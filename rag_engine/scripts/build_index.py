@@ -1,0 +1,44 @@
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from rag_engine.config.settings import settings
+from rag_engine.core.document_processor import DocumentProcessor
+from rag_engine.llm.llm_manager import LLMManager  # noqa: F401  # reserved for future use
+from rag_engine.retrieval.embedder import FRIDAEmbedder
+from rag_engine.retrieval.retriever import RAGRetriever
+from rag_engine.storage.vector_store import ChromaStore
+from rag_engine.utils.logging_manager import setup_logging
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Build RAG index from markdown sources")
+    parser.add_argument("--source", required=True, help="Path to folder or file")
+    parser.add_argument("--mode", choices=["folder", "file", "mkdocs"], default="folder")
+    parser.add_argument("--reindex", action="store_true", help="Force reindex (ignored in MVP)")
+    args = parser.parse_args()
+
+    setup_logging()
+
+    dp = DocumentProcessor(mode=args.mode)
+    docs = dp.process(args.source)
+
+    embedder = FRIDAEmbedder(model_name=settings.embedding_model, device=settings.embedding_device)
+    store = ChromaStore(persist_dir=settings.chromadb_persist_dir, collection_name=settings.chromadb_collection)
+    retriever = RAGRetriever(
+        embedder=embedder,
+        vector_store=store,
+        top_k_retrieve=settings.top_k_retrieve,
+        top_k_rerank=settings.top_k_rerank,
+        rerank_enabled=settings.rerank_enabled,
+    )
+
+    retriever.index_documents(docs, chunk_size=settings.chunk_size, chunk_overlap=settings.chunk_overlap)
+    print("Index build complete.")
+
+
+if __name__ == "__main__":
+    main()
+
+

@@ -17,7 +17,8 @@ alwaysApply: true
     - Configuration in pyproject.toml follows LangChain and Gradio best practices
 - Ensure testability and extensibility.
 - When refactoring code, change only the levant parts.
-- Ensure LangChain purity.
+- Prefer LangChain purity for LangChain code.
+- Use sentence_transformers when needed and practical.
 - Follow LangChain's best practices, patterns, and conventions:
     - https://python.langchain.com/docs/introduction/
     - https://python.langchain.com/docs/concepts/streaming/
