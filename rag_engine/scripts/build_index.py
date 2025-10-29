@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
+
+# Add project root to path if not already installed
+_project_root = Path(__file__).parent.parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
 
 from rag_engine.config.settings import settings
 from rag_engine.core.document_processor import DocumentProcessor
-from rag_engine.llm.llm_manager import LLMManager  # noqa: F401  # reserved for future use
+from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.retrieval.embedder import FRIDAEmbedder
 from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
@@ -26,9 +32,15 @@ def main() -> None:
 
     embedder = FRIDAEmbedder(model_name=settings.embedding_model, device=settings.embedding_device)
     store = ChromaStore(persist_dir=settings.chromadb_persist_dir, collection_name=settings.chromadb_collection)
+    llm_manager = LLMManager(
+        provider=settings.default_llm_provider,
+        model=settings.default_model,
+        temperature=settings.llm_temperature,
+    )
     retriever = RAGRetriever(
         embedder=embedder,
         vector_store=store,
+        llm_manager=llm_manager,
         top_k_retrieve=settings.top_k_retrieve,
         top_k_rerank=settings.top_k_rerank,
         rerank_enabled=settings.rerank_enabled,

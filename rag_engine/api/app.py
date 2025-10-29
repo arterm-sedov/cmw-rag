@@ -1,7 +1,14 @@
 """Gradio UI with ChatInterface and REST API endpoint."""
 from __future__ import annotations
 
+import sys
 from collections.abc import Generator
+from pathlib import Path
+
+# Add project root to path if not already installed
+_project_root = Path(__file__).parent.parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
 
 import gradio as gr
 

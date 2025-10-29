@@ -30,4 +30,6 @@ if (Test-Path ".venv") {
 Write-Host "2. Starting RAG engine app..." -ForegroundColor Yellow
 Write-Host "  Access at: http://localhost:7860" -ForegroundColor Green
 Write-Host ""
+# Set PYTHONPATH to project root
+$env:PYTHONPATH = "$PWD;$env:PYTHONPATH"
 python rag_engine\api\app.py
