@@ -18,11 +18,11 @@ Introduce a tiny abstraction that selects the best available backend at runtime:
 
 - `rag_engine/utils/device.py`:
 - `detect_torch_device() -> tuple[Literal["cuda","directml","cpu"], Optional[object]]`
-  - Prefers `torch.cuda.is_available()`
-  - Else tries `import torch_directml; torch_directml.device()`
-  - Else CPU via `torch.device("cpu")`
+- Prefers `torch.cuda.is_available()`
+- Else tries `import torch_directml; torch_directml.device()`
+- Else CPU via `torch.device("cpu")`
 - `get_onnx_providers() -> list[str]`
-  - Returns providers in priority order among those installed: `CUDAExecutionProvider`, `DmlExecutionProvider`, `CPUExecutionProvider`
+- Returns providers in priority order among those installed: `CUDAExecutionProvider`, `DmlExecutionProvider`, `CPUExecutionProvider`
 - In `embedder.py` and `reranker.py`:
 - Import `detect_torch_device`
 - After model init, if device is not None: `model.to(device)`
