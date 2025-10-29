@@ -25,5 +25,15 @@ known-first-party = ["rag_engine"]
 testpaths = ["rag_engine/tests"]
 python_files = "test_*.py"
 python_functions = "test_*"
+markers = [
+    "external: tests that hit real services or large model downloads",
+]
+addopts = [
+    "-v",                 # show per-test progress [ xx% ]
+    "--tb=short",         # concise tracebacks
+    "--cov=rag_engine",   # coverage target
+    "--cov-report=term-missing",
+    "--cov-fail-under=95",# enforce >=95% coverage
+]
 
 

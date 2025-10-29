@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from rag_engine.llm.llm_manager import LLMManager, MODEL_CONFIGS
+from rag_engine.llm.llm_manager import MODEL_CONFIGS, LLMManager
 
 
 class TestModelConfigs:
@@ -122,6 +122,54 @@ class TestLLMManager:
         assert flash_limit == pro_limit
         assert flash_limit == 1048576  # 1M
         assert pro_limit == 1048576  # 1M
+
+    def test_stream_response_yields_tokens(self, monkeypatch):
+        manager = LLMManager("gemini", "gemini-2.5-flash")
+
+        class FakeModel:
+            def stream(self, messages):  # noqa: ANN001
+                assert messages[0][0] == "system"
+                yield type("Chunk", (), {"content": "hello"})()
+                yield type("Chunk", (), {"content": " world"})()
+
+        monkeypatch.setattr(LLMManager, "_chat_model", lambda self, provider=None: FakeModel())
+        docs = [type("Doc", (), {"page_content": "Context text"})()]
+
+        tokens = list(manager.stream_response("question?", docs))
+
+        assert tokens == ["hello", " world"]
+
+    def test_generate_returns_content(self, monkeypatch):
+        manager = LLMManager("gemini", "gemini-2.5-flash")
+
+        class FakeModel:
+            def invoke(self, messages):  # noqa: ANN001
+                assert messages[1][1] == "question?"
+                return type("Resp", (), {"content": "answer"})()
+
+        monkeypatch.setattr(LLMManager, "_chat_model", lambda self, provider=None: FakeModel())
+        docs = [type("Doc", (), {"content": "Full doc"})()]
+
+        answer = manager.generate("question?", docs)
+
+        assert answer == "answer"
+
+    def test_chat_model_provider_paths(self, monkeypatch):
+        manager = LLMManager("gemini", "gemini-2.5-flash")
+
+        class Dummy:
+            def __init__(self, *a, **k):
+                pass
+
+        # Cover openrouter branch
+        monkeypatch.setattr("rag_engine.llm.llm_manager.ChatOpenAI", Dummy)
+        m = manager._chat_model("openrouter")
+        assert isinstance(m, Dummy)
+
+        # Cover unknown provider fallback to Gemini
+        monkeypatch.setattr("rag_engine.llm.llm_manager.ChatGoogleGenerativeAI", Dummy)
+        m2 = manager._chat_model("unknown")
+        assert isinstance(m2, Dummy)
 
     @pytest.mark.parametrize(
         "model,expected_limit",

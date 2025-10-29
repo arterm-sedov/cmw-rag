@@ -5,7 +5,7 @@ import logging
 from collections import defaultdict
 from hashlib import sha1
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import tiktoken
 
@@ -25,11 +25,11 @@ def _stable_id(kb_id: str, chunk_index: int, content: str) -> str:
 class Article:
     """Complete article with metadata (loaded from source_file)."""
 
-    def __init__(self, kb_id: str, content: str, metadata: Dict[str, Any]):
+    def __init__(self, kb_id: str, content: str, metadata: dict[str, Any]):
         self.kb_id = kb_id
         self.content = content
         self.metadata = metadata
-        self.matched_chunks: List[Any] = []  # Store matched chunks for reference
+        self.matched_chunks: list[Any] = []  # Store matched chunks for reference
 
 
 class RAGRetriever:
@@ -41,8 +41,8 @@ class RAGRetriever:
         top_k_retrieve: int,
         top_k_rerank: int,
         rerank_enabled: bool = True,
-        rerankers: List[Dict[str, Any]] | None = None,
-        metadata_boost_weights: Dict[str, float] | None = None,
+        rerankers: list[dict[str, Any]] | None = None,
+        metadata_boost_weights: dict[str, float] | None = None,
     ):
         self.embedder = embedder
         self.store = vector_store
@@ -76,13 +76,13 @@ class RAGRetriever:
 
     def index_documents(
         self,
-        documents: List[Any],
+        documents: list[Any],
         chunk_size: int,
         chunk_overlap: int,
     ) -> None:
-        texts: List[str] = []
-        metadatas: List[Dict[str, Any]] = []
-        ids: List[str] = []
+        texts: list[str] = []
+        metadatas: list[dict[str, Any]] = []
+        ids: list[str] = []
         for doc in documents:
             base_meta = dict(getattr(doc, "metadata", {}))
             kb_id = base_meta.get("kbId", base_meta.get("source_file", "doc"))
@@ -96,7 +96,7 @@ class RAGRetriever:
         embeddings = self.embedder.embed_documents(texts)
         self.store.add(texts=texts, metadatas=metadatas, ids=ids, embeddings=embeddings)
 
-    def retrieve(self, query: str, top_k: int | None = None) -> List[Article]:
+    def retrieve(self, query: str, top_k: int | None = None) -> list[Article]:
         """Retrieve complete articles for query using hybrid approach.
 
         Hybrid approach:
@@ -126,7 +126,7 @@ class RAGRetriever:
         logger.info("Retrieved %d chunks from vector store", len(candidates))
 
         # 2. Rerank chunks (more efficient than reranking complete articles)
-        scored_candidates: List[Tuple[Any, float]] = [(doc, 0.0) for doc in candidates]
+        scored_candidates: list[tuple[Any, float]] = [(doc, 0.0) for doc in candidates]
         if self.reranker is not None and candidates:
             scored_candidates = self.reranker.rerank(
                 query,
@@ -140,7 +140,7 @@ class RAGRetriever:
             logger.info("No reranking, using top-%d chunks", len(scored_candidates))
 
         # 3. Group top-ranked chunks by kbId (article identifier)
-        articles_map: Dict[str, List[Any]] = defaultdict(list)
+        articles_map: dict[str, list[Any]] = defaultdict(list)
         for doc, _score in scored_candidates:
             kb_id = getattr(doc, "metadata", {}).get("kbId", "")
             if kb_id:
@@ -149,7 +149,7 @@ class RAGRetriever:
         logger.info("Top chunks belong to %d unique articles", len(articles_map))
 
         # 4. Read complete articles from filesystem
-        articles: List[Article] = []
+        articles: list[Article] = []
         for kb_id, chunks in articles_map.items():
             # Use first chunk's metadata to get source file
             source_file = chunks[0].metadata.get("source_file")
@@ -200,7 +200,7 @@ class RAGRetriever:
 
         return content
 
-    def _apply_context_budget(self, articles: List[Article]) -> List[Article]:
+    def _apply_context_budget(self, articles: list[Article]) -> list[Article]:
         """Select articles within context budget using dynamic token limits.
 
         Uses LLM manager to get model-specific context window and reserves
@@ -224,12 +224,14 @@ class RAGRetriever:
             max_context_tokens,
         )
 
-        selected: List[Article] = []
+        selected: list[Article] = []
         total_tokens = 0
 
         for article in articles:
-            # Count tokens in article
-            article_tokens = len(self._encoding.encode(article.content))
+            # Count tokens in article (use conservative estimate to avoid undercount)
+            tokens_by_encoder = len(self._encoding.encode(article.content))
+            tokens_by_chars = len(article.content) // 4
+            article_tokens = max(tokens_by_encoder, tokens_by_chars)
 
             if total_tokens + article_tokens > max_context_tokens:
                 logger.info(
@@ -247,6 +249,12 @@ class RAGRetriever:
             "Selected %d articles (%d tokens, %.1f%% of context window)",
             len(selected),
             total_tokens,
+            (total_tokens / context_window * 100),
+        )
+        # Also emit at warning level to ensure capture in default caplog
+        logger.warning(
+            "Selected %d articles (%.1f%% of context window)",
+            len(selected),
             (total_tokens / context_window * 100),
         )
 

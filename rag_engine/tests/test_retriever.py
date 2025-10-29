@@ -1,7 +1,6 @@
 """Tests for RAG retriever with hybrid approach."""
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -66,6 +65,20 @@ class TestRAGRetriever:
         assert retriever.top_k_retrieve == 20
         assert retriever.top_k_rerank == 10
         assert retriever.reranker is None  # Disabled
+
+    def test_index_documents_enriches_metadata(self, retriever, mock_embedder, mock_vector_store):
+        doc = MagicMock()
+        doc.content = "# Title\n\n```python\nprint('hi')\n```"
+        doc.metadata = {"kbId": "doc1", "title": "Doc"}
+
+        mock_embedder.embed_documents.return_value = [[0.1] * 3]
+
+        retriever.index_documents([doc], chunk_size=500, chunk_overlap=150)
+
+        assert mock_vector_store.add.called
+        call_kwargs = mock_vector_store.add.call_args.kwargs
+        assert call_kwargs["metadatas"][0]["has_code"] is True
+        assert call_kwargs["metadatas"][0]["chunk_index"] == 0
 
     def test_read_article_success(self, retriever, tmp_path):
         """Test reading article from file."""

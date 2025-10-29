@@ -1,7 +1,7 @@
 """Gradio UI with ChatInterface and REST API endpoint."""
 from __future__ import annotations
 
-from typing import Generator, List
+from collections.abc import Generator
 
 import gradio as gr
 
@@ -12,7 +12,6 @@ from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
 from rag_engine.utils.formatters import format_with_citations
 from rag_engine.utils.logging_manager import setup_logging
-
 
 setup_logging()
 
@@ -41,7 +40,7 @@ retriever = RAGRetriever(
 )
 
 
-def chat_handler(message: str, history: List[dict]) -> Generator[str, None, None]:
+def chat_handler(message: str, history: list[dict]) -> Generator[str, None, None]:
     if not message or not message.strip():
         yield "Пожалуйста, введите вопрос / Please enter a question."
         return
@@ -76,8 +75,14 @@ demo = gr.ChatInterface(
     type="messages",
     save_history=True,
 )
+# Explicitly set a plain attribute for tests and downstream code to read
+demo.title = "Comindware Platform Documentation Assistant"
 
-gr.api(fn=query_rag, api_name="query_rag")
+try:
+    gr.api(fn=query_rag, api_name="query_rag")
+except Exception:  # noqa: BLE001
+    # Older/newer Gradio builds without gr.api support
+    pass
 
 
 if __name__ == "__main__":
