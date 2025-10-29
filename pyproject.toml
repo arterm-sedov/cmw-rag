@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "RAG Engine for MkDocs documentation"
 requires-python = ">=3.10"
 dependencies = []
-readme = "QUICKSTART.md"
+readme = "README.md"
 
 [tool.setuptools.packages.find]
 where = ["."]
