@@ -3,8 +3,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
-# Load environment variables from .env file
-env_path = Path(__file__).parent.parent.parent / ".env"
+# Load environment variables from .env file in project root
+project_root = Path(__file__).parent.parent.parent
+env_path = project_root / ".env"
 load_dotenv(env_path)
 
 
@@ -18,6 +19,7 @@ class Settings(BaseSettings):
     # LLM Providers
     google_api_key: str
     openrouter_api_key: str
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
     # Embedding
     embedding_model: str

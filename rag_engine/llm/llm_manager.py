@@ -8,6 +8,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 
 from rag_engine.llm.prompts import SYSTEM_PROMPT
+from rag_engine.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -170,11 +171,31 @@ class LLMManager:
             )
         if p == "openrouter":
             # OpenRouter via OpenAI-compatible client
+            api_key = settings.openrouter_api_key
+            if not api_key or not api_key.strip():
+                raise ValueError(
+                    "OPENROUTER_API_KEY is not set or empty. "
+                    "Please set it in your .env file."
+                )
+            
+            base_url = settings.openrouter_base_url
+            logger.info(
+                f"Initializing OpenRouter client: model={self.model_name}, "
+                f"base_url={base_url}, api_key={api_key[:10]}..."
+            )
+            
             return ChatOpenAI(
                 model=self.model_name,
+                api_key=api_key,
+                base_url=base_url,
                 temperature=self.temperature,
                 max_tokens=self._model_config["max_tokens"],
-                base_url="https://openrouter.ai/api/v1",
+                streaming=True,  # Enable streaming for OpenRouter
+                default_headers={
+                    # OpenRouter recommends these headers for attribution/rate-limiting
+                    "HTTP-Referer": f"http://{settings.gradio_server_name}:{settings.gradio_server_port}",
+                    "X-Title": "CMW RAG Engine",
+                },
             )
         # default fallback to Gemini
         logger.warning(f"Unknown provider {p}, falling back to Gemini")
