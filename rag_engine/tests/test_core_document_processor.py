@@ -17,6 +17,8 @@ def test_process_folder_returns_documents(docs_fixture_path: Path):
     intro_doc = next(d for d in docs if d.metadata["kbId"].endswith("intro"))
     assert intro_doc.metadata["title"] == "intro"
     assert Path(intro_doc.metadata["source_file"]).exists()
+    assert intro_doc.metadata["source_type"] == "folder"
+    assert intro_doc.metadata["section_index"] == 0
 
 
 def test_process_file_splits_by_heading(tmp_path, fixtures_path: Path):
@@ -27,6 +29,9 @@ def test_process_file_splits_by_heading(tmp_path, fixtures_path: Path):
     assert len(docs) == 2  # Two H1 sections
     titles = {doc.metadata["title"] for doc in docs}
     assert {"Getting Started", "Administration Guide"} <= titles
+    for i, doc in enumerate(docs):
+        assert doc.metadata["source_type"] == "file"
+        assert doc.metadata["section_index"] == i
 
 
 def test_process_mkdocs_with_manifest(mkdocs_export_path: Path):
@@ -36,7 +41,8 @@ def test_process_mkdocs_with_manifest(mkdocs_export_path: Path):
     assert len(docs) == 1
     meta = docs[0].metadata
     assert meta["kbId"] == "intro"
-    assert meta["source_type"] == "mkdocs_export"
+    assert meta["source_type"] == "mkdocs"
+    assert meta["section_index"] == 0
 
 
 def test_process_mkdocs_without_manifest(tmp_path):
@@ -50,4 +56,6 @@ def test_process_mkdocs_without_manifest(tmp_path):
 
     assert len(docs) == 1
     assert docs[0].metadata["kbId"] == "file"
+    assert docs[0].metadata["source_type"] == "folder"
+    assert docs[0].metadata["section_index"] == 0
 

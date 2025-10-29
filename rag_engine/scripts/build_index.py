@@ -23,11 +23,18 @@ def main() -> None:
     parser.add_argument("--source", required=True, help="Path to folder or file")
     parser.add_argument("--mode", choices=["folder", "file", "mkdocs"], default="folder")
     parser.add_argument("--reindex", action="store_true", help="Force reindex (ignored in MVP)")
+    parser.add_argument(
+        "--max-files",
+        type=int,
+        default=None,
+        help="Limit the number of source files to scan/process (for quick runs)",
+    )
     args = parser.parse_args()
 
     setup_logging()
 
     dp = DocumentProcessor(mode=args.mode)
+    # Always process full set; apply limiting in retriever so skipped files don't count
     docs = dp.process(args.source)
 
     embedder = FRIDAEmbedder(model_name=settings.embedding_model, device=settings.embedding_device)
@@ -46,7 +53,21 @@ def main() -> None:
         rerank_enabled=settings.rerank_enabled,
     )
 
-    retriever.index_documents(docs, chunk_size=settings.chunk_size, chunk_overlap=settings.chunk_overlap)
+    # Call retriever with optional max_files, but keep backward compatibility
+    try:
+        retriever.index_documents(
+            docs,
+            chunk_size=settings.chunk_size,
+            chunk_overlap=settings.chunk_overlap,
+            max_files=args.max_files,
+        )
+    except TypeError:
+        # Older retrievers without max_files support
+        retriever.index_documents(
+            docs,
+            chunk_size=settings.chunk_size,
+            chunk_overlap=settings.chunk_overlap,
+        )
     print("Index build complete.")
 
 
