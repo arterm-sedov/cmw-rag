@@ -61,7 +61,9 @@ Choose one of three ingestion modes:
 ```bash
 python rag_engine/scripts/build_index.py \
   --source "path/to/your/markdown/folder/" \
-  --mode folder
+  --mode folder \
+  # Optional: limit number of actually indexed docs (skips don't count)
+  --max-files 100
 ```
 
 **Mode: Single File**
@@ -82,8 +84,14 @@ python rag_engine/scripts/run_mkdocs_export.py \
 # Then index
 python rag_engine/scripts/build_index.py \
   --source ./data/compiled_md_for_rag \
-  --mode mkdocs
+  --mode mkdocs \
+  --max-files 100
 ```
+
+Optional flags and behavior
+- `--max-files N`: Stop after indexing N documents that actually changed or are new. Unchanged files (by timestamp) are skipped and do not count against this limit.
+- Incremental reindexing: If a file’s modification time (mtime) is unchanged since the last run, it is skipped. If it changed, all previous chunks for that document are replaced with fresh ones.
+- Safe to re-run: Stable IDs and per-document replacement make repeated indexing idempotent.
 
 ### 4. Run the Application
 

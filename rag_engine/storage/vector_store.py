@@ -50,4 +50,17 @@ class ChromaStore:
         metas = res.get("metadatas", [[]])[0]
         return [RetrievedDoc(page_content=d, metadata=m) for d, m in zip(docs, metas)]
 
+    # Incremental reindexing helpers
+    def get_any_doc_meta(self, where: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Return metadata of any one document matching a metadata filter."""
+        res = self.collection.get(where=where, include=["metadatas"], limit=1)
+        metas = res.get("metadatas", [])
+        if metas:
+            return metas[0]
+        return None
+
+    def delete_where(self, where: Dict[str, Any]) -> None:
+        """Delete all records matching a metadata filter."""
+        self.collection.delete(where=where)
+
 

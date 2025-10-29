@@ -31,7 +31,7 @@ class DocumentProcessor:
         self.mode = mode
         logger.info("DocumentProcessor initialized in %s mode", mode)
 
-    def process(self, source: str) -> list[Document]:
+    def process(self, source: str, max_files: int | None = None) -> list[Document]:
         """Process documents from source.
 
         Args:
@@ -41,14 +41,49 @@ class DocumentProcessor:
             List of parsed documents with metadata
         """
         if self.mode == "folder":
-            return self._process_folder(source)
+            return self._process_folder(source, max_files=max_files)
         if self.mode == "file":
             return self._process_file(source)
         if self.mode == "mkdocs":
-            return self._process_mkdocs(source)
+            return self._process_mkdocs(source, max_files=max_files)
         raise ValueError(f"Unknown mode: {self.mode}")
 
-    def _process_folder(self, folder_path: str) -> list[Document]:
+    @staticmethod
+    def _normalize_base_metadata(
+        *,
+        kb_id: str,
+        title: str,
+        source_file: str,
+        source_type: str,
+        section_index: int | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Produce a uniform base metadata schema across all modes.
+
+        Fields always present:
+        - kbId: stable document identifier (string)
+        - title: human-friendly title (string)
+        - source_file: absolute path to the source markdown file (string)
+        - source_type: one of {folder, file, mkdocs} (string)
+        - section_index: integer section index (0 when not applicable)
+
+        Any additional parsed fields are merged in "extra".
+        """
+        meta: dict[str, Any] = {
+            "kbId": kb_id,
+            "title": title,
+            "source_file": source_file,
+            "source_type": source_type,
+            "section_index": section_index if section_index is not None else 0,
+        }
+        if extra:
+            # Do not let extras override canonical keys unless explicitly intended
+            for k, v in extra.items():
+                if k not in meta:
+                    meta[k] = v
+        return meta
+
+    def _process_folder(self, folder_path: str, max_files: int | None = None) -> list[Document]:
         """Mode 3: Scan folder for MD files."""
         folder = Path(folder_path)
         if not folder.exists():
@@ -57,17 +92,24 @@ class DocumentProcessor:
         documents: list[Document] = []
         md_files = list(folder.rglob("*.md"))
         md_files.sort()
+        if max_files is not None and max_files >= 0:
+            md_files = md_files[:max_files]
         logger.info("Found %d markdown files in %s", len(md_files), folder_path)
 
         for md_file in md_files:
             try:
-                content, metadata = self._parse_md_with_frontmatter(md_file)
+                content, fm = self._parse_md_with_frontmatter(md_file)
                 rel_path = md_file.relative_to(folder)
                 kb_id = str(rel_path.with_suffix(""))
-                metadata.setdefault("kbId", kb_id)
-                metadata.setdefault("title", md_file.stem)
-                metadata.setdefault("source_file", str(md_file))
-                documents.append(Document(content, metadata))
+                base = self._normalize_base_metadata(
+                    kb_id=kb_id,
+                    title=fm.get("title") or md_file.stem,
+                    source_file=str(md_file),
+                    source_type="folder",
+                    section_index=0,
+                    extra=fm,
+                )
+                documents.append(Document(content, base))
             except Exception as exc:  # noqa: BLE001
                 logger.error("Failed to process %s: %s", md_file, exc)
                 continue
@@ -87,18 +129,19 @@ class DocumentProcessor:
 
         documents: list[Document] = []
         for i, (title, section_content) in enumerate(sections):
-            metadata: dict[str, Any] = {
-                "kbId": f"{file.stem}_{i}",
-                "title": title or f"Section {i}",
-                "source_file": str(file),
-                "section_index": i,
-            }
-            documents.append(Document(section_content, metadata))
+            base = self._normalize_base_metadata(
+                kb_id=f"{file.stem}_{i}",
+                title=title or f"Section {i}",
+                source_file=str(file),
+                source_type="file",
+                section_index=i,
+            )
+            documents.append(Document(section_content, base))
 
         logger.info("Split file into %d sections", len(documents))
         return documents
 
-    def _process_mkdocs(self, export_dir: str) -> list[Document]:
+    def _process_mkdocs(self, export_dir: str, max_files: int | None = None) -> list[Document]:
         """Mode 1: Process MkDocs export with manifest."""
         export_path = Path(export_dir)
         manifest_file = export_path / "rag_manifest.json"
@@ -111,14 +154,23 @@ class DocumentProcessor:
         logger.info("Processing MkDocs export: %s files", manifest.get("total_files"))
 
         documents: list[Document] = []
-        for file_path in manifest.get("files", []):
+        files_iter = manifest.get("files", [])
+        if max_files is not None and max_files >= 0:
+            files_iter = files_iter[:max_files]
+        for file_path in files_iter:
             md_file = export_path / file_path
             if md_file.exists():
-                content, metadata = self._parse_md_with_frontmatter(md_file)
-                metadata.setdefault("kbId", str(Path(file_path).with_suffix("")))
-                metadata.setdefault("title", md_file.stem)
-                metadata["source_type"] = "mkdocs_export"
-                documents.append(Document(content, metadata))
+                content, fm = self._parse_md_with_frontmatter(md_file)
+                kb_id = str(Path(file_path).with_suffix(""))
+                base = self._normalize_base_metadata(
+                    kb_id=kb_id,
+                    title=fm.get("title") or md_file.stem,
+                    source_file=str(md_file),
+                    source_type="mkdocs",
+                    section_index=0,
+                    extra=fm,
+                )
+                documents.append(Document(content, base))
 
         logger.info("Processed %d MkDocs documents", len(documents))
         return documents

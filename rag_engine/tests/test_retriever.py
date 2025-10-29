@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from rag_engine.retrieval.retriever import Article, RAGRetriever
+from hashlib import sha1
+import os
 
 
 class TestArticle:
@@ -79,6 +81,9 @@ class TestRAGRetriever:
         call_kwargs = mock_vector_store.add.call_args.kwargs
         assert call_kwargs["metadatas"][0]["has_code"] is True
         assert call_kwargs["metadatas"][0]["chunk_index"] == 0
+        # New metadata fields
+        assert "stable_id" in call_kwargs["metadatas"][0]
+        assert "doc_stable_id" in call_kwargs["metadatas"][0]
 
     def test_read_article_success(self, retriever, tmp_path):
         """Test reading article from file."""
@@ -105,6 +110,141 @@ class TestRAGRetriever:
         """Test error handling for missing file."""
         with pytest.raises(FileNotFoundError):
             retriever._read_article("/nonexistent/file.md")
+
+    def test_index_documents_skips_unchanged(self, mock_embedder, mock_vector_store, mock_llm_manager, tmp_path):
+        """If stored mtime >= current mtime, document is skipped and not added."""
+        file_path = tmp_path / "doc.md"
+        file_path.write_text("Content")
+        # Set file mtime to 200
+        os.utime(file_path, (200, 200))
+
+        # Existing metadata says epoch 200 (same), so skip
+        mock_vector_store.get_any_doc_meta.return_value = {"file_mtime_epoch": 200}
+
+        retriever = RAGRetriever(
+            embedder=mock_embedder,
+            vector_store=mock_vector_store,
+            llm_manager=mock_llm_manager,
+            top_k_retrieve=10,
+            top_k_rerank=5,
+            rerank_enabled=False,
+        )
+
+        doc = MagicMock()
+        doc.content = "# T\nBody"
+        doc.metadata = {"kbId": "k1", "source_file": str(file_path)}
+
+        retriever.index_documents([doc], chunk_size=50, chunk_overlap=10, max_files=10)
+
+        mock_vector_store.add.assert_not_called()
+        mock_vector_store.delete_where.assert_not_called()
+
+    def test_index_documents_replaces_updated(self, mock_embedder, mock_vector_store, mock_llm_manager, tmp_path):
+        """If stored mtime < current mtime, delete_where then add is called."""
+        file_path = tmp_path / "doc.md"
+        file_path.write_text("Content")
+        # Current file mtime 300
+        os.utime(file_path, (300, 300))
+
+        # Existing older epoch 200 triggers reindex
+        mock_vector_store.get_any_doc_meta.return_value = {"file_mtime_epoch": 200}
+
+        retriever = RAGRetriever(
+            embedder=mock_embedder,
+            vector_store=mock_vector_store,
+            llm_manager=mock_llm_manager,
+            top_k_retrieve=10,
+            top_k_rerank=5,
+            rerank_enabled=False,
+        )
+
+        doc = MagicMock()
+        doc.content = "# T\nBody"
+        doc.metadata = {"kbId": "k2", "source_file": str(file_path)}
+
+        retriever.index_documents([doc], chunk_size=50, chunk_overlap=10, max_files=None)
+
+        # delete_where called with doc_stable_id
+        doc_stable_id = sha1("k2".encode("utf-8")).hexdigest()[:12]
+        mock_vector_store.delete_where.assert_called_once_with({"doc_stable_id": doc_stable_id})
+        mock_vector_store.add.assert_called_once()
+
+    def test_max_files_counts_only_indexed(self, mock_embedder, mock_vector_store, mock_llm_manager, tmp_path):
+        """max_files should limit actual indexed docs, not scanned docs."""
+        # Prepare three files: two unchanged (skip), one updated (index)
+        f1 = tmp_path / "a.md"; f1.write_text("A"); os.utime(f1, (200, 200))
+        f2 = tmp_path / "b.md"; f2.write_text("B"); os.utime(f2, (200, 200))
+        f3 = tmp_path / "c.md"; f3.write_text("C"); os.utime(f3, (300, 300))
+
+        # For first two docs, existing epoch equals current → skip
+        def get_meta(where):
+            if where.get("doc_stable_id") in {
+                sha1("kb_a".encode("utf-8")).hexdigest()[:12],
+                sha1("kb_b".encode("utf-8")).hexdigest()[:12],
+            }:
+                return {"file_mtime_epoch": 200}
+            if where.get("doc_stable_id") == sha1("kb_c".encode("utf-8")).hexdigest()[:12]:
+                return {"file_mtime_epoch": 200}  # older than current 300 → reindex
+            return None
+
+        mock_vector_store.get_any_doc_meta.side_effect = get_meta
+
+        retriever = RAGRetriever(
+            embedder=mock_embedder,
+            vector_store=mock_vector_store,
+            llm_manager=mock_llm_manager,
+            top_k_retrieve=10,
+            top_k_rerank=5,
+            rerank_enabled=False,
+        )
+
+        docs = []
+        for kb, fp in [("kb_a", f1), ("kb_b", f2), ("kb_c", f3)]:
+            d = MagicMock()
+            d.content = "# H\nX"
+            d.metadata = {"kbId": kb, "source_file": str(fp)}
+            docs.append(d)
+
+        # Request max_files=1; should skip a and b, index only c and stop
+        retriever.index_documents(docs, chunk_size=50, chunk_overlap=10, max_files=1)
+
+        mock_vector_store.add.assert_called_once()
+        # Ensure we deleted outdated for c only
+        doc_stable_c = sha1("kb_c".encode("utf-8")).hexdigest()[:12]
+        mock_vector_store.delete_where.assert_called_once_with({"doc_stable_id": doc_stable_c})
+
+    def test_stable_id_disambiguates_by_source_file(self, mock_embedder, mock_vector_store, mock_llm_manager, tmp_path):
+        """Chunks from different files with same kbId/content get different IDs."""
+        # Two files with identical content and same kbId
+        f1 = tmp_path / "same.md"; f1.write_text("# H\nSame body"); os.utime(f1, (100, 100))
+        f2 = tmp_path / "same_copy.md"; f2.write_text("# H\nSame body"); os.utime(f2, (100, 100))
+
+        # Force embedder to return deterministic embeddings
+        mock_embedder.embed_documents.return_value = [[0.1, 0.2, 0.3]]
+
+        retriever = RAGRetriever(
+            embedder=mock_embedder,
+            vector_store=mock_vector_store,
+            llm_manager=mock_llm_manager,
+            top_k_retrieve=5,
+            top_k_rerank=3,
+            rerank_enabled=False,
+        )
+
+        d1 = MagicMock(); d1.content = "# H\nSame body"; d1.metadata = {"kbId": "kb_same", "source_file": str(f1)}
+        d2 = MagicMock(); d2.content = "# H\nSame body"; d2.metadata = {"kbId": "kb_same", "source_file": str(f2)}
+
+        # Capture IDs from consecutive add() calls
+        captured_ids = []
+        def capture_add(texts=None, metadatas=None, ids=None, embeddings=None):  # noqa: ANN001
+            captured_ids.append(tuple(ids))
+        mock_vector_store.add.side_effect = capture_add
+
+        retriever.index_documents([d1, d2], chunk_size=50, chunk_overlap=10, max_files=None)
+
+        assert len(captured_ids) == 2
+        # Each call has 1 chunk id; they should differ
+        assert captured_ids[0][0] != captured_ids[1][0]
 
     @patch("rag_engine.retrieval.retriever.top_k_search")
     def test_retrieve_no_results(self, mock_search, retriever):
