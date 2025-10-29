@@ -30,4 +30,6 @@ fi
 echo "2. Starting RAG engine app..."
 echo "  Access at: http://localhost:7860"
 echo ""
+# Set PYTHONPATH to project root
+export PYTHONPATH="$(pwd):${PYTHONPATH:-}"
 python rag_engine/api/app.py
