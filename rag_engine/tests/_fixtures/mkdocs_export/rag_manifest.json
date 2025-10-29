@@ -1,0 +1,10 @@
+{
+  "total_files": 1,
+  "files": [
+    "intro.md"
+  ],
+  "build_date": "2025-10-29T00:00:00",
+  "config_name": "Test MkDocs Project",
+  "source_type": "mkdocs_pipeline"
+}
+

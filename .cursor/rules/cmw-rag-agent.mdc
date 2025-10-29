@@ -16,6 +16,7 @@ alwaysApply: true
     - Only lint the files that were modified, not the entire codebase
     - Configuration in pyproject.toml follows LangChain and Gradio best practices
 - Ensure testability and extensibility.
+- Avoid unnecessary try-catches.
 - When refactoring code, change only the levant parts.
 - Prefer LangChain purity for LangChain code.
 - Use sentence_transformers when needed and practical.

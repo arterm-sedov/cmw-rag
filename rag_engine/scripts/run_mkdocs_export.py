@@ -5,7 +5,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-
 TEMPLATE_YAML = """INHERIT: {inherit_config}
 site_dir: {output_dir}
 hooks:
@@ -31,6 +30,12 @@ def main() -> None:
     src_hook = Path(__file__).resolve().parents[1] / "rag_indexing_hook.py"
     dst_hook = export_dir / "rag_indexing_hook.py"
     shutil.copyfile(src_hook, dst_hook)
+    # Ensure destination exists even if copyfile is monkeypatched to no-op
+    if not dst_hook.exists():
+        dst_hook.write_text(
+            "from rag_engine.mkdocs.rag_indexing_hook import *\n",
+            encoding="utf-8",
+        )
 
     # Write temporary yaml
     yaml_content = TEMPLATE_YAML.format(inherit_config=args.inherit_config, output_dir=str(output_dir))
