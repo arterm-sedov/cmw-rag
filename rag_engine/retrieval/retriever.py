@@ -293,10 +293,23 @@ class RAGRetriever:
 
             try:
                 article_content = self._read_article(source_file)
+                # Preserve original metadata for internal ops; add a clean URL for citations
+                article_metadata = dict(chunks[0].metadata)
+                if "article_url" not in article_metadata:
+                    # Prefer explicit frontmatter URL
+                    frontmatter_url = article_metadata.get("url")
+                    if frontmatter_url:
+                        article_metadata["article_url"] = str(frontmatter_url)
+                    else:
+                        # kbId is guaranteed numeric by indexer; construct URL directly
+                        kbid = article_metadata.get("kbId") or kb_id
+                        if kbid is not None:
+                            article_metadata["article_url"] = f"https://kb.comindware.ru/article.php?id={kbid}"
+
                 article = Article(
                     kb_id=kb_id,
                     content=article_content,
-                    metadata=chunks[0].metadata,
+                    metadata=article_metadata,
                 )
                 article.matched_chunks = chunks
                 articles.append(article)
@@ -340,11 +353,16 @@ class RAGRetriever:
         Uses LLM manager to get model-specific context window and reserves
         25% for prompt overhead and output tokens.
 
+        For articles that don't fit with full content, creates lightweight
+        representations with title, URL, and relevant matched chunks so the
+        LLM can still cite them.
+
         Args:
             articles: Sorted list of articles
 
         Returns:
-            Articles that fit within context budget
+            Articles that fit within context budget (full content) plus
+            lightweight representations (title, URL, chunks) for remaining articles
         """
         # Get dynamic context window from LLM manager
         context_window = self.llm_manager.get_current_llm_context_window()
@@ -360,8 +378,11 @@ class RAGRetriever:
 
         selected: list[Article] = []
         total_tokens = 0
+        full_content_idx = 0
 
-        for article in articles:
+        # First pass: try to fit full article content
+        # Articles added here will NOT be processed again in the second pass
+        for idx, article in enumerate(articles):
             # Count tokens in article (use conservative estimate to avoid undercount)
             tokens_by_encoder = len(self._encoding.encode(article.content))
             tokens_by_chars = len(article.content) // 4
@@ -369,27 +390,87 @@ class RAGRetriever:
 
             if total_tokens + article_tokens > max_context_tokens:
                 logger.info(
-                    "Context budget reached: %d/%d tokens (%.1f%% of window)",
+                    "Context budget reached for full content: %d/%d tokens (%.1f%% of window)",
                     total_tokens,
                     max_context_tokens,
                     (total_tokens / context_window * 100),
                 )
+                full_content_idx = idx  # Articles from this index onward weren't included
                 break
 
             selected.append(article)
             total_tokens += article_tokens
 
+        # Second pass: add lightweight representations for remaining articles
+        # Only processes articles[full_content_idx:] - articles already included as full
+        # (indices 0 to full_content_idx-1) are skipped, ensuring each article appears once
+        lightweight_count = 0
+
+        for article in articles[full_content_idx:]:
+            if not article.matched_chunks:
+                # Skip articles without matched chunks (can't create lightweight version)
+                continue
+
+            # Build lightweight content from matched chunks
+            chunk_texts = []
+            for chunk in article.matched_chunks:
+                chunk_content = getattr(chunk, "page_content", None) or getattr(chunk, "content", "")
+                if chunk_content:
+                    chunk_texts.append(chunk_content)
+
+            if not chunk_texts:
+                continue
+
+            # Create lightweight content: title + URL + relevant chunks
+            title = article.metadata.get("title", article.kb_id)
+            article_url = article.metadata.get("article_url") or article.metadata.get("url")
+            if not article_url:
+                kbid = article.metadata.get("kbId") or article.kb_id
+                if kbid:
+                    article_url = f"https://kb.comindware.ru/article.php?id={kbid}"
+
+            # Combine chunks with a header
+            lightweight_content = f"# {title}\n\nURL: {article_url}\n\n"
+            lightweight_content += "\n\n---\n\n".join(chunk_texts)
+
+            # Count tokens for lightweight version
+            tokens_by_encoder = len(self._encoding.encode(lightweight_content))
+            tokens_by_chars = len(lightweight_content) // 4
+            lightweight_tokens = max(tokens_by_encoder, tokens_by_chars)
+
+            if total_tokens + lightweight_tokens > max_context_tokens:
+                # Even lightweight version doesn't fit
+                logger.debug(
+                    "Skipping lightweight article (kbId=%s): exceeds remaining budget",
+                    article.kb_id,
+                )
+                continue
+
+            # Create lightweight article
+            lightweight_article = Article(
+                kb_id=article.kb_id,
+                content=lightweight_content,
+                metadata=article.metadata,
+            )
+            lightweight_article.matched_chunks = article.matched_chunks
+            selected.append(lightweight_article)
+            total_tokens += lightweight_tokens
+            lightweight_count += 1
+
         logger.info(
-            "Selected %d articles (%d tokens, %.1f%% of context window)",
-            len(selected),
+            "Selected %d full articles + %d lightweight articles (%d tokens, %.1f%% of context window)",
+            len(selected) - lightweight_count,
+            lightweight_count,
             total_tokens,
             (total_tokens / context_window * 100),
         )
         # Also emit at warning level to ensure capture in default caplog
         logger.warning(
-            "Selected %d articles (%.1f%% of context window)",
+            "Selected %d articles (%.1f%% of context window, %d full + %d lightweight)",
             len(selected),
             (total_tokens / context_window * 100),
+            len(selected) - lightweight_count,
+            lightweight_count,
         )
 
         return selected

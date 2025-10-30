@@ -99,10 +99,13 @@ class DocumentProcessor:
         for md_file in md_files:
             try:
                 content, fm = self._parse_md_with_frontmatter(md_file)
-                rel_path = md_file.relative_to(folder)
-                kb_id = str(rel_path.with_suffix(""))
+                # Require numeric kbId from frontmatter; skip if missing
+                kb_id = fm.get("kbId")
+                if not kb_id:
+                    logger.warning("Skipping %s: missing kbId in frontmatter", md_file)
+                    continue
                 base = self._normalize_base_metadata(
-                    kb_id=kb_id,
+                    kb_id=str(kb_id),
                     title=fm.get("title") or md_file.stem,
                     source_file=str(md_file),
                     source_type="folder",
@@ -124,17 +127,26 @@ class DocumentProcessor:
             raise FileNotFoundError(f"File not found: {file_path}")
 
         logger.info("Processing single file: %s", file_path)
-        content = file.read_text(encoding="utf-8")
+        # Parse frontmatter if present, then split the remainder by headings
+        content, fm = self._parse_md_with_frontmatter(file)
+        # Require numeric kbId from frontmatter; skip entire file if missing
+        kb_id = fm.get("kbId")
+        if not kb_id:
+            logger.warning("Skipping %s: missing kbId in frontmatter", file_path)
+            return []
+        
         sections = self._split_by_headings(content)
 
         documents: list[Document] = []
         for i, (title, section_content) in enumerate(sections):
+            # Use same numeric kbId from frontmatter for all sections
             base = self._normalize_base_metadata(
-                kb_id=f"{file.stem}_{i}",
+                kb_id=str(kb_id),
                 title=title or f"Section {i}",
                 source_file=str(file),
                 source_type="file",
                 section_index=i,
+                extra=fm,
             )
             documents.append(Document(section_content, base))
 
@@ -161,9 +173,13 @@ class DocumentProcessor:
             md_file = export_path / file_path
             if md_file.exists():
                 content, fm = self._parse_md_with_frontmatter(md_file)
-                kb_id = str(Path(file_path).with_suffix(""))
+                # Require numeric kbId from frontmatter; skip if missing
+                kb_id = fm.get("kbId")
+                if not kb_id:
+                    logger.warning("Skipping %s: missing kbId in frontmatter", md_file)
+                    continue
                 base = self._normalize_base_metadata(
-                    kb_id=kb_id,
+                    kb_id=str(kb_id),
                     title=fm.get("title") or md_file.stem,
                     source_file=str(md_file),
                     source_type="mkdocs",
