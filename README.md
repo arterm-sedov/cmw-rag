@@ -13,6 +13,7 @@ Chat with DeepWiki to get answers about this repo:
 ## Features
 
 - **Multi-source ingestion**: Support for MkDocs export, markdown folders, and single combined files
+- **Smart timestamp detection**: Three-tier fallback (frontmatter → Git → file modification) for accurate incremental reindexing
 - **Bilingual support**: FRIDA embeddings for Russian and English content
 - **Advanced retrieval**: Vector search with optional cross-encoder reranking
 - **Multi-vector queries**: Split long queries into token-aware segments, retrieve per segment, union + rerank
@@ -25,6 +26,39 @@ Chat with DeepWiki to get answers about this repo:
 - **Context-aware**: Complete article context with citation support
   - **Per-session memory**: LangChain-backed conversation memory (scoped by Gradio session hash) with optional compression near context limits
   - **Copy button**: One-click copy on chat messages
+
+## Architecture
+
+The codebase follows a clean separation of concerns:
+
+### Indexing Pipeline (`rag_engine/core/`)
+
+- **`indexer.py` - RAGIndexer**: Handles document indexing operations
+  - Chunks documents, generates embeddings, writes to vector store
+  - Implements incremental reindexing with timestamp-based deduplication
+  - Normalizes `kbId` to numeric format for consistent document identification
+  - Located in `core/` alongside other document processing components
+
+- **`document_processor.py`**: Processes markdown files from various sources (folder, file, mkdocs)
+- **`chunker.py`**: Token-aware text chunking with overlap
+- **`metadata_enricher.py`**: Enriches chunk metadata with code detection, section info, etc.
+
+### Retrieval Pipeline (`rag_engine/retrieval/`)
+
+- **`retriever.py` - RAGRetriever**: Handles query retrieval operations
+  - Vector search, reranking, article reconstruction
+  - Context budgeting and article summarization
+  - Query segmentation and multi-vector retrieval
+  - **Note**: Indexing has been separated into `RAGIndexer` for better separation of concerns
+
+- **`embedder.py`**: FRIDA embedding model wrapper
+- **`vector_search.py`**: ChromaDB vector search utilities
+- **`reranker.py`**: Cross-encoder reranking models
+
+### Scripts (`rag_engine/scripts/`)
+
+- **`build_index.py`**: Main indexing script that uses `RAGIndexer`
+- **`start_app.sh` / `start_app.ps1`**: Application startup scripts
 
 ## Prerequisites
 
@@ -98,9 +132,14 @@ python rag_engine/scripts/build_index.py \
   --max-files 100
 ```
 
-Optional flags and behavior
+Optional flags and behavior:
 - `--max-files N`: Stop after indexing N documents that actually changed or are new. Unchanged files (by timestamp) are skipped and do not count against this limit.
-- Incremental reindexing: If a file’s modification time (mtime) is unchanged since the last run, it is skipped. If it changed, all previous chunks for that document are replaced with fresh ones.
+- `--dry-run`: Analyze timestamps without indexing. Shows which timestamp source (frontmatter/git/file) is used for each file and whether it would be indexed, skipped, or reindexed.
+- **Three-tier timestamp fallback**: The system uses timestamps in priority order:
+  1. **Frontmatter `updated` field** - Parsed from YAML frontmatter (e.g., `updated: '2024-06-14 12:33:36'`)
+  2. **Git commit timestamp** - Last commit time for the file from its Git repository (automatically detected per file)
+  3. **File modification date** - Filesystem `stat().st_mtime` as fallback
+- Incremental reindexing: If a file's timestamp is unchanged since the last run, it is skipped. If it changed, all previous chunks for that document are replaced with fresh ones.
 - Safe to re-run: Stable IDs and per-document replacement make repeated indexing idempotent.
 
 ### 4. Run the Application

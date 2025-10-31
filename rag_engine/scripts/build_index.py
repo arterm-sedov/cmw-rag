@@ -11,10 +11,13 @@ if str(_project_root) not in sys.path:
 
 from rag_engine.config.settings import settings
 from rag_engine.core.document_processor import DocumentProcessor
-from rag_engine.llm.llm_manager import LLMManager
+from rag_engine.core.indexer import RAGIndexer
 from rag_engine.retrieval.embedder import FRIDAEmbedder
-from rag_engine.retrieval.retriever import RAGRetriever
+from hashlib import sha1
+
 from rag_engine.storage.vector_store import ChromaStore
+from rag_engine.utils.git_utils import get_file_timestamp
+from rag_engine.utils.metadata_utils import extract_numeric_kbid
 from rag_engine.utils.logging_manager import setup_logging
 
 
@@ -29,6 +32,11 @@ def main() -> None:
         default=None,
         help="Limit the number of source files to scan/process (for quick runs)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Analyze timestamps without indexing (shows which source is used for each file)",
+    )
     args = parser.parse_args()
 
     setup_logging()
@@ -37,37 +45,79 @@ def main() -> None:
     # Always process full set; apply limiting in retriever so skipped files don't count
     docs = dp.process(args.source)
 
+    # Dry-run mode: analyze timestamps without indexing
+    if args.dry_run:
+        print("=" * 80)
+        print("DRY-RUN MODE: Timestamp Analysis")
+        print("=" * 80)
+        print(f"{'File':<60} {'Source':<12} {'Epoch':<12} {'ISO String':<25}")
+        print("-" * 80)
+
+        store = ChromaStore(
+            persist_dir=settings.chromadb_persist_dir, collection_name=settings.chromadb_collection
+        )
+
+        for doc in docs:
+            base_meta = getattr(doc, "metadata", {})
+            kb_id = base_meta.get("kbId", "unknown")
+            source_file = base_meta.get("source_file", "")
+
+            # Get timestamp using three-tier fallback
+            epoch, iso_string, source = get_file_timestamp(source_file, base_meta)
+
+            # Check if would be skipped (compare with existing)
+            # Normalize kbId to numeric for consistent lookup
+            numeric_kb_id = extract_numeric_kbid(kb_id) or str(kb_id)
+            doc_stable_id = sha1(numeric_kb_id.encode("utf-8")).hexdigest()[:12]
+            existing = store.get_any_doc_meta({"doc_stable_id": doc_stable_id}) if store else None
+            
+            # Fallback: search by numeric kbId if exact match not found
+            if existing is None and extract_numeric_kbid(kb_id):
+                try:
+                    all_docs = store.collection.get(limit=1000, include=["metadatas"])
+                    for meta_item in all_docs.get("metadatas", []):
+                        if extract_numeric_kbid(meta_item.get("kbId")) == numeric_kb_id:
+                            old_doc_stable_id = meta_item.get("doc_stable_id")
+                            if old_doc_stable_id:
+                                existing = store.get_any_doc_meta({"doc_stable_id": old_doc_stable_id})
+                                if existing:
+                                    break
+                except Exception:  # noqa: BLE001
+                    pass
+            
+            existing_epoch = existing.get("file_mtime_epoch") if existing else None
+
+            status = ""
+            if existing_epoch is not None:
+                if isinstance(existing_epoch, int) and epoch is not None and existing_epoch >= epoch:
+                    status = " [SKIP]"
+                elif epoch is not None:
+                    status = " [REINDEX]"
+                else:
+                    status = " [NO_TS]"
+            else:
+                status = " [NEW]"
+
+            file_display = str(source_file)[-60:] if source_file else "N/A"
+            epoch_str = str(epoch) if epoch else "None"
+            iso_str = iso_string if iso_string else "None"
+
+            print(f"{file_display:<60} {source:<12} {epoch_str:<12} {iso_str:<25}{status}")
+
+        print("=" * 80)
+        print("Dry-run complete. No files were indexed.")
+        return
+
     embedder = FRIDAEmbedder(model_name=settings.embedding_model, device=settings.embedding_device)
     store = ChromaStore(persist_dir=settings.chromadb_persist_dir, collection_name=settings.chromadb_collection)
-    llm_manager = LLMManager(
-        provider=settings.default_llm_provider,
-        model=settings.default_model,
-        temperature=settings.llm_temperature,
+    
+    indexer = RAGIndexer(embedder=embedder, vector_store=store)
+    indexer.index_documents(
+        docs,
+        chunk_size=settings.chunk_size,
+        chunk_overlap=settings.chunk_overlap,
+        max_files=args.max_files,
     )
-    retriever = RAGRetriever(
-        embedder=embedder,
-        vector_store=store,
-        llm_manager=llm_manager,
-        top_k_retrieve=settings.top_k_retrieve,
-        top_k_rerank=settings.top_k_rerank,
-        rerank_enabled=settings.rerank_enabled,
-    )
-
-    # Call retriever with optional max_files, but keep backward compatibility
-    try:
-        retriever.index_documents(
-            docs,
-            chunk_size=settings.chunk_size,
-            chunk_overlap=settings.chunk_overlap,
-            max_files=args.max_files,
-        )
-    except TypeError:
-        # Older retrievers without max_files support
-        retriever.index_documents(
-            docs,
-            chunk_size=settings.chunk_size,
-            chunk_overlap=settings.chunk_overlap,
-        )
     print("Index build complete.")
 
 
