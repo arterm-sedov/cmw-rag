@@ -4,6 +4,7 @@ from __future__ import annotations
 import pytest
 
 from rag_engine.llm.llm_manager import MODEL_CONFIGS, LLMManager
+from rag_engine.config import settings as settings_mod
 
 
 class TestModelConfigs:
@@ -187,6 +188,23 @@ class TestLLMManager:
         provider = "openrouter" if "deepseek" in model or "anthropic" in model or "x-ai" in model else "gemini"
         manager = LLMManager(provider=provider, model=model)
         assert manager.get_current_llm_context_window() == expected_limit
+
+
+class TestFallbackProviderInference:
+    def test_create_manager_for_infers_openrouter_for_qwen(self, monkeypatch):
+        mgr = LLMManager(provider="gemini", model="gemini-2.5-flash")
+        # Ensure no explicit provider set on the module used by LLMManager
+        monkeypatch.setattr("rag_engine.llm.llm_manager.settings", type("S", (), {"llm_fallback_provider": None})())
+        fb_mgr = mgr._create_manager_for("qwen/qwen3-max")
+        assert isinstance(fb_mgr, LLMManager)
+        assert fb_mgr.provider == "openrouter"
+
+    def test_create_manager_for_respects_explicit_provider(self, monkeypatch):
+        mgr = LLMManager(provider="gemini", model="gemini-2.5-flash")
+        # Force explicit provider on the module used by LLMManager
+        monkeypatch.setattr("rag_engine.llm.llm_manager.settings", type("S", (), {"llm_fallback_provider": "gemini"})())
+        fb_mgr = mgr._create_manager_for("qwen/qwen3-max")
+        assert fb_mgr.provider == "gemini"
 
 
 class TestDynamicContextBudgeting:

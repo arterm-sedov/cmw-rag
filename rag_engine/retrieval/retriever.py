@@ -40,6 +40,7 @@ class Article:
         self.content = content
         self.metadata = metadata
         self.matched_chunks: list[Any] = []  # Store matched chunks for reference
+        self._is_lightweight: bool = False
 
 
 class RAGRetriever:
@@ -319,8 +320,8 @@ class RAGRetriever:
 
         logger.info("Loaded %d complete articles", len(articles))
 
-        # 5. Apply context budgeting with dynamic token limits
-        articles = self._apply_context_budget(articles)
+        # 5. Apply context budgeting with dynamic token limits (pass question)
+        articles = self._apply_context_budget(articles, question=query)
 
         return articles
 
@@ -347,7 +348,7 @@ class RAGRetriever:
 
         return content
 
-    def _apply_context_budget(self, articles: list[Article]) -> list[Article]:
+    def _apply_context_budget(self, articles: list[Article], question: str = "", system_prompt: str = "") -> list[Article]:
         """Select articles within context budget using dynamic token limits.
 
         Uses LLM manager to get model-specific context window and reserves
@@ -366,9 +367,21 @@ class RAGRetriever:
         """
         # Get dynamic context window from LLM manager
         context_window = self.llm_manager.get_current_llm_context_window()
+        max_output_tokens = self.llm_manager.get_max_output_tokens()
 
-        # Reserve 25% for output + prompt overhead (use 75% for articles)
-        max_context_tokens = int(context_window * 0.75)
+        # Derive system prompt
+        sys_prompt = system_prompt or self.llm_manager.get_system_prompt()
+
+        # Reserve accurately using shared util
+        from rag_engine.llm.token_utils import estimate_tokens_for_request
+        reserved_est = estimate_tokens_for_request(
+            system_prompt=sys_prompt,
+            question=question or "",
+            context="",
+            max_output_tokens=max_output_tokens,
+            overhead=200,
+        )
+        max_context_tokens = max(0, context_window - reserved_est["total_tokens"])
 
         logger.info(
             "Context window: %d tokens, using %d (75%%) for articles",
@@ -402,28 +415,26 @@ class RAGRetriever:
             selected.append(article)
             total_tokens += article_tokens
 
-        # Second pass: add lightweight representations for remaining articles
+        # Second pass: summarization-first for remaining articles
         # Only processes articles[full_content_idx:] - articles already included as full
         # (indices 0 to full_content_idx-1) are skipped, ensuring each article appears once
         lightweight_count = 0
 
-        for article in articles[full_content_idx:]:
-            if not article.matched_chunks:
-                # Skip articles without matched chunks (can't create lightweight version)
-                continue
+        from rag_engine.llm.summarization import summarize_to_tokens
 
-            # Build lightweight content from matched chunks
+        overflow = list(articles[full_content_idx:])
+        while overflow and total_tokens < max_context_tokens:
+            remaining_budget = max_context_tokens - total_tokens
+            remaining_overflow = len(overflow)
+            per_target = max(300, min(2000, remaining_budget // max(1, remaining_overflow)))
+
+            article = overflow.pop(0)
             chunk_texts = []
             for chunk in article.matched_chunks:
                 chunk_content = getattr(chunk, "page_content", None) or getattr(chunk, "content", "")
                 if chunk_content:
-                    # Ensure we strings
                     chunk_texts.append(str(chunk_content))
 
-            if not chunk_texts:
-                continue
-
-            # Create lightweight content: title + URL + relevant chunks
             title = article.metadata.get("title", article.kb_id)
             article_url = article.metadata.get("article_url") or article.metadata.get("url")
             if not article_url:
@@ -431,32 +442,58 @@ class RAGRetriever:
                 if kbid:
                     article_url = f"https://kb.comindware.ru/article.php?id={kbid}"
 
-            # Combine chunks with a header
-            lightweight_content = f"# {title}\n\nURL: {article_url}\n\n"
-            lightweight_content += "\n\n---\n\n".join(chunk_texts)
-
-            # Count tokens for lightweight version
-            tokens_by_encoder = len(self._encoding.encode(lightweight_content))
-            tokens_by_chars = len(lightweight_content) // 4
-            lightweight_tokens = max(tokens_by_encoder, tokens_by_chars)
-
-            if total_tokens + lightweight_tokens > max_context_tokens:
-                # Even lightweight version doesn't fit
-                logger.debug(
-                    "Skipping lightweight article (kbId=%s): exceeds remaining budget",
-                    article.kb_id,
-                )
-                continue
-
-            # Create lightweight article
-            lightweight_article = Article(
-                kb_id=article.kb_id,
-                content=lightweight_content,
-                metadata=article.metadata,
+            summary = summarize_to_tokens(
+                title=title,
+                url=article_url or "",
+                matched_chunks=chunk_texts,
+                full_body=article.content,
+                target_tokens=per_target,
+                guidance=question or "",
+                llm=self.llm_manager,
+                max_retries=2,
             )
-            lightweight_article.matched_chunks = article.matched_chunks
-            selected.append(lightweight_article)
-            total_tokens += lightweight_tokens
+
+            tokens_by_encoder = len(self._encoding.encode(summary))
+            tokens_by_chars = len(summary) // 4
+            summary_tokens = max(tokens_by_encoder, tokens_by_chars)
+
+            if total_tokens + summary_tokens > max_context_tokens:
+                # Not enough space even for summary; stop summarization loop
+                overflow.insert(0, article)
+                break
+
+            summarized_article = Article(kb_id=article.kb_id, content=summary, metadata=article.metadata)
+            summarized_article.matched_chunks = article.matched_chunks
+            selected.append(summarized_article)
+            total_tokens += summary_tokens
+
+        # If still space and overflow remains, convert remaining to lightweight stitching
+        def _create_lightweight_article(src: Article) -> tuple[Article, int]:
+            chunk_texts = []
+            for chunk in src.matched_chunks:
+                chunk_content = getattr(chunk, "page_content", None) or getattr(chunk, "content", "")
+                if chunk_content:
+                    chunk_texts.append(str(chunk_content))
+            title = src.metadata.get("title", src.kb_id)
+            article_url = src.metadata.get("article_url") or src.metadata.get("url")
+            if not article_url:
+                kbid = src.metadata.get("kbId") or src.kb_id
+                if kbid:
+                    article_url = f"https://kb.comindware.ru/article.php?id={kbid}"
+            content = f"# {title}\n\nURL: {article_url}\n\n" + "\n\n---\n\n".join(chunk_texts)
+            lw = Article(kb_id=src.kb_id, content=content, metadata=src.metadata)
+            lw.matched_chunks = src.matched_chunks
+            lw._is_lightweight = True
+            enc = len(self._encoding.encode(content))
+            by_chars = len(content) // 4
+            return lw, max(enc, by_chars)
+
+        for article in overflow:
+            lw_article, lw_tokens = _create_lightweight_article(article)
+            if total_tokens + lw_tokens > max_context_tokens:
+                continue
+            selected.append(lw_article)
+            total_tokens += lw_tokens
             lightweight_count += 1
 
         logger.info(

@@ -45,6 +45,14 @@ class Settings(BaseSettings):
     llm_temperature: float
     llm_max_tokens: int
 
+    # Fallback and summarization
+    llm_fallback_enabled: bool = False
+    llm_fallback_provider: str | None = None
+    llm_allowed_fallback_models: str = ""
+    llm_summarization_enabled: bool = False
+    # Optional legacy/override; dynamic targets are used by default
+    llm_summarization_target_tokens_per_article: int | None = None
+
     # Gradio
     gradio_server_name: str
     gradio_server_port: int
@@ -55,5 +63,12 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+# Helpers derived from settings (avoid polluting pydantic model with properties)
+def get_allowed_fallback_models() -> list[str]:
+    raw = settings.llm_allowed_fallback_models or ""
+    return [m.strip() for m in raw.split(",") if m and m.strip()]
+
 
 
