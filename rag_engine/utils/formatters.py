@@ -38,17 +38,21 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
         url = meta.get("url") or meta.get("article_url")
         norm_url = _normalize_url(url)
 
+        # Always deduplicate by normalized URL first (prevents identical links repeating)
+        if norm_url:
+            if norm_url in seen_urls:
+                continue
+            seen_urls.add(norm_url)
+
         if kbid:
             # Use first occurrence of each kbId
             if kbid not in seen_kbids:
                 seen_kbids[kbid] = meta
-        elif norm_url:
-            # Fallback dedup by normalized URL when kbId is missing
-            if norm_url in seen_urls:
-                continue
-            seen_urls.add(norm_url)
-            # Use a synthetic key to preserve ordering
-            seen_kbids[norm_url] = meta
+        else:
+            if norm_url:
+                # Use a synthetic key to preserve ordering when kbId is missing
+                if norm_url not in seen_kbids:
+                    seen_kbids[norm_url] = meta
 
     citations: List[str] = []
     for i, (kbid, meta) in enumerate(seen_kbids.items(), 1):
