@@ -30,7 +30,7 @@ def test_build_index_runs_with_fakes(monkeypatch, docs_fixture_path):
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
-    class FakeRetriever:
+    class FakeIndexer:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
@@ -44,7 +44,7 @@ def test_build_index_runs_with_fakes(monkeypatch, docs_fixture_path):
 
     monkeypatch.setattr(module, "FRIDAEmbedder", FakeEmbedder)
     monkeypatch.setattr(module, "ChromaStore", FakeStore)
-    monkeypatch.setattr(module, "RAGRetriever", FakeRetriever)
+    monkeypatch.setattr(module, "RAGIndexer", FakeIndexer)
     monkeypatch.setattr(module, "DocumentProcessor", lambda mode: SimpleNamespace(process=lambda _: [SimpleNamespace(content="text", metadata={})]))
 
     monkeypatch.setattr(module.settings, "chromadb_persist_dir", "./tmp")
@@ -73,7 +73,7 @@ def test_build_index_respects_max_files(monkeypatch, docs_fixture_path):
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
-    class FakeRetriever:
+    class FakeIndexer:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
@@ -84,7 +84,7 @@ def test_build_index_respects_max_files(monkeypatch, docs_fixture_path):
 
     monkeypatch.setattr(module, "FRIDAEmbedder", FakeEmbedder)
     monkeypatch.setattr(module, "ChromaStore", FakeStore)
-    monkeypatch.setattr(module, "RAGRetriever", FakeRetriever)
+    monkeypatch.setattr(module, "RAGIndexer", FakeIndexer)
     monkeypatch.setattr(module, "DocumentProcessor", lambda mode: SimpleNamespace(process=lambda src: [SimpleNamespace(content="text", metadata={}), SimpleNamespace(content="text2", metadata={})]))
 
     argv = sys.argv
