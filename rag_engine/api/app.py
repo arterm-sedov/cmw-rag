@@ -12,7 +12,7 @@ if str(_project_root) not in sys.path:
 
 import gradio as gr
 
-from rag_engine.config.settings import settings
+from rag_engine.config.settings import settings, get_allowed_fallback_models
 from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.retrieval.embedder import FRIDAEmbedder
 from rag_engine.retrieval.retriever import RAGRetriever
@@ -58,7 +58,12 @@ def chat_handler(message: str, history: list[dict]) -> Generator[str, None, None
         return
 
     answer = ""
-    for token in llm_manager.stream_response(message, docs):
+    for token in llm_manager.stream_response(
+        message,
+        docs,
+        enable_fallback=settings.llm_fallback_enabled,
+        allowed_fallback_models=get_allowed_fallback_models(),
+    ):
         answer += token
         yield answer
 
@@ -77,8 +82,8 @@ def query_rag(question: str, provider: str = "gemini", top_k: int = 5) -> str:
 
 demo = gr.ChatInterface(
     fn=chat_handler,
-    title="Comindware Platform Documentation Assistant",
-    description="RU/EN RAG with citations",
+    title="Ассистент базы знаний Comindware Platform",
+    description="RAG-агент базы знаний Comindware Platform",
     type="messages",
     save_history=True,
 )

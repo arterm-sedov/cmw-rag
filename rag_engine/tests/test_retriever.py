@@ -33,6 +33,13 @@ class TestRAGRetriever:
         """Mock LLM manager with dynamic token limits."""
         manager = Mock()
         manager.get_current_llm_context_window.return_value = 100000  # 100K context
+        manager.get_max_output_tokens.return_value = 32768
+        manager.get_system_prompt.return_value = "SYS"
+        # Provide a chat model that returns a string content response
+        class _FakeModel:
+            def invoke(self, messages):  # noqa: ANN001
+                return type("Resp", (), {"content": "summary"})()
+        manager._chat_model.return_value = _FakeModel()
         return manager
 
     @pytest.fixture
@@ -309,7 +316,11 @@ class TestRAGRetriever:
         assert len(articles[0].matched_chunks) == 3
 
     def test_context_budgeting(self, retriever):
-        """Test context budgeting respects token limits."""
+        """Test context budgeting respects token limits.
+
+        New behavior may include a summarized/lightweight representation of the
+        overflow article while still respecting the overall token budget.
+        """
         # Create articles with known sizes
         articles = [
             Article("article1", "x" * 10000, {}),  # ~2500 tokens
@@ -318,11 +329,14 @@ class TestRAGRetriever:
             Article("article4", "x" * 500000, {}),  # ~125K tokens (exceeds budget)
         ]
 
-        # Context window is 100K, budget is 75K
-        # Should fit articles 1, 2, 3 but not 4
+        # Context window is 100K; reserved tokens reduce available budget.
+        # The algorithm may include a summarized/lightweight version of the 4th
+        # article if it still fits within the remaining budget.
         selected = retriever._apply_context_budget(articles)
 
-        assert len(selected) <= 3  # Should not include article 4
+        # Ensure we at least included the first three articles or their
+        # representations, and the total remains within the budget.
+        assert len(selected) >= 3
         # Verify total is within budget
         total_tokens = sum(len(retriever._encoding.encode(a.content)) for a in selected)
         assert total_tokens <= 75000  # 75% of 100K

@@ -8,6 +8,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 
 from rag_engine.llm.prompts import SYSTEM_PROMPT
+from rag_engine.llm.token_utils import estimate_tokens_for_request
 from rag_engine.config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -75,9 +76,31 @@ MODEL_CONFIGS: Dict[str, Dict] = {
         "max_tokens": 32768,
         "temperature": 0,
     },
+    # Additional Qwen Models
+    "qwen/qwen3-235b-a22b": {
+        # Native window ~40,960; some routes may extend via scaling
+        "token_limit": 262144,
+        "max_tokens": 32768,
+        "temperature": 0,
+    },
+    "qwen/qwen3-30b-a3b-instruct-2507": {
+        "token_limit": 262144,
+        "max_tokens": 32768,
+        "temperature": 0,
+    },
     "qwen/qwen3-coder-plus": {
         "token_limit": 128000,
         "max_tokens": 65536,
+        "temperature": 0,
+    },
+    "qwen/qwen3-235b-a22b-2507": {
+        "token_limit": 262144,
+        "max_tokens": 32768,
+        "temperature": 0,
+    },
+    "qwen/qwen3-coder": {
+        "token_limit": 262144,
+        "max_tokens": 262144,
         "temperature": 0,
     },
     # Other Models
@@ -104,6 +127,12 @@ MODEL_CONFIGS: Dict[str, Dict] = {
     "mistralai/codestral-2508": {
         "token_limit": 256000,
         "max_tokens": 4096,
+        "temperature": 0,
+    },
+    # OpenAI specialized models
+    "openai/gpt-5-codex": {
+        "token_limit": 400000,
+        "max_tokens": 32768,
         "temperature": 0,
     },
     # Fallback default
@@ -205,32 +234,129 @@ class LLMManager:
             max_tokens=self._model_config["max_tokens"],
         )
 
+    def get_system_prompt(self) -> str:
+        """Expose system prompt for other components (no import cycles)."""
+        return SYSTEM_PROMPT
+
+    def _estimate_request_tokens(self, question: str, context: str) -> dict:
+        return estimate_tokens_for_request(
+            system_prompt=SYSTEM_PROMPT,
+            question=question,
+            context=context,
+            max_output_tokens=self._model_config["max_tokens"],
+            overhead=100,
+        )
+
+    def _get_fallback_model(self, required_tokens: int, allowed_models: list[str] | None) -> Optional[str]:
+        allowed = set(allowed_models or [])
+        # If allowed list is empty, do not fallback
+        if not allowed:
+            return None
+        candidates: list[tuple[str, int]] = []
+        for name, cfg in MODEL_CONFIGS.items():
+            if name == "default":
+                continue
+            if name == self.model_name:
+                continue
+            if name not in allowed:
+                continue
+            limit = int(cfg.get("token_limit", 0))
+            candidates.append((name, limit))
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        for name, limit in candidates:
+            if limit >= required_tokens:
+                return name
+        return None
+
+    def _infer_provider_for_model(self, model_name: str) -> str:
+        """Infer provider if no explicit fallback provider is set.
+
+        - gemini* -> gemini
+        - otherwise -> openrouter
+        """
+        explicit = (getattr(settings, "llm_fallback_provider", None) or "").strip().lower()
+        if explicit:
+            return explicit
+        if model_name.startswith("gemini"):
+            return "gemini"
+        return "openrouter"
+
+    def _create_manager_for(self, model_name: str) -> "LLMManager":
+        provider = self._infer_provider_for_model(model_name)
+        return LLMManager(provider=provider, model=model_name, temperature=self.temperature)
+
     def stream_response(
-        self, question: str, context_docs: Iterable
+        self,
+        question: str,
+        context_docs: Iterable,
+        enable_fallback: bool = False,
+        allowed_fallback_models: Optional[list[str]] = None,
     ) -> Generator[str, None, None]:
-        """Stream LLM response with context from complete articles."""
+        """Stream LLM response with context from complete articles.
+
+        Supports immediate model fallback if estimated tokens exceed window.
+        """
         content_blocks: List[str] = []
         for d in context_docs:
             text = getattr(d, "page_content", None) or getattr(d, "content", "")
             content_blocks.append(text)
         context = "\n\n".join(content_blocks)
 
-        # Log context size
-        context_tokens = len(context) // 4  # Rough estimate
+        # Accurate token estimate and optional immediate fallback
+        est = self._estimate_request_tokens(question, context)
+        context_window = int(self._model_config["token_limit"]) or 0
         logger.info(
-            f"Streaming response with ~{context_tokens} context tokens "
-            f"({(context_tokens/self._model_config['token_limit']*100):.1f}% of window)"
+            "Token estimate: input=%d, output=%d, total=%d (window=%d)",
+            est["input_tokens"],
+            est["output_tokens"],
+            est["total_tokens"],
+            context_window,
         )
+
+        if enable_fallback and est["total_tokens"] > context_window:
+            fb = self._get_fallback_model(est["total_tokens"], allowed_fallback_models)
+            if fb:
+                logger.warning(
+                    "Total tokens %d exceed window %d for %s. Falling back to %s.",
+                    est["total_tokens"],
+                    context_window,
+                    self.model_name,
+                    fb,
+                )
+                fb_mgr = self._create_manager_for(fb)
+                yield from fb_mgr.stream_response(
+                    question,
+                    context_docs,
+                    enable_fallback=False,
+                    allowed_fallback_models=None,
+                )
+                return
 
         model = self._chat_model()
         messages = [
             ("system", SYSTEM_PROMPT + "\n\nContext:\n" + context),
             ("user", question),
         ]
-        for chunk in model.stream(messages):
-            token = getattr(chunk, "content", None)
-            if token:
-                yield token
+        try:
+            for chunk in model.stream(messages):
+                token = getattr(chunk, "content", None)
+                if token:
+                    yield token
+        except Exception as exc:  # noqa: BLE001
+            msg = str(exc).lower()
+            if enable_fallback and ("context" in msg or "length" in msg or "400" in msg or "bad request" in msg):
+                fb = self._get_fallback_model(est["total_tokens"], allowed_fallback_models)
+                if fb:
+                    logger.warning("API rejected due to context. Retrying with fallback %s", fb)
+                    fb_mgr = self._create_manager_for(fb)
+                    yield from fb_mgr.stream_response(
+                        question,
+                        context_docs,
+                        enable_fallback=False,
+                        allowed_fallback_models=None,
+                    )
+                    return
+            raise
 
     def generate(
         self, question: str, context_docs: Iterable, provider: str | None = None
