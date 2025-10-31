@@ -114,3 +114,9 @@ Guidelines:
 - Do not include content unrelated to the question.
 """
 
+
+# Query decomposition prompt (deterministic, one line per sub-query)
+QUERY_DECOMPOSITION_PROMPT = (
+    "Decompose the user question into at most {max_n} concise sub-queries (one per line). "
+    "No numbering, no extra text.\n\nQuestion:\n{question}"
+)

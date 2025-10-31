@@ -1,4 +1,4 @@
-<!-- ea534041-88dc-4ccd-a262-f568e9b2edea 8c728128-6110-430c-a823-7a3c2aabcb78 -->
+<!-- ea534041-88dc-4ccd-a262-f568e9b2edea 8d4c6a81-547c-439d-aee6-557b40f1fac2 -->
 # Summarization-First Budgeting with Immediate Fallback
 
 ## Overview
@@ -8,6 +8,12 @@
 - Only if summarization cannot fit the window, fall back to lightweight chunk stitching (title + URL + matched chunks).
 
 ## Changes
+
+### 0) Token utility (shared)
+
+- Add `rag_engine/llm/token_utils.py`:
+- `estimate_tokens_for_request(system_prompt: str, question: str, context: str, max_output_tokens: int, overhead: int = 100) -> dict`
+- Used by LLMManager and Retriever (single source of truth)
 
 ### 1) Config: Allowed fallback + summarization (.env + settings)
 
@@ -23,12 +29,15 @@
 - `_get_fallback_model(required_tokens, allowed)`; `_create_manager_for(model)`
 - `stream_response(question, docs, enable_fallback, allowed_models)` does immediate fallback before any trimming/summarization
 
-### 3) Summarization helper (new)
+### 3) Summarization helper (new, question-guided, dual-source)
 
 - Add `rag_engine/llm/summarization.py`:
-- `summarize_to_tokens(text, target_tokens, llm: LLMManager, guidance: str, max_retries=2, temperature=None) -> str`
-- Prompt: role=system "You are a compression assistant for RAG"; instruction includes target token count and to keep citations-relevant details; pass `guidance` = original user question
-- Retry if token estimate of output still exceeds target (tighten target on retry)
+- `summarize_to_tokens(title: str, url: str, matched_chunks: list[str], full_body: str | None, target_tokens: int, guidance: str, llm: LLMManager, max_retries=2) -> str`
+- The function itself decides source inclusion:
+- Start with matched_chunks as primary source.
+- Use shared token utility to check if adding `full_body` (with system+question context) still fits the model window; if yes, include it; otherwise, proceed with chunks-only.
+- Prompt: stored in `rag_engine/llm/prompts.py` (separation of concerns). Guidance: focus on answering the user question using ONLY provided content; prioritize matched chunks; boost code/config/CLI examples; avoid speculation; adhere to target tokens.
+- On failure or if output still exceeds target after retries, fall back to deterministic stitching: `# {title}\n\nURL: {url}\n\n` + joined chunks.
 
 ### 4) Retriever: summarization-first budgeting
 

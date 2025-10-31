@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections import defaultdict
 import json
 from hashlib import sha1
@@ -12,6 +13,7 @@ from typing import Any
 import tiktoken
 
 from rag_engine.core.chunker import split_text
+from rag_engine.config.settings import settings
 from rag_engine.core.metadata_enricher import enrich_metadata
 from rag_engine.retrieval.reranker import build_reranker
 from rag_engine.retrieval.vector_search import top_k_search
@@ -84,6 +86,54 @@ class RAGRetriever:
             top_k_rerank,
             "enabled" if self.reranker else "disabled",
         )
+
+    # --- Query segmentation helpers (multi-vector retrieval) ---
+    def _toklen(self, s: str) -> int:
+        return len(self._encoding.encode(s or ""))
+
+    def _split_query_segments(
+        self,
+        query: str,
+        max_seg_tokens: int,
+        overlap: int,
+        max_segments: int,
+    ) -> list[str]:
+        # Reuse code-safe, token-aware splitter used by indexer
+        segments = list(split_text(query, chunk_size=max_seg_tokens, chunk_overlap=overlap))
+        out: list[str] = []
+        for seg in segments:
+            seg = (seg or "").strip()
+            if not seg:
+                continue
+            ids = self._encoding.encode(seg)
+            if len(ids) > max_seg_tokens:
+                seg = self._encoding.decode(ids[:max_seg_tokens])
+            out.append(seg)
+            if len(out) >= max_segments:
+                break
+        # Edge guard: if we ended with a single segment equal to original, return original only
+        if len(out) == 1 and out[0] == query.strip():
+            return [query]
+        return out or [query]
+
+    def _llm_decompose_query(self, query: str, max_subq: int) -> list[str]:
+        """Optionally decompose query via LLM into concise sub-queries.
+
+        Uses current LLM with no context to avoid window pressure. On any
+        exception, returns an empty list.
+        """
+        try:
+            max_n = max(1, int(max_subq))
+            from rag_engine.llm.prompts import QUERY_DECOMPOSITION_PROMPT
+            prompt = QUERY_DECOMPOSITION_PROMPT.format(max_n=max_n, question=query)
+            resp = self.llm_manager.generate(question=prompt, context_docs=[])
+            if not resp:
+                return []
+            lines = [ln.strip("- ").strip() for ln in str(resp).splitlines()]
+            subqs = [ln for ln in lines if ln]
+            return subqs[:max_n]
+        except Exception:
+            return []
 
     def index_documents(
         self,
@@ -250,9 +300,58 @@ class RAGRetriever:
         """
         qk = top_k or self.top_k_rerank
 
-        # 1. Embed query and vector search on chunks
-        query_vec = self.embedder.embed_query(query)
-        candidates = top_k_search(self.store, query_vec, k=self.top_k_retrieve)
+        # 1. Build candidate set via multi-vector query segmentation
+        candidates: list[Any] = []
+        seen_ids: set[str] = set()
+
+        def _add_candidates_for(text: str) -> None:
+            qv = self.embedder.embed_query(text)
+            seg_hits = top_k_search(self.store, qv, k=self.top_k_retrieve)
+            for doc in seg_hits:
+                sid = (
+                    getattr(doc, "metadata", {}).get("stable_id")
+                    or getattr(doc, "id", None)
+                    or str(id(doc))
+                )
+                if sid in seen_ids:
+                    continue
+                seen_ids.add(sid)
+                candidates.append(doc)
+
+        use_multi = (
+            settings.retrieval_multiquery_enabled
+            and self._toklen(query) > int(settings.retrieval_multiquery_segment_tokens)
+        )
+        if use_multi:
+            segs = self._split_query_segments(
+                query,
+                max_seg_tokens=int(settings.retrieval_multiquery_segment_tokens),
+                overlap=int(settings.retrieval_multiquery_segment_overlap),
+                max_segments=int(settings.retrieval_multiquery_max_segments),
+            )
+            # Edge guard: if segmentation collapses to original, do single path
+            if len(segs) == 1 and segs[0].strip() == query.strip():
+                _add_candidates_for(query)
+            else:
+                for seg in segs:
+                    _add_candidates_for(seg)
+        else:
+            _add_candidates_for(query)
+
+        # Optional: LLM query decomposition (additive)
+        if settings.retrieval_query_decomp_enabled:
+            subqs = self._llm_decompose_query(query, int(settings.retrieval_query_decomp_max_subqueries))
+            for sq in subqs:
+                _add_candidates_for(sq)
+
+        # If nothing found, retry single-query once
+        if not candidates:
+            _add_candidates_for(query)
+
+        # Pre-rerank cap to bound latency
+        prl = int(getattr(settings, "retrieval_multiquery_pre_rerank_limit", 0) or 0)
+        if prl > 0 and len(candidates) > prl:
+            candidates = candidates[:prl]
 
         if not candidates:
             logger.warning("No chunks found for query")

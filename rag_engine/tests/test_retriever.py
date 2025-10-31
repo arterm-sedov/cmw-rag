@@ -75,6 +75,62 @@ class TestRAGRetriever:
         assert retriever.top_k_rerank == 10
         assert retriever.reranker is None  # Disabled
 
+    @patch("rag_engine.retrieval.retriever.top_k_search")
+    def test_multi_vector_segmentation_and_cap(self, mock_search, retriever, monkeypatch, tmp_path):
+        """Long queries are segmented; multiple searches performed; pre-rerank cap enforced."""
+        # Configure settings to force segmentation and a small pre-rerank cap
+        from rag_engine.config import settings as cfg
+        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_enabled", True, raising=False)
+        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_segment_tokens", 16, raising=False)
+        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_segment_overlap", 4, raising=False)
+        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_max_segments", 3, raising=False)
+        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_pre_rerank_limit", 2, raising=False)
+
+        # Prepare two distinct chunk hits from the same article file so downstream succeeds
+        f = tmp_path / "a.md"
+        f.write_text("Doc A")
+        d1 = Mock(); d1.metadata = {"kbId": "kb1", "source_file": str(f), "stable_id": "s1"}
+        d2 = Mock(); d2.metadata = {"kbId": "kb1", "source_file": str(f), "stable_id": "s2"}
+        # Each search returns one doc; multiple calls will append until cap trims to 2
+        mock_search.side_effect = [[d1], [d2], [d2]]
+
+        # Long query with multiple sentences to trigger splitter
+        long_q = "Sentence one. Sentence two with more words. Another sentence for splitting."
+        articles = retriever.retrieve(long_q)
+
+        # top_k_search should have been called multiple times (segmented)
+        assert mock_search.call_count >= 2
+        # Pre-rerank cap applied; downstream groups into a single article
+        assert len(articles) == 1
+
+    @patch("rag_engine.retrieval.retriever.top_k_search")
+    def test_query_decomposition_adds_candidates(self, mock_search, retriever, monkeypatch, tmp_path):
+        """LLM decomposition produces extra sub-queries whose results are unioned."""
+        from rag_engine.config import settings as cfg
+        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_enabled", False, raising=False)
+        monkeypatch.setattr(cfg.settings, "retrieval_query_decomp_enabled", True, raising=False)
+        monkeypatch.setattr(cfg.settings, "retrieval_query_decomp_max_subqueries", 3, raising=False)
+        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_pre_rerank_limit", 10, raising=False)
+
+        # Decompose into 2 sub-queries
+        retriever.llm_manager.generate.return_value = "sub one\nsub two"
+
+        # Set up two files for two distinct articles
+        f1 = tmp_path / "a.md"; f1.write_text("A")
+        f2 = tmp_path / "b.md"; f2.write_text("B")
+        d1 = Mock(); d1.metadata = {"kbId": "kb1", "source_file": str(f1), "stable_id": "s1"}
+        d2 = Mock(); d2.metadata = {"kbId": "kb2", "source_file": str(f2), "stable_id": "s2"}
+
+        # First call for original query, then for each subquery: return distinct docs
+        mock_search.side_effect = [[d1], [d2], []]
+
+        articles = retriever.retrieve("original long question")
+
+        # We should retrieve two distinct articles after union
+        assert len(articles) == 2
+        kb_ids = {a.kb_id for a in articles}
+        assert kb_ids == {"kb1", "kb2"}
+
     def test_index_documents_enriches_metadata(self, retriever, mock_embedder, mock_vector_store):
         doc = MagicMock()
         doc.content = "# Title\n\n```python\nprint('hi')\n```"
