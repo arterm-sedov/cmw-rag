@@ -262,7 +262,9 @@ Environment variables (configure in `.env`):
 - `LLM_SUMMARIZATION_TARGET_TOKENS_PER_ARTICLE`: Optional override for per-article summary target
 - `TOP_K_RETRIEVE`: Initial retrieval count (default: 20)
 - `TOP_K_RERANK`: Final results after reranking (default: 10)
+- `GRADIO_SERVER_NAME`: Web UI server name (default: `0.0.0.0`)
 - `GRADIO_SERVER_PORT`: Web UI port (default: 7860)
+- `GRADIO_SHARE`: Enable Gradio share link for public access (`true`/`false`, default: `false`)
 - `EMBEDDING_MODEL`: Embedding model name (default: `ai-forever/FRIDA`)
 - `EMBEDDING_DEVICE`: Device for embeddings (`cpu` or `cuda`)
 - `MEMORY_COMPRESSION_THRESHOLD_PCT`: Trigger compression when estimated request exceeds this percent of the model window (default: `85`)

@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     # Gradio
     gradio_server_name: str
     gradio_server_port: int
+    # Share link: if True, attempts to create a public shareable link.
+    # If share link creation fails (network/service issues), app still runs locally.
+    gradio_share: bool = False
 
     # Memory compression (conversation history)
     # Percentage of context window at which we trigger compression

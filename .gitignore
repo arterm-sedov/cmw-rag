@@ -1,5 +1,5 @@
 # ChromaDB local data (generated, environment-specific)
-data/chromadb_data/
+data/chromadb_data/**
 
 .reference-repos/**
 .venv/**
@@ -23,3 +23,5 @@ build/
 
 # IDE
 .vscode/
+
+.gradio/
