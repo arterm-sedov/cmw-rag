@@ -497,7 +497,11 @@ class RAGRetriever:
         # Articles added here will NOT be processed again in the second pass
         for idx, article in enumerate(articles):
             # Count tokens in article (use conservative estimate to avoid undercount)
-            tokens_by_encoder = len(self._encoding.encode(article.content))
+            # Fast path for very large bodies: approximate to avoid slow encodes
+            if len(article.content) > settings.retrieval_fast_token_char_threshold:
+                tokens_by_encoder = len(article.content) // 4
+            else:
+                tokens_by_encoder = len(self._encoding.encode(article.content))
             tokens_by_chars = len(article.content) // 4
             article_tokens = max(tokens_by_encoder, tokens_by_chars)
 
@@ -552,7 +556,11 @@ class RAGRetriever:
                 max_retries=2,
             )
 
-            tokens_by_encoder = len(self._encoding.encode(summary))
+            # Fast path for very large summaries (rare): approximate
+            if len(summary) > settings.retrieval_fast_token_char_threshold:
+                tokens_by_encoder = len(summary) // 4
+            else:
+                tokens_by_encoder = len(self._encoding.encode(summary))
             tokens_by_chars = len(summary) // 4
             summary_tokens = max(tokens_by_encoder, tokens_by_chars)
 

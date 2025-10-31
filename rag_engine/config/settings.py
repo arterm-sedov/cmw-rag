@@ -1,12 +1,6 @@
 from pathlib import Path
 
-from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-# Load environment variables from .env file in project root
-project_root = Path(__file__).parent.parent.parent
-env_path = project_root / ".env"
-load_dotenv(env_path)
 
 
 class Settings(BaseSettings):
@@ -68,6 +62,16 @@ class Settings(BaseSettings):
     # Gradio
     gradio_server_name: str
     gradio_server_port: int
+
+    # Memory compression (conversation history)
+    # Percentage of context window at which we trigger compression
+    memory_compression_threshold_pct: int = 85
+    # Target tokens for the compressed history turn
+    memory_compression_target_tokens: int = 1000
+
+    # Performance guardrails
+    # When counting tokens, approximate for very large strings beyond this char length
+    retrieval_fast_token_char_threshold: int = 200000
 
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(

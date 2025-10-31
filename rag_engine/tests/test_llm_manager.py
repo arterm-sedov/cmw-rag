@@ -225,3 +225,68 @@ class TestDynamicContextBudgeting:
         assert small_context == 1048576  # 1M
         assert large_context == 1048576  # 1M
 
+
+class TestMemoryAndCompression:
+    def test_session_isolation_and_system_not_persisted(self, monkeypatch):
+        manager = LLMManager("gemini", "gemini-2.5-flash")
+
+        class FakeModel:
+            def stream(self, messages):  # noqa: ANN001
+                # First message must be system, not stored in memory
+                assert messages[0][0] == "system"
+                yield type("Chunk", (), {"content": "ok"})()
+
+            def invoke(self, messages):  # noqa: ANN001
+                return type("Resp", (), {"content": "answer"})()
+
+        monkeypatch.setattr(LLMManager, "_chat_model", lambda self, provider=None: FakeModel())
+
+        docs = [type("Doc", (), {"content": "Ctx"})()]
+
+        # Two independent sessions
+        list(manager.stream_response("q1", docs, session_id="s1"))
+        manager.save_assistant_turn("s1", "a1")
+
+        list(manager.stream_response("q2", docs, session_id="s2"))
+        manager.save_assistant_turn("s2", "a2")
+
+        h1 = manager._conversations.get("s1")
+        h2 = manager._conversations.get("s2")
+
+        assert h1 != h2
+        # No system role stored; only user/assistant
+        assert all(r in ("user", "assistant") for r, _ in h1)
+        assert all(r in ("user", "assistant") for r, _ in h2)
+
+    def test_compression_triggers_and_keeps_last_two(self, monkeypatch):
+        manager = LLMManager("gemini", "gemini-2.5-flash")
+
+        # Force tiny window and very low threshold to trigger compression
+        manager._model_config["token_limit"] = 512
+
+        # Patch settings on module used by manager
+        monkeypatch.setattr(
+            "rag_engine.llm.llm_manager.settings",
+            type("S", (), {"memory_compression_threshold_pct": 1, "memory_compression_target_tokens": 200})(),
+        )
+
+        class FakeModel:
+            def stream(self, messages):  # noqa: ANN001
+                yield type("Chunk", (), {"content": "ok"})()
+
+        monkeypatch.setattr(LLMManager, "_chat_model", lambda self, provider=None: FakeModel())
+
+        # Seed history with 6 turns: u/a/u/a/u/a
+        for i in range(3):
+            manager._conversations.append("s3", "user", f"q{i}")
+            manager._conversations.append("s3", "assistant", f"a{i}")
+
+        docs = [type("Doc", (), {"content": "Ctx"})()]
+        list(manager.stream_response("new question", docs, session_id="s3"))
+
+        hist = manager._conversations.get("s3")
+        # After compression: starts with one assistant summary, then last two original turns, then the new user
+        assert len(hist) >= 3
+        assert hist[0][0] == "assistant"
+        # Last two preserved
+        assert hist[1][0] in ("user", "assistant") and hist[2][0] in ("user", "assistant")

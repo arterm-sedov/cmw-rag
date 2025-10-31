@@ -23,6 +23,8 @@ Chat with DeepWiki to get answers about this repo:
 - **Web interface**: Gradio ChatInterface with citations and chat history
 - **REST API**: Programmatic access for integration
 - **Context-aware**: Complete article context with citation support
+  - **Per-session memory**: LangChain-backed conversation memory (scoped by Gradio session hash) with optional compression near context limits
+  - **Copy button**: One-click copy on chat messages
 
 ## Prerequisites
 
@@ -168,6 +170,7 @@ print(response.json())
 Environment-driven behavior:
 - If `LLM_FALLBACK_ENABLED=true`, the engine will estimate total tokens and immediately select a larger allowed model when necessary.
 - Summarization-first budgeting compresses overflow articles (guided by the question) before falling back to lightweight stitching.
+- Token counting uses fast approximation (chars // 4) for strings exceeding `RETRIEVAL_FAST_TOKEN_CHAR_THRESHOLD` to avoid slow encodes.
 
 **Response**:
 ```json
@@ -200,6 +203,9 @@ Environment variables (configure in `.env`):
 - `GRADIO_SERVER_PORT`: Web UI port (default: 7860)
 - `EMBEDDING_MODEL`: Embedding model name (default: `ai-forever/FRIDA`)
 - `EMBEDDING_DEVICE`: Device for embeddings (`cpu` or `cuda`)
+- `MEMORY_COMPRESSION_THRESHOLD_PCT`: Trigger compression when estimated request exceeds this percent of the model window (default: `85`)
+- `MEMORY_COMPRESSION_TARGET_TOKENS`: Target tokens for the compressed history turn (default: `1000`)
+- `RETRIEVAL_FAST_TOKEN_CHAR_THRESHOLD`: For strings exceeding this length, approximate tokens as chars // 4 instead of full encode (default: `200000`)
 
 See `.env.example` for full configuration options.
 

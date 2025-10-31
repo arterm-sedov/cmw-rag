@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, Generator, Iterable, List, Optional
+from typing import Dict, Generator, Iterable, List, Optional, Tuple
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
@@ -10,6 +10,7 @@ from langchain_openai import ChatOpenAI
 from rag_engine.llm.prompts import SYSTEM_PROMPT
 from rag_engine.llm.token_utils import estimate_tokens_for_request
 from rag_engine.config.settings import settings
+from rag_engine.utils.conversation_store import ConversationStore
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +153,7 @@ class LLMManager:
         self.model_name = model
         self.temperature = temperature
         self._model_config = self._get_model_config(model)
+        self._conversations = ConversationStore()
         logger.info(
             f"LLMManager initialized: {provider}/{model} "
             f"(context: {self._model_config['token_limit']} tokens)"
@@ -247,6 +249,70 @@ class LLMManager:
             overhead=100,
         )
 
+    def _build_messages_with_memory(
+        self, session_id: Optional[str], question: str, context: str
+    ) -> List[Tuple[str, str]]:
+        """Assemble chat messages including prior memory (if any).
+
+        System prompt is injected at call time and never stored in memory.
+        """
+        messages: List[Tuple[str, str]] = []
+        messages.append(("system", SYSTEM_PROMPT + "\n\nContext:\n" + context))
+        if session_id:
+            history = self._conversations.get(session_id)
+            # Replay prior turns
+            for role, content in history:
+                messages.append((role, content))
+        messages.append(("user", question))
+        return messages
+
+    def _compress_memory(self, session_id: Optional[str], question: str, context: str) -> None:
+        """Compress older turns into a single assistant message when over threshold.
+
+        Keeps the latest two turns intact; replaces earlier turns with one summary.
+        """
+        if not session_id:
+            return
+        history = self._conversations.get(session_id)
+        if len(history) < 4:
+            return
+        # Estimate tokens with current history included
+        messages = self._build_messages_with_memory(session_id, question, context)
+        concat = "\n\n".join([c for _r, c in messages])
+        est = self._estimate_request_tokens(question="", context=concat)
+        window = int(self._model_config["token_limit"]) or 0
+        threshold_pct = int(getattr(settings, "memory_compression_threshold_pct", 85))
+        if window <= 0:
+            return
+        if est["total_tokens"] * 100 < threshold_pct * window:
+            return
+
+        # Compress all but last two turns
+        preserved = history[-2:]
+        to_compress = history[:-2]
+        if not to_compress:
+            return
+
+        prior_text = "\n\n".join([f"{r.upper()}: {c}" for r, c in to_compress])
+        try:
+            from rag_engine.llm.summarization import summarize_to_tokens
+
+            compressed = summarize_to_tokens(
+                title="Conversation",
+                url="",
+                matched_chunks=[prior_text],
+                full_body=None,
+                target_tokens=int(getattr(settings, "memory_compression_target_tokens", 1000)),
+                guidance=question,
+                llm=self,
+                max_retries=2,
+            )
+        except Exception:
+            compressed = prior_text[:2000]
+
+        new_history: List[Tuple[str, str]] = [("assistant", compressed)] + preserved
+        self._conversations.set(session_id, new_history)
+
     def _get_fallback_model(self, required_tokens: int, allowed_models: list[str] | None) -> Optional[str]:
         allowed = set(allowed_models or [])
         # If allowed list is empty, do not fallback
@@ -291,6 +357,8 @@ class LLMManager:
         context_docs: Iterable,
         enable_fallback: bool = False,
         allowed_fallback_models: Optional[list[str]] = None,
+        *,
+        session_id: Optional[str] = None,
     ) -> Generator[str, None, None]:
         """Stream LLM response with context from complete articles.
 
@@ -332,11 +400,10 @@ class LLMManager:
                 )
                 return
 
+        # Maybe compress memory then build messages including memory
+        self._compress_memory(session_id, question, context)
         model = self._chat_model()
-        messages = [
-            ("system", SYSTEM_PROMPT + "\n\nContext:\n" + context),
-            ("user", question),
-        ]
+        messages = self._build_messages_with_memory(session_id, question, context)
         try:
             for chunk in model.stream(messages):
                 token = getattr(chunk, "content", None)
@@ -348,18 +415,23 @@ class LLMManager:
                 fb = self._get_fallback_model(est["total_tokens"], allowed_fallback_models)
                 if fb:
                     logger.warning("API rejected due to context. Retrying with fallback %s", fb)
-                    fb_mgr = self._create_manager_for(fb)
-                    yield from fb_mgr.stream_response(
+                fb_mgr = self._create_manager_for(fb)
+                yield from fb_mgr.stream_response(
                         question,
                         context_docs,
                         enable_fallback=False,
                         allowed_fallback_models=None,
+                    session_id=session_id,
                     )
-                    return
+                return
             raise
+        finally:
+            # Append this turn to memory (assistant content will be added by caller)
+            if session_id:
+                self._conversations.append(session_id, "user", question)
 
     def generate(
-        self, question: str, context_docs: Iterable, provider: str | None = None
+        self, question: str, context_docs: Iterable, provider: str | None = None, *, session_id: Optional[str] = None
     ) -> str:
         """Generate LLM response (non-streaming) with context from complete articles."""
         content_blocks: List[str] = []
@@ -368,11 +440,18 @@ class LLMManager:
             content_blocks.append(text)
         context = "\n\n".join(content_blocks)
 
+        # Maybe compress and include prior memory
+        self._compress_memory(session_id, question, context)
         model = self._chat_model(provider)
-        messages = [
-            ("system", SYSTEM_PROMPT + "\n\nContext:\n" + context),
-            ("user", question),
-        ]
+        messages = self._build_messages_with_memory(session_id, question, context)
         resp = model.invoke(messages)
-        return getattr(resp, "content", "")
+        content = getattr(resp, "content", "")
+        if session_id:
+            self._conversations.append(session_id, "user", question)
+            self._conversations.append(session_id, "assistant", content)
+        return content
+
+    def save_assistant_turn(self, session_id: Optional[str], content: str) -> None:
+        if session_id and content:
+            self._conversations.append(session_id, "assistant", content)
 
