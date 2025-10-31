@@ -290,3 +290,102 @@ class TestMemoryAndCompression:
         assert hist[0][0] == "assistant"
         # Last two preserved
         assert hist[1][0] in ("user", "assistant") and hist[2][0] in ("user", "assistant")
+
+
+class TestArticleHeaders:
+    """Tests for Article URLs header formatting."""
+
+    def test_format_article_header_with_full_metadata(self):
+        manager = LLMManager("gemini", "gemini-2.5-flash")
+        doc = type(
+            "Doc",
+            (),
+            {
+                "metadata": {
+                    "title": "Test Article",
+                    "kbId": "1234",
+                    "url": "https://kb.comindware.ru/article.php?id=1234",
+                    "tags": ["linux", "install"],
+                },
+                "kb_id": "1234",
+            },
+        )()
+        header = manager._format_article_header(doc)
+        assert "Article details:" in header
+        assert "Test Article" in header
+        assert "kbId=1234" in header
+        assert "https://kb.comindware.ru/article.php?id=1234" in header
+        assert "Tags: linux, install" in header
+
+    def test_format_article_header_synthesizes_url_from_kbid(self):
+        manager = LLMManager("gemini", "gemini-2.5-flash")
+        doc = type(
+            "Doc",
+            (),
+            {
+                "metadata": {"title": "Test", "kbId": "5678"},
+                "kb_id": "5678",
+            },
+        )()
+        header = manager._format_article_header(doc)
+        assert "kbId=5678" in header
+        assert "https://kb.comindware.ru/article.php?id=5678" in header
+
+    def test_format_article_header_handles_string_tags(self):
+        manager = LLMManager("gemini", "gemini-2.5-flash")
+        doc = type(
+            "Doc",
+            (),
+            {
+                "metadata": {"title": "Test", "kbId": "9999", "tags": "tag1, tag2, tag3"},
+                "kb_id": "9999",
+            },
+        )()
+        header = manager._format_article_header(doc)
+        assert "Tags: tag1, tag2, tag3" in header
+
+    def test_context_includes_article_headers(self, monkeypatch):
+        manager = LLMManager("gemini", "gemini-2.5-flash")
+
+        captured_messages = []
+
+        class FakeModel:
+            def stream(self, messages):  # noqa: ANN001
+                captured_messages.extend(messages)
+                yield type("Chunk", (), {"content": "ok"})()
+
+        monkeypatch.setattr(LLMManager, "_chat_model", lambda self, provider=None: FakeModel())
+        docs = [
+            type(
+                "Doc",
+                (),
+                {
+                    "metadata": {"title": "Article 1", "kbId": "100"},
+                    "kb_id": "100",
+                    "content": "Content 1",
+                },
+            )(),
+            type(
+                "Doc",
+                (),
+                {
+                    "metadata": {"title": "Article 2", "kbId": "200"},
+                    "kb_id": "200",
+                    "content": "Content 2",
+                },
+            )(),
+        ]
+
+        list(manager.stream_response("question?", docs))
+
+        # System message should contain headers
+        system_msg = captured_messages[0][1]
+        assert "Article details:" in system_msg
+        assert "Article 1" in system_msg
+        assert "kbId=100" in system_msg
+        assert "Article 2" in system_msg
+        assert "kbId=200" in system_msg
+        assert "Content 1" in system_msg
+        assert "Content 2" in system_msg
+        # Articles should be separated
+        assert "---" in system_msg
