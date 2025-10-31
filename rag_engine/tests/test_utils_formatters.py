@@ -9,6 +9,7 @@ def test_format_with_citations_adds_section_links():
     docs = [
         SimpleNamespace(
             metadata={
+                "kbId": "42",
                 "title": "Intro",
                 "url": "https://example.com/intro",
                 "section_anchor": "#overview",
@@ -18,12 +19,13 @@ def test_format_with_citations_adds_section_links():
 
     result = format_with_citations("Answer", docs)
 
-    assert "## Sources" in result
+    # Accept both Russian and English headings for sources
+    assert any(h in result for h in ("## Источники:", "## Sources:"))
     assert "[Intro](https://example.com/intro#overview)" in result
 
 
 def test_format_with_citations_handles_missing_url():
-    docs = [SimpleNamespace(metadata={"title": "Doc without URL"})]
+    docs = [SimpleNamespace(metadata={"kbId": "99", "title": "Doc without URL"})]
     result = format_with_citations("Answer", docs)
 
     assert "Doc without URL" in result

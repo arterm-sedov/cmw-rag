@@ -378,7 +378,8 @@ class RAGRetriever:
 
         selected: list[Article] = []
         total_tokens = 0
-        full_content_idx = 0
+        # By default assume all articles fit; adjusted only if we break early
+        full_content_idx = len(articles)
 
         # First pass: try to fit full article content
         # Articles added here will NOT be processed again in the second pass
@@ -416,7 +417,8 @@ class RAGRetriever:
             for chunk in article.matched_chunks:
                 chunk_content = getattr(chunk, "page_content", None) or getattr(chunk, "content", "")
                 if chunk_content:
-                    chunk_texts.append(chunk_content)
+                    # Ensure we strings
+                    chunk_texts.append(str(chunk_content))
 
             if not chunk_texts:
                 continue
