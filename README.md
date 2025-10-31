@@ -12,6 +12,9 @@ Production-ready RAG (Retrieval-Augmented Generation) engine for document Q&A wi
 - **Bilingual support**: FRIDA embeddings for Russian and English content
 - **Advanced retrieval**: Vector search with optional cross-encoder reranking
 - **Multi-LLM support**: Gemini (default) and OpenRouter with streaming responses
+- **Dynamic context budgeting**: Summarization-first trimming guided by the user question; falls back to lightweight stitching when needed
+- **Immediate model fallback**: Optional auto-fallback to allowed larger-context models when estimated tokens exceed the current model
+- **Consistent token accounting**: Shared `token_utils` for system + question + context + output budgeting
 - **Web interface**: Gradio ChatInterface with citations and chat history
 - **REST API**: Programmatic access for integration
 - **Context-aware**: Complete article context with citation support
@@ -156,6 +159,10 @@ print(response.json())
 - `question` (string, required): Query text
 - `provider` (string, optional): LLM provider (`gemini` or `openrouter`)
 - `top_k` (int, optional): Number of results to retrieve
+  
+Environment-driven behavior:
+- If `LLM_FALLBACK_ENABLED=true`, the engine will estimate total tokens and immediately select a larger allowed model when necessary.
+- Summarization-first budgeting compresses overflow articles (guided by the question) before falling back to lightweight stitching.
 
 **Response**:
 ```json
@@ -178,6 +185,11 @@ Environment variables (configure in `.env`):
 - `GOOGLE_API_KEY`: Google Gemini API key (required if using Gemini)
 - `OPENROUTER_API_KEY`: OpenRouter API key (required if using OpenRouter)
 - `DEFAULT_LLM_PROVIDER`: Default provider (`gemini` or `openrouter`)
+- `LLM_FALLBACK_ENABLED`: Enable immediate model fallback (`true`/`false`)
+- `LLM_FALLBACK_PROVIDER`: Provider for fallback (`gemini`/`openrouter`), otherwise inferred per model
+- `LLM_ALLOWED_FALLBACK_MODELS`: Comma-separated list of allowed fallback models
+- `LLM_SUMMARIZATION_ENABLED`: Enable summarization-first budgeting (`true`/`false`)
+- `LLM_SUMMARIZATION_TARGET_TOKENS_PER_ARTICLE`: Optional override for per-article summary target
 - `TOP_K_RETRIEVE`: Initial retrieval count (default: 20)
 - `TOP_K_RERANK`: Final results after reranking (default: 10)
 - `GRADIO_SERVER_PORT`: Web UI port (default: 7860)
@@ -257,6 +269,11 @@ DEFAULT_LLM_PROVIDER=openrouter
 # Activate venv first
 pytest rag_engine/tests/
 ```
+
+Notes on tests:
+
+- Retriever tests expect summarization-first budgeting; assertions check token budgets rather than hard-coding article counts.
+- Token accounting is centralized in `rag_engine/llm/token_utils.py` and used consistently in tests and implementation.
 
 ### Code Style
 
