@@ -28,7 +28,14 @@ def test_chat_interface_initialization(monkeypatch):
             pass
 
         def retrieve(self, query, top_k=None):  # noqa: ANN001
-            doc = SimpleNamespace(metadata={"title": "Doc", "url": "https://example.com", "section_anchor": "#a"})
+            doc = SimpleNamespace(
+                metadata={
+                    "kbId": "123",
+                    "title": "Doc",
+                    "url": "https://example.com",
+                    "section_anchor": "#a",
+                }
+            )
             return [doc]
 
     monkeypatch.setattr("rag_engine.retrieval.embedder.FRIDAEmbedder", FakeEmbedder)
@@ -44,7 +51,8 @@ def test_chat_interface_initialization(monkeypatch):
     assert app.demo.title == "Comindware Platform Documentation Assistant"
 
     output = app.query_rag("Question?", provider="gemini", top_k=1)
-    assert "## Sources" in output
+    # Citations heading is in Russian per current formatter
+    assert any(h in output for h in ("## Источники:", "## Sources:"))
 
 
 def test_api_and_handler_empty_cases(monkeypatch):
