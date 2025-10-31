@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Load environment variables from .env file in project root
 project_root = Path(__file__).parent.parent.parent
@@ -12,8 +12,9 @@ load_dotenv(env_path)
 class Settings(BaseSettings):
     """Application settings loaded from .env file.
 
-    All configuration values come from environment variables.
-    No hardcoded defaults - everything is configurable via .env.
+    Most configuration is env-driven. Some fields include safe, opinionated
+    defaults to ensure resilience when env vars are not set. Secrets and
+    provider credentials must be provided via environment variables.
     """
 
     # LLM Providers
@@ -34,6 +35,17 @@ class Settings(BaseSettings):
     top_k_rerank: int
     chunk_size: int
     chunk_overlap: int
+
+    # Retrieval – multi-vector query and query decomposition
+    # Kept configurable via .env; safe defaults provided
+    retrieval_multiquery_enabled: bool = True
+    retrieval_multiquery_max_segments: int = 4
+    retrieval_multiquery_segment_tokens: int = 448
+    retrieval_multiquery_segment_overlap: int = 64
+    retrieval_multiquery_pre_rerank_limit: int = 60
+
+    retrieval_query_decomp_enabled: bool = False
+    retrieval_query_decomp_max_subqueries: int = 4
 
     # Reranker
     rerank_enabled: bool
@@ -57,9 +69,12 @@ class Settings(BaseSettings):
     gradio_server_name: str
     gradio_server_port: int
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    # Pydantic v2 configuration: accept extra env vars and set env file
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 settings = Settings()

@@ -2,6 +2,10 @@
 
 Production-ready RAG (Retrieval-Augmented Generation) engine for document Q&A with support for MkDocs, markdown folders, and single-file ingestion. Features FRIDA embeddings (Russian/English), ChromaDB vector storage, reranking, and multi-LLM support with streaming responses.
 
+## AI-Enabled Repo
+
+Chat with DeepWiki to get answers about this repo:
+
 [Ask DeepWiki](https://deepwiki.com/arterm-sedov/cmw-rag)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/arterm-sedov/cmw-rag)
@@ -11,6 +15,7 @@ Production-ready RAG (Retrieval-Augmented Generation) engine for document Q&A wi
 - **Multi-source ingestion**: Support for MkDocs export, markdown folders, and single combined files
 - **Bilingual support**: FRIDA embeddings for Russian and English content
 - **Advanced retrieval**: Vector search with optional cross-encoder reranking
+- **Multi-vector queries**: Split long queries into token-aware segments, retrieve per segment, union + rerank
 - **Multi-LLM support**: Gemini (default) and OpenRouter with streaming responses
 - **Dynamic context budgeting**: Summarization-first trimming guided by the user question; falls back to lightweight stitching when needed
 - **Immediate model fallback**: Optional auto-fallback to allowed larger-context models when estimated tokens exceed the current model
@@ -197,6 +202,21 @@ Environment variables (configure in `.env`):
 - `EMBEDDING_DEVICE`: Device for embeddings (`cpu` or `cuda`)
 
 See `.env.example` for full configuration options.
+
+### Retrieval – Multi-vector and Query Decomposition
+
+Environment flags controlling long-query behavior:
+
+- `RETRIEVAL_MULTIQUERY_ENABLED` (default: `true`): Enable multi-vector query retrieval
+- `RETRIEVAL_MULTIQUERY_MAX_SEGMENTS` (default: `4`): Max query segments
+- `RETRIEVAL_MULTIQUERY_SEGMENT_TOKENS` (default: `448`): Target tokens per segment (≤ 512)
+- `RETRIEVAL_MULTIQUERY_SEGMENT_OVERLAP` (default: `64`): Overlap tokens between segments
+- `RETRIEVAL_MULTIQUERY_PRE_RERANK_LIMIT` (default: `60`): Cap merged candidates before rerank
+- `RETRIEVAL_QUERY_DECOMP_ENABLED` (default: `false`): Enable LLM-based query decomposition
+- `RETRIEVAL_QUERY_DECOMP_MAX_SUBQUERIES` (default: `4`): Max sub-queries to generate
+
+Recommended ranges:
+- `SEGMENT_TOKENS`: 384–512; `OVERLAP`: 32–96; `MAX_SEGMENTS`: ≤ 4; `PRE_RERANK_LIMIT`: ≈ 3×`TOP_K_RETRIEVE`.
 
 ## Project Structure
 
