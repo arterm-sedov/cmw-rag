@@ -197,54 +197,18 @@ class TestRAGIndexer:
         assert call_kwargs["metadatas"][0]["kbId"] == "4578"
         assert call_kwargs["metadatas"][0]["doc_stable_id"] == doc_stable_id
 
-    def test_index_documents_finds_existing_by_numeric_kbid(self, mock_embedder, mock_vector_store, tmp_path):
-        """Test that documents with kbId suffixes are found via numeric fallback."""
-        file_path = tmp_path / "doc.md"
-        file_path.write_text("Content")
-        os.utime(file_path, (300, 300))
-
-        # Document with clean numeric kbId
+    def test_index_documents_requires_kbid(self, mock_embedder, mock_vector_store):
+        """Test that indexer skips documents without kbId (no fallback to source_file)."""
         doc = MagicMock()
         doc.content = "# Title\nBody"
-        doc.metadata = {"kbId": "4578", "source_file": str(file_path)}
+        doc.metadata = {"title": "Test", "source_file": "/path/to/file.md"}  # Missing kbId
 
-        numeric_kb_id = extract_numeric_kbid("4578") or "4578"
-        new_doc_stable_id = sha1(numeric_kb_id.encode("utf-8")).hexdigest()[:12]
-        # Old document had kbId "4578-toc", so its doc_stable_id was based on "4578-toc"
-        old_doc_stable_id = sha1("4578-toc".encode("utf-8")).hexdigest()[:12]
-
-        # First lookup by new doc_stable_id returns None (not found)
-        # Then fallback search by numeric kbId should find the old document
-        # After finding via fallback, we delete old chunks and always reindex (even if timestamp would suggest skip)
-        call_count = [0]
-        def get_meta_side_effect(where):
-            call_count[0] += 1
-            # First call: lookup by new doc_stable_id -> None
-            if call_count[0] == 1:
-                return None
-            # Second call: lookup by old doc_stable_id (found via fallback) -> return existing
-            if call_count[0] == 2 and where.get("doc_stable_id") == old_doc_stable_id:
-                return {"file_mtime_epoch": 200, "kbId": "4578-toc", "doc_stable_id": old_doc_stable_id}
-            return None
-
-        mock_vector_store.get_any_doc_meta.side_effect = get_meta_side_effect
-        # Mock collection.get to return existing document with suffix (used in fallback search)
-        mock_vector_store.collection.get.return_value = {
-            "metadatas": [{"kbId": "4578-toc", "doc_stable_id": old_doc_stable_id}],
-            "ids": ["old_chunk_id"],
-        }
-
-        mock_embedder.embed_documents.return_value = [[0.1] * 3]
+        mock_vector_store.get_any_doc_meta.return_value = None
 
         indexer = RAGIndexer(embedder=mock_embedder, vector_store=mock_vector_store)
 
         indexer.index_documents([doc], chunk_size=50, chunk_overlap=10, max_files=None)
 
-        # Verify old document with suffix was deleted
-        mock_vector_store.delete_where.assert_any_call({"doc_stable_id": old_doc_stable_id})
-        # Verify new document with normalized kbId is added
-        assert mock_vector_store.add.called
-        call_kwargs = mock_vector_store.add.call_args.kwargs
-        assert call_kwargs["metadatas"][0]["kbId"] == "4578"
-        assert call_kwargs["metadatas"][0]["doc_stable_id"] == new_doc_stable_id
+        # Should not index documents without kbId
+        mock_vector_store.add.assert_not_called()
 

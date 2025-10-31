@@ -110,10 +110,22 @@ def chat_handler(message: str, history: list[dict], request: gr.Request | None =
         return
 
     docs = retriever.retrieve(message)
+    
+    # If no documents found, inject a message into the context so LLM knows
+    # explicitly that no relevant materials were found
+    has_no_results_doc = False
     if not docs:
-        yield "К сожалению, не найдено релевантных материалов / No relevant results found."
-        return
-
+        # Create a fake document with the "no results" message to inject into context
+        from rag_engine.retrieval.retriever import Article
+        no_results_msg = "К сожалению, не найдено релевантных материалов / No relevant results found."
+        no_results_doc = Article(
+            kb_id="",
+            content=no_results_msg,
+            metadata={"title": "No Results", "kbId": "", "_is_no_results": True}
+        )
+        docs = [no_results_doc]
+        has_no_results_doc = True
+    
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
     session_id = _salt_session_id(base_session_id, history, message)
 
@@ -129,7 +141,12 @@ def chat_handler(message: str, history: list[dict], request: gr.Request | None =
         yield answer
 
     # Save assistant turn with footer appended, once at the end
-    final_text = format_with_citations(answer, docs)
+    # format_with_citations handles empty docs gracefully (no citations)
+    # If we injected the "no results" message, don't add citations
+    if has_no_results_doc:
+        final_text = answer  # Don't add citations for "no results" message
+    else:
+        final_text = format_with_citations(answer, docs)
     llm_manager.save_assistant_turn(session_id, final_text)
     yield final_text
 
@@ -138,9 +155,23 @@ def query_rag(question: str, provider: str = "gemini", top_k: int = 5) -> str:
     if not question or not question.strip():
         return "Error: Empty question"
     docs = retriever.retrieve(question, top_k=top_k)
+    # If no documents found, inject a message into the context
+    has_no_results_doc = False
     if not docs:
-        return "No relevant results found"
+        from rag_engine.retrieval.retriever import Article
+        no_results_msg = "К сожалению, не найдено релевантных материалов / No relevant results found."
+        no_results_doc = Article(
+            kb_id="",
+            content=no_results_msg,
+            metadata={"title": "No Results", "kbId": "", "_is_no_results": True}
+        )
+        docs = [no_results_doc]
+        has_no_results_doc = True
+    
     answer = llm_manager.generate(question, docs, provider=provider)
+    # If we injected the "no results" message, don't add citations
+    if has_no_results_doc:
+        return answer  # Don't add citations for "no results" message
     return format_with_citations(answer, docs)
 
 

@@ -11,6 +11,7 @@ from rag_engine.llm.prompts import SYSTEM_PROMPT
 from rag_engine.llm.token_utils import estimate_tokens_for_request
 from rag_engine.config.settings import settings
 from rag_engine.utils.conversation_store import ConversationStore
+from rag_engine.utils.metadata_utils import extract_numeric_kbid
 
 logger = logging.getLogger(__name__)
 
@@ -249,8 +250,11 @@ class LLMManager:
         title = meta.get("title", "")
         kbid = meta.get("kbId") or getattr(doc, "kb_id", None) or ""
         url = meta.get("url") or meta.get("article_url")
-        if not url and kbid and str(kbid).isdigit():
-            url = f"https://kb.comindware.ru/article.php?id={kbid}"
+        if not url and kbid:
+            # Normalize kbId for URL construction (handles edge cases)
+            normalized_kbid = extract_numeric_kbid(str(kbid))
+            if normalized_kbid:
+                url = f"https://kb.comindware.ru/article.php?id={normalized_kbid}"
         tags = meta.get("tags", [])
         if isinstance(tags, str):
             tags = [t.strip() for t in tags.split(",") if t.strip()]

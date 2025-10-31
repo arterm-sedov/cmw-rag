@@ -72,7 +72,15 @@ class RAGIndexer:
 
         for doc_idx, doc in enumerate(documents, start=1):
             base_meta = dict(getattr(doc, "metadata", {}))
-            kb_id = base_meta.get("kbId", base_meta.get("source_file", "doc"))
+            kb_id = base_meta.get("kbId")
+            if not kb_id:
+                logger.error(
+                    "Missing kbId in metadata for document %d/%d (source: %s)",
+                    doc_idx,
+                    total_docs,
+                    base_meta.get("source_file", "unknown"),
+                )
+                continue
             content = getattr(doc, "content", "")
 
             # Skip empty documents
@@ -80,7 +88,9 @@ class RAGIndexer:
                 logger.warning("Skipping empty document %d/%d (kbId: %s)", doc_idx, total_docs, kb_id)
                 continue
 
-            # Respect max_files limit (counts only documents we actually index)
+            # Respect max_files limit as a safety check
+            # Note: max_files is primarily applied at DocumentProcessor level,
+            # but this serves as a secondary check for documents actually indexed
             if max_files is not None and processed_docs >= max_files:
                 logger.info("Max files limit reached: %d", max_files)
                 break
@@ -105,34 +115,11 @@ class RAGIndexer:
             file_mtime_epoch, file_modified_at_iso, _timestamp_source = get_file_timestamp(source_file, base_meta)
 
             # Incremental reindexing: skip unchanged docs, replace outdated
-            found_via_fallback = False
             if file_mtime_epoch is not None:
                 existing = self.store.get_any_doc_meta({"doc_stable_id": doc_stable_id})
-                # Fallback: search by numeric kbId if exact match not found
-                if existing is None and extract_numeric_kbid(kb_id):
-                    try:
-                        all_docs = self.store.collection.get(limit=1000, include=["metadatas"])
-                        for meta_item in all_docs.get("metadatas", []):
-                            if extract_numeric_kbid(meta_item.get("kbId")) == numeric_kb_id:
-                                old_doc_stable_id = meta_item.get("doc_stable_id")
-                                if old_doc_stable_id:
-                                    existing = self.store.get_any_doc_meta({"doc_stable_id": old_doc_stable_id})
-                                    if existing:
-                                        # Found old document with suffix - delete it and reindex with normalized kbId
-                                        self.store.delete_where({"doc_stable_id": old_doc_stable_id})
-                                        logger.info(
-                                            "Deleted old document chunks with kbId=%s (doc_stable_id=%s), reindexing with normalized kbId",
-                                            meta_item.get("kbId"),
-                                            old_doc_stable_id,
-                                        )
-                                        found_via_fallback = True
-                                        existing = None  # Clear existing so we always reindex with new normalized kbId
-                                        break
-                    except Exception:  # noqa: BLE001
-                        pass
-
+                
                 # Only skip if we found an exact match (same doc_stable_id) and it's up to date
-                if existing is not None and not found_via_fallback:
+                if existing is not None:
                     existing_epoch = existing.get("file_mtime_epoch")
                     if isinstance(existing_epoch, int) and existing_epoch >= file_mtime_epoch:
                         logger.info("Skipping unchanged document %d/%d (kbId: %s)", doc_idx, total_docs, kb_id)
