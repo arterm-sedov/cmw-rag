@@ -42,8 +42,8 @@ def main() -> None:
     setup_logging()
 
     dp = DocumentProcessor(mode=args.mode)
-    # Always process full set; apply limiting in retriever so skipped files don't count
-    docs = dp.process(args.source)
+    # Pass max_files to limit files processed (before indexing)
+    docs = dp.process(args.source, max_files=args.max_files)
 
     # Dry-run mode: analyze timestamps without indexing
     if args.dry_run:
@@ -70,21 +70,6 @@ def main() -> None:
             numeric_kb_id = extract_numeric_kbid(kb_id) or str(kb_id)
             doc_stable_id = sha1(numeric_kb_id.encode("utf-8")).hexdigest()[:12]
             existing = store.get_any_doc_meta({"doc_stable_id": doc_stable_id}) if store else None
-            
-            # Fallback: search by numeric kbId if exact match not found
-            if existing is None and extract_numeric_kbid(kb_id):
-                try:
-                    all_docs = store.collection.get(limit=1000, include=["metadatas"])
-                    for meta_item in all_docs.get("metadatas", []):
-                        if extract_numeric_kbid(meta_item.get("kbId")) == numeric_kb_id:
-                            old_doc_stable_id = meta_item.get("doc_stable_id")
-                            if old_doc_stable_id:
-                                existing = store.get_any_doc_meta({"doc_stable_id": old_doc_stable_id})
-                                if existing:
-                                    break
-                except Exception:  # noqa: BLE001
-                    pass
-            
             existing_epoch = existing.get("file_mtime_epoch") if existing else None
 
             status = ""

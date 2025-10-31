@@ -12,6 +12,7 @@ from rag_engine.core.chunker import split_text
 from rag_engine.config.settings import settings
 from rag_engine.retrieval.reranker import build_reranker
 from rag_engine.retrieval.vector_search import top_k_search
+from rag_engine.utils.metadata_utils import extract_numeric_kbid
 
 logger = logging.getLogger(__name__)
 
@@ -144,8 +145,10 @@ class RAGRetriever:
             qv = self.embedder.embed_query(text)
             seg_hits = top_k_search(self.store, qv, k=self.top_k_retrieve)
             for doc in seg_hits:
+                # Handle None metadata gracefully
+                metadata = getattr(doc, "metadata", None) or {}
                 sid = (
-                    getattr(doc, "metadata", {}).get("stable_id")
+                    metadata.get("stable_id")
                     or getattr(doc, "id", None)
                     or str(id(doc))
                 )
@@ -210,10 +213,15 @@ class RAGRetriever:
             logger.info("No reranking, using top-%d chunks", len(scored_candidates))
 
         # 3. Group top-ranked chunks by kbId (article identifier)
+        # Normalize kbIds to handle any edge cases (e.g., old suffixed kbIds)
         articles_map: dict[str, list[Any]] = defaultdict(list)
         for doc, _score in scored_candidates:
-            kb_id = getattr(doc, "metadata", {}).get("kbId", "")
-            if kb_id:
+            # Handle None metadata gracefully
+            metadata = getattr(doc, "metadata", None) or {}
+            raw_kb_id = metadata.get("kbId", "")
+            if raw_kb_id:
+                # Normalize kbId for consistent grouping (handles suffixed kbIds)
+                kb_id = extract_numeric_kbid(raw_kb_id) or str(raw_kb_id)
                 articles_map[kb_id].append(doc)
 
         logger.info("Top chunks belong to %d unique articles", len(articles_map))
@@ -222,7 +230,8 @@ class RAGRetriever:
         articles: list[Article] = []
         for kb_id, chunks in articles_map.items():
             # Use first chunk's metadata to get source file
-            source_file = chunks[0].metadata.get("source_file")
+            first_chunk_meta = getattr(chunks[0], "metadata", None) or {}
+            source_file = first_chunk_meta.get("source_file")
             if not source_file:
                 logger.warning("No source_file for kbId=%s", kb_id)
                 continue
@@ -230,15 +239,16 @@ class RAGRetriever:
             try:
                 article_content = self._read_article(source_file)
                 # Preserve original metadata for internal ops; add a clean URL for citations
-                article_metadata = dict(chunks[0].metadata)
+                article_metadata = dict(first_chunk_meta)
                 if "article_url" not in article_metadata:
                     # Prefer explicit frontmatter URL
                     frontmatter_url = article_metadata.get("url")
                     if frontmatter_url:
                         article_metadata["article_url"] = str(frontmatter_url)
                     else:
-                        # kbId is guaranteed numeric by indexer; construct URL directly
-                        kbid = article_metadata.get("kbId") or kb_id
+                        # Normalize kbId for URL construction (handles edge cases)
+                        raw_kbid = article_metadata.get("kbId") or kb_id
+                        kbid = extract_numeric_kbid(raw_kbid) or str(raw_kbid) if raw_kbid else None
                         if kbid is not None:
                             article_metadata["article_url"] = f"https://kb.comindware.ru/article.php?id={kbid}"
 
@@ -377,7 +387,8 @@ class RAGRetriever:
             title = article.metadata.get("title", article.kb_id)
             article_url = article.metadata.get("article_url") or article.metadata.get("url")
             if not article_url:
-                kbid = article.metadata.get("kbId") or article.kb_id
+                raw_kbid = article.metadata.get("kbId") or article.kb_id
+                kbid = extract_numeric_kbid(raw_kbid) or str(raw_kbid) if raw_kbid else None
                 if kbid:
                     article_url = f"https://kb.comindware.ru/article.php?id={kbid}"
 
@@ -420,7 +431,8 @@ class RAGRetriever:
             title = src.metadata.get("title", src.kb_id)
             article_url = src.metadata.get("article_url") or src.metadata.get("url")
             if not article_url:
-                kbid = src.metadata.get("kbId") or src.kb_id
+                raw_kbid = src.metadata.get("kbId") or src.kb_id
+                kbid = extract_numeric_kbid(raw_kbid) or str(raw_kbid) if raw_kbid else None
                 if kbid:
                     article_url = f"https://kb.comindware.ru/article.php?id={kbid}"
             content = f"# {title}\n\nURL: {article_url}\n\n" + "\n\n---\n\n".join(chunk_texts)

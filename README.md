@@ -37,6 +37,7 @@ The codebase follows a clean separation of concerns:
   - Chunks documents, generates embeddings, writes to vector store
   - Implements incremental reindexing with timestamp-based deduplication
   - Normalizes `kbId` to numeric format for consistent document identification
+  - Requires `kbId` in document metadata (from frontmatter); no fallback to `source_file`
   - Located in `core/` alongside other document processing components
 
 - **`document_processor.py`**: Processes markdown files from various sources (folder, file, mkdocs)
@@ -58,6 +59,25 @@ The codebase follows a clean separation of concerns:
 ### Scripts (`rag_engine/scripts/`)
 
 - **`build_index.py`**: Main indexing script that uses `RAGIndexer`
+  - Supports `--dry-run` mode to analyze timestamps without indexing
+  - Incremental reindexing with timestamp-based deduplication
+  - `--max-files` limits files processed during scanning (before indexing)
+- **`maintain_chroma.py`**: ChromaDB maintenance and diagnostics
+  - `--action diagnose`: Comprehensive database health check
+    - Lists collections and their chunk counts
+    - Checks consistency between SQLite metadata and vector data directories
+    - Detects orphaned vector directories and UUID mismatches
+    - Shows WAL (Write-Ahead Log) status
+    - Counts unique articles vs total chunks
+  - `--action commit-wal`: Commits pending transactions from WAL
+- **`migrate_normalize_kbids.py`**: One-time migration script to normalize kbId values
+  - Finds documents with suffixed kbIds (e.g., `"4578-toc"`) and normalizes to numeric format
+  - Handles both suffixed kbIds and path-like kbIds (from old fallback logic)
+  - Dry-run mode by default; use `--apply` to perform migration
+- **`inspect_db_schema.py`**: Inspect ChromaDB data model and sample records
+  - Shows all metadata fields and their types
+  - Displays random sample records for validation
+  - Provides statistics and validation checks
 - **`start_app.sh` / `start_app.ps1`**: Application startup scripts
 
 ## Prerequisites
@@ -133,7 +153,7 @@ python rag_engine/scripts/build_index.py \
 ```
 
 Optional flags and behavior:
-- `--max-files N`: Stop after indexing N documents that actually changed or are new. Unchanged files (by timestamp) are skipped and do not count against this limit.
+- `--max-files N`: Limit the number of files processed during indexing. The limit is applied during file scanning (before indexing), so only the first N files from the source are processed. Useful for quick test runs or incremental indexing.
 - `--dry-run`: Analyze timestamps without indexing. Shows which timestamp source (frontmatter/git/file) is used for each file and whether it would be indexed, skipped, or reindexed.
 - **Three-tier timestamp fallback**: The system uses timestamps in priority order:
   1. **Frontmatter `updated` field** - Parsed from YAML frontmatter (e.g., `updated: '2024-06-14 12:33:36'`)
@@ -294,7 +314,38 @@ Ensure `.env` file contains all required variables. Check `.env.example` for ref
 
 - Verify index was built (Step 3)
 - Check ChromaDB collection: `./data/chromadb_data/`
-- Reindex with `--reindex` flag
+- Run diagnostics: `python rag_engine/scripts/maintain_chroma.py --action diagnose`
+- Inspect schema: `python rag_engine/scripts/inspect_db_schema.py`
+
+### ChromaDB Maintenance
+
+Diagnose database health:
+```bash
+python rag_engine/scripts/maintain_chroma.py --action diagnose
+```
+
+Commit pending transactions:
+```bash
+python rag_engine/scripts/maintain_chroma.py --action commit-wal
+```
+
+Inspect data model and sample records:
+```bash
+python rag_engine/scripts/inspect_db_schema.py --samples 10
+```
+
+### Normalizing kbId Values
+
+If you have documents with suffixed kbIds (e.g., `"4578-toc"`) from older indexing:
+```bash
+# Check what would be normalized (dry-run)
+python rag_engine/scripts/migrate_normalize_kbids.py
+
+# Apply normalization
+python rag_engine/scripts/migrate_normalize_kbids.py --apply
+```
+
+After migration, reindex documents with `build_index.py` to restore them with normalized kbIds.
 
 ### FRIDA Model Download Fails / Disk Space
 

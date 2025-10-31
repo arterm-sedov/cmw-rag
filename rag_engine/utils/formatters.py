@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List
 
+from rag_engine.utils.metadata_utils import extract_numeric_kbid
+
 
 def _normalize_url(url: str | None) -> str:
     if not url:
@@ -45,9 +47,10 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
             seen_urls.add(norm_url)
 
         if kbid:
-            # Use first occurrence of each kbId
-            if kbid not in seen_kbids:
-                seen_kbids[kbid] = meta
+            # Normalize kbId for consistent deduplication (handles suffixed kbIds)
+            normalized_kbid = extract_numeric_kbid(str(kbid)) or str(kbid)
+            if normalized_kbid not in seen_kbids:
+                seen_kbids[normalized_kbid] = meta
         else:
             if norm_url:
                 # Use a synthetic key to preserve ordering when kbId is missing
@@ -63,9 +66,11 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
         # 2) or precomputed article_url
         if not url:
             url = meta.get("article_url")
-        # 3) or construct from numeric kbId (guaranteed by indexer)
-        if not url and kbid and str(kbid).isdigit():
-            url = f"https://kb.comindware.ru/article.php?id={kbid}"
+        # 3) or construct from numeric kbId (normalize to handle edge cases)
+        if not url and kbid:
+            normalized_kbid = extract_numeric_kbid(str(kbid))
+            if normalized_kbid:
+                url = f"https://kb.comindware.ru/article.php?id={normalized_kbid}"
 
         # Append anchor only if we have a base URL and the base doesn't already include one
         anchor = meta.get("section_anchor") or ""

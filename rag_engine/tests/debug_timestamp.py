@@ -18,6 +18,24 @@ from rag_engine.utils.metadata_utils import extract_numeric_kbid
 import yaml
 
 
+def _get_all_metadata_paginated(store: ChromaStore, limit_per_batch: int = 1000) -> list[dict]:
+    """Get all document metadatas with pagination (local utility for debug script)."""
+    all_metadata = []
+    offset = 0
+    
+    while True:
+        res = store.collection.get(limit=limit_per_batch, offset=offset, include=["metadatas"])
+        batch_metas = res.get("metadatas", [])
+        if not batch_metas:
+            break
+        all_metadata.extend(batch_metas)
+        if len(batch_metas) < limit_per_batch:
+            break
+        offset += limit_per_batch
+    
+    return all_metadata
+
+
 def debug_single_file(file_path: str) -> None:
     """Debug timestamp comparison for a single file."""
     file_path_obj = Path(file_path)
@@ -164,9 +182,9 @@ def debug_single_file(file_path: str) -> None:
                 print(f"  No exact match found. Searching by numeric part ({numeric_kb_id})...")
                 # Get all documents and filter by numeric kbId
                 try:
-                    all_docs = store.collection.get(limit=1000, include=["metadatas"])
+                    all_metadata = _get_all_metadata_paginated(store)
                     matching_docs = []
-                    for meta in all_docs.get("metadatas", []):
+                    for meta in all_metadata:
                         stored_kb_id = meta.get("kbId")
                         stored_numeric = extract_numeric_kbid(stored_kb_id)
                         if stored_numeric == numeric_kb_id:

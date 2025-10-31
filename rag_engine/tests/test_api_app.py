@@ -70,18 +70,30 @@ def test_api_and_handler_empty_cases(monkeypatch):
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
-        def stream_response(self, message, docs):  # noqa: ANN001
-            yield "response"
+        def stream_response(self, message, docs, **kwargs):  # noqa: ANN001, ANN003
+            # LLM receives injected "no results" document when docs is empty
+            # It should see the "No relevant results found" message in context
+            assert len(docs) > 0, "Should have at least the injected 'no results' doc"
+            # Check for the metadata flag instead of string matching
+            assert any(getattr(d, "metadata", {}).get("_is_no_results") is True for d in docs)
+            yield "Sorry, I couldn't find relevant information in the knowledge base."
 
         def generate(self, question, docs, provider=None):  # noqa: ANN001
-            return "answer"
+            # LLM receives injected "no results" document when docs is empty
+            assert len(docs) > 0, "Should have at least the injected 'no results' doc"
+            # Check for the metadata flag instead of string matching
+            assert any(getattr(d, "metadata", {}).get("_is_no_results") is True for d in docs)
+            return "Sorry, I couldn't find relevant information in the knowledge base."
+
+        def save_assistant_turn(self, session_id, content):  # noqa: ANN001
+            pass
 
     class FakeRetriever:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
         def retrieve(self, query, top_k=None):  # noqa: ANN001
-            return []
+            return []  # Empty results - will trigger injection of "no results" message
 
     monkeypatch.setattr("rag_engine.retrieval.embedder.FRIDAEmbedder", FakeEmbedder)
     monkeypatch.setattr("rag_engine.storage.vector_store.ChromaStore", FakeStore)
@@ -95,10 +107,19 @@ def test_api_and_handler_empty_cases(monkeypatch):
     # query_rag with empty question returns error string
     assert app.query_rag(" ") == "Error: Empty question"
 
-    # chat_handler yields validation message on empty
+    # query_rag with empty docs should still return LLM response (not block)
+    result = app.query_rag("test question")
+    assert "Sorry" in result or "found" in result.lower() or "information" in result.lower()
+
+    # chat_handler yields validation message on empty input
     gen = app.chat_handler("", [])
     first = next(gen)
     assert "Please enter a question" in first or "Введите вопрос" in first
+
+    # chat_handler with empty docs should still call LLM (not block)
+    gen = app.chat_handler("test question", [])
+    result = list(gen)
+    assert len(result) > 0  # Should have some response
 
 
 def test_chat_handler_appends_footer_and_saves_to_memory(monkeypatch):
