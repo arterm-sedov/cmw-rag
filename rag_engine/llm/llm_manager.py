@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, Generator, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
@@ -240,6 +240,32 @@ class LLMManager:
         """Expose system prompt for other components (no import cycles)."""
         return SYSTEM_PROMPT
 
+    def _format_article_header(self, doc: Any) -> str:
+        """Format Article URLs header from document metadata.
+
+        Includes Title, kbId, canonical URL, and tags if available.
+        """
+        meta = getattr(doc, "metadata", {}) or {}
+        title = meta.get("title", "")
+        kbid = meta.get("kbId") or getattr(doc, "kb_id", None) or ""
+        url = meta.get("url") or meta.get("article_url")
+        if not url and kbid and str(kbid).isdigit():
+            url = f"https://kb.comindware.ru/article.php?id={kbid}"
+        tags = meta.get("tags", [])
+        if isinstance(tags, str):
+            tags = [t.strip() for t in tags.split(",") if t.strip()]
+        header_parts = ["Article details:"]
+        if title:
+            header_parts.append(title)
+        if kbid:
+            header_parts.append(f"kbId={kbid}")
+        if url:
+            header_parts.append(url)
+        header = " — ".join(header_parts)
+        if tags:
+            header += f"\nTags: {', '.join(tags)}"
+        return header
+
     def _estimate_request_tokens(self, question: str, context: str) -> dict:
         return estimate_tokens_for_request(
             system_prompt=SYSTEM_PROMPT,
@@ -367,8 +393,9 @@ class LLMManager:
         content_blocks: List[str] = []
         for d in context_docs:
             text = getattr(d, "page_content", None) or getattr(d, "content", "")
-            content_blocks.append(text)
-        context = "\n\n".join(content_blocks)
+            header = self._format_article_header(d)
+            content_blocks.append(f"{header}\n\n{text}")
+        context = "\n\n---\n\n".join(content_blocks)
 
         # Accurate token estimate and optional immediate fallback
         est = self._estimate_request_tokens(question, context)
@@ -437,8 +464,9 @@ class LLMManager:
         content_blocks: List[str] = []
         for d in context_docs:
             text = getattr(d, "page_content", None) or getattr(d, "content", "")
-            content_blocks.append(text)
-        context = "\n\n".join(content_blocks)
+            header = self._format_article_header(d)
+            content_blocks.append(f"{header}\n\n{text}")
+        context = "\n\n---\n\n".join(content_blocks)
 
         # Maybe compress and include prior memory
         self._compress_memory(session_id, question, context)
