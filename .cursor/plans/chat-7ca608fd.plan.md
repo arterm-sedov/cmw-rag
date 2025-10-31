@@ -62,22 +62,11 @@
 
 ## To-dos
 
-- [ ] Thread Gradio session hash as `session_id` in `chat_handler`
-- [ ] Add in-memory `ConversationStore` keyed by `session_id`
-- [ ] Wrap chain with `RunnableWithMessageHistory` in `llm_manager`
-- [ ] Implement compression (threshold pct and target tokens from env); keep last two turns; inject system prompt only at call time
-- [ ] Append footer (dedup by `kbId`/URL) to final assistant message; store citations metadata; ensure URLs in retriever
-- [ ] Enable `show_copy_button` on Chatbot
-- [ ] Tests: isolation; footer+metadata; dedup robustness; compression behavior; system prompt not persisted
-- [ ] Update README.md with memory, citations, copy, session isolation, and compression env vars
-
-### To-dos
-
-- [ ] Add session_id intake and propagate to chain
-- [ ] Create ConversationStore (in-memory; optional Redis implementation)
-- [ ] Wrap chain with RunnableWithMessageHistory in llm_manager using session_id
-- [ ] Append deduped source links footer to assistant replies
-- [ ] Use token_utils to bound memory/context size
-- [ ] Add tests for preserved history across turns
-- [ ] Add tests verifying source links included
-- [ ] If Gradio UI exists, enable show_copy_button on Chatbot and wire session_id
+- [x] Thread Gradio session hash as `session_id` in `chat_handler`
+- [x] Add in-memory `ConversationStore` keyed by `session_id`
+- [x] Wrap chain with `RunnableWithMessageHistory` in `llm_manager`
+- [x] Implement compression (threshold pct and target tokens from env); keep last two turns; inject system prompt only at call time
+- [x] Append footer (dedup by `kbId`/URL) to final assistant message; store citations metadata; ensure URLs in retriever
+- [x] Enable `show_copy_button` on Chatbot
+- [x] Tests: isolation; footer+metadata; dedup robustness; compression behavior; system prompt not persisted
+- [x] Update README.md with memory, citations, copy, session isolation, and compression env vars

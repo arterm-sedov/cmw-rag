@@ -47,7 +47,7 @@ retriever = RAGRetriever(
 )
 
 
-def chat_handler(message: str, history: list[dict]) -> Generator[str, None, None]:
+def chat_handler(message: str, history: list[dict], request: gr.Request | None = None) -> Generator[str, None, None]:
     if not message or not message.strip():
         yield "Пожалуйста, введите вопрос / Please enter a question."
         return
@@ -57,17 +57,22 @@ def chat_handler(message: str, history: list[dict]) -> Generator[str, None, None
         yield "К сожалению, не найдено релевантных материалов / No relevant results found."
         return
 
+    session_id = getattr(request, "session_hash", None) if request is not None else None
     answer = ""
     for token in llm_manager.stream_response(
         message,
         docs,
         enable_fallback=settings.llm_fallback_enabled,
         allowed_fallback_models=get_allowed_fallback_models(),
+        session_id=session_id,
     ):
         answer += token
         yield answer
 
-    yield format_with_citations(answer, docs)
+    # Save assistant turn with footer appended, once at the end
+    final_text = format_with_citations(answer, docs)
+    llm_manager.save_assistant_turn(session_id, final_text)
+    yield final_text
 
 
 def query_rag(question: str, provider: str = "gemini", top_k: int = 5) -> str:
@@ -86,6 +91,7 @@ demo = gr.ChatInterface(
     description="RAG-агент базы знаний Comindware Platform",
     type="messages",
     save_history=True,
+    chatbot=gr.Chatbot(show_copy_button=True),
 )
 # Explicitly set a plain attribute for tests and downstream code to read
 demo.title = "Comindware Platform Documentation Assistant"
