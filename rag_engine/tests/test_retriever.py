@@ -284,6 +284,35 @@ class TestRAGRetriever:
         kb_ids = {a.kb_id for a in articles}
         assert kb_ids == {"article_1", "article_2"}
 
+    @patch("rag_engine.retrieval.retriever.top_k_search")
+    def test_retrieve_normalizes_kbid_for_grouping(self, mock_search, retriever, tmp_path):
+        """Test that chunks with suffixed kbIds are normalized and grouped together."""
+        # Create test file
+        test_file = tmp_path / "article.md"
+        test_file.write_text("Article content")
+
+        # Mock chunks with suffixed kbIds that should normalize to the same kbId
+        chunk1 = Mock()
+        chunk1.metadata = {
+            "kbId": "4578-toc",  # Suffixed kbId
+            "source_file": str(test_file),
+        }
+        chunk2 = Mock()
+        chunk2.metadata = {
+            "kbId": "4578",  # Normalized kbId
+            "source_file": str(test_file),
+        }
+
+        mock_search.return_value = [chunk1, chunk2]
+
+        # Retrieve
+        articles = retriever.retrieve("test query")
+
+        # Should group both chunks into 1 article with normalized kbId
+        assert len(articles) == 1
+        assert articles[0].kb_id == "4578"  # Normalized
+        assert len(articles[0].matched_chunks) == 2  # Both chunks grouped together
+
 
 class TestIntegration:
     """Integration tests with real components."""
