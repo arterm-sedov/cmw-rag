@@ -50,6 +50,8 @@ The codebase follows a clean separation of concerns:
   - Vector search, reranking, article reconstruction
   - Context budgeting and article summarization
   - Query segmentation and multi-vector retrieval
+  - Normalizes `kbId` values during retrieval for robustness (handles edge cases)
+  - Groups chunks by normalized `kbId` to ensure consistent article identification
   - **Note**: Indexing has been separated into `RAGIndexer` for better separation of concerns
 
 - **`embedder.py`**: FRIDA embedding model wrapper
@@ -200,6 +202,7 @@ The Gradio ChatInterface provides:
 - Streaming responses
 - Automatic citations
 - Chat history
+- Graceful handling of empty results (see Troubleshooting section)
 
 ### REST API
 
@@ -316,6 +319,7 @@ Ensure `.env` file contains all required variables. Check `.env.example` for ref
 - Check ChromaDB collection: `./data/chromadb_data/`
 - Run diagnostics: `python rag_engine/scripts/maintain_chroma.py --action diagnose`
 - Inspect schema: `python rag_engine/scripts/inspect_db_schema.py`
+- **Behavior**: When no documents are retrieved, the system injects a "no results" message into the LLM context. The LLM will respond appropriately, acknowledging that no relevant information was found in the knowledge base, rather than blocking completely.
 
 ### ChromaDB Maintenance
 
