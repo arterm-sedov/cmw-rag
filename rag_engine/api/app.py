@@ -1,6 +1,7 @@
 """Gradio UI with ChatInterface and REST API endpoint."""
 from __future__ import annotations
 
+import hashlib
 import sys
 from collections.abc import Generator
 from pathlib import Path
@@ -47,6 +48,62 @@ retriever = RAGRetriever(
 )
 
 
+def _salt_session_id(base_session_id: str | None, history: list[dict], current_message: str = "") -> str | None:
+    """Salt session_id with chat history to isolate memory per chat.
+
+    When Gradio's save_history=True is enabled, different chats share the same
+    session_hash. Salting ensures each chat (new or loaded from history) gets
+    its own isolated session memory.
+
+    Strategy: Generate deterministically from the first user message.
+    - For new chats: uses current_message (first message being sent)
+    - For loaded chats: uses first user message from history
+    - For continuing same chat: same first message → same salt → same session_id → memory preserved
+
+    This approach is robust because:
+    1. The first message is stable across Gradio's save/load cycle
+    2. Each distinct chat has a different first message → different session_id
+    3. Same chat always generates the same session_id → memory continuity
+
+    Args:
+        base_session_id: Base session hash from Gradio request
+        history: Current chat history from Gradio (includes loaded chats)
+        current_message: Current message being sent (used for new chats)
+
+    Returns:
+        Salted session_id or None if base_session_id is None
+    """
+    if not base_session_id:
+        return None
+
+    # Extract first user message as salt
+    # For loaded chats: from history; for new chats: from current_message
+    salt = ""
+    if history:
+        # Loaded or continuing chat: use first user message from history
+        for msg in history:
+            role = msg.get("role", "")
+            if role != "user":
+                continue
+            content = msg.get("content", "")
+            # Handle both string and dict content (multimodal)
+            if isinstance(content, dict):
+                # Extract text from dict if available, otherwise use path
+                text = content.get("text", "") or str(content.get("path", ""))
+            else:
+                text = str(content)
+            if text:
+                salt = text[:100]  # First 100 chars as salt
+                break
+    elif current_message:
+        # New chat: use current message as salt
+        salt = str(current_message)[:100]
+
+    # Create salted session_id deterministically
+    salted = f"{base_session_id}:{salt}"
+    return hashlib.sha256(salted.encode()).hexdigest()[:32]
+
+
 def chat_handler(message: str, history: list[dict], request: gr.Request | None = None) -> Generator[str, None, None]:
     if not message or not message.strip():
         yield "Пожалуйста, введите вопрос / Please enter a question."
@@ -57,7 +114,9 @@ def chat_handler(message: str, history: list[dict], request: gr.Request | None =
         yield "К сожалению, не найдено релевантных материалов / No relevant results found."
         return
 
-    session_id = getattr(request, "session_hash", None) if request is not None else None
+    base_session_id = getattr(request, "session_hash", None) if request is not None else None
+    session_id = _salt_session_id(base_session_id, history, message)
+
     answer = ""
     for token in llm_manager.stream_response(
         message,
