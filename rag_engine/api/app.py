@@ -184,7 +184,7 @@ demo = gr.ChatInterface(
     type="messages",
     save_history=True,
     fill_width=True,
-    chatbot=gr.Chatbot(type="messages", show_copy_button=True, height="60%", max_height="80%", resizable=True),
+    chatbot=gr.Chatbot(type="messages", show_copy_button=True, height="80%", max_height="90%", resizable=True),
 )
 # Explicitly set a plain attribute for tests and downstream code to read
 demo.title = "Comindware Platform Documentation Assistant"
