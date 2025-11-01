@@ -11,6 +11,8 @@ _project_root = Path(__file__).parent.parent.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
+import logging
+
 import gradio as gr
 
 from rag_engine.config.settings import settings, get_allowed_fallback_models
@@ -181,7 +183,7 @@ demo = gr.ChatInterface(
     description="RAG-агент базы знаний Comindware Platform",
     type="messages",
     save_history=True,
-    chatbot=gr.Chatbot(show_copy_button=True, height=700, resizable=True),
+    chatbot=gr.Chatbot(type="messages", show_copy_button=True, height=700, resizable=True),
 )
 # Explicitly set a plain attribute for tests and downstream code to read
 demo.title = "Comindware Platform Documentation Assistant"
@@ -194,9 +196,24 @@ except Exception:  # noqa: BLE001
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger(__name__)
+    
+    logger.info(
+        "Starting Gradio server at %s:%s (share=%s)",
+        settings.gradio_server_name,
+        settings.gradio_server_port,
+        settings.gradio_share,
+    )
+    
+    if settings.gradio_share:
+        logger.info(
+            "Share link enabled. If share link creation fails, the app will still run locally."
+        )
+    
     demo.queue().launch(
         server_name=settings.gradio_server_name,
         server_port=settings.gradio_server_port,
+        share=settings.gradio_share,
     )
 
 
