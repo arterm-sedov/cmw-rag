@@ -180,7 +180,7 @@ def query_rag(question: str, provider: str = "gemini", top_k: int = 5) -> str:
 # Configure chatbot height and UI elements based on embedded widget setting
 if settings.gradio_embedded_widget:
     # For embedded widget
-    chatbot_height = "50vh"
+    chatbot_height = "400px"
     chatbot_max_height = "65vh"
     chat_title = None
     chat_description = None
