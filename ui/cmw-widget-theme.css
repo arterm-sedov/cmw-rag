@@ -296,6 +296,7 @@
     flex: 1;
     overflow: auto;
     min-height: 0;
+    position: relative;
 }
 
 .gradio-app-container gradio-app {
@@ -352,14 +353,21 @@
 
 /* Loading State */
 .loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    background: var(--cmw-surface);
     color: var(--cmw-text);
     font-family: var(--cmw-font-family);
     font-size: var(--cmw-font-size);
     font-weight: var(--cmw-font-weight-light);
+    z-index: 15;
+    pointer-events: none;
 }
 
 .loading-indicator.hidden {
