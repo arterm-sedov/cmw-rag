@@ -127,7 +127,7 @@ def chat_handler(message: str, history: list[dict], request: gr.Request | None =
         )
         docs = [no_results_doc]
         has_no_results_doc = True
-    
+
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
     session_id = _salt_session_id(base_session_id, history, message)
 
@@ -169,7 +169,7 @@ def query_rag(question: str, provider: str = "gemini", top_k: int = 5) -> str:
         )
         docs = [no_results_doc]
         has_no_results_doc = True
-    
+
     answer = llm_manager.generate(question, docs, provider=provider)
     # If we injected the "no results" message, don't add citations
     if has_no_results_doc:
@@ -180,10 +180,11 @@ def query_rag(question: str, provider: str = "gemini", top_k: int = 5) -> str:
 demo = gr.ChatInterface(
     fn=chat_handler,
     title="Ассистент базы знаний Comindware Platform",
-    description="RAG-агент базы знаний Comindware Platform",
+    #description="RAG-агент базы знаний Comindware Platform",
     type="messages",
     save_history=True,
-    chatbot=gr.Chatbot(type="messages", show_copy_button=True, height=700, resizable=True),
+    fill_width=True,
+    chatbot=gr.Chatbot(type="messages", show_copy_button=True, height="60%", max_height="80%", resizable=True),
 )
 # Explicitly set a plain attribute for tests and downstream code to read
 demo.title = "Comindware Platform Documentation Assistant"

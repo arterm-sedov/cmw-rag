@@ -156,16 +156,18 @@ python rag_engine/scripts/run_mkdocs_export.py \
 ```
 
 Behavior:
+
 - Creates `<project-dir>/.rag_export/`
 - Copies `rag_engine/rag_indexing_hook.py` → `.rag_export/rag_indexing_hook.py`
 - Writes `.rag_export/mkdocs_for_rag_indexing.yml` with:
-  - `INHERIT: <inherit-config>` (resolved within the MkDocs repo)
-  - `hooks: [ .rag_export/rag_indexing_hook.py ]`
-  - `site_dir: <output-dir>` (absolute or relative; absolute recommended to place output in the RAG agent repo)
+    - `INHERIT: <inherit-config>` (resolved within the MkDocs repo)
+    - `hooks: [ .rag_export/rag_indexing_hook.py ]`
+    - `site_dir: <output-dir>` (absolute or relative; absolute recommended to place output in the RAG agent repo)
 - Runs from `--project-dir`:
-  - `mkdocs build -f .rag_export/mkdocs_for_rag_indexing.yml`
+    - `mkdocs build -f .rag_export/mkdocs_for_rag_indexing.yml`
 
 Notes:
+
 - Works on Windows/macOS/Linux; uses absolute paths where necessary; avoids touching real project files.
 
 ### 1.1 Project Structure
@@ -337,31 +339,30 @@ class EmbeddingGenerator:
 ### 3.2 Chroma Document Schema and Deduplication (MVP)
 
 - Document fields (per chunk):
-  - `id`: stable unique id, e.g., `f"{kbId}:{chunk_index}:{sha1(content)}"`
-  - `text`: chunk content (string)
-  - `metadata` (dict):
-    - `kbId` (str): article identifier or path
-    - `title` (str): article/page title
-    - `url` (str): canonical URL to the article
-    - `section_heading` (str|optional)
-    - `section_anchor` (str|optional, starts with `#`)
-    - `chunk_index` (int)
-    - `section_depth` (int|optional)
-    - `has_code` (bool), `code_languages` (list[str])
-    - `tags` (list[str]|optional)
-    - `char_count` (int)
+    - `id`: stable unique id, e.g., `f"{kbId}:{chunk_index}:{sha1(content)}"`
+    - `text`: chunk content (string)
+    - `metadata` (dict):
+        - `kbId` (str): article identifier or path
+        - `title` (str): article/page title
+        - `url` (str): canonical URL to the article
+        - `section_heading` (str|optional)
+        - `section_anchor` (str|optional, starts with `#`)
+        - `chunk_index` (int)
+        - `section_depth` (int|optional)
+        - `has_code` (bool), `code_languages` (list[str])
+        - `tags` (list[str]|optional)
+        - `char_count` (int)
 
 - Deduplication rule:
-  - Deduplicate on `kbId + chunk_index + sha1(normalized_text)` before upsert.
-  - On re-index, upsert replaces entries with the same `id`.
+    - Deduplicate on `kbId + chunk_index + sha1(normalized_text)` before upsert.
+    - On re-index, upsert replaces entries with the same `id`.
 
 - Query filters (optional):
-  - by `kbId`, `tags`, `has_code`.
+    - by `kbId`, `tags`, `has_code`.
 
 ### 3.3 VectorStore Interface and Adapters (Future-Proofing)
 
 - Define a minimal interface to decouple retrieval from the backend:
-
 ```python
 class VectorStore:
     def add(self, ids: list[str], embeddings: list[list[float]], metadatas: list[dict], documents: list[str]) -> None: ...
@@ -376,9 +377,9 @@ class VectorStore:
 ## Phase 4: Retrieval and Reranking
 
 - `retrieval/retriever.py`: 
-        - Embed query → vector_search (top-20) → group by `kbId`
-        - Reconstruct articles: sort chunks by `chunk_index`, merge adjacent short chunks, cap context length
-        - Context budgeting: prioritize sections whose `section_heading`/`section_anchor` match query terms; fallback to best chunk scores; keep per-article top-N chunks
+                - Embed query → vector_search (top-20) → group by `kbId`
+                - Reconstruct articles: sort chunks by `chunk_index`, merge adjacent short chunks, cap context length
+                - Context budgeting: prioritize sections whose `section_heading`/`section_anchor` match query terms; fallback to best chunk scores; keep per-article top-N chunks
 - `retrieval/reranker.py`: abstract `Reranker` interface + adapters (HuggingFace cross-encoders). Use prioritized `RERANKERS`; apply metadata boosts (tags +20%, code +15%, section +10%)
 
 ## Phase 5: LLM Integration
@@ -728,18 +729,19 @@ VECTOR_BACKEND=chroma
 - [ ] Implement `config/settings.py` (3 modes, DiTy default reranker + alternatives, FRIDA, Chroma, LLM)
 - [ ] Implement `core/document_processor.py`, `core/chunker.py` (section-aware, token-aware, code-safe), `core/metadata_enricher.py`
 - [ ] Implement `storage/vector_store.py` (Chroma CRUD + filters), `retrieval/vector_search.py`, `retrieval/embedder.py` (abstract + adapters; FRIDA default)
-  - [ ] Define `VectorStore` interface; implement Chroma adapter; keep interface vendor-agnostic
-  - [ ] Define abstract `Embedder` + adapter; implement FRIDA; allow model/provider override via config
+    - [ ] Define `VectorStore` interface; implement Chroma adapter; keep interface vendor-agnostic
+    - [ ] Define abstract `Embedder` + adapter; implement FRIDA; allow model/provider override via config
 - [ ] Implement `retrieval/retriever.py` (group/sort/merge/budget), `retrieval/reranker.py` (abstract + adapters; prioritized `RERANKERS` + boosts)
 - [ ] Integrate `llm_manager.py` + providers; prompts + citation formatter
 - [ ] Build Gradio ChatInterface `api/app.py`; also expose `gr.api("/query")`
 - [ ] Implement `scripts/build_index.py` with CLI flags; implement `scripts/test_queries.py` (RU/EN, metrics); add basic unit tests
 - [ ] Local venv workflow: finalize requirements, update README with usage, CLI flags, and Phase 2 roadmap
-  - [ ] Implement `scripts/run_mkdocs_export.py` to export compiled MD from an external MkDocs repo
-  
-  Phase 2 (deferred):
-  - [ ] Define `Chunker` and `MetadataEnricher` interfaces; keep current implementations as defaults
-  - [ ] MMR diversification, per-`kbId` caps, thresholds, async reranker, caches, structured outputs
+    - [ ] Implement `scripts/run_mkdocs_export.py` to export compiled MD from an external MkDocs repo
+
+Phase 2 (deferred):
+
+    - [ ] Define `Chunker` and `MetadataEnricher` interfaces; keep current implementations as defaults
+    - [ ] MMR diversification, per-`kbId` caps, thresholds, async reranker, caches, structured outputs
 
 ### To-dos
 
