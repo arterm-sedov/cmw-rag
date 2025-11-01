@@ -1,0 +1,413 @@
+/* CMW Widget Theme - Lean CSS for Floating Embedded Gradio Widget */
+/* Extracted from KB site (kb.comindware.ru) and extra.css styling */
+
+:root {
+    /* KB Primary Colors - from extra.css and KB site */
+    --cmw-primary: #3697d4;
+    --cmw-primary-light: #62aedd;
+    --cmw-primary-dark: #0875bc;
+    --cmw-primary-text: #ffffff;
+    --cmw-primary-hsl: 203, 65%, 52%;
+
+    /* KB Link Colors - from KB site app.min.css */
+    --cmw-link: #03a9f4;
+    --cmw-link-hover: #0079d2;
+
+    /* Text Colors - from KB site */
+    --cmw-text: #5e686f;
+    --cmw-text-strong: #545764;
+    --cmw-text-fade: #84919b;
+
+    /* Surface Colors - from KB site */
+    --cmw-surface: #ffffff;
+    --cmw-surface-alt: #f5f8fa;
+    --cmw-border: #e1e8ee;
+    --cmw-border-strong: #dce2ea;
+
+    /* Spacing & Design Tokens */
+    --cmw-radius-md: 5px;
+    --cmw-radius-lg: 6px;
+    --cmw-space-2: 8px;
+    --cmw-space-3: 12px;
+    --cmw-space-4: 16px;
+    --cmw-space-5: 20px;
+
+    --cmw-shadow-focus: 0 0 0 2px rgba(54, 151, 212, 0.2);
+
+    /* Typography - Open Sans with Cyrillic support */
+    --cmw-font-family: 'Open Sans', Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --cmw-font-size: 14px;
+    --cmw-font-weight-light: 300;
+    --cmw-font-weight-normal: 400;
+    --cmw-font-weight-medium: 500;
+    --cmw-font-weight-bold: 700;
+    --cmw-letter-spacing: 0.2px;
+    --cmw-line-height: 1.5;
+
+    /* Widget Layout Variables */
+    --cmw-widget-z-index: 1000;
+    --cmw-widget-bottom: 20px;
+    --cmw-widget-right: 20px;
+    --cmw-widget-bottom-mobile: 15px;
+    --cmw-widget-right-mobile: 15px;
+
+    /* Toggle Button */
+    --cmw-toggle-size: 60px;
+    --cmw-toggle-size-mobile: 56px;
+    --cmw-toggle-icon-size: 28px;
+    --cmw-toggle-icon-size-mobile: 24px;
+    --cmw-toggle-hover-scale: 1.1;
+    --cmw-toggle-active-scale: 0.95;
+    --cmw-toggle-shadow: 0 4px 12px rgba(54, 151, 212, 0.4);
+    --cmw-toggle-shadow-hover: 0 6px 16px rgba(54, 151, 212, 0.5);
+
+    /* Container */
+    --cmw-container-width: 450px;
+    --cmw-container-height: 650px;
+    --cmw-container-min-width: 320px;
+    --cmw-container-min-height: 400px;
+    --cmw-container-max-width: 90vw;
+    --cmw-container-max-height: 90vh;
+    --cmw-container-bottom: 90px;
+    --cmw-container-bottom-mobile: 80px;
+    --cmw-container-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+    /* Close Button */
+    --cmw-close-size: 32px;
+    --cmw-close-icon-size: 20px;
+    --cmw-close-bg: rgba(255, 255, 255, 0.2);
+    --cmw-close-bg-hover: rgba(255, 255, 255, 0.3);
+
+    /* Header */
+    --cmw-header-font-size: 18px;
+    --cmw-header-font-weight: 400;
+
+    /* Transitions */
+    --cmw-transition-duration: 0.3s;
+    --cmw-transition-duration-fast: 0.2s;
+    --cmw-transition-easing: ease;
+
+    /* Animation */
+    --cmw-animation-translate-y: 20px;
+    --cmw-animation-scale: 0.95;
+
+    /* Responsive Breakpoints */
+    --cmw-breakpoint-tablet: 768px;
+    --cmw-breakpoint-mobile: 480px;
+
+    /* Responsive Spacing */
+    --cmw-responsive-padding: 40px;
+    --cmw-responsive-padding-mobile: 40px;
+    --cmw-responsive-viewport-offset: 120px;
+    --cmw-responsive-viewport-offset-mobile: 100px;
+}
+
+/* Widget Container */
+.chat-widget {
+    position: fixed;
+    bottom: var(--cmw-widget-bottom);
+    right: var(--cmw-widget-right);
+    z-index: var(--cmw-widget-z-index);
+    font-family: var(--cmw-font-family);
+    font-weight: var(--cmw-font-weight-light);
+    letter-spacing: var(--cmw-letter-spacing);
+    line-height: var(--cmw-line-height);
+}
+
+/* Toggle Button */
+.chat-toggle {
+    width: var(--cmw-toggle-size);
+    height: var(--cmw-toggle-size);
+    border-radius: 50%;
+    border: none;
+    font-size: var(--cmw-toggle-icon-size);
+    cursor: pointer;
+    transition: all var(--cmw-transition-duration) var(--cmw-transition-easing);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    background: var(--cmw-primary);
+    color: var(--cmw-primary-text);
+    box-shadow: var(--cmw-toggle-shadow);
+    font-family: var(--cmw-font-family);
+}
+
+.chat-toggle:hover {
+    transform: scale(var(--cmw-toggle-hover-scale));
+    box-shadow: var(--cmw-toggle-shadow-hover);
+    background: var(--cmw-primary-light);
+}
+
+.chat-toggle:active {
+    transform: scale(var(--cmw-toggle-active-scale));
+}
+
+/* Widget Container */
+.chat-container {
+    position: fixed;
+    bottom: var(--cmw-container-bottom);
+    right: var(--cmw-widget-right);
+    width: var(--cmw-container-width);
+    height: var(--cmw-container-height);
+    min-width: var(--cmw-container-min-width);
+    min-height: var(--cmw-container-min-height);
+    max-width: var(--cmw-container-max-width);
+    max-height: var(--cmw-container-max-height);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    resize: none; /* Disabled - using custom resize handle */
+    transition: transform var(--cmw-transition-duration) var(--cmw-transition-easing),
+                opacity var(--cmw-transition-duration) var(--cmw-transition-easing);
+    transform-origin: bottom right;
+    background: var(--cmw-surface);
+    border-radius: var(--cmw-radius-md);
+    box-shadow: var(--cmw-container-shadow);
+    border: 1px solid var(--cmw-border);
+}
+
+/* Resize handle styling - Gradio-style in top-left corner */
+.chat-container::-webkit-resizer {
+    background: transparent;
+    cursor: nwse-resize;
+}
+
+/* Gradio-style resize handle indicator in top-left */
+.chat-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    z-index: 10;
+    background-image: 
+        repeating-linear-gradient(
+            135deg,
+            var(--cmw-border-strong) 0,
+            var(--cmw-border-strong) 1px,
+            transparent 1px,
+            transparent 4px
+        ),
+        repeating-linear-gradient(
+            135deg,
+            transparent 2px,
+            transparent 3px,
+            var(--cmw-border-strong) 3px,
+            var(--cmw-border-strong) 4px
+        );
+    opacity: 0.6;
+    border-radius: var(--cmw-radius-md) 0 0 0;
+}
+
+/* Custom resize handle element in top-left for interactive resizing */
+.chat-container-resize-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    z-index: 11;
+    background: transparent;
+}
+
+.chat-container.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(var(--cmw-animation-translate-y)) scale(var(--cmw-animation-scale));
+}
+
+.chat-container.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    animation: slideUp var(--cmw-transition-duration) var(--cmw-transition-easing);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(var(--cmw-animation-translate-y)) scale(var(--cmw-animation-scale));
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Widget Header */
+.chat-header {
+    padding: var(--cmw-space-4) var(--cmw-space-5);
+    padding-left: calc(var(--cmw-space-5) + 20px); /* Make room for resize handle */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--cmw-primary);
+    color: var(--cmw-primary-text);
+    border-radius: var(--cmw-radius-md) var(--cmw-radius-md) 0 0;
+    font-family: var(--cmw-font-family);
+    position: relative;
+    z-index: 1;
+}
+
+.chat-header h3 {
+    margin: 0;
+    font-size: var(--cmw-header-font-size);
+    color: var(--cmw-primary-text);
+    font-weight: var(--cmw-header-font-weight);
+}
+
+/* Close Button */
+.close-chat {
+    border: none;
+    width: var(--cmw-close-size);
+    height: var(--cmw-close-size);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: var(--cmw-close-icon-size);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background var(--cmw-transition-duration-fast) var(--cmw-transition-easing);
+    background: var(--cmw-close-bg);
+    color: var(--cmw-primary-text);
+    font-family: var(--cmw-font-family);
+}
+
+.close-chat:hover {
+    background: var(--cmw-close-bg-hover);
+}
+
+/* Gradio App Container */
+.gradio-app-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.gradio-app-container gradio-app {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Hide Gradio title and description blocks */
+.gradio-app-container #component-7,
+.gradio-app-container #component-8 {
+    display: none !important;
+}
+
+/* Remove padding/margins from Gradio container */
+.gradio-app-container .gradio-container {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    min-height: 100% !important;
+}
+
+.gradio-app-container .gradio-container .embed-container {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Loading State */
+.loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--cmw-text);
+    font-family: var(--cmw-font-family);
+    font-size: var(--cmw-font-size);
+    font-weight: var(--cmw-font-weight-light);
+}
+
+.loading-indicator.hidden {
+    display: none;
+}
+
+/* Responsive Design - Tablet */
+@media (max-width: 768px) {
+    .chat-container {
+        width: calc(100vw - var(--cmw-responsive-padding));
+        height: calc(100vh - var(--cmw-responsive-viewport-offset));
+        max-width: var(--cmw-container-width);
+        bottom: var(--cmw-container-bottom);
+        right: var(--cmw-widget-right);
+        left: var(--cmw-widget-right);
+    }
+
+    .chat-toggle {
+        width: var(--cmw-toggle-size-mobile);
+        height: var(--cmw-toggle-size-mobile);
+        font-size: var(--cmw-toggle-icon-size-mobile);
+    }
+}
+
+/* Responsive Design - Mobile */
+@media (max-width: 480px) {
+    .chat-widget {
+        bottom: var(--cmw-widget-bottom-mobile);
+        right: var(--cmw-widget-right-mobile);
+    }
+
+    .chat-container {
+        bottom: var(--cmw-container-bottom-mobile);
+        right: var(--cmw-widget-right-mobile);
+        left: var(--cmw-widget-right-mobile);
+        height: calc(100vh - var(--cmw-responsive-viewport-offset-mobile));
+        resize: none; /* Disable resize on mobile */
+    }
+
+    .chat-container::before {
+        display: none; /* Hide resize indicator on mobile */
+    }
+
+    .chat-container-resize-handle {
+        display: none; /* Hide resize handle on mobile */
+    }
+}
+
+/* Dark theme support */
+html[data-theme='dark'] .chat-widget,
+body[data-theme='dark'] .chat-widget,
+.dark .chat-widget {
+    --cmw-text: #cfd6e4;
+    --cmw-text-strong: #eef3fb;
+    --cmw-text-fade: #a8b3c4;
+    --cmw-surface: #151a21;
+    --cmw-surface-alt: #0f141a;
+    --cmw-border: #2a3340;
+}
+
+html[data-theme='dark'] .chat-container,
+body[data-theme='dark'] .chat-container,
+.dark .chat-container {
+    background: var(--cmw-surface);
+    border: 1px solid var(--cmw-border);
+}
+
+html[data-theme='dark'] .chat-header,
+body[data-theme='dark'] .chat-header,
+.dark .chat-header {
+    background: var(--cmw-primary);
+}
+
+html[data-theme='dark'] .loading-indicator,
+body[data-theme='dark'] .loading-indicator,
+.dark .loading-indicator {
+    color: var(--cmw-text-fade);
+}
