@@ -177,14 +177,38 @@ def query_rag(question: str, provider: str = "gemini", top_k: int = 5) -> str:
     return format_with_citations(answer, docs)
 
 
+# Configure chatbot height and UI elements based on embedded widget setting
+if settings.gradio_embedded_widget:
+    # For embedded widget
+    chatbot_height = "50vh"
+    chatbot_max_height = "65vh"
+    chat_title = None
+    chat_description = None
+else:
+    # For standalone app
+    chatbot_height = "85vh"
+    chatbot_max_height = "80vh"
+    chat_title = "Ассистент базы знаний Comindware Platform"
+    chat_description = None  # "RAG-агент базы знаний Comindware Platform"
+
+chatbot_config = gr.Chatbot(
+    type="messages",
+    show_copy_button=True,
+    min_height="30vh",
+    height=chatbot_height,
+    max_height=chatbot_max_height,
+    resizable=True,
+    elem_classes=["gradio-chatbot"],
+)
+
 demo = gr.ChatInterface(
     fn=chat_handler,
-    title="Ассистент базы знаний Comindware Platform",
-    #description="RAG-агент базы знаний Comindware Platform",
+    title=chat_title,
+    description=chat_description,
     type="messages",
     save_history=True,
     #fill_width=True,
-    chatbot=gr.Chatbot(type="messages", show_copy_button=True, min_height=400, height="80%", max_height="90%", resizable=True, elem_classes=["gradio-chatbot"]),
+    chatbot=chatbot_config,
 )
 # Explicitly set a plain attribute for tests and downstream code to read
 demo.title = "Comindware Platform Documentation Assistant"

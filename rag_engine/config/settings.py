@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     # Share link: if True, attempts to create a public shareable link.
     # If share link creation fails (network/service issues), app still runs locally.
     gradio_share: bool = False
+    # Embedded widget mode: if True, uses smaller heights suitable for embedded widget.
+    # If False, uses larger heights suitable for standalone app.
+    gradio_embedded_widget: bool = False
 
     # Memory compression (conversation history)
     # Percentage of context window at which we trigger compression

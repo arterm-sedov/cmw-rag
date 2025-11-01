@@ -306,14 +306,14 @@
 }
 
 /* Hide Gradio title and description blocks */
-.gradio-app-container #component-7 {
+/* .gradio-app-container #component-7 {
     display: none !important;
-}
+} */
 
-.gradio-chatbot {
+/* .gradio-chatbot {
     min-height: 400px !important;
-    max-height: 600px !important;
-}
+    max-height: 65vh !important;
+} */
 
 /* Remove padding/margins from Gradio container */
 .gradio-app-container .gradio-container {
