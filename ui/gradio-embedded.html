@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comindware Platform Documentation Assistant</title>
+    <title>Ассистент базы знаний Comindware</title>
     
     <!-- Preconnect to KB site fonts for faster loading when embedded -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,7 +34,7 @@
             
             <!-- Header -->
             <div class="chat-header">
-                <h3>Comindware Assistant</h3>
+                <h3>Ассистент базы знаний Comindware</h3>
                 <button 
                     id="close-chat" 
                     class="close-chat" 
@@ -61,14 +61,9 @@
     ></script>
 
     <script>
-        // Configuration
-        // Set your Gradio app URL here, or it will use the default
-        const GRADIO_URL = window.GRADIO_URL || '0.0.0.0:7860';
-        
         // Ensure URL has protocol
         function normalizeUrl(url) {
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                // Default to http for local development, https for production domains
                 if (url.includes('localhost') || url.match(/^\d+\.\d+\.\d+\.\d+/)) {
                     return `http://${url}`;
                 }
@@ -77,7 +72,7 @@
             return url;
         }
 
-        const gradioAppUrl = normalizeUrl(GRADIO_URL);
+        let gradioAppUrl;
 
         // DOM elements - declared early for use in functions
         const chatToggle = document.getElementById('chat-toggle');
@@ -110,13 +105,17 @@
 
         function saveState(state) {
             try {
-                // Also save container size and position if it exists
-                if (chatContainer && !isContainerHidden()) {
+                // Also save container size and position if it exists and is visible
+                if (chatContainer && !isContainerHidden() && chatContainer.classList.contains('show')) {
                     const rect = chatContainer.getBoundingClientRect();
                     state.width = rect.width;
                     state.height = rect.height;
-                    state.left = rect.left;
-                    state.bottom = window.innerHeight - rect.bottom;
+                    const calculatedBottom = window.innerHeight - rect.bottom;
+                    // Only save position if it's valid (non-negative and reasonable)
+                    if (calculatedBottom >= 0 && calculatedBottom < window.innerHeight) {
+                        state.left = rect.left;
+                        state.bottom = calculatedBottom;
+                    }
                 }
                 localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(state));
             } catch (e) {
@@ -134,15 +133,17 @@
         function restoreContainerSize() {
             const storedState = getStoredState();
             if (storedState.width && storedState.height) {
-                chatContainer.style.width = storedState.width + 'px';
-                chatContainer.style.height = storedState.height + 'px';
+                const width = Math.max(storedState.width, parseInt(getComputedStyle(chatContainer).minWidth) || 320);
+                const height = Math.max(storedState.height, parseInt(getComputedStyle(chatContainer).minHeight) || 400);
+                chatContainer.style.width = width + 'px';
+                chatContainer.style.height = height + 'px';
             }
-            // Also restore position if saved
-            if (storedState.left !== undefined) {
+            // Only restore position if values are valid (non-negative and within reasonable bounds)
+            if (storedState.left !== undefined && storedState.left >= 0 && storedState.left < window.innerWidth) {
                 chatContainer.style.left = storedState.left + 'px';
                 chatContainer.style.right = 'auto';
             }
-            if (storedState.bottom !== undefined) {
+            if (storedState.bottom !== undefined && storedState.bottom >= 0 && storedState.bottom < window.innerHeight) {
                 chatContainer.style.bottom = storedState.bottom + 'px';
             }
         }
@@ -238,8 +239,15 @@
 
         // Toggle widget visibility
         function toggleWidget(forceState = null) {
-            const isOpen = forceState !== null ? forceState : !chatContainer.classList.contains('hidden');
-            const newState = !isOpen;
+            let newState;
+            if (forceState !== null) {
+                // If forceState is provided, use it directly
+                newState = forceState;
+            } else {
+                // Otherwise, toggle based on current state
+                const isOpen = !chatContainer.classList.contains('hidden');
+                newState = !isOpen;
+            }
 
             if (newState) {
                 // Show immediately
@@ -267,10 +275,10 @@
         }
 
         // Initialize Gradio app (preloading on page load)
-        function initializeGradioApp() {
+        function initializeGradioApp(url) {
             if (isInitialized) return;
 
-            gradioApp.setAttribute('src', gradioAppUrl);
+            gradioApp.setAttribute('src', url);
             gradioApp.style.display = 'block';
             
             // Wait for Gradio to load
@@ -288,8 +296,16 @@
         }
 
         // Event listeners
-        chatToggle.addEventListener('click', () => toggleWidget());
-        closeChat.addEventListener('click', () => toggleWidget(false));
+        if (chatToggle) {
+            chatToggle.addEventListener('click', () => toggleWidget());
+        }
+        if (closeChat) {
+            closeChat.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleWidget(false);
+            });
+        }
         
         // Custom resize handle
         if (resizeHandle) {
@@ -304,31 +320,61 @@
             }
         });
 
-        // Restore previous state on page load
-        const storedState = getStoredState();
-        
-        // Restore container size first
-        restoreContainerSize();
-        
-        // Add resize observer to save size changes
-        const resizeObserver = new ResizeObserver(() => {
-            if (!isContainerHidden()) {
-                handleResize();
+        // Initialize on page load
+        (async () => {
+            // Load GRADIO_URL from JSON config or window.GRADIO_URL
+            let url;
+            try {
+                const config = await fetch('gradio-config.json').then(r => r.json());
+                url = config.GRADIO_URL;
+            } catch {
+                url = window.GRADIO_URL;
             }
-        });
-        resizeObserver.observe(chatContainer);
-        
-        // Preload Gradio app immediately (not lazy loading)
-        // This ensures it's ready when the user clicks the button
-        initializeGradioApp();
-        
-        if (storedState.isOpen) {
-            // Small delay to ensure DOM is ready
-            setTimeout(() => toggleWidget(true), 100);
-        }
-
-        // Expose configuration globally for easy override
-        window.GRADIO_URL = gradioAppUrl;
+            
+            if (!url) {
+                console.error('GRADIO_URL not configured');
+                return;
+            }
+            
+            gradioAppUrl = normalizeUrl(url);
+            
+            window.GRADIO_URL = gradioAppUrl;
+            
+            // Restore previous state on page load
+            const storedState = getStoredState();
+            
+            // Validate and clean stored position values
+            const hasValidPosition = storedState.bottom !== undefined && 
+                                     storedState.bottom >= 0 && 
+                                     storedState.bottom < window.innerHeight &&
+                                     storedState.left !== undefined &&
+                                     storedState.left >= 0 && 
+                                     storedState.left < window.innerWidth;
+            
+            // If position is invalid, clear it to use default positioning
+            if (!hasValidPosition && (storedState.bottom !== undefined || storedState.left !== undefined)) {
+                delete storedState.bottom;
+                delete storedState.left;
+                localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(storedState));
+            }
+            
+            restoreContainerSize();
+            
+            // Add resize observer to save size changes
+            const resizeObserver = new ResizeObserver(() => {
+                if (!isContainerHidden()) {
+                    handleResize();
+                }
+            });
+            resizeObserver.observe(chatContainer);
+            
+            // Preload Gradio app
+            initializeGradioApp(gradioAppUrl);
+            
+            if (storedState.isOpen) {
+                setTimeout(() => toggleWidget(true), 100);
+            }
+        })();
     </script>
 </body>
 </html>

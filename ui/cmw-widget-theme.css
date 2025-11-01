@@ -157,7 +157,7 @@
     max-height: var(--cmw-container-max-height);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    /* overflow: hidden; */
     resize: none; /* Disabled - using custom resize handle */
     transition: transform var(--cmw-transition-duration) var(--cmw-transition-easing),
                 opacity var(--cmw-transition-duration) var(--cmw-transition-easing);
@@ -183,7 +183,7 @@
     width: 16px;
     height: 16px;
     pointer-events: none;
-    z-index: 10;
+    z-index: 19;
     background-image: 
         repeating-linear-gradient(
             135deg,
@@ -211,8 +211,9 @@
     width: 20px;
     height: 20px;
     cursor: nwse-resize;
-    z-index: 11;
+    z-index: 20;
     background: transparent;
+    pointer-events: auto;
 }
 
 .chat-container.hidden {
@@ -252,7 +253,8 @@
     border-radius: var(--cmw-radius-md) var(--cmw-radius-md) 0 0;
     font-family: var(--cmw-font-family);
     position: relative;
-    z-index: 1;
+    z-index: 10;
+    pointer-events: auto;
 }
 
 .chat-header h3 {
@@ -279,6 +281,10 @@
     background: var(--cmw-close-bg);
     color: var(--cmw-primary-text);
     font-family: var(--cmw-font-family);
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+    flex-shrink: 0;
 }
 
 .close-chat:hover {
@@ -288,20 +294,25 @@
 /* Gradio App Container */
 .gradio-app-container {
     flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: auto;
     min-height: 0;
 }
 
 .gradio-app-container gradio-app {
     display: block;
     width: 100%;
+    height: 100%;
+    overflow: auto;
 }
 
 /* Hide Gradio title and description blocks */
-.gradio-app-container #component-7,
-.gradio-app-container #component-8 {
+.gradio-app-container #component-7 {
     display: none !important;
+}
+
+.gradio-chatbot {
+    min-height: 400px !important;
+    max-height: 600px !important;
 }
 
 /* Remove padding/margins from Gradio container */
@@ -310,6 +321,9 @@
     padding-bottom: 0 !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    overflow: auto;
 }
 
 .gradio-app-container .gradio-container .embed-container {
@@ -317,6 +331,23 @@
     padding-bottom: 0 !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    overflow: auto;
+}
+
+/* Ensure main element fills available space */
+.gradio-app-container .gradio-container .embed-container main.fillable {
+    height: 100% !important;
+    min-height: 100% !important;
+    overflow: auto;
+}
+
+/* Ensure main element fills available space (alternative selector) */
+.gradio-app-container main.fillable {
+    height: 100% !important;
+    min-height: 100% !important;
+    overflow: auto;
 }
 
 /* Loading State */

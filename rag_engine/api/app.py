@@ -183,8 +183,8 @@ demo = gr.ChatInterface(
     #description="RAG-агент базы знаний Comindware Platform",
     type="messages",
     save_history=True,
-    fill_width=True,
-    chatbot=gr.Chatbot(type="messages", show_copy_button=True, height="80%", max_height="90%", resizable=True),
+    #fill_width=True,
+    chatbot=gr.Chatbot(type="messages", show_copy_button=True, min_height=400, height="80%", max_height="90%", resizable=True, elem_classes=["gradio-chatbot"]),
 )
 # Explicitly set a plain attribute for tests and downstream code to read
 demo.title = "Comindware Platform Documentation Assistant"
