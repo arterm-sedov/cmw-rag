@@ -53,17 +53,21 @@ retriever = RAGRetriever(
 
 
 def _create_rag_agent():
-    """Create LangChain agent with forced retrieval tool execution.
+    """Create LangChain agent with forced retrieval tool execution and memory compression.
 
-    Uses tool_choice parameter to enforce tool calling and the standard
-    Comindware Platform system prompt for consistent behavior.
+    Uses tool_choice parameter to enforce tool calling, the standard
+    Comindware Platform system prompt, and SummarizationMiddleware for
+    automatic conversation history compression at 85% context threshold.
 
     Returns:
-        Configured LangChain agent with retrieve_context tool
+        Configured LangChain agent with retrieve_context tool and middleware
     """
     from langchain.agents import create_agent
+    from langchain.agents.middleware import SummarizationMiddleware
+    import tiktoken
 
     from rag_engine.llm.prompts import SYSTEM_PROMPT
+    from rag_engine.llm.llm_manager import MODEL_CONFIGS
     from rag_engine.tools import retrieve_context
 
     # Select model based on provider
@@ -83,6 +87,35 @@ def _create_rag_agent():
             openai_api_base=settings.openrouter_base_url,
         )
 
+    # Get model configuration for context window
+    model_config = MODEL_CONFIGS.get(settings.default_model)
+    if not model_config:
+        # Try partial match
+        for key in MODEL_CONFIGS:
+            if key != "default" and key in settings.default_model:
+                model_config = MODEL_CONFIGS[key]
+                break
+    if not model_config:
+        model_config = MODEL_CONFIGS["default"]
+    
+    context_window = model_config["token_limit"]
+    
+    # Calculate threshold (85% of context window, matching old behavior)
+    threshold_tokens = int(context_window * (settings.memory_compression_threshold_pct / 100))
+
+    # Custom token counter using tiktoken (exact counting)
+    encoding = tiktoken.get_encoding("cl100k_base")
+    
+    def tiktoken_counter(messages: list) -> int:
+        """Count tokens using tiktoken for accuracy."""
+        total = 0
+        for msg in messages:
+            content = msg.get("content", "")
+            if isinstance(content, str) and content:
+                # Use tiktoken for exact counting
+                total += len(encoding.encode(content))
+        return total
+
     # CRITICAL: Use tool_choice to force retrieval tool execution
     # This ensures the agent always searches the knowledge base
     model_with_tools = base_model.bind_tools(
@@ -94,9 +127,30 @@ def _create_rag_agent():
         model=model_with_tools,
         tools=[retrieve_context],
         system_prompt=SYSTEM_PROMPT,
+        middleware=[
+            SummarizationMiddleware(
+                model=base_model,  # Use same model for summarization
+                token_counter=tiktoken_counter,  # Use our tiktoken-based counter
+                max_tokens_before_summary=threshold_tokens,  # Match old 85% threshold
+                messages_to_keep=4,  # Keep last 2 turns (2 user + 2 assistant)
+                summary_prompt=(
+                    "Summarize the conversation so far, preserving key context "
+                    "about the user's questions and the information provided. "
+                    "Focus on facts, decisions, and ongoing topics. "
+                    "Keep the summary concise and relevant."
+                ),
+                summary_prefix="## Предыдущее обсуждение / Previous conversation:",
+            ),
+        ],
     )
 
-    logger.info("RAG agent created with forced tool execution via tool_choice parameter")
+    logger.info(
+        "RAG agent created with forced tool execution and memory compression "
+        "(threshold: %d tokens at %d%%, window: %d)",
+        threshold_tokens,
+        settings.memory_compression_threshold_pct,
+        context_window,
+    )
     return agent
 
 
@@ -126,6 +180,11 @@ def agent_chat_handler(
     # Session management (reuse existing pattern)
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
     session_id = _salt_session_id(base_session_id, history, message)
+
+    # Save user message to conversation store (BEFORE agent execution)
+    # This ensures conversation history is tracked for memory compression
+    if session_id:
+        llm_manager._conversations.append(session_id, "user", message)
 
     # Build messages from history for agent
     messages = []

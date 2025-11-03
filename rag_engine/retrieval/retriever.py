@@ -118,7 +118,7 @@ class RAGRetriever:
         except Exception:
             return []
 
-    def retrieve(self, query: str, top_k: int | None = None) -> list[Article]:
+    def retrieve(self, query: str, top_k: int | None = None, reserved_tokens: int = 0) -> list[Article]:
         """Retrieve complete articles for query using hybrid approach.
 
         Hybrid approach:
@@ -131,6 +131,7 @@ class RAGRetriever:
         Args:
             query: User query string
             top_k: Override top_k_rerank if provided
+            reserved_tokens: Tokens already consumed by conversation history (for accurate budgeting)
 
         Returns:
             List of complete Article objects within context budget
@@ -265,8 +266,8 @@ class RAGRetriever:
 
         logger.info("Loaded %d complete articles", len(articles))
 
-        # 5. Apply context budgeting with dynamic token limits (pass question)
-        articles = self._apply_context_budget(articles, question=query)
+        # 5. Apply context budgeting with dynamic token limits (pass question and reserved tokens)
+        articles = self._apply_context_budget(articles, question=query, reserved_tokens=reserved_tokens)
 
         return articles
 
@@ -293,11 +294,17 @@ class RAGRetriever:
 
         return content
 
-    def _apply_context_budget(self, articles: list[Article], question: str = "", system_prompt: str = "") -> list[Article]:
+    def _apply_context_budget(
+        self, 
+        articles: list[Article], 
+        question: str = "", 
+        system_prompt: str = "",
+        reserved_tokens: int = 0
+    ) -> list[Article]:
         """Select articles within context budget using dynamic token limits.
 
         Uses LLM manager to get model-specific context window and reserves
-        25% for prompt overhead and output tokens.
+        tokens for prompt overhead, output, and conversation history.
 
         For articles that don't fit with full content, creates lightweight
         representations with title, URL, and relevant matched chunks so the
@@ -305,6 +312,9 @@ class RAGRetriever:
 
         Args:
             articles: Sorted list of articles
+            question: User query for token estimation
+            system_prompt: System prompt text for token estimation
+            reserved_tokens: Tokens already consumed by conversation history
 
         Returns:
             Articles that fit within context budget (full content) plus
@@ -326,13 +336,22 @@ class RAGRetriever:
             max_output_tokens=max_output_tokens,
             overhead=200,
         )
-        max_context_tokens = max(0, context_window - reserved_est["total_tokens"])
+        # Subtract both estimated tokens AND conversation history tokens
+        max_context_tokens = max(0, context_window - reserved_est["total_tokens"] - reserved_tokens)
 
-        logger.info(
-            "Context window: %d tokens, using %d (75%%) for articles",
-            context_window,
-            max_context_tokens,
-        )
+        if reserved_tokens > 0:
+            logger.info(
+                "Context window: %d tokens, reserved for conversation: %d, using %d for articles",
+                context_window,
+                reserved_tokens,
+                max_context_tokens,
+            )
+        else:
+            logger.info(
+                "Context window: %d tokens, using %d for articles",
+                context_window,
+                max_context_tokens,
+            )
 
         selected: list[Article] = []
         total_tokens = 0

@@ -211,7 +211,14 @@ class TestAgentChatHandler:
             [mock_article]
         )
 
-        # Verify conversation was saved
+        # Verify conversation was saved (both user and assistant turns)
+        # User message saved before agent execution
+        mock_llm_manager._conversations.append.assert_any_call(
+            "test_session_123",
+            "user",
+            "test question"
+        )
+        # Assistant response saved after execution
         mock_llm_manager.save_assistant_turn.assert_called_once_with(
             "test_session_123",
             "Answer with citations"
