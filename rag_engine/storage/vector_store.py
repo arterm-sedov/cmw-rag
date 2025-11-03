@@ -25,6 +25,7 @@ class ChromaStore:
     @property
     def collection(self):
         if self._client is None:
+            # Use PersistentClient from latest ChromaDB
             self._client = chromadb.PersistentClient(path=self.persist_dir)
         if self._collection is None:
             self._collection = self._client.get_or_create_collection(name=self.collection_name, metadata={"hnsw:space": "cosine"})
