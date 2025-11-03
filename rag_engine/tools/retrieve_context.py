@@ -143,7 +143,8 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
             "has_results": len(articles_data) > 0,
         },
     }
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    # Compact JSON (no indent) - internal communication, readability not needed
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
 
 @tool("retrieve_context", args_schema=RetrieveContextSchema)

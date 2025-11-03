@@ -8,8 +8,8 @@ from typing import Any
 
 import tiktoken
 
-from rag_engine.core.chunker import split_text
 from rag_engine.config.settings import settings
+from rag_engine.core.chunker import split_text
 from rag_engine.retrieval.reranker import build_reranker
 from rag_engine.retrieval.vector_search import top_k_search
 from rag_engine.utils.metadata_utils import extract_numeric_kbid
@@ -295,9 +295,9 @@ class RAGRetriever:
         return content
 
     def _apply_context_budget(
-        self, 
-        articles: list[Article], 
-        question: str = "", 
+        self,
+        articles: list[Article],
+        question: str = "",
         system_prompt: str = "",
         reserved_tokens: int = 0
     ) -> list[Article]:
@@ -337,19 +337,34 @@ class RAGRetriever:
             overhead=200,
         )
         # Subtract both estimated tokens AND conversation history tokens
-        max_context_tokens = max(0, context_window - reserved_est["total_tokens"] - reserved_tokens)
+        base_context_tokens = max(0, context_window - reserved_est["total_tokens"] - reserved_tokens)
+
+        # CRITICAL: Apply JSON serialization overhead safety margin
+        # Tool wraps articles in compact JSON (no indent/spaces) with overhead from:
+        # - Metadata dict per article (~500-1000 tokens each)
+        # - JSON keys: kb_id, title, url, content, metadata
+        # Raw content tokens * 1.4 ≈ JSON size (conservative estimate)
+        # Use 70% of available space for raw content to stay within budget
+        JSON_OVERHEAD_SAFETY_MARGIN = 0.70
+        max_context_tokens = int(base_context_tokens * JSON_OVERHEAD_SAFETY_MARGIN)
 
         if reserved_tokens > 0:
             logger.info(
-                "Context window: %d tokens, reserved for conversation: %d, using %d for articles",
+                "Context window: %d tokens, reserved for conversation: %d, "
+                "base budget: %d, with JSON overhead margin (×%.1f): %d tokens for articles",
                 context_window,
                 reserved_tokens,
+                base_context_tokens,
+                JSON_OVERHEAD_SAFETY_MARGIN,
                 max_context_tokens,
             )
         else:
             logger.info(
-                "Context window: %d tokens, using %d for articles",
+                "Context window: %d tokens, base budget: %d, "
+                "with JSON overhead margin (×%.1f): %d tokens for articles",
                 context_window,
+                base_context_tokens,
+                JSON_OVERHEAD_SAFETY_MARGIN,
                 max_context_tokens,
             )
 

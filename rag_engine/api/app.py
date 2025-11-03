@@ -244,6 +244,180 @@ def _check_context_fallback(messages: list[dict]) -> str | None:
     return None
 
 
+def compress_tool_results_if_needed(state: dict, runtime) -> dict | None:
+    """Compress tool results before LLM call if approaching context limit.
+
+    This middleware runs right before each LLM invocation. It checks if the
+    accumulated tool results + conversation would exceed 85% of the context window.
+    If so, it compresses the least relevant articles using the summarization utility.
+
+    This is the lean way to handle dynamic compression without modifying the
+    streaming loop or tool logic.
+
+    Args:
+        state: Agent state containing messages
+        runtime: Runtime object with access to model config
+
+    Returns:
+        Updated state dict with compressed messages, or None if no changes needed
+    """
+    import json
+
+    from rag_engine.llm.llm_manager import MODEL_CONFIGS
+    from rag_engine.llm.summarization import summarize_to_tokens
+    from rag_engine.llm.token_utils import count_tokens
+
+    messages = state.get("messages", [])
+    if not messages:
+        return None
+
+    # Get current model's context window
+    current_model = getattr(runtime, "model", None) or settings.default_model
+    model_config = MODEL_CONFIGS.get(current_model)
+    if not model_config:
+        for key in MODEL_CONFIGS:
+            if key != "default" and key in str(current_model):
+                model_config = MODEL_CONFIGS[key]
+                break
+    if not model_config:
+        model_config = MODEL_CONFIGS["default"]
+
+    context_window = model_config.get("token_limit", 262144)
+    threshold = int(context_window * 0.85)  # 85% threshold
+
+    # Count total tokens in messages
+    total_tokens = 0
+    tool_message_indices = []
+
+    for idx, msg in enumerate(messages):
+        content = getattr(msg, "content", "") if hasattr(msg, "content") else msg.get("content", "")
+        if content and isinstance(content, str):
+            total_tokens += count_tokens(content)
+
+            # Track tool messages (type="tool" or ToolMessage class)
+            msg_type = getattr(msg, "type", None) if hasattr(msg, "type") else msg.get("type")
+            if msg_type == "tool":
+                tool_message_indices.append(idx)
+
+    # Check if we need compression
+    if total_tokens <= threshold:
+        return None  # All good, no changes needed
+
+    if not tool_message_indices:
+        return None  # No tool messages to compress
+
+    logger.warning(
+        "Context at %d tokens (%.1f%% of %d window), compressing tool results",
+        total_tokens,
+        100 * total_tokens / context_window,
+        context_window
+    )
+
+    # Calculate how much to compress (target: get below 80% to leave room for output)
+    target_tokens = int(context_window * 0.80)
+    tokens_to_save = total_tokens - target_tokens
+
+    # Find the user's question for summarization guidance
+    user_question = ""
+    for msg in messages:
+        msg_type = getattr(msg, "type", None) if hasattr(msg, "type") else msg.get("type")
+        if msg_type == "human":
+            content = getattr(msg, "content", "") if hasattr(msg, "content") else msg.get("content", "")
+            if content:
+                user_question = content
+                break  # Use the first (most recent) user message
+
+    # Compress tool messages, starting from the last one (least relevant)
+    tokens_saved = 0
+    updated_messages = list(messages)  # Copy to avoid mutating original
+
+    for idx in reversed(tool_message_indices):
+        if tokens_saved >= tokens_to_save:
+            break
+
+        msg = updated_messages[idx]
+        content = getattr(msg, "content", "") if hasattr(msg, "content") else msg.get("content", "")
+
+        try:
+            # Parse tool result JSON
+            result = json.loads(content)
+            articles = result.get("articles", [])
+
+            if not articles:
+                continue
+
+            # Compress articles from the end (least relevant first)
+            for i in range(len(articles) - 1, -1, -1):
+                if tokens_saved >= tokens_to_save:
+                    break
+
+                article = articles[i]
+                original_content = article.get("content", "")
+                original_tokens = count_tokens(original_content)
+
+                # Target: compress to 30% of original size
+                article_target = max(300, int(original_tokens * 0.30))
+
+                # Compress using existing summarization utility
+                compressed = summarize_to_tokens(
+                    title=article.get("title", "Article"),
+                    url=article.get("url", ""),
+                    matched_chunks=[original_content],  # Use content as chunk
+                    full_body=None,
+                    target_tokens=article_target,
+                    guidance=user_question,
+                    llm=llm_manager,  # Use global llm_manager
+                    max_retries=1,  # Quick compression
+                )
+
+                # Update article
+                compressed_tokens = count_tokens(compressed)
+                articles[i]["content"] = compressed
+                articles[i]["metadata"]["compressed"] = True
+
+                saved = original_tokens - compressed_tokens
+                tokens_saved += saved
+
+                logger.info(
+                    "Compressed article '%s': %d → %d tokens (saved %d)",
+                    article.get("title", "")[:50],
+                    original_tokens,
+                    compressed_tokens,
+                    saved
+                )
+
+            # Update the message content with compressed articles
+            result["metadata"]["compressed_articles_count"] = sum(
+                1 for a in articles if a.get("metadata", {}).get("compressed")
+            )
+            result["metadata"]["tokens_saved_by_compression"] = tokens_saved
+
+            # Create new compact JSON
+            new_content = json.dumps(result, ensure_ascii=False, separators=(',', ':'))
+
+            # Update message content in place
+            if hasattr(msg, "content"):
+                msg.content = new_content  # LangChain message object
+            else:
+                updated_messages[idx] = {**msg, "content": new_content}  # Dict
+
+        except (json.JSONDecodeError, Exception) as exc:
+            logger.warning("Failed to compress tool message at index %d: %s", idx, exc)
+            continue
+
+    if tokens_saved > 0:
+        logger.info(
+            "Compression complete: saved %d tokens, new total ~%d (%.1f%% of window)",
+            tokens_saved,
+            total_tokens - tokens_saved,
+            100 * (total_tokens - tokens_saved) / context_window
+        )
+        # Return updated messages
+        return {"messages": updated_messages}
+
+    return None  # No compression happened
+
+
 def _create_rag_agent(override_model: str | None = None):
     """Create LangChain agent with forced retrieval tool execution and memory compression.
 
@@ -260,10 +434,10 @@ def _create_rag_agent(override_model: str | None = None):
     """
     import tiktoken
     from langchain.agents import create_agent
-    from langchain.agents.middleware import SummarizationMiddleware
+    from langchain.agents.middleware import SummarizationMiddleware, before_model
 
     from rag_engine.llm.llm_manager import MODEL_CONFIGS
-    from rag_engine.llm.prompts import SYSTEM_PROMPT
+    from rag_engine.llm.prompts import SUMMARIZATION_PROMPT, SYSTEM_PROMPT
     from rag_engine.tools import retrieve_context
     from rag_engine.utils.context_tracker import AgentContext
 
@@ -347,17 +521,13 @@ def _create_rag_agent(override_model: str | None = None):
         system_prompt=SYSTEM_PROMPT,
         context_schema=AgentContext,  # Typed context for tools
         middleware=[
+            before_model(compress_tool_results_if_needed),  # Dynamic tool result compression
             SummarizationMiddleware(
                 model=base_model,  # Use same model for summarization
                 token_counter=tiktoken_counter,  # Use our tiktoken-based counter
                 max_tokens_before_summary=threshold_tokens,  # Configurable threshold (default 70%)
                 messages_to_keep=messages_to_keep,  # Configurable, default 2 (matches old handler)
-                summary_prompt=(
-                    "Summarize the conversation so far, preserving key context "
-                    "about the user's questions and the information provided. "
-                    "Focus on facts, decisions, and ongoing topics. "
-                    "Keep the summary concise and relevant."
-                ),
+                summary_prompt=SUMMARIZATION_PROMPT,  # Use existing prompt from prompts.py
                 summary_prefix="## Предыдущее обсуждение / Previous conversation:",
             ),
         ],
