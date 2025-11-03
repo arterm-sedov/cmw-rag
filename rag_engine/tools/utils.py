@@ -45,38 +45,59 @@ def parse_tool_result_to_articles(tool_result: str) -> list[Article]:
 def accumulate_articles_from_tool_results(tool_results: list[str]) -> list[Article]:
     """Accumulate articles from multiple retrieve_context tool calls.
 
-    This function collects articles from multiple tool invocations and returns
-    them as a single list. Deduplication by kbId/URL happens later in
-    format_with_citations(), so all articles are preserved here.
+    This function collects articles from multiple tool invocations and deduplicates
+    them by kb_id to prevent the LLM from seeing the same article content multiple times.
+    This is critical when the agent makes similar queries that return overlapping results.
+
+    Deduplication strategy:
+    - Primary key: kb_id (unique article identifier)
+    - Preserves first occurrence of each article
+    - Maintains original ordering from tool calls
 
     Args:
         tool_results: List of JSON strings from retrieve_context tool calls
 
     Returns:
-        Combined list of Article objects from all tool calls
+        Deduplicated list of Article objects from all tool calls
 
     Example:
-        >>> # LLM makes multiple tool calls
+        >>> # LLM makes multiple tool calls with overlapping results
         >>> result1 = retrieve_context.invoke({"query": "authentication"})
-        >>> result2 = retrieve_context.invoke({"query": "permissions"})
-        >>> 
-        >>> # Accumulate all articles
+        >>> # Returns: Article A, B, C
+        >>> result2 = retrieve_context.invoke({"query": "user authentication"})
+        >>> # Returns: Article A, D, E (A is duplicate!)
+        >>>
+        >>> # Accumulate and deduplicate
         >>> all_articles = accumulate_articles_from_tool_results([result1, result2])
-        >>> 
-        >>> # Use with LLM - format_with_citations will deduplicate
+        >>> # Returns: Article A, B, C, D, E (A only once!)
+        >>>
+        >>> # Use with LLM - no duplicate content in context
         >>> answer = llm_manager.generate(question, all_articles)
         >>> final = format_with_citations(answer, all_articles)
     """
     accumulated = []
+    seen_kb_ids = set()
 
     for tool_result in tool_results:
         articles = parse_tool_result_to_articles(tool_result)
-        accumulated.extend(articles)
+
+        for article in articles:
+            # Deduplicate by kb_id (unique article identifier)
+            if article.kb_id and article.kb_id not in seen_kb_ids:
+                accumulated.append(article)
+                seen_kb_ids.add(article.kb_id)
+            elif not article.kb_id:
+                # If no kb_id, preserve the article (rare edge case)
+                accumulated.append(article)
+
+    total_articles = sum(len(parse_tool_result_to_articles(r)) for r in tool_results)
+    duplicates_removed = total_articles - len(accumulated)
 
     logger.info(
-        "Accumulated %d articles from %d tool call(s)",
+        "Accumulated %d unique articles from %d tool call(s) (removed %d duplicates)",
         len(accumulated),
         len(tool_results),
+        duplicates_removed,
     )
 
     return accumulated

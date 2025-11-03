@@ -54,11 +54,11 @@ retriever = RAGRetriever(
 
 def _estimate_accumulated_context(messages: list[dict], tool_results: list) -> int:
     """Estimate total tokens for messages + tool results (JSON format).
-    
+
     Args:
         messages: Conversation messages
         tool_results: List of tool result JSON strings
-        
+
     Returns:
         Estimated token count
     """
@@ -96,10 +96,10 @@ def _estimate_accumulated_context(messages: list[dict], tool_results: list) -> i
 
 def _find_model_for_tokens(required_tokens: int) -> str | None:
     """Find a model that can handle the required token count.
-    
+
     Args:
         required_tokens: Minimum token capacity needed
-        
+
     Returns:
         Model name if found, None otherwise
     """
@@ -265,6 +265,7 @@ def _create_rag_agent(override_model: str | None = None):
     from rag_engine.llm.llm_manager import MODEL_CONFIGS
     from rag_engine.llm.prompts import SYSTEM_PROMPT
     from rag_engine.tools import retrieve_context
+    from rag_engine.utils.context_tracker import AgentContext
 
     # Use override model if provided (for fallback), otherwise use default
     selected_model = override_model or settings.default_model
@@ -344,6 +345,7 @@ def _create_rag_agent(override_model: str | None = None):
         model=model_with_tools,
         tools=[retrieve_context],
         system_prompt=SYSTEM_PROMPT,
+        context_schema=AgentContext,  # Typed context for tools
         middleware=[
             SummarizationMiddleware(
                 model=base_model,  # Use same model for summarization
@@ -431,16 +433,30 @@ def agent_chat_handler(
     answer = ""
     current_model = selected_model or settings.default_model
 
+    # Track accumulated context for progressive budgeting
+    # Agent is responsible for counting context, not the tool
+    from rag_engine.utils.context_tracker import AgentContext, estimate_accumulated_tokens
+
+    conversation_tokens, _ = estimate_accumulated_tokens(messages, [])
+
     try:
         # Track tool execution state
         # Only stream text content when NOT executing tools
         tool_executing = False
         import json
 
+        # Pass accumulated context to agent via typed context parameter
+        # Tools can access this via runtime.context (typed, clean!)
+        agent_context = AgentContext(
+            conversation_tokens=conversation_tokens,
+            accumulated_tool_tokens=0,  # Updated as we go
+        )
+
         # Use multiple stream modes for complete streaming experience
         # Per https://docs.langchain.com/oss/python/langchain/streaming#stream-multiple-modes
         for stream_mode, chunk in agent.stream(
             {"messages": messages},
+            context=agent_context,
             stream_mode=["updates", "messages"]
         ):
             # Handle "messages" mode for token streaming
@@ -453,6 +469,18 @@ def agent_chat_handler(
                     tool_results.append(token.content)
                     logger.debug("Tool result received, %d total results", len(tool_results))
                     tool_executing = False
+
+                    # Update accumulated context for next tool call
+                    # Agent tracks context, not the tool!
+                    _, accumulated_tool_tokens = estimate_accumulated_tokens([], tool_results)
+                    agent_context.accumulated_tool_tokens = accumulated_tool_tokens
+
+                    logger.debug(
+                        "Updated accumulated context: conversation=%d, tools=%d (total: %d)",
+                        conversation_tokens,
+                        accumulated_tool_tokens,
+                        conversation_tokens + accumulated_tool_tokens,
+                    )
 
                     # Parse result to get article count and emit completion metadata
                     try:

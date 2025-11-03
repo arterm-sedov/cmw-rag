@@ -132,7 +132,7 @@ class TestAccumulateArticlesFromToolResults:
         assert [a.kb_id for a in articles] == ["1", "2", "3", "4", "5"]
 
     def test_accumulate_with_duplicates(self):
-        """Test accumulating includes duplicates (dedup happens in format_with_citations)."""
+        """Test accumulating deduplicates by kb_id to prevent duplicate content."""
         result1 = json.dumps({
             "articles": [
                 {"kb_id": "1", "content": "Content 1", "metadata": {"title": "Article 1"}},
@@ -150,11 +150,11 @@ class TestAccumulateArticlesFromToolResults:
 
         articles = accumulate_articles_from_tool_results([result1, result2])
 
-        # Accumulation preserves all - deduplication happens in format_with_citations
-        assert len(articles) == 3
-        assert articles[0].kb_id == "1"
-        assert articles[1].kb_id == "1"  # Duplicate preserved
-        assert articles[2].kb_id == "2"
+        # NEW BEHAVIOR: Deduplication happens during accumulation by kb_id
+        # This prevents the LLM from seeing duplicate article content
+        assert len(articles) == 2  # Only unique articles
+        assert articles[0].kb_id == "1"  # First occurrence kept
+        assert articles[1].kb_id == "2"  # Second unique article
 
     def test_accumulate_empty_results(self):
         """Test accumulating from empty tool results."""
@@ -253,18 +253,18 @@ class TestIntegrationWithFormatWithCitations:
             "metadata": {"articles_count": 2},
         })
 
-        # Accumulate articles
+        # Accumulate articles - NEW BEHAVIOR: deduplicates during accumulation
         all_articles = accumulate_articles_from_tool_results([result1, result2])
-        assert len(all_articles) == 4  # Includes duplicate
+        assert len(all_articles) == 3  # Now deduplicates, only unique articles
 
-        # Format with citations - should deduplicate
+        # Format with citations - articles already deduplicated
         formatted = format_with_citations("Answer text", all_articles)
 
         # Should only cite each article once
         assert "1. [Article 1]" in formatted
         assert "2. [Article 2]" in formatted
         assert "3. [Article 3]" in formatted
-        assert formatted.count("Article 2") == 1  # Only cited once despite duplicate
+        assert formatted.count("Article 2") == 1  # Only appears once
 
     def test_accumulated_articles_preserve_order(self):
         """Test that citations preserve order from first occurrence."""
