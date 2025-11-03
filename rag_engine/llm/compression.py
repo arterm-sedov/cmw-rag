@@ -288,10 +288,34 @@ def compress_tool_messages(
     threshold = int(context_window * threshold_pct)
 
     # Count total tokens in messages
+    # Note: count_messages_tokens may underestimate JSON serialization overhead
     total_tokens = count_messages_tokens(messages)
 
-    # Check if we need compression
-    if total_tokens <= threshold:
+    # Add safety margin for JSON serialization overhead (tool messages are JSON strings)
+    # Tool message content is JSON, which adds ~30% overhead vs raw content
+    tool_message_count = sum(1 for m in messages if is_tool_message(m))
+    if tool_message_count > 0:
+        # Estimate JSON overhead: count tool message content separately and add 30% overhead
+        tool_tokens_raw = sum(
+            count_tokens(get_message_content(m) or "") for m in messages if is_tool_message(m)
+        )
+        json_overhead = int(tool_tokens_raw * 0.3)
+        total_tokens_adjusted = total_tokens + json_overhead
+    else:
+        total_tokens_adjusted = total_tokens
+
+    # Log token count for debugging
+    logger.info(
+        "Compression check: total=%d tokens (adjusted=%d with JSON overhead), threshold=%d (%.1f%% of %d window)",
+        total_tokens,
+        total_tokens_adjusted,
+        threshold,
+        threshold_pct * 100,
+        context_window,
+    )
+
+    # Check if we need compression - use adjusted count for more accurate check
+    if total_tokens_adjusted <= threshold:
         return None  # All good, no changes needed
 
     # Find all tool message indices
@@ -304,9 +328,10 @@ def compress_tool_messages(
         return None  # No tool messages to compress
 
     logger.warning(
-        "Context at %d tokens (%.1f%% of %d window), compressing articles proportionally by rank",
+        "Context at %d tokens (adjusted=%d, %.1f%% of %d window), compressing articles proportionally by rank",
         total_tokens,
-        100 * total_tokens / context_window,
+        total_tokens_adjusted,
+        100 * total_tokens_adjusted / context_window,
         context_window,
     )
 
@@ -364,7 +389,7 @@ def compress_tool_messages(
             all_articles[0].setdefault("metadata", {})["normalized_rank"] = 0.0
             all_articles[0].setdefault("metadata", {})["article_rank"] = 0
 
-    # Calculate target tokens
+    # Calculate target tokens - use more aggressive target to ensure we fit
     target_tokens = int(context_window * target_pct)
 
     # Count non-tool message tokens (conversation + system prompts)
@@ -376,8 +401,34 @@ def compress_tool_messages(
     # Available budget for articles = target - conversation - LLM overhead
     available_for_articles = max(0, int(target_tokens - non_tool_tokens - overhead_tokens))
 
+    # Log budget calculation for debugging
+    logger.info(
+        "Compression budget: target=%d, non_tool=%d, overhead=%d, available_for_articles=%d",
+        target_tokens,
+        non_tool_tokens,
+        overhead_tokens,
+        available_for_articles,
+    )
+
+    # If available budget is too small, reduce target more aggressively
+    if available_for_articles <= 0:
+        logger.warning(
+            "Available budget is zero or negative (%d). Using aggressive fallback: 10%% of context window",
+            available_for_articles,
+        )
+        available_for_articles = max(300 * len(all_articles), int(context_window * 0.10))
+
     # Get user question for summarization guidance
     user_question = extract_user_question(messages)
+
+    # Log current article sizes before compression
+    current_article_tokens = sum(count_tokens(a.get("content", "")) for a in all_articles)
+    logger.info(
+        "Articles before compression: %d articles, %d total tokens, target=%d tokens",
+        len(all_articles),
+        current_article_tokens,
+        available_for_articles,
+    )
 
     # Compress ALL articles proportionally by rank
     compressed_articles, tokens_saved = compress_all_articles_proportionally_by_rank(
@@ -387,8 +438,40 @@ def compress_tool_messages(
         llm_manager=llm_manager,
     )
 
+    # Log compression results
+    if tokens_saved > 0:
+        compressed_total = sum(count_tokens(a.get("content", "")) for a in compressed_articles)
+        logger.info(
+            "Compression result: saved %d tokens, compressed_total=%d tokens (target was %d)",
+            tokens_saved,
+            compressed_total,
+            available_for_articles,
+        )
+    else:
+        logger.warning(
+            "Compression saved 0 tokens. Articles may already fit or compression failed. "
+            "Current: %d tokens, target: %d tokens",
+            current_article_tokens,
+            available_for_articles,
+        )
+
     if tokens_saved == 0:
-        return None  # Compression didn't help
+        # If compression didn't help but we're still over limit, force more aggressive compression
+        if current_article_tokens > available_for_articles:
+            logger.warning(
+                "Compression didn't help but still over budget. "
+                "Forcing aggressive compression to 50%% of target: %d tokens",
+                int(available_for_articles * 0.5),
+            )
+            # Try again with even more aggressive target
+            compressed_articles, tokens_saved = compress_all_articles_proportionally_by_rank(
+                articles=all_articles,
+                target_tokens=int(available_for_articles * 0.5),
+                guidance=user_question,
+                llm_manager=llm_manager,
+            )
+            if tokens_saved == 0:
+                return None  # Still failed
 
     # Create mapping: kb_id -> compressed article
     compressed_by_kb_id = {a["kb_id"]: a for a in compressed_articles}
