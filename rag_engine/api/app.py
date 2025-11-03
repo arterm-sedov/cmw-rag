@@ -418,6 +418,70 @@ def compress_tool_results_if_needed(state: dict, runtime) -> dict | None:
     return None  # No compression happened
 
 
+def _compute_context_tokens_from_state(messages: list[dict]) -> tuple[int, int]:
+    """Compute (conversation_tokens, accumulated_tool_tokens) from agent state messages.
+
+    - Conversation tokens: count non-tool message contents
+    - Accumulated tool tokens: parse tool JSONs, dedupe by kb_id, sum content tokens, add ~30% JSON overhead
+    """
+    from rag_engine.llm.token_utils import count_tokens
+    from rag_engine.tools.utils import parse_tool_result_to_articles
+
+    conversation_tokens = 0
+    accumulated_tool_tokens = 0
+    seen_kb_ids: set[str] = set()
+
+    for msg in messages:
+        content = getattr(msg, "content", "") if hasattr(msg, "content") else msg.get("content", "")
+        if not isinstance(content, str) or not content:
+            continue
+        msg_type = getattr(msg, "type", None) if hasattr(msg, "type") else msg.get("type")
+        if msg_type == "tool":
+            try:
+                articles = parse_tool_result_to_articles(content)
+                for art in articles:
+                    if art.kb_id and art.kb_id not in seen_kb_ids:
+                        accumulated_tool_tokens += count_tokens(art.content)
+                        seen_kb_ids.add(art.kb_id)
+            except Exception as exc:
+                # If parsing fails, log and skip rather than guessing; keep accounting strict
+                logger.warning("Failed to parse tool result for token accounting: %s", exc)
+                continue
+        else:
+            conversation_tokens += count_tokens(content)
+
+    # JSON overhead ~30%
+    accumulated_tool_tokens = int(accumulated_tool_tokens * 1.3)
+    return conversation_tokens, accumulated_tool_tokens
+
+
+def update_context_budget(state: dict, runtime) -> dict | None:
+    """Middleware to populate runtime.context token figures before each model call.
+
+    Ensures tools see accurate conversation and accumulated tool tokens via runtime.context.
+    """
+    messages = state.get("messages", [])
+    if not messages:
+        return None
+
+    conv_toks, tool_toks = _compute_context_tokens_from_state(messages)
+
+    # Mutate runtime.context (AgentContext) so tools can read accurate figures
+    try:
+        if hasattr(runtime, "context") and runtime.context:
+            runtime.context.conversation_tokens = conv_toks
+            runtime.context.accumulated_tool_tokens = tool_toks
+            logger.debug(
+                "Updated runtime.context: conversation_tokens=%d, accumulated_tool_tokens=%d",
+                conv_toks,
+                tool_toks,
+            )
+    except Exception:
+        # Do not fail the run due to budgeting issues
+        logger.debug("Unable to update runtime.context tokens")
+
+    return None
+
 def _create_rag_agent(override_model: str | None = None):
     """Create LangChain agent with forced retrieval tool execution and memory compression.
 
@@ -521,6 +585,7 @@ def _create_rag_agent(override_model: str | None = None):
         system_prompt=SYSTEM_PROMPT,
         context_schema=AgentContext,  # Typed context for tools
         middleware=[
+            before_model(update_context_budget),  # Keep runtime.context tokens fresh
             before_model(compress_tool_results_if_needed),  # Dynamic tool result compression
             SummarizationMiddleware(
                 model=base_model,  # Use same model for summarization
@@ -858,53 +923,6 @@ def _salt_session_id(base_session_id: str | None, history: list[dict], current_m
     return hashlib.sha256(salted.encode()).hexdigest()[:32]
 
 
-def chat_handler(message: str, history: list[dict], request: gr.Request | None = None) -> Generator[str, None, None]:
-    if not message or not message.strip():
-        yield "Пожалуйста, введите вопрос / Please enter a question."
-        return
-
-    docs = retriever.retrieve(message)
-
-    # If no documents found, inject a message into the context so LLM knows
-    # explicitly that no relevant materials were found
-    has_no_results_doc = False
-    if not docs:
-        # Create a fake document with the "no results" message to inject into context
-        from rag_engine.retrieval.retriever import Article
-        no_results_msg = "К сожалению, не найдено релевантных материалов / No relevant results found."
-        no_results_doc = Article(
-            kb_id="",
-            content=no_results_msg,
-            metadata={"title": "No Results", "kbId": "", "_is_no_results": True}
-        )
-        docs = [no_results_doc]
-        has_no_results_doc = True
-
-    base_session_id = getattr(request, "session_hash", None) if request is not None else None
-    session_id = _salt_session_id(base_session_id, history, message)
-
-    answer = ""
-    for token in llm_manager.stream_response(
-        message,
-        docs,
-        enable_fallback=settings.llm_fallback_enabled,
-        allowed_fallback_models=get_allowed_fallback_models(),
-        session_id=session_id,
-    ):
-        answer += token
-        yield answer
-
-    # Save assistant turn with footer appended, once at the end
-    # format_with_citations handles empty docs gracefully (no citations)
-    # If we injected the "no results" message, don't add citations
-    if has_no_results_doc:
-        final_text = answer  # Don't add citations for "no results" message
-    else:
-        final_text = format_with_citations(answer, docs)
-    llm_manager.save_assistant_turn(session_id, final_text)
-    yield final_text
-
-
 def query_rag(question: str, provider: str = "gemini", top_k: int = 5) -> str:
     if not question or not question.strip():
         return "Error: Empty question"
@@ -953,10 +971,9 @@ chatbot_config = gr.Chatbot(
     elem_classes=["gradio-chatbot"],
 )
 
-# Select handler based on agent mode setting
-handler_fn = agent_chat_handler if settings.use_agent_mode else chat_handler
-handler_mode = "agent-based (LangChain)" if settings.use_agent_mode else "direct retrieval"
-logger.info("Using %s handler for chat interface", handler_mode)
+# Force agent-based handler; legacy direct handler removed
+handler_fn = agent_chat_handler
+logger.info("Using agent-based (LangChain) handler for chat interface")
 
 demo = gr.ChatInterface(
     fn=handler_fn,

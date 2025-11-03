@@ -21,17 +21,25 @@ alwaysApply: true
 - Prefer LangChain purity for LangChain code.
 - Use sentence_transformers when needed and practical.
 - Follow LangChain's best practices, patterns, and conventions:
-    - https://python.langchain.com/docs/introduction/
-    - https://python.langchain.com/docs/concepts/streaming/
-    - https://python.langchain.com/docs/concepts/runnables/
-    - https://python.langchain.com/docs/concepts/tool_calling/
+    - https://docs.langchain.com/oss/python/langchain/overview
+    - https://docs.langchain.com/oss/python/langchain/agents
+    - https://reference.langchain.com/python/langchain/agents/
+    - https://docs.langchain.com/oss/python/langchain/models
+    - https://reference.langchain.com/python/langchain/models/
+    - https://docs.langchain.com/oss/python/langchain/messages
+    - https://reference.langchain.com/python/langchain/messages/
+    - https://docs.langchain.com/oss/python/langchain/tools
+    - https://reference.langchain.com/python/langchain/tools/
+    - https://docs.langchain.com/oss/python/langchain/short-term-memory
+    - https://docs.langchain.com/oss/python/langchain/streaming
+    - https://docs.langchain.com/oss/python/langchain/middleware
+    - https://reference.langchain.com/python/langchain/middleware/
+    - https://reference.langchain.com/python/langchain/
     - https://langchain-ai.github.io/langgraph/concepts/memory/
-    - https://python.langchain.com/docs/how_to/
-    - https://langchain-ai.github.io/langgraph/concepts/why-langgraph/
-    - https://python.langchain.com/docs/how_to/
-    - https://python.langchain.com/docs/concepts/
-    - https://python.langchain.com/docs/integrations/providers/
-    - https://python.langchain.com/api_reference/
+    - https://reference.langchain.com/python/integrations/
+    - https://docs.langchain.com/oss/python/langchain/quickstart
+    - https://docs.langchain.com/oss/python/langchain/philosophy
+    - https://docs.langchain.com/oss/python/langchain/runtime
     - https://langchain-ai.github.io/langgraph/guides/
     - https://langchain-ai.github.io/langgraph/concepts/streaming/
     - https://langchain-ai.github.io/langgraph/concepts/memory/
@@ -57,5 +65,9 @@ alwaysApply: true
 - Reanalyze your changes twice for any issues you might have introduced.
 - Place imports always on top.
 - Use environment variables for secrets.
-- Put reports to a relevant `docs/**/progress_reports/` folder under `/docs/` or its relevant `cwd/subfolder`
-- Put tests to `/agent_ng/_tests` preferably, or under a relevant `cwd/_tests` where the files are modified or created, otherwise to `@/.misc_files`
+- Put reports to a relevant `docs/**/progress_reports/` folder under `/docs/`
+- Put tests to `/rag_engine/tests` preferably.
+- Always update and run testsuite after any changes.
+    - LangChain Test docs https://docs.langchain.com/oss/python/langchain/test
+- Always update readme after any changes that affect it.
+- Avoid try/except-heavy code and hardcoded fallbacks. Prefer robust, explicit logic, and catch exceptions only when necessary and meaningful. Code should work correctly without hidden fallbacks.

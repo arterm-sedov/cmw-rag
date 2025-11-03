@@ -15,7 +15,8 @@ def test_chat_interface_initialization(monkeypatch):
 
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
-            pass
+            from types import SimpleNamespace
+            self._conversations = SimpleNamespace(append=lambda *a, **k: None)
 
         def stream_response(self, message, docs):  # noqa: ANN001
             yield "response"
@@ -27,7 +28,7 @@ def test_chat_interface_initialization(monkeypatch):
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
-        def retrieve(self, query, top_k=None):  # noqa: ANN001
+        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
             doc = SimpleNamespace(
                 metadata={
                     "kbId": "123",
@@ -68,7 +69,8 @@ def test_api_and_handler_empty_cases(monkeypatch):
 
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
-            pass
+            from types import SimpleNamespace
+            self._conversations = SimpleNamespace(append=lambda *a, **k: None)
 
         def stream_response(self, message, docs, **kwargs):  # noqa: ANN001, ANN003
             # LLM receives injected "no results" document when docs is empty
@@ -92,7 +94,7 @@ def test_api_and_handler_empty_cases(monkeypatch):
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
-        def retrieve(self, query, top_k=None):  # noqa: ANN001
+        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
             return []  # Empty results - will trigger injection of "no results" message
 
     monkeypatch.setattr("rag_engine.retrieval.embedder.FRIDAEmbedder", FakeEmbedder)
@@ -111,15 +113,19 @@ def test_api_and_handler_empty_cases(monkeypatch):
     result = app.query_rag("test question")
     assert "Sorry" in result or "found" in result.lower() or "information" in result.lower()
 
-    # chat_handler yields validation message on empty input
-    gen = app.chat_handler("", [])
+    # agent_chat_handler yields validation message on empty input
+    gen = app.agent_chat_handler("", [])
     first = next(gen)
-    assert "Please enter a question" in first or "Введите вопрос" in first
+    if isinstance(first, dict):
+        content = first.get("content", "")
+    else:
+        content = first
+    assert "Please enter a question" in content or "Введите вопрос" in content
 
-    # chat_handler with empty docs should still call LLM (not block)
-    gen = app.chat_handler("test question", [])
+    # agent_chat_handler with empty docs should still stream a response (not block)
+    gen = app.agent_chat_handler("test question", [])
     result = list(gen)
-    assert len(result) > 0  # Should have some response
+    assert any(isinstance(x, str) and x for x in result)
 
 
 def test_chat_handler_appends_footer_and_saves_to_memory(monkeypatch):
@@ -135,7 +141,9 @@ def test_chat_handler_appends_footer_and_saves_to_memory(monkeypatch):
 
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
+            from types import SimpleNamespace
             self.last_saved = None
+            self._conversations = SimpleNamespace(append=lambda *a, **k: None)
 
         def stream_response(self, message, docs, **kwargs):  # noqa: ANN001
             yield "partial"
@@ -173,14 +181,47 @@ def test_chat_handler_appends_footer_and_saves_to_memory(monkeypatch):
 
     app = importlib.reload(importlib.import_module("rag_engine.api.app"))
 
+    # Patch agent creation to synthesize a tool result followed by AI text
+    def fake_agent_stream(*args, **kwargs):  # noqa: ANN001, ANN003
+        import json as _json
+        # First yield a tool message with one small article
+        class ToolMsg:
+            type = "tool"
+            content = _json.dumps({
+                "articles": [{
+                    "kb_id": "kb-1",
+                    "title": "Doc",
+                    "url": "https://example.com",
+                    "content": "Short content",
+                    "metadata": {"kbId": "kb-1", "title": "Doc"}
+                }],
+                "metadata": {"articles_count": 1, "query": "q"}
+            }, ensure_ascii=False)
+
+        yield ("messages", (ToolMsg(), {}))
+
+        # Then yield an AI text message chunk
+        class AiMsg:
+            tool_calls = None
+            content_blocks = [{"type": "text", "text": "Final answer body."}]
+
+        yield ("messages", (AiMsg(), {}))
+
+    class FakeAgent:
+        def stream(self, *a, **k):  # noqa: ANN001, ANN003
+            return fake_agent_stream()
+
+    app._create_rag_agent = lambda override_model=None: FakeAgent()  # type: ignore
+
     # Build a fake request with session_hash
     class R:
         session_hash = "sess-1"
 
-    gen = app.chat_handler("Question?", [], R())
+    gen = app.agent_chat_handler("Question?", [], R())
     outs = list(gen)
-    assert outs[-1].startswith("partial answer") or outs[-1].endswith("partial answer")
-    assert any(h in outs[-1] for h in ("## Источники:", "## Sources:"))
+    final_text = "".join([x for x in outs if isinstance(x, str)])
+    # With a synthesized tool result, footer must be present
+    assert any(h in final_text for h in ("## Источники:", "## Sources:"))
 
 
 def test_session_salting_new_chat(monkeypatch):
@@ -192,7 +233,8 @@ def test_session_salting_new_chat(monkeypatch):
 
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
-            pass
+            from types import SimpleNamespace
+            self._conversations = SimpleNamespace(append=lambda sid, role, content: received_session_ids.append(sid))
 
         def stream_response(self, message, docs, session_id=None, **kwargs):  # noqa: ANN001
             if session_id:
@@ -206,7 +248,7 @@ def test_session_salting_new_chat(monkeypatch):
             return "answer"
 
     class FakeRetriever:
-        def retrieve(self, query, top_k=None):  # noqa: ANN001
+        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
             from types import SimpleNamespace
 
             return [
@@ -227,7 +269,7 @@ def test_session_salting_new_chat(monkeypatch):
         session_hash = "base-session-123"
 
     # New chat - empty history
-    gen = app.chat_handler("First message", [], Request())
+    gen = app.agent_chat_handler("First message", [], Request())
     list(gen)  # Consume generator
 
     # Verify session_id was generated from first message
@@ -246,7 +288,8 @@ def test_session_salting_loaded_chat(monkeypatch):
 
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
-            pass
+            from types import SimpleNamespace
+            self._conversations = SimpleNamespace(append=lambda sid, role, content: received_session_ids.append(sid))
 
         def stream_response(self, message, docs, session_id=None, **kwargs):  # noqa: ANN001
             if session_id:
@@ -260,7 +303,7 @@ def test_session_salting_loaded_chat(monkeypatch):
             return "answer"
 
     class FakeRetriever:
-        def retrieve(self, query, top_k=None):  # noqa: ANN001
+        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
             from types import SimpleNamespace
 
             return [
@@ -286,7 +329,7 @@ def test_session_salting_loaded_chat(monkeypatch):
         {"role": "assistant", "content": "Previous response"},
     ]
 
-    gen = app.chat_handler("Follow up", history, Request())
+    gen = app.agent_chat_handler("Follow up", history, Request())
     list(gen)  # Consume generator
 
     # Verify session_id was generated from first message in history (not current)
@@ -307,7 +350,8 @@ def test_session_salting_same_chat_preserves_session(monkeypatch):
 
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
-            pass
+            from types import SimpleNamespace
+            self._conversations = SimpleNamespace(append=lambda sid, role, content: received_session_ids.append(sid))
 
         def stream_response(self, message, docs, session_id=None, **kwargs):  # noqa: ANN001
             if session_id:
@@ -321,7 +365,7 @@ def test_session_salting_same_chat_preserves_session(monkeypatch):
             return "answer"
 
     class FakeRetriever:
-        def retrieve(self, query, top_k=None):  # noqa: ANN001
+        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
             from types import SimpleNamespace
 
             return [
@@ -347,13 +391,13 @@ def test_session_salting_same_chat_preserves_session(monkeypatch):
     ]
 
     # First call
-    gen1 = app.chat_handler("Second question", history, Request())
+    gen1 = app.agent_chat_handler("Second question", history, Request())
     list(gen1)
     session_id1 = received_session_ids[0]
 
     # Second call with same history
     received_session_ids.clear()
-    gen2 = app.chat_handler("Third question", history, Request())
+    gen2 = app.agent_chat_handler("Third question", history, Request())
     list(gen2)
     session_id2 = received_session_ids[0]
 
@@ -372,7 +416,8 @@ def test_session_salting_different_chats_isolated(monkeypatch):
 
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
-            pass
+            from types import SimpleNamespace
+            self._conversations = SimpleNamespace(append=lambda sid, role, content: received_session_ids.append(sid))
 
         def stream_response(self, message, docs, session_id=None, **kwargs):  # noqa: ANN001
             if session_id:
@@ -408,14 +453,14 @@ def test_session_salting_different_chats_isolated(monkeypatch):
 
     # Chat 1: first message "Hello"
     history1 = [{"role": "user", "content": "Hello"}]
-    gen1 = app.chat_handler("Follow up 1", history1, Request())
+    gen1 = app.agent_chat_handler("Follow up 1", history1, Request())
     list(gen1)
     session_id1 = received_session_ids[0]
 
     # Chat 2: first message "Hi" (different)
     received_session_ids.clear()
     history2 = [{"role": "user", "content": "Hi"}]
-    gen2 = app.chat_handler("Follow up 2", history2, Request())
+    gen2 = app.agent_chat_handler("Follow up 2", history2, Request())
     list(gen2)
     session_id2 = received_session_ids[0]
 
