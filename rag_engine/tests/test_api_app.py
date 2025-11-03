@@ -16,7 +16,12 @@ def test_chat_interface_initialization(monkeypatch):
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             from types import SimpleNamespace
+            from unittest.mock import Mock
             self._conversations = SimpleNamespace(append=lambda *a, **k: None)
+            self._mock_chat_model = Mock()
+
+        def _chat_model(self, provider=None):  # noqa: ANN001
+            return self._mock_chat_model
 
         def stream_response(self, message, docs):  # noqa: ANN001
             yield "response"
@@ -70,7 +75,12 @@ def test_api_and_handler_empty_cases(monkeypatch):
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             from types import SimpleNamespace
+            from unittest.mock import Mock
             self._conversations = SimpleNamespace(append=lambda *a, **k: None)
+            self._mock_chat_model = Mock()
+
+        def _chat_model(self, provider=None):  # noqa: ANN001
+            return self._mock_chat_model
 
         def stream_response(self, message, docs, **kwargs):  # noqa: ANN001, ANN003
             # LLM receives injected "no results" document when docs is empty
@@ -142,8 +152,13 @@ def test_chat_handler_appends_footer_and_saves_to_memory(monkeypatch):
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             from types import SimpleNamespace
+            from unittest.mock import Mock
             self.last_saved = None
             self._conversations = SimpleNamespace(append=lambda *a, **k: None)
+            self._mock_chat_model = Mock()
+
+        def _chat_model(self, provider=None):  # noqa: ANN001
+            return self._mock_chat_model
 
         def stream_response(self, message, docs, **kwargs):  # noqa: ANN001
             yield "partial"
@@ -234,7 +249,12 @@ def test_session_salting_new_chat(monkeypatch):
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             from types import SimpleNamespace
+            from unittest.mock import Mock
             self._conversations = SimpleNamespace(append=lambda sid, role, content: received_session_ids.append(sid))
+            self._mock_chat_model = Mock()
+
+        def _chat_model(self, provider=None):  # noqa: ANN001
+            return self._mock_chat_model
 
         def stream_response(self, message, docs, session_id=None, **kwargs):  # noqa: ANN001
             if session_id:
@@ -289,7 +309,12 @@ def test_session_salting_loaded_chat(monkeypatch):
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             from types import SimpleNamespace
+            from unittest.mock import Mock
             self._conversations = SimpleNamespace(append=lambda sid, role, content: received_session_ids.append(sid))
+            self._mock_chat_model = Mock()
+
+        def _chat_model(self, provider=None):  # noqa: ANN001
+            return self._mock_chat_model
 
         def stream_response(self, message, docs, session_id=None, **kwargs):  # noqa: ANN001
             if session_id:
@@ -351,7 +376,12 @@ def test_session_salting_same_chat_preserves_session(monkeypatch):
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             from types import SimpleNamespace
+            from unittest.mock import Mock
             self._conversations = SimpleNamespace(append=lambda sid, role, content: received_session_ids.append(sid))
+            self._mock_chat_model = Mock()
+
+        def _chat_model(self, provider=None):  # noqa: ANN001
+            return self._mock_chat_model
 
         def stream_response(self, message, docs, session_id=None, **kwargs):  # noqa: ANN001
             if session_id:
@@ -417,7 +447,12 @@ def test_session_salting_different_chats_isolated(monkeypatch):
     class FakeLLMManager:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             from types import SimpleNamespace
+            from unittest.mock import Mock
             self._conversations = SimpleNamespace(append=lambda sid, role, content: received_session_ids.append(sid))
+            self._mock_chat_model = Mock()
+
+        def _chat_model(self, provider=None):  # noqa: ANN001
+            return self._mock_chat_model
 
         def stream_response(self, message, docs, session_id=None, **kwargs):  # noqa: ANN001
             if session_id:

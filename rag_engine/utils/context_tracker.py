@@ -143,3 +143,64 @@ def extract_articles_from_runtime_state(runtime_state: dict) -> list[Article]:
 
     return articles
 
+
+def compute_thresholds(
+    window: int, pre_pct: float = 0.90, post_pct: float = 0.80
+) -> tuple[int, int]:
+    """Compute context thresholds for pre-agent and post-tool checks.
+
+    Args:
+        window: Context window size in tokens
+        pre_pct: Pre-agent threshold percentage (default: 0.90 = 90%)
+        post_pct: Post-tool threshold percentage (default: 0.80 = 80%)
+
+    Returns:
+        Tuple of (pre_threshold, post_threshold) in tokens
+
+    Example:
+        >>> from rag_engine.utils.context_tracker import compute_thresholds
+        >>> pre, post = compute_thresholds(100000, 0.90, 0.80)
+        >>> pre == 90000 and post == 80000
+        True
+    """
+    return int(window * pre_pct), int(window * post_pct)
+
+
+def estimate_accumulated_context(
+    messages: list[dict], tool_results: list[str], overhead: int = 40000
+) -> int:
+    """Estimate total tokens for messages + tool results (JSON format).
+
+    This function combines conversation messages and tool result JSON strings
+    to estimate the total accumulated context. Matches the logic from
+    `_estimate_accumulated_context` in app.py but uses centralized token counting.
+
+    Args:
+        messages: Conversation messages (dict or LangChain messages)
+        tool_results: List of tool result JSON strings
+        overhead: Buffer for system prompt, tool schemas, overhead (default: 40000)
+
+    Returns:
+        Estimated total token count including overhead
+
+    Example:
+        >>> from rag_engine.utils.context_tracker import estimate_accumulated_context
+        >>> messages = [{"role": "user", "content": "Hello"}]
+        >>> tool_results = ['{"articles": [...]}']
+        >>> total = estimate_accumulated_context(messages, tool_results)
+        >>> total > 0
+        True
+    """
+    from rag_engine.llm.token_utils import count_messages_tokens, count_tokens
+
+    total_tokens = count_messages_tokens(messages)
+
+    # Count tool result tokens (JSON format is verbose!)
+    for result in tool_results:
+        if isinstance(result, str):
+            total_tokens += count_tokens(result)
+
+    # Add buffer for system prompt, tool schemas, overhead
+    total_tokens += overhead
+
+    return total_tokens

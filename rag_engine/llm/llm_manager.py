@@ -16,134 +16,60 @@ from rag_engine.utils.metadata_utils import extract_numeric_kbid
 logger = logging.getLogger(__name__)
 
 
-# Model configurations with dynamic token limits (from cmw-platform-agent)
-MODEL_CONFIGS: Dict[str, Dict] = {
-    # Gemini models (matching cmw-platform-agent)
-    "gemini-2.5-flash": {
-        "token_limit": 1048576,  # 1M context
-        "max_tokens": 65536,
-        "temperature": 0,
-    },
-    "gemini-2.5-pro": {
-        "token_limit": 1048576,  # 1M context
-        "max_tokens": 65536,
-        "temperature": 0,
-    },
-    # OpenRouter models (matching cmw-platform-agent)
-    # DeepSeek Models
-    "deepseek/deepseek-v3.1-terminus": {
-        "token_limit": 163840,
-        "max_tokens": 65536,
-        "temperature": 0,
-    },
-    "deepseek/deepseek-chat-v3.1:free": {
-        "token_limit": 163840,
-        "max_tokens": 4096,
-        "temperature": 0,
-    },
-    "deepseek/deepseek-r1-0528": {
-        "token_limit": 163840,
-        "max_tokens": 4096,
-        "temperature": 0,
-    },
-    # Grok (xAI) Models
-    "x-ai/grok-4-fast:free": {
-        "token_limit": 2000000,
-        "max_tokens": 8192,
-        "temperature": 0,
-    },
-    "x-ai/grok-code-fast-1": {
-        "token_limit": 256000,
-        "max_tokens": 10000,
-        "temperature": 0,
-    },
-    "x-ai/grok-4-fast": {
-        "token_limit": 2000000,
-        "max_tokens": 30000,
-        "temperature": 0,
-    },
-    # Qwen Models
-    "qwen/qwen3-coder:free": {
-        "token_limit": 262144,
-        "max_tokens": 4096,
-        "temperature": 0,
-    },
-    "qwen/qwen3-coder-flash": {
-        "token_limit": 128000,
-        "max_tokens": 4096,
-        "temperature": 0,
-    },
-    "qwen/qwen3-max": {
-        "token_limit": 256000,
-        "max_tokens": 32768,
-        "temperature": 0,
-    },
-    # Additional Qwen Models
-    "qwen/qwen3-235b-a22b": {
-        # Native window ~40,960; some routes may extend via scaling
-        "token_limit": 262144,
-        "max_tokens": 32768,
-        "temperature": 0,
-    },
-    "qwen/qwen3-30b-a3b-instruct-2507": {
-        "token_limit": 262144,
-        "max_tokens": 32768,
-        "temperature": 0,
-    },
-    "qwen/qwen3-coder-plus": {
-        "token_limit": 128000,
-        "max_tokens": 65536,
-        "temperature": 0,
-    },
-    "qwen/qwen3-235b-a22b-2507": {
-        "token_limit": 262144,
-        "max_tokens": 32768,
-        "temperature": 0,
-    },
-    "qwen/qwen3-coder": {
-        "token_limit": 262144,
-        "max_tokens": 262144,
-        "temperature": 0,
-    },
-    # Other Models
-    "anthropic/claude-sonnet-4.5": {
-        "token_limit": 1000000,
-        "max_tokens": 64000,
-        "temperature": 0,
-    },
-    "openai/gpt-oss-120b": {
-        "token_limit": 131072,
-        "max_tokens": 32768,
-        "temperature": 0,
-    },
-    "openai/gpt-5-mini": {
-        "token_limit": 400000,
-        "max_tokens": 32768,
-        "temperature": 0,
-    },
-    "nvidia/nemotron-nano-9b-v2:free": {
-        "token_limit": 128000,
-        "max_tokens": 4096,
-        "temperature": 0,
-    },
-    "mistralai/codestral-2508": {
-        "token_limit": 256000,
-        "max_tokens": 4096,
-        "temperature": 0,
-    },
-    # OpenAI specialized models
-    "openai/gpt-5-codex": {
-        "token_limit": 400000,
-        "max_tokens": 32768,
-        "temperature": 0,
-    },
-    # Fallback default
-    "default": {
-        "token_limit": 8192,
-        "max_tokens": 2048,
-        "temperature": 0.1,
-    },
-}
+from rag_engine.llm.model_configs import MODEL_CONFIGS
+
+
+def get_model_config(model_name: str) -> dict:
+    """Get model configuration with partial-match fallback.
+
+    Tries exact match first, then partial match (e.g., "gemini-2.5-flash-latest"
+    matches "gemini-2.5-flash"), then falls back to "default" config.
+
+    Args:
+        model_name: Model identifier to look up
+
+    Returns:
+        Model configuration dict with token_limit, max_tokens, temperature
+
+    Example:
+        >>> from rag_engine.llm.llm_manager import get_model_config
+        >>> config = get_model_config("gemini-2.5-flash")
+        >>> config["token_limit"] > 0
+        True
+    """
+    # Try exact match first
+    if model_name in MODEL_CONFIGS:
+        return MODEL_CONFIGS[model_name]
+
+    # Try partial match (e.g., "gemini-2.5-flash-latest" → "gemini-2.5-flash")
+    for key in MODEL_CONFIGS:
+        if key != "default" and key in model_name:
+            logger.debug("Using config for %s (matched from %s)", key, model_name)
+            return MODEL_CONFIGS[key]
+
+    # Fallback to default
+    logger.warning("No config for %s, using default", model_name)
+    return MODEL_CONFIGS["default"]
+
+
+def get_context_window(model_name: str, default: int = 262144) -> int:
+    """Get context window size for a model.
+
+    Args:
+        model_name: Model identifier to look up
+        default: Default context window if model not found (default: 262144)
+
+    Returns:
+        Context window size in tokens
+
+    Example:
+        >>> from rag_engine.llm.llm_manager import get_context_window
+        >>> window = get_context_window("gemini-2.5-flash")
+        >>> window > 0
+        True
+    """
+    config = get_model_config(model_name)
+    return config.get("token_limit", default)
 
 
 class LLMManager:
@@ -153,28 +79,12 @@ class LLMManager:
         self.provider = provider
         self.model_name = model
         self.temperature = temperature
-        self._model_config = self._get_model_config(model)
+        self._model_config = get_model_config(model)
         self._conversations = ConversationStore()
         logger.info(
             f"LLMManager initialized: {provider}/{model} "
             f"(context: {self._model_config['token_limit']} tokens)"
         )
-
-    def _get_model_config(self, model: str) -> Dict:
-        """Get model configuration with token limits."""
-        # Try exact match first
-        if model in MODEL_CONFIGS:
-            return MODEL_CONFIGS[model]
-
-        # Try partial match (e.g., "gemini-2.5-flash-latest" → "gemini-2.5-flash")
-        for key in MODEL_CONFIGS:
-            if key != "default" and key in model:
-                logger.info(f"Using config for {key} (matched from {model})")
-                return MODEL_CONFIGS[key]
-
-        # Fallback to default
-        logger.warning(f"No config for {model}, using default")
-        return MODEL_CONFIGS["default"]
 
     def get_current_llm_context_window(self) -> int:
         """Get the context window size for the current LLM model.
