@@ -33,7 +33,7 @@ def test_chat_interface_initialization(monkeypatch):
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
-        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
+        def retrieve(self, query, top_k=None):  # noqa: ANN001, ANN002
             doc = SimpleNamespace(
                 metadata={
                     "kbId": "123",
@@ -104,7 +104,7 @@ def test_api_and_handler_empty_cases(monkeypatch):
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
-        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
+        def retrieve(self, query, top_k=None):  # noqa: ANN001, ANN002
             return []  # Empty results - will trigger injection of "no results" message
 
     monkeypatch.setattr("rag_engine.retrieval.embedder.FRIDAEmbedder", FakeEmbedder)
@@ -268,7 +268,7 @@ def test_session_salting_new_chat(monkeypatch):
             return "answer"
 
     class FakeRetriever:
-        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
+        def retrieve(self, query, top_k=None):  # noqa: ANN001, ANN002
             from types import SimpleNamespace
 
             return [
@@ -328,7 +328,7 @@ def test_session_salting_loaded_chat(monkeypatch):
             return "answer"
 
     class FakeRetriever:
-        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
+        def retrieve(self, query, top_k=None):  # noqa: ANN001, ANN002
             from types import SimpleNamespace
 
             return [
@@ -395,7 +395,7 @@ def test_session_salting_same_chat_preserves_session(monkeypatch):
             return "answer"
 
     class FakeRetriever:
-        def retrieve(self, query, top_k=None, reserved_tokens=0):  # noqa: ANN001, ANN002
+        def retrieve(self, query, top_k=None):  # noqa: ANN001, ANN002
             from types import SimpleNamespace
 
             return [

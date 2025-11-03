@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 
 from langchain.tools import ToolRuntime, tool
-import threading
 from pydantic import BaseModel, Field, field_validator
 
 from rag_engine.retrieval.retriever import Article, RAGRetriever
@@ -119,25 +119,26 @@ class RetrieveContextSchema(BaseModel):
 
 
 def _format_articles_to_json(articles: list[Article], query: str, top_k: int | None) -> str:
-    """Convert Article objects to JSON format."""
+    """Convert Article objects to JSON format with ranking information."""
     articles_data = []
     for article in articles:
-        # Extract title with fallback
         title = article.metadata.get("title", article.kb_id)
-
-        # Extract URL with fallback chain
         url = (
             article.metadata.get("article_url")
             or article.metadata.get("url")
             or f"https://kb.comindware.ru/article.php?id={article.kb_id}"
         )
 
+        # Include all metadata including rank information for proportional compression
+        article_metadata = dict(article.metadata)
+        # Metadata already contains rerank_score and normalized_rank from retriever
+
         articles_data.append({
             "kb_id": article.kb_id,
             "title": title,
             "url": url,
-            "content": article.content,
-            "metadata": dict(article.metadata),
+            "content": article.content,  # Uncompressed content
+            "metadata": article_metadata,  # Includes rerank_score, normalized_rank
         })
 
     result = {
@@ -149,7 +150,6 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
             "has_results": len(articles_data) > 0,
         },
     }
-    # Compact JSON (no indent) - internal communication, readability not needed
     return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
 
@@ -159,11 +159,10 @@ def retrieve_context(
     top_k: int | None = None,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
-    """
-    Retrieve relevant context documents from the knowledge base using semantic search.
+    """Retrieve relevant context documents from the knowledge base using semantic search.
 
     This tool searches the indexed knowledge base for articles relevant to your query using
-    vector search, reranking, and intelligent context budgeting. It returns formatted context
+    vector search, and reranking. It returns formatted context
     with article titles, URLs, and content ready for consumption.
 
     **When to use this tool:**
@@ -212,45 +211,18 @@ def retrieve_context(
           }
         }
 
-        Each article includes title, URL, content (full or summarized), and complete metadata
-        for citations. If no documents found, returns JSON with empty articles array and
-        has_results: false.
+        Each article includes title, URL, content (uncompressed), and complete metadata
+        including ranking information (rerank_score, normalized_rank) for citations.
+        If no documents found, returns JSON with empty articles array and has_results: false.
 
     **Note**: You can call this tool multiple times in the same conversation turn to gather
     information from different angles or aspects of a topic. Each call is independent.
     """
     try:
-        # Get or create retriever (lazy initialization)
         retriever = _get_or_create_retriever()
 
-        # Get reserved tokens from runtime context (typed, clean access!)
-        # The AGENT is responsible for counting context, NOT the tool!
-        # Agent passes accumulated context via runtime.context, tool just uses it.
-        conversation_tokens = 0
-        accumulated_tool_tokens = 0
-
-        if runtime and hasattr(runtime, "context") and runtime.context:
-            # Agent provides pre-calculated token counts via typed context
-            conversation_tokens = runtime.context.conversation_tokens
-            accumulated_tool_tokens = runtime.context.accumulated_tool_tokens
-
-        # Total reserved = conversation + accumulated tool results (agent-calculated, deduplicated)
-        # This enables progressive budgeting: each tool call gets less space
-        total_reserved_tokens = conversation_tokens + accumulated_tool_tokens
-
-        logger.info(
-            "Retrieving articles: query=%s, top_k=%s, reserved_tokens=%d "
-            "(conversation: %d, accumulated_tools: %d) [agent-provided]",
-            query[:100],
-            top_k,
-            total_reserved_tokens,
-            conversation_tokens,
-            accumulated_tool_tokens,
-        )
-
-        # Retrieve articles with progressive budgeting
-        # Each tool call gets progressively less space as more articles are accumulated
-        docs = retriever.retrieve(query, top_k=top_k, reserved_tokens=total_reserved_tokens)
+        # NO token counting - just retrieve uncompressed articles with ranks
+        docs = retriever.retrieve(query, top_k=top_k)
         logger.info("Retrieved %d articles for query: %s", len(docs), query)
         return _format_articles_to_json(docs, query, top_k)
     except Exception as exc:  # noqa: BLE001

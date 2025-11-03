@@ -118,23 +118,27 @@ class RAGRetriever:
         except Exception:
             return []
 
-    def retrieve(self, query: str, top_k: int | None = None, reserved_tokens: int = 0) -> list[Article]:
+    def retrieve(self, query: str, top_k: int | None = None) -> list[Article]:
         """Retrieve complete articles for query using hybrid approach.
 
         Hybrid approach:
         1. Vector search on chunks (top-20)
         2. Rerank chunks (top-10)
-        3. Group chunks by kbId
+        3. Group chunks by kbId and preserve max reranker score
         4. Read complete articles from source_file
-        5. Apply context budgeting with dynamic token limits
+        5. Sort by rank and normalize ranks (0.0 = best, 1.0 = worst)
+        6. Return ALL articles uncompressed with ranking information
+
+        **Returns uncompressed articles with ranking metadata.**
+        **Compression happens in agent middleware (before_model), not here.**
 
         Args:
             query: User query string
             top_k: Override top_k_rerank if provided
-            reserved_tokens: Tokens already consumed by conversation history (for accurate budgeting)
 
         Returns:
-            List of complete Article objects within context budget
+            List of complete Article objects (uncompressed, sorted by rank)
+            Each article has metadata["rerank_score"] and metadata["normalized_rank"]
         """
         qk = top_k or self.top_k_rerank
 
@@ -213,23 +217,25 @@ class RAGRetriever:
             scored_candidates = scored_candidates[:qk]
             logger.info("No reranking, using top-%d chunks", len(scored_candidates))
 
-        # 3. Group top-ranked chunks by kbId (article identifier)
-        # Normalize kbIds to handle any edge cases (e.g., old suffixed kbIds)
-        articles_map: dict[str, list[Any]] = defaultdict(list)
-        for doc, _score in scored_candidates:
+        # 3. Group chunks by kb_id and preserve MAX reranker score as article rank
+        articles_map: dict[str, tuple[list[Any], float]] = defaultdict(lambda: ([], -float('inf')))
+        for doc, score in scored_candidates:
             # Handle None metadata gracefully
             metadata = getattr(doc, "metadata", None) or {}
             raw_kb_id = metadata.get("kbId", "")
             if raw_kb_id:
                 # Normalize kbId for consistent grouping (handles suffixed kbIds)
                 kb_id = extract_numeric_kbid(raw_kb_id) or str(raw_kb_id)
-                articles_map[kb_id].append(doc)
+                chunks, best_score = articles_map[kb_id]
+                chunks.append(doc)
+                # Keep the highest reranker score for this article
+                articles_map[kb_id] = (chunks, max(best_score, score))
 
         logger.info("Top chunks belong to %d unique articles", len(articles_map))
 
-        # 4. Read complete articles from filesystem
+        # 4. Read complete articles and attach ranking information
         articles: list[Article] = []
-        for kb_id, chunks in articles_map.items():
+        for kb_id, (chunks, max_score) in articles_map.items():
             # Use first chunk's metadata to get source file
             first_chunk_meta = getattr(chunks[0], "metadata", None) or {}
             source_file = first_chunk_meta.get("source_file")
@@ -259,6 +265,8 @@ class RAGRetriever:
                     metadata=article_metadata,
                 )
                 article.matched_chunks = chunks
+                # Store reranker score in metadata for proportional compression
+                article.metadata["rerank_score"] = max_score
                 articles.append(article)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Failed to read article %s: %s", source_file, exc)
@@ -266,9 +274,23 @@ class RAGRetriever:
 
         logger.info("Loaded %d complete articles", len(articles))
 
-        # 5. Apply context budgeting with dynamic token limits (pass question and reserved tokens)
-        articles = self._apply_context_budget(articles, question=query, reserved_tokens=reserved_tokens)
+        # 5. Sort articles by reranker score (highest first = best rank)
+        articles.sort(key=lambda a: a.metadata.get("rerank_score", -float('inf')), reverse=True)
 
+        # 6. Normalize ranks: 0.0 = best rank, 1.0 = worst rank (for proportional compression)
+        if len(articles) > 1:
+            for idx, article in enumerate(articles):
+                # Normalized rank: 0.0 = first (best), 1.0 = last (worst)
+                article.metadata["normalized_rank"] = idx / (len(articles) - 1)
+                article.metadata["article_rank"] = idx  # Position-based rank (0-based)
+        else:
+            if articles:
+                articles[0].metadata["normalized_rank"] = 0.0
+                articles[0].metadata["article_rank"] = 0
+
+        logger.info("Loaded %d complete articles (uncompressed, sorted by rank)", len(articles))
+
+        # NO _apply_context_budget call - return all uncompressed articles with ranks
         return articles
 
     def _read_article(self, source_file: str) -> str:
@@ -293,214 +315,3 @@ class RAGRetriever:
                 content = parts[2].strip()
 
         return content
-
-    def _apply_context_budget(
-        self,
-        articles: list[Article],
-        question: str = "",
-        system_prompt: str = "",
-        reserved_tokens: int = 0
-    ) -> list[Article]:
-        """Select articles within context budget using dynamic token limits.
-
-        Uses LLM manager to get model-specific context window and reserves
-        tokens for prompt overhead, output, and conversation history.
-
-        For articles that don't fit with full content, creates lightweight
-        representations with title, URL, and relevant matched chunks so the
-        LLM can still cite them.
-
-        Args:
-            articles: Sorted list of articles
-            question: User query for token estimation
-            system_prompt: System prompt text for token estimation
-            reserved_tokens: Tokens already consumed by conversation history
-
-        Returns:
-            Articles that fit within context budget (full content) plus
-            lightweight representations (title, URL, chunks) for remaining articles
-        """
-        # Get dynamic context window from LLM manager
-        context_window = self.llm_manager.get_current_llm_context_window()
-        max_output_tokens = self.llm_manager.get_max_output_tokens()
-
-        # Derive system prompt
-        sys_prompt = system_prompt or self.llm_manager.get_system_prompt()
-
-        # Reserve accurately using shared util
-        from rag_engine.llm.token_utils import estimate_tokens_for_request
-        reserved_est = estimate_tokens_for_request(
-            system_prompt=sys_prompt,
-            question=question or "",
-            context="",
-            max_output_tokens=max_output_tokens,
-            overhead=200,
-        )
-        # Subtract both estimated tokens AND conversation history tokens
-        base_context_tokens = max(0, context_window - reserved_est["total_tokens"] - reserved_tokens)
-
-        # CRITICAL: Apply JSON serialization overhead safety margin
-        # Tool wraps articles in compact JSON (no indent/spaces) with overhead from:
-        # - Metadata dict per article (~500-1000 tokens each)
-        # - JSON keys: kb_id, title, url, content, metadata
-        # Raw content tokens * 1.4 ≈ JSON size (conservative estimate)
-        # Use 70% of available space for raw content to stay within budget
-        JSON_OVERHEAD_SAFETY_MARGIN = 0.70
-        max_context_tokens = int(base_context_tokens * JSON_OVERHEAD_SAFETY_MARGIN)
-
-        if reserved_tokens > 0:
-            logger.info(
-                "Context window: %d tokens, reserved for conversation: %d, "
-                "base budget: %d, with JSON overhead margin (×%.1f): %d tokens for articles",
-                context_window,
-                reserved_tokens,
-                base_context_tokens,
-                JSON_OVERHEAD_SAFETY_MARGIN,
-                max_context_tokens,
-            )
-        else:
-            logger.info(
-                "Context window: %d tokens, base budget: %d, "
-                "with JSON overhead margin (×%.1f): %d tokens for articles",
-                context_window,
-                base_context_tokens,
-                JSON_OVERHEAD_SAFETY_MARGIN,
-                max_context_tokens,
-            )
-
-        selected: list[Article] = []
-        total_tokens = 0
-        # By default assume all articles fit; adjusted only if we break early
-        full_content_idx = len(articles)
-
-        # First pass: try to fit full article content
-        # Articles added here will NOT be processed again in the second pass
-        for idx, article in enumerate(articles):
-            # Count tokens in article (use conservative estimate to avoid undercount)
-            # Fast path for very large bodies: approximate to avoid slow encodes
-            if len(article.content) > settings.retrieval_fast_token_char_threshold:
-                tokens_by_encoder = len(article.content) // 4
-            else:
-                tokens_by_encoder = len(self._encoding.encode(article.content))
-            tokens_by_chars = len(article.content) // 4
-            article_tokens = max(tokens_by_encoder, tokens_by_chars)
-
-            if total_tokens + article_tokens > max_context_tokens:
-                logger.info(
-                    "Context budget reached for full content: %d/%d tokens (%.1f%% of window)",
-                    total_tokens,
-                    max_context_tokens,
-                    (total_tokens / context_window * 100),
-                )
-                full_content_idx = idx  # Articles from this index onward weren't included
-                break
-
-            selected.append(article)
-            total_tokens += article_tokens
-
-        # Second pass: summarization-first for remaining articles
-        # Only processes articles[full_content_idx:] - articles already included as full
-        # (indices 0 to full_content_idx-1) are skipped, ensuring each article appears once
-        lightweight_count = 0
-
-        from rag_engine.llm.summarization import summarize_to_tokens
-
-        overflow = list(articles[full_content_idx:])
-        while overflow and total_tokens < max_context_tokens:
-            remaining_budget = max_context_tokens - total_tokens
-            remaining_overflow = len(overflow)
-            per_target = max(300, min(2000, remaining_budget // max(1, remaining_overflow)))
-
-            article = overflow.pop(0)
-            chunk_texts = []
-            for chunk in article.matched_chunks:
-                chunk_content = getattr(chunk, "page_content", None) or getattr(chunk, "content", "")
-                if chunk_content:
-                    chunk_texts.append(str(chunk_content))
-
-            title = article.metadata.get("title", article.kb_id)
-            article_url = article.metadata.get("article_url") or article.metadata.get("url")
-            if not article_url:
-                raw_kbid = article.metadata.get("kbId") or article.kb_id
-                kbid = extract_numeric_kbid(raw_kbid) or str(raw_kbid) if raw_kbid else None
-                if kbid:
-                    article_url = f"https://kb.comindware.ru/article.php?id={kbid}"
-
-            summary = summarize_to_tokens(
-                title=title,
-                url=article_url or "",
-                matched_chunks=chunk_texts,
-                full_body=article.content,
-                target_tokens=per_target,
-                guidance=question or "",
-                llm=self.llm_manager,
-                max_retries=2,
-            )
-
-            # Fast path for very large summaries (rare): approximate
-            if len(summary) > settings.retrieval_fast_token_char_threshold:
-                tokens_by_encoder = len(summary) // 4
-            else:
-                tokens_by_encoder = len(self._encoding.encode(summary))
-            tokens_by_chars = len(summary) // 4
-            summary_tokens = max(tokens_by_encoder, tokens_by_chars)
-
-            if total_tokens + summary_tokens > max_context_tokens:
-                # Not enough space even for summary; stop summarization loop
-                overflow.insert(0, article)
-                break
-
-            summarized_article = Article(kb_id=article.kb_id, content=summary, metadata=article.metadata)
-            summarized_article.matched_chunks = article.matched_chunks
-            selected.append(summarized_article)
-            total_tokens += summary_tokens
-
-        # If still space and overflow remains, convert remaining to lightweight stitching
-        def _create_lightweight_article(src: Article) -> tuple[Article, int]:
-            chunk_texts = []
-            for chunk in src.matched_chunks:
-                chunk_content = getattr(chunk, "page_content", None) or getattr(chunk, "content", "")
-                if chunk_content:
-                    chunk_texts.append(str(chunk_content))
-            title = src.metadata.get("title", src.kb_id)
-            article_url = src.metadata.get("article_url") or src.metadata.get("url")
-            if not article_url:
-                raw_kbid = src.metadata.get("kbId") or src.kb_id
-                kbid = extract_numeric_kbid(raw_kbid) or str(raw_kbid) if raw_kbid else None
-                if kbid:
-                    article_url = f"https://kb.comindware.ru/article.php?id={kbid}"
-            content = f"# {title}\n\nURL: {article_url}\n\n" + "\n\n---\n\n".join(chunk_texts)
-            lw = Article(kb_id=src.kb_id, content=content, metadata=src.metadata)
-            lw.matched_chunks = src.matched_chunks
-            lw._is_lightweight = True
-            enc = len(self._encoding.encode(content))
-            by_chars = len(content) // 4
-            return lw, max(enc, by_chars)
-
-        for article in overflow:
-            lw_article, lw_tokens = _create_lightweight_article(article)
-            if total_tokens + lw_tokens > max_context_tokens:
-                continue
-            selected.append(lw_article)
-            total_tokens += lw_tokens
-            lightweight_count += 1
-
-        logger.info(
-            "Selected %d full articles + %d lightweight articles (%d tokens, %.1f%% of context window)",
-            len(selected) - lightweight_count,
-            lightweight_count,
-            total_tokens,
-            (total_tokens / context_window * 100),
-        )
-        # Also emit at warning level to ensure capture in default caplog
-        logger.warning(
-            "Selected %d articles (%.1f%% of context window, %d full + %d lightweight)",
-            len(selected),
-            (total_tokens / context_window * 100),
-            len(selected) - lightweight_count,
-            lightweight_count,
-        )
-
-        return selected
-
-
