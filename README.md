@@ -100,9 +100,10 @@ USE_AGENT_MODE=true
 - Automatic tool calling via LangChain ReAct agent
 - Forced tool execution via `tool_choice` parameter (per [LangChain docs](https://docs.langchain.com/oss/python/langchain/models#tool-calling))
 - Uses standard Comindware Platform system prompt
-- Streaming responses with citations
+- **Real-time token streaming** - see text appear as it's generated
+- **Visual tool feedback** - collapsible metadata messages show search progress
 - Session-based conversation memory
-- Same UX as direct retrieval mode
+- Citations automatically added
 
 **How it works:**
 1. User asks question → Agent analyzes it
