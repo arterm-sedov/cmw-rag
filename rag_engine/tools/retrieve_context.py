@@ -215,8 +215,20 @@ def retrieve_context(
         # Get or create retriever (lazy initialization)
         retriever = _get_or_create_retriever()
 
-        # Call the retriever with the same parameters as direct usage
-        docs = retriever.retrieve(query, top_k=top_k)
+        # Calculate conversation history size from runtime state
+        conversation_tokens = 0
+        if runtime and hasattr(runtime, 'state'):
+            messages = runtime.state.get("messages", [])
+            # Estimate tokens in conversation history using fast approximation
+            for msg in messages:
+                content = msg.get("content", "")
+                if isinstance(content, str):
+                    # Use ~4 chars per token approximation (same as retriever)
+                    conversation_tokens += len(content) // 4
+            logger.debug("Estimated conversation history: %d tokens", conversation_tokens)
+
+        # Call retriever with conversation context awareness
+        docs = retriever.retrieve(query, top_k=top_k, reserved_tokens=conversation_tokens)
         logger.info("Retrieved %d articles for query: %s", len(docs), query)
         return _format_articles_to_json(docs, query, top_k)
     except Exception as exc:  # noqa: BLE001
