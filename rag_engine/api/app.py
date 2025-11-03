@@ -19,6 +19,7 @@ from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.retrieval.embedder import FRIDAEmbedder
 from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
+from rag_engine.tools import retrieve_context
 from rag_engine.utils.context_tracker import (
     AgentContext,
     estimate_accumulated_context,
@@ -688,7 +689,27 @@ chatbot_config = gr.Chatbot(
 handler_fn = agent_chat_handler
 logger.info("Using agent-based (LangChain) handler for chat interface")
 
-demo = gr.ChatInterface(
+
+# Wrapper function to expose retrieve_context tool as API endpoint
+    # The tool is a StructuredTool, so we need to extract the underlying function
+def get_knowledge_base_articles(query: str, top_k: int | None = None) -> str:
+    """API endpoint wrapper for retrieve_context tool.
+
+    This exposes the retrieve_context LangChain tool as a Gradio API endpoint.
+    The runtime parameter is automatically set to None when called directly.
+
+    Args:
+        query: Search query or question to find relevant documents.
+        top_k: Optional limit on number of articles.
+
+    Returns:
+        JSON string with article data.
+    """
+    # Access the underlying function from the StructuredTool
+    return retrieve_context.func(query=query, top_k=top_k)
+
+with gr.Blocks() as demo:
+    gr.ChatInterface(
     fn=handler_fn,
     title=chat_title,
     description=chat_description,
@@ -696,16 +717,15 @@ demo = gr.ChatInterface(
     save_history=True,
     #fill_width=True,
     chatbot=chatbot_config,
-)
-# Explicitly set a plain attribute for tests and downstream code to read
-demo.title = "Comindware Platform Documentation Assistant"
+    )
+    gr.api(
+        fn=get_knowledge_base_articles,
+        api_name="get_knowledge_base_articles",
+        api_description="Retrieve relevant documents from the knowledge base using semantic search. Returns JSON with article titles, URLs, content, and metadata.",
+    )
 
-try:
-    gr.api(fn=query_rag, api_name="query_rag")
-except Exception:  # noqa: BLE001
-    # Older/newer Gradio builds without gr.api support
-    pass
-
+    # Explicitly set a plain attribute for tests and downstream code to read
+    title = "Comindware Platform Documentation Assistant"
 
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
@@ -726,6 +746,7 @@ if __name__ == "__main__":
         server_name=settings.gradio_server_name,
         server_port=settings.gradio_server_port,
         share=settings.gradio_share,
+        mcp_server=True,
     )
 
 
