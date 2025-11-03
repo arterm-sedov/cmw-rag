@@ -462,6 +462,14 @@ Tool results are still returned as JSON, which is ~1.5× larger than raw content
 | **Overflow error** | ❌ Yes (282K > 262K) | ✅ No (137K < 262K) | ✅ Fixed! |
 | **Fallback triggered** | ❌ Never | ✅ If needed | ✅ Safety net |
 
+## Related Fix: Article Deduplication
+
+After implementing this fix, we discovered that **duplicate articles** were also contributing to context bloat. When the agent makes similar queries, the retriever often returns the same articles multiple times.
+
+**See**: `article_deduplication_fix.md` for full details
+
+**Impact**: Additional 34% context reduction by deduplicating articles before counting `reserved_tokens` and before passing to LLM.
+
 ## Conclusion
 
 ✅ **Problem Solved**: Agent can now make multiple tool calls without overflow
@@ -470,12 +478,14 @@ Tool results are still returned as JSON, which is ~1.5× larger than raw content
 - ✅ Tool calls now account for accumulated results
 - ✅ Progressive budgeting prevents over-retrieval
 - ✅ Post-tool fallback provides safety net
+- ✅ Article deduplication prevents counting the same content multiple times
 
 **Key Improvements**:
 1. **Progressive Context Budgeting** - Each tool call gets less space
 2. **Accumulated Tracking** - Tool results counted as reserved tokens
 3. **Dynamic Fallback** - Switches to larger model if needed mid-turn
 4. **Accurate Counting** - Tiktoken + fast path for performance
+5. **Article Deduplication** - Same article never counted twice
 
 The agent is now robust enough to handle complex queries that require multiple searches, automatically managing context and falling back to larger models when necessary.
 

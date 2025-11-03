@@ -12,6 +12,7 @@ from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, Field, field_validator
 
 from rag_engine.retrieval.retriever import Article, RAGRetriever
+from rag_engine.utils.context_tracker import AgentContext
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +150,7 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
 def retrieve_context(
     query: str,
     top_k: int | None = None,
-    runtime: ToolRuntime | None = None,
+    runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     """
     Retrieve relevant context documents from the knowledge base using semantic search.
@@ -215,56 +216,33 @@ def retrieve_context(
         # Get or create retriever (lazy initialization)
         retriever = _get_or_create_retriever()
 
-        # Estimate TOTAL reserved tokens for accurate context budgeting
-        # This includes:
-        # 1. Conversation history (user/assistant messages)
-        # 2. Tool results from previous calls IN THIS TURN (critical for multi-tool scenarios)
+        # Get reserved tokens from runtime context (typed, clean access!)
+        # The AGENT is responsible for counting context, NOT the tool!
+        # Agent passes accumulated context via runtime.context, tool just uses it.
         conversation_tokens = 0
-        tool_result_tokens = 0
+        accumulated_tool_tokens = 0
 
-        if runtime and hasattr(runtime, 'state'):
-            messages = runtime.state.get("messages", [])
-            for msg in messages:
-                # Get message content (handle both dict and LangChain objects)
-                if hasattr(msg, "content"):
-                    content = msg.content
-                else:
-                    content = msg.get("content", "") if isinstance(msg, dict) else ""
+        if runtime and hasattr(runtime, "context") and runtime.context:
+            # Agent provides pre-calculated token counts via typed context
+            conversation_tokens = runtime.context.conversation_tokens
+            accumulated_tool_tokens = runtime.context.accumulated_tool_tokens
 
-                if isinstance(content, str) and content:
-                    msg_tokens = len(content) // 4  # Fast approximation
-
-                    # Classify: is this a tool result or conversation?
-                    # Tool results are JSON with "articles" key, much larger than normal messages
-                    msg_type = getattr(msg, "type", None)
-                    is_tool_result = (
-                        msg_type == "tool" or
-                        (isinstance(content, str) and '"articles"' in content and len(content) > 5000)
-                    )
-
-                    if is_tool_result:
-                        # This is a tool result from a previous retrieve_context call
-                        # Tool results are JSON-heavy and bloat context significantly
-                        tool_result_tokens += msg_tokens
-                    else:
-                        # Regular conversation message
-                        conversation_tokens += msg_tokens
-
-        # Total reserved includes BOTH conversation AND accumulated tool results
-        total_reserved_tokens = conversation_tokens + tool_result_tokens
+        # Total reserved = conversation + accumulated tool results (agent-calculated, deduplicated)
+        # This enables progressive budgeting: each tool call gets less space
+        total_reserved_tokens = conversation_tokens + accumulated_tool_tokens
 
         logger.info(
             "Retrieving articles: query=%s, top_k=%s, reserved_tokens=%d "
-            "(conversation: %d, tool_results: %d)",
+            "(conversation: %d, accumulated_tools: %d) [agent-provided]",
             query[:100],
             top_k,
             total_reserved_tokens,
             conversation_tokens,
-            tool_result_tokens,
+            accumulated_tool_tokens,
         )
 
-        # Retrieve articles with accurate context budgeting
-        # Retriever will reduce article count/size if reserved tokens are high
+        # Retrieve articles with progressive budgeting
+        # Each tool call gets progressively less space as more articles are accumulated
         docs = retriever.retrieve(query, top_k=top_k, reserved_tokens=total_reserved_tokens)
         logger.info("Retrieved %d articles for query: %s", len(docs), query)
         return _format_articles_to_json(docs, query, top_k)
