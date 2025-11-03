@@ -1,4 +1,9 @@
-"""Utility functions for working with LangChain tools."""
+"""Utility functions for working with LangChain tool results.
+
+This module contains utilities specific to parsing and processing tool results.
+For generic message handling utilities (content extraction, type checking, etc.),
+see rag_engine.utils.message_utils.
+"""
 from __future__ import annotations
 
 import json

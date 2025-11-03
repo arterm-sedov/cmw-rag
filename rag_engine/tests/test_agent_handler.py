@@ -11,8 +11,8 @@ class TestCreateRagAgent:
 
     @patch("rag_engine.api.app.settings")
     @patch("langchain.agents.create_agent")
-    @patch("langchain_google_genai.ChatGoogleGenerativeAI")
-    def test_create_agent_gemini(self, mock_gemini_cls, mock_create_agent, mock_settings):
+    @patch("rag_engine.api.app.LLMManager")
+    def test_create_agent_gemini(self, mock_llm_manager_cls, mock_create_agent, mock_settings):
         """Test agent creation with Gemini provider."""
         mock_settings.default_llm_provider = "gemini"
         mock_settings.default_model = "gemini-2.5-flash"
@@ -22,18 +22,24 @@ class TestCreateRagAgent:
         mock_model = Mock()
         mock_model_with_tools = Mock()
         mock_model.bind_tools.return_value = mock_model_with_tools
-        mock_gemini_cls.return_value = mock_model
+        
+        mock_llm_manager = Mock()
+        mock_llm_manager._chat_model.return_value = mock_model
+        mock_llm_manager_cls.return_value = mock_llm_manager
+        
         mock_agent = Mock()
         mock_create_agent.return_value = mock_agent
 
         agent = _create_rag_agent()
 
-        # Verify model was created with correct params
-        mock_gemini_cls.assert_called_once_with(
+        # Verify LLMManager was created with correct params
+        mock_llm_manager_cls.assert_called_once_with(
+            provider="gemini",
             model="gemini-2.5-flash",
             temperature=0.1,
-            google_api_key="test_key",
         )
+        # Verify chat model was retrieved via LLMManager
+        mock_llm_manager._chat_model.assert_called_once()
 
         # Verify bind_tools was called with tool_choice
         mock_model.bind_tools.assert_called_once()
@@ -53,8 +59,8 @@ class TestCreateRagAgent:
 
     @patch("rag_engine.api.app.settings")
     @patch("langchain.agents.create_agent")
-    @patch("langchain_openai.ChatOpenAI")
-    def test_create_agent_openrouter(self, mock_openai_cls, mock_create_agent, mock_settings):
+    @patch("rag_engine.api.app.LLMManager")
+    def test_create_agent_openrouter(self, mock_llm_manager_cls, mock_create_agent, mock_settings):
         """Test agent creation with OpenRouter provider."""
         mock_settings.default_llm_provider = "openrouter"
         mock_settings.default_model = "deepseek/deepseek-chat"
@@ -63,19 +69,23 @@ class TestCreateRagAgent:
         mock_settings.openrouter_base_url = "https://openrouter.ai/api/v1"
 
         mock_model = Mock()
-        mock_openai_cls.return_value = mock_model
+        mock_llm_manager = Mock()
+        mock_llm_manager._chat_model.return_value = mock_model
+        mock_llm_manager_cls.return_value = mock_llm_manager
+        
         mock_agent = Mock()
         mock_create_agent.return_value = mock_agent
 
         agent = _create_rag_agent()
 
-        # Verify model was created with correct params
-        mock_openai_cls.assert_called_once_with(
+        # Verify LLMManager was created with correct params
+        mock_llm_manager_cls.assert_called_once_with(
+            provider="openrouter",
             model="deepseek/deepseek-chat",
             temperature=0.0,
-            openai_api_key="test_or_key",
-            openai_api_base="https://openrouter.ai/api/v1",
         )
+        # Verify chat model was retrieved via LLMManager
+        mock_llm_manager._chat_model.assert_called_once()
 
         # Verify agent was created
         mock_create_agent.assert_called_once()
@@ -83,8 +93,8 @@ class TestCreateRagAgent:
 
     @patch("rag_engine.api.app.settings")
     @patch("langchain.agents.create_agent")
-    @patch("langchain_google_genai.ChatGoogleGenerativeAI")
-    def test_system_prompt_uses_standard_prompt(self, mock_gemini_cls, mock_create_agent, mock_settings):
+    @patch("rag_engine.api.app.LLMManager")
+    def test_system_prompt_uses_standard_prompt(self, mock_llm_manager_cls, mock_create_agent, mock_settings):
         """Test that agent uses standard Comindware Platform system prompt."""
         mock_settings.default_llm_provider = "gemini"
         mock_settings.default_model = "gemini-2.5-flash"
@@ -93,7 +103,11 @@ class TestCreateRagAgent:
 
         mock_model = Mock()
         mock_model.bind_tools.return_value = Mock()
-        mock_gemini_cls.return_value = mock_model
+        
+        mock_llm_manager = Mock()
+        mock_llm_manager._chat_model.return_value = mock_model
+        mock_llm_manager_cls.return_value = mock_llm_manager
+        
         mock_create_agent.return_value = Mock()
 
         _create_rag_agent()
@@ -107,8 +121,8 @@ class TestCreateRagAgent:
 
     @patch("rag_engine.api.app.settings")
     @patch("langchain.agents.create_agent")
-    @patch("langchain_google_genai.ChatGoogleGenerativeAI")
-    def test_create_agent_with_fallback_model(self, mock_gemini_cls, mock_create_agent, mock_settings):
+    @patch("rag_engine.api.app.LLMManager")
+    def test_create_agent_with_fallback_model(self, mock_llm_manager_cls, mock_create_agent, mock_settings):
         """Test agent creation with fallback model override."""
         mock_settings.default_llm_provider = "gemini"
         mock_settings.default_model = "gemini-2.5-flash"
@@ -120,19 +134,25 @@ class TestCreateRagAgent:
         mock_model = Mock()
         mock_model_with_tools = Mock()
         mock_model.bind_tools.return_value = mock_model_with_tools
-        mock_gemini_cls.return_value = mock_model
+        
+        mock_llm_manager = Mock()
+        mock_llm_manager._chat_model.return_value = mock_model
+        mock_llm_manager_cls.return_value = mock_llm_manager
+        
         mock_agent = Mock()
         mock_create_agent.return_value = mock_agent
 
         # Create agent with fallback model
         agent = _create_rag_agent(override_model="gemini-2.0-flash-exp")
 
-        # Verify model was created with FALLBACK model
-        mock_gemini_cls.assert_called_once_with(
+        # Verify LLMManager was created with FALLBACK model
+        mock_llm_manager_cls.assert_called_once_with(
+            provider="gemini",
             model="gemini-2.0-flash-exp",
             temperature=0.1,
-            google_api_key="test_key",
         )
+        # Verify chat model was retrieved via LLMManager
+        mock_llm_manager._chat_model.assert_called_once()
 
         assert agent is mock_agent
 
@@ -164,6 +184,8 @@ class TestContextFallback:
         """Test fallback triggered when approaching context window limit."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
+        mock_settings.llm_tool_results_overhead_tokens = 40000
+        mock_settings.llm_pre_context_threshold_pct = 0.90
         mock_get_fallbacks.return_value = ["openai/gpt-5-mini"]  # 400K tokens
 
         # Large conversation - simulate approaching limit
@@ -206,6 +228,8 @@ class TestContextFallback:
         """Test fallback skips current model in selection."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
+        mock_settings.llm_tool_results_overhead_tokens = 40000
+        mock_settings.llm_pre_context_threshold_pct = 0.90
         # List includes current model - should skip to next
         mock_get_fallbacks.return_value = [
             "qwen/qwen3-coder-flash",  # Current model - skip
@@ -226,6 +250,8 @@ class TestContextFallback:
         """Test fallback selects first model with sufficient capacity."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
+        mock_settings.llm_tool_results_overhead_tokens = 40000
+        mock_settings.llm_pre_context_threshold_pct = 0.90
         # List of increasing capacity models
         mock_get_fallbacks.return_value = [
             "qwen/qwen3-coder-flash",  # Current - skip
@@ -248,7 +274,7 @@ class TestAgentChatHandler:
     """Tests for agent_chat_handler function."""
 
     @patch("rag_engine.api.app._create_rag_agent")
-    @patch("rag_engine.api.app._salt_session_id")
+    @patch("rag_engine.api.app.salt_session_id")
     @patch("rag_engine.api.app.llm_manager")
     @patch("rag_engine.api.app.format_with_citations")
     def test_agent_handler_empty_message(
@@ -260,7 +286,7 @@ class TestAgentChatHandler:
         assert "Пожалуйста" in result[0] or "Please" in result[0]
 
     @patch("rag_engine.api.app._create_rag_agent")
-    @patch("rag_engine.api.app._salt_session_id")
+    @patch("rag_engine.api.app.salt_session_id")
     @patch("rag_engine.api.app.llm_manager")
     @patch("rag_engine.api.app.format_with_citations")
     @patch("rag_engine.tools.accumulate_articles_from_tool_results")
@@ -363,7 +389,7 @@ class TestAgentChatHandler:
         )
 
     @patch("rag_engine.api.app._create_rag_agent")
-    @patch("rag_engine.api.app._salt_session_id")
+    @patch("rag_engine.api.app.salt_session_id")
     @patch("rag_engine.api.app.llm_manager")
     @patch("rag_engine.tools.accumulate_articles_from_tool_results")
     def test_agent_handler_no_articles(
@@ -415,7 +441,7 @@ class TestAgentChatHandler:
         assert result[-1] == "I couldn't find relevant information."
 
     @patch("rag_engine.api.app._create_rag_agent")
-    @patch("rag_engine.api.app._salt_session_id")
+    @patch("rag_engine.api.app.salt_session_id")
     def test_agent_handler_error_handling(
         self,
         mock_salt_session,
@@ -438,7 +464,7 @@ class TestAgentChatHandler:
         assert "error" in result[0].lower()
 
     @patch("rag_engine.api.app._create_rag_agent")
-    @patch("rag_engine.api.app._salt_session_id")
+    @patch("rag_engine.api.app.salt_session_id")
     @patch("rag_engine.api.app.llm_manager")
     @patch("rag_engine.api.app.format_with_citations")
     @patch("rag_engine.tools.accumulate_articles_from_tool_results")

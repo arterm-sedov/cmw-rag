@@ -56,6 +56,39 @@ def count_tokens(content: str) -> int:
     return len(_ENCODING.encode(content_str))
 
 
+def count_messages_tokens(messages: list) -> int:
+    """Count tokens for a list of messages (dict or LangChain message objects).
+
+    Handles both dict messages (from Gradio) and LangChain message objects.
+    Uses exact tiktoken encoding for normal content, but switches to
+    fast approximation (chars // 4) for very large strings (>50K chars)
+    to avoid performance issues.
+
+    Args:
+        messages: List of message objects (dict or LangChain messages)
+
+    Returns:
+        Total token count across all messages
+
+    Example:
+        >>> from rag_engine.llm.token_utils import count_messages_tokens
+        >>> messages = [{"role": "user", "content": "Hello"}]
+        >>> tokens = count_messages_tokens(messages)
+        >>> tokens >= 1
+        True
+    """
+    total_tokens = 0
+    for msg in messages:
+        # Handle both dict (Gradio) and LangChain message objects
+        if hasattr(msg, "content"):
+            content = msg.content  # LangChain message object
+        else:
+            content = msg.get("content", "") if isinstance(msg, dict) else ""
+        if isinstance(content, str) and content:
+            total_tokens += count_tokens(content)
+    return total_tokens
+
+
 def estimate_tokens_for_request(
     *,
     system_prompt: str,

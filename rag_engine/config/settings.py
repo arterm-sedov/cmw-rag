@@ -86,6 +86,23 @@ class Settings(BaseSettings):
     # When counting tokens, approximate for very large strings beyond this char length
     retrieval_fast_token_char_threshold: int = 200000
 
+    # Context thresholds and compression (env-driven)
+    # Pre/post safety thresholds as fractions of the model context window
+    llm_pre_context_threshold_pct: float = 0.90
+    llm_post_context_threshold_pct: float = 0.80
+
+    # Estimated overhead tokens for tool schemas/system prompt when combining messages + tool JSON
+    llm_tool_results_overhead_tokens: int = 40000
+
+    # Tool-results compression controls
+    # When total tokens exceed this fraction, trigger compression
+    llm_compression_threshold_pct: float = 0.85
+    # After compression, target total tokens to be at/below this fraction
+    llm_compression_target_pct: float = 0.80
+    # Per-article compression target ratio and minimum tokens
+    llm_compression_article_ratio: float = 0.30
+    llm_compression_min_tokens: int = 300
+
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
         env_file=".env",
