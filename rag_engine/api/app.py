@@ -16,6 +16,7 @@ import logging
 import gradio as gr
 
 from rag_engine.config.settings import get_allowed_fallback_models, settings
+from rag_engine.utils.context_tracker import AgentContext, estimate_accumulated_tokens
 from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.retrieval.embedder import FRIDAEmbedder
 from rag_engine.retrieval.retriever import RAGRetriever
@@ -23,7 +24,7 @@ from rag_engine.storage.vector_store import ChromaStore
 from rag_engine.utils.formatters import format_with_citations
 from rag_engine.utils.logging_manager import setup_logging
 
-setup_logging()
+setup_logging(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 
@@ -483,7 +484,7 @@ def update_context_budget(state: dict, runtime) -> dict | None:
     return None
 
 
-from typing import Callable  # noqa: E402
+from collections.abc import Callable  # noqa: E402
 from langchain.agents.middleware import AgentMiddleware, wrap_tool_call as middleware_wrap_tool_call  # noqa: E402
 from langchain.tools.tool_node import ToolCallRequest  # noqa: E402
 from langchain_core.messages import ToolMessage  # noqa: E402
@@ -713,8 +714,6 @@ def agent_chat_handler(
 
     # Track accumulated context for progressive budgeting
     # Agent is responsible for counting context, not the tool
-    from rag_engine.utils.context_tracker import AgentContext, estimate_accumulated_tokens
-
     conversation_tokens, _ = estimate_accumulated_tokens(messages, [])
 
     try:
@@ -906,6 +905,89 @@ def agent_chat_handler(
 
     except Exception as e:
         logger.error("Error in agent_chat_handler: %s", e, exc_info=True)
+        # Handle context-length overflow gracefully by switching to a larger model (once)
+        err_text = str(e).lower()
+        is_context_overflow = (
+            "maximum context length" in err_text
+            or "context length" in err_text
+            or "token limit" in err_text
+            or "too many tokens" in err_text
+        )
+
+        if settings.llm_fallback_enabled and is_context_overflow:
+            try:  # Single-shot fallback retry
+                # Estimate required tokens and pick a capable fallback model
+                required_tokens = _estimate_accumulated_context(messages, tool_results)
+                fallback_model = _find_model_for_tokens(required_tokens) or None
+
+                if fallback_model and fallback_model != current_model:
+                    logger.warning(
+                        "Retrying with fallback model due to context overflow: %s -> %s (required≈%d)",
+                        current_model,
+                        fallback_model,
+                        required_tokens,
+                    )
+
+                    # Inform UI about the switch
+                    yield {
+                        "role": "assistant",
+                        "content": "",
+                        "metadata": {"title": f"⚡ Switching to {fallback_model} (larger context needed)"},
+                    }
+
+                    # Recreate agent and re-run the stream once
+                    agent = _create_rag_agent(override_model=fallback_model)
+                    current_model = fallback_model
+
+                    conversation_tokens, _ = estimate_accumulated_tokens(messages, [])
+                    agent_context = AgentContext(
+                        conversation_tokens=conversation_tokens,
+                        accumulated_tool_tokens=0,
+                    )
+
+                    answer = ""
+                    tool_results = []
+
+                    for stream_mode, chunk in agent.stream(
+                        {"messages": messages},
+                        context=agent_context,
+                        stream_mode=["updates", "messages"],
+                    ):
+                        if stream_mode == "messages":
+                            token, metadata = chunk
+                            # Collect tool results silently; only stream final text
+                            if hasattr(token, "type") and token.type == "tool":
+                                tool_results.append(token.content)
+                                # keep agent_context.accumulated_tool_tokens updated
+                                _, acc_tool_toks = estimate_accumulated_tokens([], tool_results)
+                                agent_context.accumulated_tool_tokens = acc_tool_toks
+                                continue
+
+                            if hasattr(token, "tool_calls") and token.tool_calls:
+                                # Do not stream tool call reasoning
+                                continue
+
+                            if hasattr(token, "content_blocks") and token.content_blocks:
+                                for block in token.content_blocks:
+                                    if block.get("type") == "text" and block.get("text"):
+                                        answer += block["text"]
+                                        yield answer
+                        elif stream_mode == "updates":
+                            # No-op for UI
+                            pass
+
+                    from rag_engine.tools import accumulate_articles_from_tool_results
+                    articles = accumulate_articles_from_tool_results(tool_results)
+                    final_text = answer if not articles else format_with_citations(answer, articles)
+
+                    if session_id:
+                        llm_manager.save_assistant_turn(session_id, final_text)
+                    yield final_text
+                    return
+            except Exception as retry_exc:  # If fallback retry fails, emit original-style error
+                logger.error("Fallback retry failed: %s", retry_exc, exc_info=True)
+
+        # Default error path
         error_msg = f"Извините, произошла ошибка / Sorry, an error occurred: {str(e)}"
         yield error_msg
 
