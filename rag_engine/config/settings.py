@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     # If False, uses larger heights suitable for standalone app.
     gradio_embedded_widget: bool = False
 
+    # Agent Mode
+    # If True, uses LangChain agent-based handler with tool calling
+    # If False, uses direct retrieval handler (legacy behavior)
+    use_agent_mode: bool = False
+
     # Memory compression (conversation history)
     # Percentage of context window at which we trigger compression
     memory_compression_threshold_pct: int = 85

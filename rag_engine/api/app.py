@@ -15,7 +15,7 @@ import logging
 
 import gradio as gr
 
-from rag_engine.config.settings import settings, get_allowed_fallback_models
+from rag_engine.config.settings import get_allowed_fallback_models, settings
 from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.retrieval.embedder import FRIDAEmbedder
 from rag_engine.retrieval.retriever import RAGRetriever
@@ -24,6 +24,8 @@ from rag_engine.utils.formatters import format_with_citations
 from rag_engine.utils.logging_manager import setup_logging
 
 setup_logging()
+
+logger = logging.getLogger(__name__)
 
 
 # Initialize singletons (order matters: llm_manager before retriever)
@@ -48,6 +50,172 @@ retriever = RAGRetriever(
     top_k_rerank=settings.top_k_rerank,
     rerank_enabled=settings.rerank_enabled,
 )
+
+
+def _create_rag_agent():
+    """Create LangChain agent with forced retrieval tool execution.
+    
+    Uses tool_choice parameter to enforce tool calling and the standard
+    Comindware Platform system prompt for consistent behavior.
+    
+    Returns:
+        Configured LangChain agent with retrieve_context tool
+    """
+    from langchain.agents import create_agent
+
+    from rag_engine.llm.prompts import SYSTEM_PROMPT
+    from rag_engine.tools import retrieve_context
+
+    # Select model based on provider
+    if settings.default_llm_provider == "gemini":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        base_model = ChatGoogleGenerativeAI(
+            model=settings.default_model,
+            temperature=settings.llm_temperature,
+            google_api_key=settings.google_api_key,
+        )
+    else:  # openrouter or other
+        from langchain_openai import ChatOpenAI
+        base_model = ChatOpenAI(
+            model=settings.default_model,
+            temperature=settings.llm_temperature,
+            openai_api_key=settings.openrouter_api_key,
+            openai_api_base=settings.openrouter_base_url,
+        )
+
+    # CRITICAL: Use tool_choice to force retrieval tool execution
+    # This ensures the agent always searches the knowledge base
+    model_with_tools = base_model.bind_tools(
+        [retrieve_context],
+        tool_choice="retrieve_context"
+    )
+
+    agent = create_agent(
+        model=model_with_tools,
+        tools=[retrieve_context],
+        system_prompt=SYSTEM_PROMPT,
+    )
+
+    logger.info("RAG agent created with forced tool execution via tool_choice parameter")
+    return agent
+
+
+def agent_chat_handler(
+    message: str,
+    history: list[dict],
+    request: gr.Request | None = None,
+) -> Generator[str, None, None]:
+    """Agent-based chat handler using LangChain agent with tool calling.
+    
+    This handler uses a LangChain agent that decides when to call the
+    retrieve_context tool. The agent is prompted to always search the
+    knowledge base before answering.
+    
+    Args:
+        message: User's current message
+        history: Chat history from Gradio
+        request: Gradio request object for session management
+        
+    Yields:
+        Streaming response with citations
+    """
+    if not message or not message.strip():
+        yield "Пожалуйста, введите вопрос / Please enter a question."
+        return
+
+    # Session management (reuse existing pattern)
+    base_session_id = getattr(request, "session_hash", None) if request is not None else None
+    session_id = _salt_session_id(base_session_id, history, message)
+
+    # Build messages from history for agent
+    messages = []
+    for msg in history:
+        messages.append(msg)
+    messages.append({"role": "user", "content": message})
+
+    # Create agent and stream execution
+    agent = _create_rag_agent()
+    tool_results = []
+    answer = ""
+
+    try:
+        for chunk in agent.stream(
+            {"messages": messages},
+            stream_mode="values"
+        ):
+            latest_msg = chunk["messages"][-1]
+
+            # Track tool calls - emit metadata message
+            if hasattr(latest_msg, "tool_calls") and latest_msg.tool_calls:
+                tool_name = latest_msg.tool_calls[0].get("name", "retrieve_context")
+                logger.debug("Agent calling tool: %s", tool_name)
+
+                # Emit status message to Gradio with metadata
+                status_msg = {
+                    "role": "assistant",
+                    "content": "",
+                    "metadata": {"title": "🔍 Searching information in the knowledge base"}
+                }
+                # In Gradio, this will appear as a collapsible message
+                messages.append(status_msg)
+                continue
+
+            # Track tool results - emit completion metadata
+            if hasattr(latest_msg, "type") and latest_msg.type == "tool":
+                tool_results.append(latest_msg.content)
+                logger.debug("Tool result received, %d total results", len(tool_results))
+
+                # Parse result to get article count
+                try:
+                    import json
+                    result = json.loads(latest_msg.content)
+                    articles_count = result.get("metadata", {}).get("articles_count", 0)
+
+                    # Emit completion message with metadata
+                    completion_msg = {
+                        "role": "assistant",
+                        "content": "",
+                        "metadata": {"title": f"✅ Found {articles_count} article{'s' if articles_count != 1 else ''}"}
+                    }
+                    messages.append(completion_msg)
+                except (json.JSONDecodeError, KeyError):
+                    # If parsing fails, emit generic completion message
+                    completion_msg = {
+                        "role": "assistant",
+                        "content": "",
+                        "metadata": {"title": "✅ Search completed"}
+                    }
+                    messages.append(completion_msg)
+
+                continue
+
+            # Stream AI response
+            if hasattr(latest_msg, "type") and latest_msg.type == "ai" and latest_msg.content:
+                answer = latest_msg.content
+                yield answer
+
+        # Accumulate articles from tool results and add citations
+        from rag_engine.tools import accumulate_articles_from_tool_results
+        articles = accumulate_articles_from_tool_results(tool_results)
+
+        # Handle no results case
+        if not articles:
+            final_text = answer
+            logger.info("Agent completed with no retrieved articles")
+        else:
+            final_text = format_with_citations(answer, articles)
+            logger.info("Agent completed with %d articles", len(articles))
+
+        # Save conversation turn (reuse existing pattern)
+        if session_id:
+            llm_manager.save_assistant_turn(session_id, final_text)
+
+        yield final_text
+
+    except Exception as e:
+        logger.error("Error in agent_chat_handler: %s", e, exc_info=True)
+        error_msg = f"Извините, произошла ошибка / Sorry, an error occurred: {str(e)}"
+        yield error_msg
 
 
 def _salt_session_id(base_session_id: str | None, history: list[dict], current_message: str = "") -> str | None:
@@ -112,7 +280,7 @@ def chat_handler(message: str, history: list[dict], request: gr.Request | None =
         return
 
     docs = retriever.retrieve(message)
-    
+
     # If no documents found, inject a message into the context so LLM knows
     # explicitly that no relevant materials were found
     has_no_results_doc = False
@@ -201,8 +369,13 @@ chatbot_config = gr.Chatbot(
     elem_classes=["gradio-chatbot"],
 )
 
+# Select handler based on agent mode setting
+handler_fn = agent_chat_handler if settings.use_agent_mode else chat_handler
+handler_mode = "agent-based (LangChain)" if settings.use_agent_mode else "direct retrieval"
+logger.info("Using %s handler for chat interface", handler_mode)
+
 demo = gr.ChatInterface(
-    fn=chat_handler,
+    fn=handler_fn,
     title=chat_title,
     description=chat_description,
     type="messages",
@@ -222,19 +395,19 @@ except Exception:  # noqa: BLE001
 
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
-    
+
     logger.info(
         "Starting Gradio server at %s:%s (share=%s)",
         settings.gradio_server_name,
         settings.gradio_server_port,
         settings.gradio_share,
     )
-    
+
     if settings.gradio_share:
         logger.info(
             "Share link enabled. If share link creation fails, the app will still run locally."
         )
-    
+
     demo.queue().launch(
         server_name=settings.gradio_server_name,
         server_port=settings.gradio_server_port,

@@ -83,9 +83,79 @@ The codebase follows a clean separation of concerns:
   - Provides statistics and validation checks
 - **`start_app.sh` / `start_app.ps1`**: Application startup scripts
 
+### LangChain Tool Integration (`rag_engine/tools/`)
+
+The RAG engine provides a LangChain 1.0-compatible `retrieve_context` tool for agent integration. The tool is self-sufficient (handles RAGRetriever initialization internally), returns JSON with articles and metadata, and supports multiple calls per conversation.
+
+#### Agent Mode (Recommended)
+
+The application includes a built-in agent mode using LangChain's `create_agent`. Enable it via environment variable:
+
+```bash
+# .env
+USE_AGENT_MODE=true
+```
+
+**Features:**
+- Automatic tool calling via LangChain ReAct agent
+- Forced tool execution via `tool_choice` parameter (per [LangChain docs](https://docs.langchain.com/oss/python/langchain/models#tool-calling))
+- Uses standard Comindware Platform system prompt
+- Streaming responses with citations
+- Session-based conversation memory
+- Same UX as direct retrieval mode
+
+**How it works:**
+1. User asks question → Agent analyzes it
+2. Agent shows "🔍 Searching information in the knowledge base" (collapsible metadata message)
+3. Agent calls `retrieve_context` tool (forced via `tool_choice="retrieve_context"`)
+4. Agent shows "✅ Found X articles" (completion metadata message)
+5. Agent generates answer based on retrieved articles
+6. Citations automatically added
+
+Metadata messages follow the [Gradio agents pattern](https://www.gradio.app/4.44.1/guides/agents-and-tool-usage#the-metadata-key) for displaying tool execution status.
+
+The agent mode is production-ready and can be toggled without code changes.
+
+#### Tool Usage (For Custom Agents)
+
+**Direct tool invocation:**
+
+```python
+from rag_engine.tools import retrieve_context
+
+# Direct invocation
+result = retrieve_context.invoke({"query": "How to configure authentication?", "top_k": 5})
+
+# Agent integration with forced tool execution
+from langchain_openai import ChatOpenAI
+model = ChatOpenAI(model="gpt-4")
+model_with_tools = model.bind_tools([retrieve_context], tool_choice="retrieve_context")
+```
+
+**Multiple tool calls:**
+
+When an agent makes multiple `retrieve_context` calls (iterative search refinement), accumulate articles for comprehensive citations:
+
+```python
+from rag_engine.tools import accumulate_articles_from_tool_results
+from rag_engine.utils.formatters import format_with_citations
+
+# Collect tool results from agent
+tool_results = [result1, result2, result3]  # From multiple tool calls
+
+# Accumulate and generate answer
+all_articles = accumulate_articles_from_tool_results(tool_results)
+answer = llm_manager.stream_response(question, all_articles, ...)
+final_answer = format_with_citations(answer, all_articles)  # Auto-deduplicates by kbId/URL
+```
+
+**Available utilities**: `parse_tool_result_to_articles()`, `accumulate_articles_from_tool_results()`, `extract_metadata_from_tool_result()`
+
+See `rag_engine/tests/test_tools_utils.py` and `rag_engine/tests/test_agent_handler.py` for detailed examples.
+
 ## Prerequisites
 
-- Python 3.13+
+- Python 3.12+
 - Virtual environment (`.venv` for Windows, `.venv-wsl` for WSL/Linux)
 - API keys: Google (Gemini) or OpenRouter
 - Source documents (markdown files) for indexing
@@ -310,6 +380,7 @@ Environment variables (configure in `.env`):
 - `MEMORY_COMPRESSION_THRESHOLD_PCT`: Trigger compression when estimated request exceeds this percent of the model window (default: `85`)
 - `MEMORY_COMPRESSION_TARGET_TOKENS`: Target tokens for the compressed history turn (default: `1000`)
 - `RETRIEVAL_FAST_TOKEN_CHAR_THRESHOLD`: For strings exceeding this length, approximate tokens as chars // 4 instead of full encode (default: `200000`)
+- `USE_AGENT_MODE`: Enable LangChain agent mode with tool calling (`true`/`false`, default: `false`)
 
 See `.env.example` for full configuration options.
 
