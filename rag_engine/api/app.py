@@ -54,10 +54,10 @@ retriever = RAGRetriever(
 
 def _create_rag_agent():
     """Create LangChain agent with forced retrieval tool execution.
-    
+
     Uses tool_choice parameter to enforce tool calling and the standard
     Comindware Platform system prompt for consistent behavior.
-    
+
     Returns:
         Configured LangChain agent with retrieve_context tool
     """
@@ -106,16 +106,16 @@ def agent_chat_handler(
     request: gr.Request | None = None,
 ) -> Generator[str, None, None]:
     """Agent-based chat handler using LangChain agent with tool calling.
-    
+
     This handler uses a LangChain agent that decides when to call the
     retrieve_context tool. The agent is prompted to always search the
     knowledge base before answering.
-    
+
     Args:
         message: User's current message
         history: Chat history from Gradio
         request: Gradio request object for session management
-        
+
     Yields:
         Streaming response with citations
     """
@@ -139,60 +139,106 @@ def agent_chat_handler(
     answer = ""
 
     try:
-        for chunk in agent.stream(
+        # Track tool execution state
+        # Only stream text content when NOT executing tools
+        tool_executing = False
+        import json
+
+        # Use multiple stream modes for complete streaming experience
+        # Per https://docs.langchain.com/oss/python/langchain/streaming#stream-multiple-modes
+        for stream_mode, chunk in agent.stream(
             {"messages": messages},
-            stream_mode="values"
+            stream_mode=["updates", "messages"]
         ):
-            latest_msg = chunk["messages"][-1]
+            # Handle "messages" mode for token streaming
+            if stream_mode == "messages":
+                token, metadata = chunk
 
-            # Track tool calls - emit metadata message
-            if hasattr(latest_msg, "tool_calls") and latest_msg.tool_calls:
-                tool_name = latest_msg.tool_calls[0].get("name", "retrieve_context")
-                logger.debug("Agent calling tool: %s", tool_name)
+                # Filter out tool-related messages (DO NOT display in chat)
+                # 1. Tool results (type="tool") - processed internally for citations
+                if hasattr(token, "type") and token.type == "tool":
+                    tool_results.append(token.content)
+                    logger.debug("Tool result received, %d total results", len(tool_results))
+                    tool_executing = False
 
-                # Emit status message to Gradio with metadata
-                status_msg = {
-                    "role": "assistant",
-                    "content": "",
-                    "metadata": {"title": "🔍 Searching information in the knowledge base"}
-                }
-                # In Gradio, this will appear as a collapsible message
-                messages.append(status_msg)
-                continue
+                    # Parse result to get article count and emit completion metadata
+                    try:
+                        result = json.loads(token.content)
+                        articles_count = result.get("metadata", {}).get("articles_count", 0)
 
-            # Track tool results - emit completion metadata
-            if hasattr(latest_msg, "type") and latest_msg.type == "tool":
-                tool_results.append(latest_msg.content)
-                logger.debug("Tool result received, %d total results", len(tool_results))
+                        # Yield completion metadata to Gradio
+                        article_word = "article" if articles_count == 1 else "articles"
+                        yield {
+                            "role": "assistant",
+                            "content": "",
+                            "metadata": {"title": f"✅ Found {articles_count} {article_word}"}
+                        }
+                    except (json.JSONDecodeError, KeyError):
+                        # If parsing fails, emit generic completion
+                        yield {
+                            "role": "assistant",
+                            "content": "",
+                            "metadata": {"title": "✅ Search completed"}
+                        }
 
-                # Parse result to get article count
-                try:
-                    import json
-                    result = json.loads(latest_msg.content)
-                    articles_count = result.get("metadata", {}).get("articles_count", 0)
+                    # Skip further processing of tool messages
+                    continue
 
-                    # Emit completion message with metadata
-                    completion_msg = {
-                        "role": "assistant",
-                        "content": "",
-                        "metadata": {"title": f"✅ Found {articles_count} article{'s' if articles_count != 1 else ''}"}
-                    }
-                    messages.append(completion_msg)
-                except (json.JSONDecodeError, KeyError):
-                    # If parsing fails, emit generic completion message
-                    completion_msg = {
-                        "role": "assistant",
-                        "content": "",
-                        "metadata": {"title": "✅ Search completed"}
-                    }
-                    messages.append(completion_msg)
+                # 2. AI messages with tool_calls (when agent decides to call tools)
+                # These should NEVER be displayed - only show metadata
+                if hasattr(token, "tool_calls") and token.tool_calls:
+                    if not tool_executing:
+                        tool_executing = True
+                        # Log tool call count safely (tool_calls might be True or a list)
+                        call_count = len(token.tool_calls) if isinstance(token.tool_calls, list) else "?"
+                        logger.debug("Agent calling tool(s): %s call(s)", call_count)
+                        # Yield metadata message to Gradio
+                        yield {
+                            "role": "assistant",
+                            "content": "",
+                            "metadata": {
+                                "title": "🔍 Searching information in the knowledge base"
+                            },
+                        }
+                    # Skip displaying the tool call itself and any content
+                    continue
 
-                continue
+                # 3. Only stream text content from messages WITHOUT tool_calls
+                # This ensures we only show the final answer, not tool reasoning
+                if hasattr(token, "tool_calls") and token.tool_calls:
+                    # Skip any message that has tool_calls (redundant check for safety)
+                    continue
 
-            # Stream AI response
-            if hasattr(latest_msg, "type") and latest_msg.type == "ai" and latest_msg.content:
-                answer = latest_msg.content
-                yield answer
+                # Process content blocks for final answer text streaming
+                if hasattr(token, "content_blocks") and token.content_blocks:
+                    for block in token.content_blocks:
+                        if block.get("type") == "tool_call_chunk":
+                            # Tool call chunk detected - emit metadata if not already done
+                            if not tool_executing:
+                                tool_executing = True
+                                logger.debug("Agent calling tool via chunk")
+                                yield {
+                                    "role": "assistant",
+                                    "content": "",
+                                    "metadata": {
+                                        "title": "🔍 Searching information in the knowledge base"
+                                    },
+                                }
+                            # Never stream tool call chunks as text
+                            continue
+
+                        elif block.get("type") == "text" and block.get("text"):
+                            # Only stream text if we're not currently executing tools
+                            # This prevents streaming the agent's "reasoning" about tool calls
+                            if not tool_executing:
+                                text_chunk = block["text"]
+                                answer += text_chunk
+                                yield answer
+
+            # Handle "updates" mode for agent state updates
+            elif stream_mode == "updates":
+                # We can log updates but don't need to yield them
+                logger.debug("Agent update: %s", list(chunk.keys()) if isinstance(chunk, dict) else chunk)
 
         # Accumulate articles from tool results and add citations
         from rag_engine.tools import accumulate_articles_from_tool_results
