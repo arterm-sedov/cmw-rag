@@ -218,40 +218,6 @@ class TestRAGRetriever:
         assert isinstance(articles[0], Article)
         assert len(articles[0].matched_chunks) == 3
 
-    def test_context_budgeting(self, retriever):
-        """Test context budgeting respects token limits.
-
-        New behavior may include a summarized/lightweight representation of the
-        overflow article while still respecting the overall token budget.
-        """
-        # Create articles with known sizes
-        articles = [
-            Article("article1", "x" * 10000, {}),  # ~2500 tokens
-            Article("article2", "x" * 10000, {}),  # ~2500 tokens
-            Article("article3", "x" * 10000, {}),  # ~2500 tokens
-            Article("article4", "x" * 500000, {}),  # ~125K tokens (exceeds budget)
-        ]
-
-        # Context window is 100K; reserved tokens reduce available budget.
-        # The algorithm may include a summarized/lightweight version of the 4th
-        # article if it still fits within the remaining budget.
-        selected = retriever._apply_context_budget(articles)
-
-        # Ensure we at least included the first three articles or their
-        # representations, and the total remains within the budget.
-        assert len(selected) >= 3
-        # Verify total is within budget
-        total_tokens = sum(len(retriever._encoding.encode(a.content)) for a in selected)
-        assert total_tokens <= 75000  # 75% of 100K
-
-    def test_context_budgeting_logs_percentage(self, retriever, caplog):
-        """Test context budgeting logs token usage percentage."""
-        articles = [Article("test", "x" * 1000, {})]
-
-        retriever._apply_context_budget(articles)
-
-        # Check logs contain percentage
-        assert "% of context window" in caplog.text
 
     @patch("rag_engine.retrieval.retriever.top_k_search")
     def test_retrieve_multiple_articles(self, mock_search, retriever, tmp_path):
@@ -312,6 +278,63 @@ class TestRAGRetriever:
         assert len(articles) == 1
         assert articles[0].kb_id == "4578"  # Normalized
         assert len(articles[0].matched_chunks) == 2  # Both chunks grouped together
+
+    @patch("rag_engine.retrieval.retriever.top_k_search")
+    def test_retrieve_preserves_ranks(self, mock_search, retriever, tmp_path):
+        """Test that retrieve() preserves reranker scores and calculates normalized ranks."""
+        # Create test file
+        test_file = tmp_path / "article1.md"
+        test_file.write_text("Article content")
+
+        # Create chunks with different scores
+        chunk1 = Mock()
+        chunk1.metadata = {
+            "kbId": "123",
+            "source_file": str(test_file),
+            "title": "Article 1",
+        }
+        chunk1.page_content = "chunk 1"
+        chunk1.id = "chunk1"
+
+        chunk2 = Mock()
+        chunk2.metadata = {
+            "kbId": "456",
+            "source_file": str(test_file),
+            "title": "Article 2",
+        }
+        chunk2.page_content = "chunk 2"
+        chunk2.id = "chunk2"
+
+        mock_search.return_value = [chunk1, chunk2]
+
+        # Mock reranker - need to ensure retriever has a reranker
+        if retriever.reranker is None:
+            retriever.reranker = MagicMock()
+
+        # Mock reranker to return different scores
+        with patch.object(retriever.reranker, "rerank") as mock_rerank:
+            # Return articles with different scores (chunk2 has higher score)
+            mock_rerank.return_value = [
+                (chunk2, 0.9),  # Higher score = better rank
+                (chunk1, 0.7),  # Lower score
+            ]
+
+            articles = retriever.retrieve("test query")
+
+            # Should have 2 articles
+            assert len(articles) == 2
+
+            # Articles should be sorted by rerank_score (highest first)
+            assert articles[0].metadata["rerank_score"] == 0.9
+            assert articles[1].metadata["rerank_score"] == 0.7
+
+            # Normalized ranks should be calculated (0.0 = best, 1.0 = worst)
+            assert articles[0].metadata["normalized_rank"] == 0.0  # Best rank
+            assert articles[1].metadata["normalized_rank"] == 1.0  # Worst rank
+
+            # Article ranks should be position-based
+            assert articles[0].metadata["article_rank"] == 0
+            assert articles[1].metadata["article_rank"] == 1
 
 
 class TestIntegration:

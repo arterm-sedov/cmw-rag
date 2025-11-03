@@ -129,11 +129,9 @@ def _check_context_fallback(messages: list[dict]) -> str | None:
 def compress_tool_results(state: dict, runtime) -> dict | None:
     """Compress tool results before LLM call if approaching context limit.
 
-    This middleware runs right before each LLM invocation. It checks if the
-    accumulated tool results + conversation would exceed 85% of the context window.
-    If so, it compresses the least relevant articles using the summarization utility.
-
-    This is a thin wrapper around the compression utility module.
+    This middleware runs right before each LLM invocation, AFTER all tool calls complete.
+    It extracts ALL articles from ALL tool messages, deduplicates, and compresses
+    proportionally based on normalized_rank (0.0 = best, 1.0 = worst).
 
     Args:
         state: Agent state containing messages

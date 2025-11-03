@@ -144,8 +144,8 @@ class TestRetrieveContextTool:
         result_str = retrieve_context.invoke({"query": "test query", "top_k": 5})
         result = json.loads(result_str)
 
-        # Verify retriever was called correctly (with reserved_tokens parameter)
-        mock_ret.retrieve.assert_called_once_with("test query", top_k=5, reserved_tokens=0)
+        # Verify retriever was called correctly (no reserved_tokens parameter)
+        mock_ret.retrieve.assert_called_once_with("test query", top_k=5)
 
         # Verify result structure
         assert len(result["articles"]) == 1

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 
+from rag_engine.config.settings import settings
 from rag_engine.llm.summarization import summarize_to_tokens
 from rag_engine.llm.token_utils import count_tokens
 from rag_engine.utils.message_utils import (
@@ -14,6 +15,144 @@ from rag_engine.utils.message_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def compress_all_articles_proportionally_by_rank(
+    articles: list[dict],
+    target_tokens: int,
+    guidance: str | None = None,
+    llm_manager=None,
+) -> tuple[list[dict], int]:
+    """Compress articles proportionally to their ranks to fit target_tokens.
+
+    Allocates target_tokens budget proportionally:
+    - Higher-ranked articles (lower normalized_rank) get larger share of budget
+    - Lower-ranked articles (higher normalized_rank) get smaller share of budget
+
+    The sum of all compressed articles will equal target_tokens (within rounding).
+
+    Args:
+        articles: List of article dicts with 'content', 'metadata.normalized_rank'
+        target_tokens: Target total tokens for ALL articles after compression
+        guidance: User question for summarization guidance
+        llm_manager: LLMManager for summarization
+
+    Returns:
+        Tuple of (compressed_articles, tokens_saved)
+    """
+    if not articles or not llm_manager:
+        return articles, 0
+
+    # Validate and prepare ranks
+    for article in articles:
+        rank = article.get("metadata", {}).get("normalized_rank")
+        if rank is not None:
+            article.setdefault("metadata", {})["normalized_rank"] = max(0.0, min(1.0, float(rank)))
+        else:
+            article.setdefault("metadata", {})["normalized_rank"] = 1.0
+
+    # Calculate allocation weights based on rank
+    # Higher rank (lower normalized_rank) = higher weight = more budget
+    # Formula: weight = 1.0 - (normalized_rank * 0.7) gives range [0.3, 1.0]
+    # Best rank (0.0) gets weight 1.0, worst (1.0) gets weight 0.3
+    total_weight = 0.0
+    article_weights = []
+
+    for article in articles:
+        normalized_rank = article.get("metadata", {}).get("normalized_rank", 1.0)
+        # Weight: 1.0 for best rank (0.0), 0.3 for worst rank (1.0)
+        weight = 1.0 - (normalized_rank * 0.7)
+        article_weights.append(weight)
+        total_weight += weight
+
+    if total_weight == 0:
+        # Fallback: equal distribution
+        article_weights = [1.0] * len(articles)
+        total_weight = float(len(articles))
+
+    # Allocate target_tokens proportionally to each article
+    min_tokens_per_article = getattr(settings, "llm_compression_min_tokens", 300)
+    article_allocations = []
+
+    for i, article in enumerate(articles):
+        # Proportional allocation based on weight
+        proportional_share = article_weights[i] / total_weight
+        allocated_tokens = int(target_tokens * proportional_share)
+
+        # Ensure minimum tokens per article and don't exceed original size
+        original_tokens = count_tokens(article.get("content", ""))
+        article_target_tokens = max(min_tokens_per_article, min(allocated_tokens, original_tokens))
+
+        article_allocations.append((i, article, article_target_tokens))
+
+    # Adjust if allocations exceed target (due to min_tokens constraint)
+    total_allocated = sum(alloc[2] for alloc in article_allocations)
+    if total_allocated > target_tokens:
+        # Need to reduce allocations, starting with worst-ranked articles
+        # Sort by normalized_rank descending (worst first)
+        article_allocations.sort(
+            key=lambda x: x[1].get("metadata", {}).get("normalized_rank", 1.0),
+            reverse=True,
+        )
+
+        excess = total_allocated - target_tokens
+        for i, (orig_idx, article, allocated) in enumerate(article_allocations):
+            if excess <= 0:
+                break
+
+            reduction = min(excess, allocated - min_tokens_per_article)
+            if reduction > 0:
+                article_allocations[i] = (orig_idx, article, allocated - reduction)
+                excess -= reduction
+
+    # Now compress each article to its allocated target
+    compressed_articles = list(articles)
+    tokens_saved = 0
+
+    for orig_idx, article, article_target_tokens in article_allocations:
+        original_content = article.get("content", "")
+        if not original_content:
+            continue
+
+        original_tokens = count_tokens(original_content)
+
+        # If already fits, no compression needed
+        if original_tokens <= article_target_tokens:
+            continue
+
+        try:
+            compressed = summarize_to_tokens(
+                title=article.get("title", "Article"),
+                url=article.get("url", ""),
+                matched_chunks=[original_content],
+                full_body=None,
+                target_tokens=article_target_tokens,
+                guidance=guidance,
+                llm=llm_manager,
+                max_retries=1,
+            )
+
+            compressed_tokens = count_tokens(compressed)
+            compressed_articles[orig_idx]["content"] = compressed
+            if "metadata" not in compressed_articles[orig_idx]:
+                compressed_articles[orig_idx]["metadata"] = {}
+            compressed_articles[orig_idx]["metadata"]["compressed"] = True
+
+            tokens_saved += original_tokens - compressed_tokens
+
+            logger.debug(
+                "Compressed article '%s' (rank=%.2f): %d → %d tokens (allocated=%d)",
+                article.get("title", "")[:50],
+                article.get("metadata", {}).get("normalized_rank", 1.0),
+                original_tokens,
+                compressed_tokens,
+                article_target_tokens,
+            )
+        except Exception as exc:
+            logger.warning("Failed to compress article at index %d: %s", orig_idx, exc)
+            continue
+
+    return compressed_articles, tokens_saved
 
 
 def compress_articles_to_target_tokens(
@@ -112,8 +251,14 @@ def compress_tool_messages(
 ) -> list | None:
     """Compress tool messages if context exceeds threshold.
 
-    This function checks if the accumulated context exceeds the threshold,
-    and if so, compresses tool messages to bring it below the target.
+    NEW BEHAVIOR:
+    1. Extracts ALL articles from ALL tool messages
+    2. Deduplicates by kb_id (preserves highest rerank_score)
+    3. Re-normalizes ranks after deduplication
+    4. Compresses proportionally by rank across all articles
+    5. Updates tool messages with compressed articles
+
+    This runs in @before_model middleware AFTER all tool calls complete.
 
     Args:
         messages: List of message objects
@@ -142,95 +287,159 @@ def compress_tool_messages(
     context_window = get_context_window(current_model)
     threshold = int(context_window * threshold_pct)
 
-    # Count total tokens in messages and find tool message indices
+    # Count total tokens in messages
     total_tokens = count_messages_tokens(messages)
-    tool_message_indices = []
-
-    for idx, msg in enumerate(messages):
-        if is_tool_message(msg):
-            tool_message_indices.append(idx)
 
     # Check if we need compression
     if total_tokens <= threshold:
         return None  # All good, no changes needed
 
+    # Find all tool message indices
+    tool_message_indices = []
+    for idx, msg in enumerate(messages):
+        if is_tool_message(msg):
+            tool_message_indices.append(idx)
+
     if not tool_message_indices:
         return None  # No tool messages to compress
 
     logger.warning(
-        "Context at %d tokens (%.1f%% of %d window), compressing tool results",
+        "Context at %d tokens (%.1f%% of %d window), compressing articles proportionally by rank",
         total_tokens,
         100 * total_tokens / context_window,
         context_window,
     )
 
-    # Calculate how much to compress (target: get below target_pct)
-    target_tokens = int(context_window * target_pct)
-    tokens_to_save = total_tokens - target_tokens
+    # Extract ALL articles from ALL tool messages (with deduplication by kb_id)
+    all_articles_dict: dict[str, dict] = {}  # kb_id -> article dict (preserve highest rank)
 
-    # Find the user's question for summarization guidance
-    user_question = extract_user_question(messages)
-
-    # Compress tool messages, starting from the last one (least relevant)
-    tokens_saved = 0
-    updated_messages = list(messages)  # Copy to avoid mutating original
-
-    for idx in reversed(tool_message_indices):
-        if tokens_saved >= tokens_to_save:
-            break
-
-        msg = updated_messages[idx]
+    for idx in tool_message_indices:
+        msg = messages[idx]
         content = get_message_content(msg)
-
         if not content:
             continue
 
         try:
-            # Parse tool result JSON
             result = json.loads(content)
             articles = result.get("articles", [])
 
-            if not articles:
-                continue
+            for article in articles:
+                kb_id = article.get("kb_id")
+                if not kb_id:
+                    continue
 
-            # Compress articles
-            compressed_articles, article_tokens_saved = compress_articles_to_target_tokens(
-                articles=articles,
-                target_ratio=None,
-                min_tokens=None,
-                guidance=user_question,
-                llm_manager=llm_manager,
-            )
+                # Deduplicate: keep article with highest rerank_score
+                existing = all_articles_dict.get(kb_id)
+                existing_score = (
+                    existing.get("metadata", {}).get("rerank_score", -float("inf")) if existing else -float("inf")
+                )
+                new_score = article.get("metadata", {}).get("rerank_score", -float("inf"))
 
-            tokens_saved += article_tokens_saved
+                if not existing or new_score > existing_score:
+                    all_articles_dict[kb_id] = article
 
-            # Update the message content with compressed articles
-            result["articles"] = compressed_articles
+        except (json.JSONDecodeError, Exception) as exc:
+            logger.warning("Failed to parse tool message %d: %s", idx, exc)
+            continue
+
+    if not all_articles_dict:
+        return None
+
+    # Convert to list and sort by rank (best first)
+    all_articles = list(all_articles_dict.values())
+    all_articles.sort(
+        key=lambda a: a.get("metadata", {}).get("rerank_score", -float("inf")),
+        reverse=True,
+    )
+
+    # Re-normalize ranks after deduplication
+    if len(all_articles) > 1:
+        for idx, article in enumerate(all_articles):
+            # Normalized rank: 0.0 = first (best), 1.0 = last (worst)
+            normalized_rank = idx / (len(all_articles) - 1)
+            article.setdefault("metadata", {})["normalized_rank"] = normalized_rank
+            article.setdefault("metadata", {})["article_rank"] = idx
+    else:
+        if all_articles:
+            all_articles[0].setdefault("metadata", {})["normalized_rank"] = 0.0
+            all_articles[0].setdefault("metadata", {})["article_rank"] = 0
+
+    # Calculate target tokens
+    target_tokens = int(context_window * target_pct)
+
+    # Count non-tool message tokens (conversation + system prompts)
+    non_tool_tokens = sum(count_messages_tokens([m]) for m in messages if not is_tool_message(m))
+
+    # Reserve space for LLM output/reasoning using configurable overhead from .env
+    overhead_tokens = getattr(settings, "llm_tool_results_overhead_tokens", 40000)
+
+    # Available budget for articles = target - conversation - LLM overhead
+    available_for_articles = max(0, int(target_tokens - non_tool_tokens - overhead_tokens))
+
+    # Get user question for summarization guidance
+    user_question = extract_user_question(messages)
+
+    # Compress ALL articles proportionally by rank
+    compressed_articles, tokens_saved = compress_all_articles_proportionally_by_rank(
+        articles=all_articles,
+        target_tokens=available_for_articles,
+        guidance=user_question,
+        llm_manager=llm_manager,
+    )
+
+    if tokens_saved == 0:
+        return None  # Compression didn't help
+
+    # Create mapping: kb_id -> compressed article
+    compressed_by_kb_id = {a["kb_id"]: a for a in compressed_articles}
+
+    # Update tool messages with compressed articles
+    updated_messages = list(messages)
+    for idx in tool_message_indices:
+        msg = updated_messages[idx]
+        content = get_message_content(msg)
+        if not content:
+            continue
+
+        try:
+            result = json.loads(content)
+            original_articles = result.get("articles", [])
+
+            # Replace with compressed versions if available
+            compressed_result_articles = []
+            for orig_article in original_articles:
+                kb_id = orig_article.get("kb_id")
+                if kb_id in compressed_by_kb_id:
+                    compressed_result_articles.append(compressed_by_kb_id[kb_id])
+                else:
+                    compressed_result_articles.append(orig_article)
+
+            result["articles"] = compressed_result_articles
             if "metadata" not in result:
                 result["metadata"] = {}
             result["metadata"]["compressed_articles_count"] = sum(
-                1 for a in compressed_articles if a.get("metadata", {}).get("compressed")
+                1 for a in compressed_result_articles if a.get("metadata", {}).get("compressed")
             )
             result["metadata"]["tokens_saved_by_compression"] = tokens_saved
 
             # Create new compact JSON
             new_content = json.dumps(result, ensure_ascii=False, separators=(",", ":"))
-
-            # Update message content
             updated_messages = update_tool_message_content(updated_messages, idx, new_content)
 
-        except (json.JSONDecodeError, Exception) as exc:
-            logger.warning("Failed to compress tool message at index %d: %s", idx, exc)
+        except Exception as exc:
+            logger.warning("Failed to update tool message %d: %s", idx, exc)
             continue
 
     if tokens_saved > 0:
         logger.info(
-            "Compression complete: saved %d tokens, new total ~%d (%.1f%% of window)",
+            "Proportional compression by rank complete: saved %d tokens (%.1f%% reduction), "
+            "new total ~%d (%.1f%% of window)",
             tokens_saved,
+            100 * tokens_saved / total_tokens,
             total_tokens - tokens_saved,
             100 * (total_tokens - tokens_saved) / context_window,
         )
         return updated_messages
 
-    return None  # No compression happened
+    return None
 
