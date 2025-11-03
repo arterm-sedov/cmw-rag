@@ -482,6 +482,44 @@ def update_context_budget(state: dict, runtime) -> dict | None:
 
     return None
 
+
+from typing import Callable  # noqa: E402
+from langchain.agents.middleware import AgentMiddleware, wrap_tool_call as middleware_wrap_tool_call  # noqa: E402
+from langchain.tools.tool_node import ToolCallRequest  # noqa: E402
+from langchain_core.messages import ToolMessage  # noqa: E402
+from langgraph.types import Command  # noqa: E402
+
+
+class ToolBudgetMiddleware(AgentMiddleware):
+    """Populate runtime.context tokens right before each tool execution.
+
+    Ensures tools see up-to-date conversation and accumulated tool tokens
+    even when multiple tool calls happen within a single agent step.
+    """
+
+    @middleware_wrap_tool_call()
+    def tool_budget_wrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+    ) -> ToolMessage | Command:
+        try:
+            state = getattr(request, "state", {}) or {}
+            runtime = getattr(request, "runtime", None)
+            if state and runtime is not None and hasattr(runtime, "context") and runtime.context:
+                conv_toks, tool_toks = _compute_context_tokens_from_state(state.get("messages", []))
+                runtime.context.conversation_tokens = conv_toks
+                runtime.context.accumulated_tool_tokens = tool_toks
+                logger.debug(
+                    "[ToolBudget] runtime.context updated before tool: conv=%d, tools=%d",
+                    conv_toks,
+                    tool_toks,
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[ToolBudget] Failed to update context before tool: %s", exc)
+
+        return handler(request)
+
 def _create_rag_agent(override_model: str | None = None):
     """Create LangChain agent with forced retrieval tool execution and memory compression.
 
@@ -585,6 +623,7 @@ def _create_rag_agent(override_model: str | None = None):
         system_prompt=SYSTEM_PROMPT,
         context_schema=AgentContext,  # Typed context for tools
         middleware=[
+            ToolBudgetMiddleware(),  # Ensure tokens are fresh before tool execution
             before_model(update_context_budget),  # Keep runtime.context tokens fresh
             before_model(compress_tool_results_if_needed),  # Dynamic tool result compression
             SummarizationMiddleware(
