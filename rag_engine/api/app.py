@@ -52,42 +52,111 @@ retriever = RAGRetriever(
 )
 
 
-def _create_rag_agent():
-    """Create LangChain agent with forced retrieval tool execution and memory compression.
-
-    Uses tool_choice parameter to enforce tool calling, the standard
-    Comindware Platform system prompt, and SummarizationMiddleware for
-    automatic conversation history compression at 85% context threshold.
-
+def _estimate_accumulated_context(messages: list[dict], tool_results: list) -> int:
+    """Estimate total tokens for messages + tool results (JSON format).
+    
+    Args:
+        messages: Conversation messages
+        tool_results: List of tool result JSON strings
+        
     Returns:
-        Configured LangChain agent with retrieve_context tool and middleware
+        Estimated token count
     """
-    from langchain.agents import create_agent
-    from langchain.agents.middleware import SummarizationMiddleware
     import tiktoken
 
-    from rag_engine.llm.prompts import SYSTEM_PROMPT
+    encoding = tiktoken.get_encoding("cl100k_base")
+    fast_path_threshold = 50_000
+    total_tokens = 0
+
+    # Count message tokens
+    for msg in messages:
+        if hasattr(msg, "content"):
+            content = msg.content
+        else:
+            content = msg.get("content", "")
+        if isinstance(content, str) and content:
+            if len(content) > fast_path_threshold:
+                total_tokens += len(content) // 4
+            else:
+                total_tokens += len(encoding.encode(content))
+
+    # Count tool result tokens (JSON format is verbose!)
+    for result in tool_results:
+        if isinstance(result, str):
+            if len(result) > fast_path_threshold:
+                total_tokens += len(result) // 4
+            else:
+                total_tokens += len(encoding.encode(result))
+
+    # Add buffer for system prompt, tool schemas, overhead
+    total_tokens += 40000
+
+    return total_tokens
+
+
+def _find_model_for_tokens(required_tokens: int) -> str | None:
+    """Find a model that can handle the required token count.
+    
+    Args:
+        required_tokens: Minimum token capacity needed
+        
+    Returns:
+        Model name if found, None otherwise
+    """
     from rag_engine.llm.llm_manager import MODEL_CONFIGS
-    from rag_engine.tools import retrieve_context
 
-    # Select model based on provider
-    if settings.default_llm_provider == "gemini":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        base_model = ChatGoogleGenerativeAI(
-            model=settings.default_model,
-            temperature=settings.llm_temperature,
-            google_api_key=settings.google_api_key,
-        )
-    else:  # openrouter or other
-        from langchain_openai import ChatOpenAI
-        base_model = ChatOpenAI(
-            model=settings.default_model,
-            temperature=settings.llm_temperature,
-            openai_api_key=settings.openrouter_api_key,
-            openai_api_base=settings.openrouter_base_url,
-        )
+    allowed = get_allowed_fallback_models()
+    if not allowed:
+        return None
 
-    # Get model configuration for context window
+    # Add 10% buffer
+    required_tokens = int(required_tokens * 1.1)
+
+    for candidate in allowed:
+        if candidate == settings.default_model:
+            continue
+
+        candidate_config = MODEL_CONFIGS.get(candidate)
+        if not candidate_config:
+            # Try partial match
+            for key in MODEL_CONFIGS:
+                if key != "default" and key in candidate:
+                    candidate_config = MODEL_CONFIGS[key]
+                    break
+
+        if candidate_config:
+            candidate_window = candidate_config.get("token_limit", 0)
+            if candidate_window >= required_tokens:
+                logger.info(
+                    "Found model %s with capacity %d tokens (required: %d)",
+                    candidate,
+                    candidate_window,
+                    required_tokens,
+                )
+                return candidate
+
+    logger.error("No model found with capacity for %d tokens", required_tokens)
+    return None
+
+
+def _check_context_fallback(messages: list[dict]) -> str | None:
+    """Check if context fallback is needed and return fallback model.
+
+    Estimates token usage for the conversation and checks against the current
+    model's context window. If approaching limit (90%), selects a larger model
+    from allowed fallbacks. Matches old chat_handler's fallback logic.
+
+    Args:
+        messages: List of message dicts with 'content' field
+
+    Returns:
+        Fallback model name if needed, None otherwise
+    """
+    import tiktoken
+
+    from rag_engine.llm.llm_manager import MODEL_CONFIGS
+
+    # Get current model config
     model_config = MODEL_CONFIGS.get(settings.default_model)
     if not model_config:
         # Try partial match
@@ -97,23 +166,168 @@ def _create_rag_agent():
                 break
     if not model_config:
         model_config = MODEL_CONFIGS["default"]
-    
+
+    current_window = model_config["token_limit"]
+
+    # Estimate tokens using tiktoken with fast path for large strings
+    # Matches token_utils.py pattern: exact for <50K chars, approximation for larger
+    encoding = tiktoken.get_encoding("cl100k_base")
+    fast_path_threshold = 50_000  # chars
+    total_tokens = 0
+    for msg in messages:
+        # Handle both dict (Gradio) and LangChain message objects
+        if hasattr(msg, "content"):
+            content = msg.content  # LangChain message object
+        else:
+            content = msg.get("content", "")  # Dict from Gradio
+        if isinstance(content, str) and content:
+            # Use fast approximation for very large content
+            if len(content) > fast_path_threshold:
+                total_tokens += len(content) // 4
+            else:
+                total_tokens += len(encoding.encode(content))
+
+    # Add buffer for system prompt and output (~35K tokens)
+    total_tokens += 35000
+
+    # Check if approaching limit (90% threshold)
+    threshold = int(current_window * 0.9)
+
+    if total_tokens > threshold:
+        logger.warning(
+            "Context size %d tokens exceeds %.1f%% threshold (%d) of %d window for %s",
+            total_tokens,
+            90.0,
+            threshold,
+            current_window,
+            settings.default_model,
+        )
+
+        # Find fallback model with sufficient capacity
+        allowed = get_allowed_fallback_models()
+        if not allowed:
+            logger.warning("No fallback models configured")
+            return None
+
+        # Add 10% buffer
+        required_tokens = int(total_tokens * 1.1)
+
+        for candidate in allowed:
+            if candidate == settings.default_model:
+                continue
+
+            candidate_config = MODEL_CONFIGS.get(candidate)
+            if not candidate_config:
+                # Try partial match
+                for key in MODEL_CONFIGS:
+                    if key != "default" and key in candidate:
+                        candidate_config = MODEL_CONFIGS[key]
+                        break
+            if not candidate_config:
+                continue
+
+            candidate_window = candidate_config.get("token_limit", 0)
+            if candidate_window >= required_tokens:
+                logger.warning(
+                    "Falling back from %s to %s (window: %d → %d tokens)",
+                    settings.default_model,
+                    candidate,
+                    current_window,
+                    candidate_window,
+                )
+                return candidate
+
+        logger.error(
+            "No fallback model found with capacity for %d tokens", required_tokens
+        )
+
+    return None
+
+
+def _create_rag_agent(override_model: str | None = None):
+    """Create LangChain agent with forced retrieval tool execution and memory compression.
+
+    Uses tool_choice parameter to enforce tool calling, the standard
+    Comindware Platform system prompt, and SummarizationMiddleware for
+    automatic conversation history compression at 85% context threshold.
+
+    Args:
+        override_model: Optional model name to use instead of default
+                       (for context window fallback)
+
+    Returns:
+        Configured LangChain agent with retrieve_context tool and middleware
+    """
+    import tiktoken
+    from langchain.agents import create_agent
+    from langchain.agents.middleware import SummarizationMiddleware
+
+    from rag_engine.llm.llm_manager import MODEL_CONFIGS
+    from rag_engine.llm.prompts import SYSTEM_PROMPT
+    from rag_engine.tools import retrieve_context
+
+    # Use override model if provided (for fallback), otherwise use default
+    selected_model = override_model or settings.default_model
+
+    # Select model based on provider
+    if settings.default_llm_provider == "gemini":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        base_model = ChatGoogleGenerativeAI(
+            model=selected_model,
+            temperature=settings.llm_temperature,
+            google_api_key=settings.google_api_key,
+        )
+    else:  # openrouter or other
+        from langchain_openai import ChatOpenAI
+        base_model = ChatOpenAI(
+            model=selected_model,
+            temperature=settings.llm_temperature,
+            openai_api_key=settings.openrouter_api_key,
+            openai_api_base=settings.openrouter_base_url,
+        )
+
+    # Get model configuration for context window
+    model_config = MODEL_CONFIGS.get(selected_model)
+    if not model_config:
+        # Try partial match
+        for key in MODEL_CONFIGS:
+            if key != "default" and key in selected_model:
+                model_config = MODEL_CONFIGS[key]
+                break
+    if not model_config:
+        model_config = MODEL_CONFIGS["default"]
+
     context_window = model_config["token_limit"]
-    
-    # Calculate threshold (85% of context window, matching old behavior)
+
+    # Calculate threshold (70% default, more aggressive for agent with tool calls)
     threshold_tokens = int(context_window * (settings.memory_compression_threshold_pct / 100))
 
-    # Custom token counter using tiktoken (exact counting)
+    # Custom token counter using tiktoken with fast path for large strings
+    # Matches token_utils.py pattern: exact for <50K chars, approximation for larger
     encoding = tiktoken.get_encoding("cl100k_base")
-    
+    fast_path_threshold = 50_000  # chars
+
     def tiktoken_counter(messages: list) -> int:
-        """Count tokens using tiktoken for accuracy."""
+        """Count tokens using tiktoken for accuracy with fast path for large content.
+
+        Handles both dict messages and LangChain message objects.
+        Uses exact tiktoken encoding for normal content, but switches to
+        fast approximation (chars // 4) for very large strings (>50K chars)
+        to avoid performance issues, matching the pattern in token_utils.py.
+        """
         total = 0
         for msg in messages:
-            content = msg.get("content", "")
+            # Handle both dict (Gradio) and LangChain message objects
+            if hasattr(msg, "content"):
+                content = msg.content  # LangChain message object
+            else:
+                content = msg.get("content", "")  # Dict from Gradio
             if isinstance(content, str) and content:
-                # Use tiktoken for exact counting
-                total += len(encoding.encode(content))
+                # Use fast approximation for very large content
+                if len(content) > fast_path_threshold:
+                    total += len(content) // 4
+                else:
+                    total += len(encoding.encode(content))
         return total
 
     # CRITICAL: Use tool_choice to force retrieval tool execution
@@ -123,6 +337,9 @@ def _create_rag_agent():
         tool_choice="retrieve_context"
     )
 
+    # Get messages_to_keep from settings (default 2, matching old handler)
+    messages_to_keep = getattr(settings, "memory_compression_messages_to_keep", 2)
+
     agent = create_agent(
         model=model_with_tools,
         tools=[retrieve_context],
@@ -131,8 +348,8 @@ def _create_rag_agent():
             SummarizationMiddleware(
                 model=base_model,  # Use same model for summarization
                 token_counter=tiktoken_counter,  # Use our tiktoken-based counter
-                max_tokens_before_summary=threshold_tokens,  # Match old 85% threshold
-                messages_to_keep=4,  # Keep last 2 turns (2 user + 2 assistant)
+                max_tokens_before_summary=threshold_tokens,  # Configurable threshold (default 70%)
+                messages_to_keep=messages_to_keep,  # Configurable, default 2 (matches old handler)
                 summary_prompt=(
                     "Summarize the conversation so far, preserving key context "
                     "about the user's questions and the information provided. "
@@ -144,13 +361,25 @@ def _create_rag_agent():
         ],
     )
 
-    logger.info(
-        "RAG agent created with forced tool execution and memory compression "
-        "(threshold: %d tokens at %d%%, window: %d)",
-        threshold_tokens,
-        settings.memory_compression_threshold_pct,
-        context_window,
-    )
+    if override_model:
+        logger.info(
+            "RAG agent created with FALLBACK MODEL %s: forced tool execution, "
+            "memory compression (threshold: %d tokens at %d%%, keep: %d msgs, window: %d)",
+            selected_model,
+            threshold_tokens,
+            settings.memory_compression_threshold_pct,
+            messages_to_keep,
+            context_window,
+        )
+    else:
+        logger.info(
+            "RAG agent created with forced tool execution and memory compression "
+            "(threshold: %d tokens at %d%%, keep: %d msgs, window: %d)",
+            threshold_tokens,
+            settings.memory_compression_threshold_pct,
+            messages_to_keep,
+            context_window,
+        )
     return agent
 
 
@@ -192,10 +421,15 @@ def agent_chat_handler(
         messages.append(msg)
     messages.append({"role": "user", "content": message})
 
-    # Create agent and stream execution
-    agent = _create_rag_agent()
+    # Check if we need model fallback BEFORE creating agent
+    # This matches old handler's upfront fallback check
+    selected_model = _check_context_fallback(messages) if settings.llm_fallback_enabled else None
+
+    # Create agent (with fallback model if needed) and stream execution
+    agent = _create_rag_agent(override_model=selected_model)
     tool_results = []
     answer = ""
+    current_model = selected_model or settings.default_model
 
     try:
         # Track tool execution state
@@ -239,6 +473,53 @@ def agent_chat_handler(
                             "content": "",
                             "metadata": {"title": "✅ Search completed"}
                         }
+
+                    # CRITICAL: Check if accumulated tool results exceed safe threshold
+                    # This prevents overflow when agent makes multiple tool calls
+                    if settings.llm_fallback_enabled and not selected_model:
+                        # Estimate total tokens: conversation + all tool results (JSON)
+                        accumulated_tokens = _estimate_accumulated_context(messages, tool_results)
+
+                        from rag_engine.llm.llm_manager import MODEL_CONFIGS
+                        model_config = MODEL_CONFIGS.get(current_model, MODEL_CONFIGS["default"])
+                        context_window = model_config.get("token_limit", 262144)
+
+                        # Use 80% threshold for post-tool check (more conservative)
+                        post_tool_threshold = int(context_window * 0.80)
+
+                        if accumulated_tokens > post_tool_threshold:
+                            logger.warning(
+                                "Accumulated context (%d tokens) exceeds 80%% threshold (%d) after tool calls. "
+                                "Checking for model fallback before final answer generation.",
+                                accumulated_tokens,
+                                post_tool_threshold,
+                            )
+
+                            # Find fallback model
+                            fallback_model = _find_model_for_tokens(accumulated_tokens)
+
+                            if fallback_model and fallback_model != current_model:
+                                logger.warning(
+                                    "⚠️ Switching from %s to %s mid-turn due to accumulated tool results (%d tokens)",
+                                    current_model,
+                                    fallback_model,
+                                    accumulated_tokens,
+                                )
+
+                                # Notify user of fallback
+                                yield {
+                                    "role": "assistant",
+                                    "content": "",
+                                    "metadata": {"title": f"⚡ Switching to {fallback_model} (larger context needed)"}
+                                }
+
+                                # Recreate agent with larger model
+                                # Note: This is expensive but prevents catastrophic overflow
+                                agent = _create_rag_agent(override_model=fallback_model)
+                                current_model = fallback_model
+
+                                # Note: Can't restart stream here - agent will continue with new model
+                                # for subsequent calls
 
                     # Skip further processing of tool messages
                     continue

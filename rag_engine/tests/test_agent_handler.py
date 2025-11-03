@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from unittest.mock import Mock, patch
 
-from rag_engine.api.app import _create_rag_agent, agent_chat_handler
+from rag_engine.api.app import _check_context_fallback, _create_rag_agent, agent_chat_handler
 
 
 class TestCreateRagAgent:
@@ -104,6 +104,144 @@ class TestCreateRagAgent:
         assert "Comindware Platform" in system_prompt
         assert "technical documentation assistant" in system_prompt
         assert "<role>" in system_prompt  # Characteristic of SYSTEM_PROMPT
+
+    @patch("rag_engine.api.app.settings")
+    @patch("langchain.agents.create_agent")
+    @patch("langchain_google_genai.ChatGoogleGenerativeAI")
+    def test_create_agent_with_fallback_model(self, mock_gemini_cls, mock_create_agent, mock_settings):
+        """Test agent creation with fallback model override."""
+        mock_settings.default_llm_provider = "gemini"
+        mock_settings.default_model = "gemini-2.5-flash"
+        mock_settings.llm_temperature = 0.1
+        mock_settings.google_api_key = "test_key"
+        mock_settings.memory_compression_threshold_pct = 70
+        mock_settings.memory_compression_messages_to_keep = 2
+
+        mock_model = Mock()
+        mock_model_with_tools = Mock()
+        mock_model.bind_tools.return_value = mock_model_with_tools
+        mock_gemini_cls.return_value = mock_model
+        mock_agent = Mock()
+        mock_create_agent.return_value = mock_agent
+
+        # Create agent with fallback model
+        agent = _create_rag_agent(override_model="gemini-2.0-flash-exp")
+
+        # Verify model was created with FALLBACK model
+        mock_gemini_cls.assert_called_once_with(
+            model="gemini-2.0-flash-exp",
+            temperature=0.1,
+            google_api_key="test_key",
+        )
+
+        assert agent is mock_agent
+
+
+class TestContextFallback:
+    """Tests for _check_context_fallback function."""
+
+    @patch("rag_engine.api.app.get_allowed_fallback_models")
+    @patch("rag_engine.api.app.settings")
+    def test_no_fallback_within_threshold(self, mock_settings, mock_get_fallbacks):
+        """Test no fallback when context is within threshold."""
+        mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
+        mock_settings.llm_fallback_enabled = True
+        mock_get_fallbacks.return_value = ["openai/gpt-5-mini"]  # 400K tokens
+
+        # Small conversation - well within limits
+        messages = [
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "Hi there!"},
+        ]
+
+        result = _check_context_fallback(messages)
+
+        assert result is None  # No fallback needed
+
+    @patch("rag_engine.api.app.get_allowed_fallback_models")
+    @patch("rag_engine.api.app.settings")
+    def test_fallback_triggered_when_approaching_limit(self, mock_settings, mock_get_fallbacks):
+        """Test fallback triggered when approaching context window limit."""
+        mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
+        mock_settings.llm_fallback_enabled = True
+        mock_get_fallbacks.return_value = ["openai/gpt-5-mini"]  # 400K tokens
+
+        # Large conversation - simulate approaching limit
+        # qwen/qwen3-coder-flash has token_limit=128,000
+        # 90% threshold = 115,200 tokens
+        # We need: message_tokens + 35K buffer > 115,200
+        # So message_tokens > 80,200 tokens
+        # With fast path (>50K chars), chars // 4 approximation
+        # So chars > 320,800. Use 400K to be safe.
+        large_content = "x" * 400_000  # Exceeds 90% threshold with fast path
+
+        messages = [
+            {"role": "user", "content": large_content},
+        ]
+
+        result = _check_context_fallback(messages)
+
+        # Should fall back to larger model
+        assert result == "openai/gpt-5-mini"
+
+    @patch("rag_engine.api.app.get_allowed_fallback_models")
+    @patch("rag_engine.api.app.settings")
+    def test_no_fallback_when_no_allowed_models(self, mock_settings, mock_get_fallbacks):
+        """Test no fallback when no allowed models configured."""
+        mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
+        mock_settings.llm_fallback_enabled = True
+        mock_get_fallbacks.return_value = []  # No fallback models
+
+        messages = [
+            {"role": "user", "content": "x" * 400_000},  # Large content
+        ]
+
+        result = _check_context_fallback(messages)
+
+        assert result is None  # No fallback available
+
+    @patch("rag_engine.api.app.get_allowed_fallback_models")
+    @patch("rag_engine.api.app.settings")
+    def test_fallback_skips_current_model(self, mock_settings, mock_get_fallbacks):
+        """Test fallback skips current model in selection."""
+        mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
+        mock_settings.llm_fallback_enabled = True
+        # List includes current model - should skip to next
+        mock_get_fallbacks.return_value = [
+            "qwen/qwen3-coder-flash",  # Current model - skip
+            "openai/gpt-5-mini",  # Should select this (400K tokens)
+        ]
+
+        messages = [
+            {"role": "user", "content": "x" * 400_000},  # Large content
+        ]
+
+        result = _check_context_fallback(messages)
+
+        assert result == "openai/gpt-5-mini"
+
+    @patch("rag_engine.api.app.get_allowed_fallback_models")
+    @patch("rag_engine.api.app.settings")
+    def test_fallback_selects_first_sufficient_model(self, mock_settings, mock_get_fallbacks):
+        """Test fallback selects first model with sufficient capacity."""
+        mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
+        mock_settings.llm_fallback_enabled = True
+        # List of increasing capacity models
+        mock_get_fallbacks.return_value = [
+            "qwen/qwen3-coder-flash",  # Current - skip
+            "qwen/qwen3-235b-a22b",  # First sufficient (262K)
+            "openai/gpt-5-mini",  # Also sufficient (400K)
+            "gemini-2.5-flash",  # Also sufficient but not selected (1M)
+        ]
+
+        messages = [
+            {"role": "user", "content": "x" * 350_000},  # ~87K tokens, triggers fallback
+        ]
+
+        result = _check_context_fallback(messages)
+
+        # Should select first sufficient model
+        assert result == "qwen/qwen3-235b-a22b"
 
 
 class TestAgentChatHandler:

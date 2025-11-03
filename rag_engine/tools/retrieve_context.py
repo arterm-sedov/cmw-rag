@@ -215,20 +215,57 @@ def retrieve_context(
         # Get or create retriever (lazy initialization)
         retriever = _get_or_create_retriever()
 
-        # Calculate conversation history size from runtime state
+        # Estimate TOTAL reserved tokens for accurate context budgeting
+        # This includes:
+        # 1. Conversation history (user/assistant messages)
+        # 2. Tool results from previous calls IN THIS TURN (critical for multi-tool scenarios)
         conversation_tokens = 0
+        tool_result_tokens = 0
+
         if runtime and hasattr(runtime, 'state'):
             messages = runtime.state.get("messages", [])
-            # Estimate tokens in conversation history using fast approximation
             for msg in messages:
-                content = msg.get("content", "")
-                if isinstance(content, str):
-                    # Use ~4 chars per token approximation (same as retriever)
-                    conversation_tokens += len(content) // 4
-            logger.debug("Estimated conversation history: %d tokens", conversation_tokens)
+                # Get message content (handle both dict and LangChain objects)
+                if hasattr(msg, "content"):
+                    content = msg.content
+                else:
+                    content = msg.get("content", "") if isinstance(msg, dict) else ""
 
-        # Call retriever with conversation context awareness
-        docs = retriever.retrieve(query, top_k=top_k, reserved_tokens=conversation_tokens)
+                if isinstance(content, str) and content:
+                    msg_tokens = len(content) // 4  # Fast approximation
+
+                    # Classify: is this a tool result or conversation?
+                    # Tool results are JSON with "articles" key, much larger than normal messages
+                    msg_type = getattr(msg, "type", None)
+                    is_tool_result = (
+                        msg_type == "tool" or
+                        (isinstance(content, str) and '"articles"' in content and len(content) > 5000)
+                    )
+
+                    if is_tool_result:
+                        # This is a tool result from a previous retrieve_context call
+                        # Tool results are JSON-heavy and bloat context significantly
+                        tool_result_tokens += msg_tokens
+                    else:
+                        # Regular conversation message
+                        conversation_tokens += msg_tokens
+
+        # Total reserved includes BOTH conversation AND accumulated tool results
+        total_reserved_tokens = conversation_tokens + tool_result_tokens
+
+        logger.info(
+            "Retrieving articles: query=%s, top_k=%s, reserved_tokens=%d "
+            "(conversation: %d, tool_results: %d)",
+            query[:100],
+            top_k,
+            total_reserved_tokens,
+            conversation_tokens,
+            tool_result_tokens,
+        )
+
+        # Retrieve articles with accurate context budgeting
+        # Retriever will reduce article count/size if reserved tokens are high
+        docs = retriever.retrieve(query, top_k=top_k, reserved_tokens=total_reserved_tokens)
         logger.info("Retrieved %d articles for query: %s", len(docs), query)
         return _format_articles_to_json(docs, query, top_k)
     except Exception as exc:  # noqa: BLE001
