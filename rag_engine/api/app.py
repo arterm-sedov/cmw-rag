@@ -697,9 +697,13 @@ def agent_chat_handler(
         messages.append(msg)
     messages.append({"role": "user", "content": message})
 
+    # Note: pre-agent trimming removed by request; rely on existing middleware
+
     # Check if we need model fallback BEFORE creating agent
     # This matches old handler's upfront fallback check
-    selected_model = _check_context_fallback(messages) if settings.llm_fallback_enabled else None
+    selected_model = None
+    if settings.llm_fallback_enabled:
+        selected_model = _check_context_fallback(messages)
 
     # Create agent (with fallback model if needed) and stream execution
     agent = _create_rag_agent(override_model=selected_model)

@@ -9,6 +9,7 @@ import json
 import logging
 
 from langchain.tools import ToolRuntime, tool
+import threading
 from pydantic import BaseModel, Field, field_validator
 
 from rag_engine.retrieval.retriever import Article, RAGRetriever
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Module-level retriever instance (lazy singleton)
 _retriever: RAGRetriever | None = None
+_retriever_init_lock = threading.Lock()
 
 
 def _get_or_create_retriever() -> RAGRetriever:
@@ -31,6 +33,10 @@ def _get_or_create_retriever() -> RAGRetriever:
     """
     global _retriever
     if _retriever is None:
+        # Serialize first-time initialization across threads
+        with _retriever_init_lock:
+            if _retriever is not None:
+                return _retriever
         from rag_engine.config.settings import settings
         from rag_engine.llm.llm_manager import LLMManager
         from rag_engine.retrieval.embedder import FRIDAEmbedder
