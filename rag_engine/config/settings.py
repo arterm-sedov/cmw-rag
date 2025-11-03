@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -76,9 +75,12 @@ class Settings(BaseSettings):
 
     # Memory compression (conversation history)
     # Percentage of context window at which we trigger compression
-    memory_compression_threshold_pct: int = 85
+    # For agent mode with tool calls, lower values (70-75) prevent overflow
+    memory_compression_threshold_pct: int = 80  # Changed from 85 to 70 for agent compatibility
     # Target tokens for the compressed history turn
     memory_compression_target_tokens: int = 1000
+    # Number of recent messages to keep uncompressed (for agent mode)
+    memory_compression_messages_to_keep: int = 2  # Match old handler
 
     # Performance guardrails
     # When counting tokens, approximate for very large strings beyond this char length
