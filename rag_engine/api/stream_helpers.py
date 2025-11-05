@@ -23,7 +23,7 @@ def yield_search_started() -> dict:
         "role": "assistant",
         "content": "",
         "metadata": {
-            "title": "🔍 Searching information in the knowledge base",
+            "title": "🔍 Поиск информации в базе знаний",
         },
     }
 
@@ -44,10 +44,9 @@ def yield_search_completed(count: int | None = None) -> dict:
         True
     """
     if count is not None:
-        article_word = "article" if count == 1 else "articles"
-        title = f"✅ Found {count} {article_word}"
+        title = f"✅ Найдено статей: {count}"
     else:
-        title = "✅ Search completed"
+        title = "✅ Поиск завершен"
 
     return {
         "role": "assistant",
@@ -74,7 +73,7 @@ def yield_model_switch_notice(model: str) -> dict:
     return {
         "role": "assistant",
         "content": "",
-        "metadata": {"title": f"⚡ Switching to {model} (larger context needed)"},
+        "metadata": {"title": f"⚡ Переключение на {model} (требуется больше контекста)"},
     }
 
 
