@@ -19,6 +19,16 @@
     <link href="assets/fontawesome/css/light.min.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Underlying KB page iframe -->
+    <iframe 
+        id="kb-iframe"
+        src="about:blank"
+        title="Comindware KB"
+        style="position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: 0;"
+        loading="eager"
+        referrerpolicy="no-referrer-when-downgrade"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+    ></iframe>
     <!-- Floating Chat Widget -->
     <div id="chat-widget" class="chat-widget">
         <!-- Toggle Button -->
@@ -376,6 +386,15 @@
             
             if (storedState.isOpen) {
                 setTimeout(() => toggleWidget(true), 100);
+            }
+
+            // Dynamically point KB iframe to local proxy on the same host
+            const kbIframe = document.getElementById('kb-iframe');
+            if (kbIframe) {
+                const host = window.location.hostname;
+                const proxy = `${window.location.protocol}//${host}:8010`;
+                const target = 'https%3A%2F%2Fkb.comindware.ru%2Fcategory%2Fcomindware-platform%2Fversiya-5-0-tekushaya-rekomendovannaya%2F798%2F';
+                kbIframe.src = `${proxy}/proxy?url=${target}`;
             }
         })();
     </script>
