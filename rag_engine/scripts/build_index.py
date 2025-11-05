@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+import logging
 
 # Add project root to path if not already installed
 _project_root = Path(__file__).parent.parent.parent
@@ -20,12 +21,19 @@ from rag_engine.utils.git_utils import get_file_timestamp
 from rag_engine.utils.metadata_utils import extract_numeric_kbid
 from rag_engine.utils.logging_manager import setup_logging
 
+logger = logging.getLogger(__name__)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build RAG index from markdown sources")
     parser.add_argument("--source", required=True, help="Path to folder or file")
     parser.add_argument("--mode", choices=["folder", "file", "mkdocs"], default="folder")
     parser.add_argument("--reindex", action="store_true", help="Force reindex (ignored in MVP)")
+    parser.add_argument(
+        "--prune-missing",
+        action="store_true",
+        help="Delete records from vector store whose kbId is not present in the source set",
+    )
     parser.add_argument(
         "--max-files",
         type=int,
@@ -97,13 +105,78 @@ def main() -> None:
     store = ChromaStore(persist_dir=settings.chromadb_persist_dir, collection_name=settings.chromadb_collection)
     
     indexer = RAGIndexer(embedder=embedder, vector_store=store)
-    indexer.index_documents(
+    summary = indexer.index_documents(
         docs,
         chunk_size=settings.chunk_size,
         chunk_overlap=settings.chunk_overlap,
         max_files=args.max_files,
     )
-    print("Index build complete.")
+    deleted_docs = 0
+
+    # Optional pruning step: remove entries whose kbId is not in current source set
+    if args.prune_missing:
+        from rag_engine.utils.metadata_utils import extract_numeric_kbid  # local import to avoid cycle
+        # Build set of normalized kbIds present in source docs
+        present_kbids = set()
+        for doc in docs:
+            base_meta = getattr(doc, "metadata", {}) or {}
+            kb = base_meta.get("kbId")
+            if kb is None:
+                continue
+            normalized = extract_numeric_kbid(kb) or str(kb)
+            present_kbids.add(normalized)
+
+        # Paginate through all stored metadata and collect delete candidates
+        checked_docs = 0
+        delete_candidates: list[tuple[str, str]] = []  # (kbId, doc_stable_id)
+        offset = 0
+        page_size = 1000
+        while True:
+            res = store.collection.get(limit=page_size, offset=offset, include=["metadatas"])
+            metas_batch = res.get("metadatas", [])
+            if not metas_batch:
+                break
+            for meta in metas_batch:
+                checked_docs += 1
+                meta_kb = (meta or {}).get("kbId")
+                meta_doc_id = (meta or {}).get("doc_stable_id")
+                if not meta_kb or not meta_doc_id:
+                    continue
+                if meta_kb not in present_kbids:
+                    delete_candidates.append((str(meta_kb), str(meta_doc_id)))
+            if len(metas_batch) < page_size:
+                break
+            offset += page_size
+
+        # Delete with progress logging similar to indexing
+        total_to_delete = len(delete_candidates)
+        for idx, (kb, doc_id) in enumerate(delete_candidates, start=1):
+            store.delete_where({"doc_stable_id": doc_id})
+            deleted_docs += 1
+            logger.info(
+                "Deleted document %d/%d (kbId: %s, doc_stable_id: %s)",
+                idx,
+                total_to_delete,
+                kb,
+                doc_id,
+            )
+
+        # Prune details are included in the final summary below
+
+    # Single enriched final summary
+    if isinstance(summary, dict):
+        logger.info(
+            "Summary:\nTotal=%d\nProcessed=%d\nNew=%d\nReindexed=%d\nSkipped=%d\nEmpty=%d\nNo_chunks=%d\nChunks=%d\nDeleted=%d",
+            summary.get("total_docs", 0),
+            summary.get("processed_docs", 0),
+            summary.get("new_docs", 0),
+            summary.get("reindexed_docs", 0),
+            summary.get("skipped_docs", 0),
+            summary.get("empty_docs", 0),
+            summary.get("no_chunk_docs", 0),
+            summary.get("total_chunks_indexed", 0),
+            deleted_docs,
+        )
 
 
 if __name__ == "__main__":
