@@ -47,7 +47,7 @@ class RAGIndexer:
         chunk_size: int,
         chunk_overlap: int,
         max_files: int | None = None,
-    ) -> None:
+    ) -> dict[str, int]:
         """Index documents incrementally with immediate database writes.
 
         Processes documents one at a time: chunk → embed → write to vector store.
@@ -69,6 +69,11 @@ class RAGIndexer:
         total_docs = len(documents)
         processed_docs = 0
         total_chunks_indexed = 0
+        skipped_docs = 0
+        empty_docs = 0
+        no_chunk_docs = 0
+        reindexed_docs = 0
+        new_docs = 0
 
         for doc_idx, doc in enumerate(documents, start=1):
             base_meta = dict(getattr(doc, "metadata", {}))
@@ -86,6 +91,7 @@ class RAGIndexer:
             # Skip empty documents
             if not content or not content.strip():
                 logger.warning("Skipping empty document %d/%d (kbId: %s)", doc_idx, total_docs, kb_id)
+                empty_docs += 1
                 continue
 
             # Respect max_files limit as a safety check
@@ -99,6 +105,7 @@ class RAGIndexer:
             chunks = list(split_text(content, chunk_size, chunk_overlap))
             if not chunks:
                 logger.warning("No chunks generated for document %d/%d (kbId: %s)", doc_idx, total_docs, kb_id)
+                no_chunk_docs += 1
                 continue
 
             # Prepare chunk data
@@ -115,19 +122,24 @@ class RAGIndexer:
             file_mtime_epoch, file_modified_at_iso, _timestamp_source = get_file_timestamp(source_file, base_meta)
 
             # Incremental reindexing: skip unchanged docs, replace outdated
+            _was_reindex = False
+            _had_existing = False
             if file_mtime_epoch is not None:
                 existing = self.store.get_any_doc_meta({"doc_stable_id": doc_stable_id})
                 
                 # Only skip if we found an exact match (same doc_stable_id) and it's up to date
                 if existing is not None:
+                    _had_existing = True
                     existing_epoch = existing.get("file_mtime_epoch")
                     if isinstance(existing_epoch, int) and existing_epoch >= file_mtime_epoch:
                         logger.info("Skipping unchanged document %d/%d (kbId: %s)", doc_idx, total_docs, kb_id)
+                        skipped_docs += 1
                         continue
                     # Delete outdated chunks for this document before re-adding
                     try:
                         self.store.delete_where({"doc_stable_id": doc_stable_id})
                         logger.info("Deleted outdated chunks for kbId=%s (doc_stable_id=%s)", kb_id, doc_stable_id)
+                        _was_reindex = True
                     except Exception as exc:  # noqa: BLE001
                         logger.warning("Failed to delete outdated chunks for kbId=%s: %s", kb_id, exc)
 
@@ -189,6 +201,10 @@ class RAGIndexer:
 
             total_chunks_indexed += len(chunks)
             processed_docs += 1
+            if _was_reindex:
+                reindexed_docs += 1
+            elif not _had_existing:
+                new_docs += 1
             logger.info(
                 "Indexed document %d/%d: %d chunks (kbId: %s, total chunks: %d)",
                 doc_idx,
@@ -198,3 +214,13 @@ class RAGIndexer:
                 total_chunks_indexed,
             )
 
+        return {
+            "total_docs": total_docs,
+            "processed_docs": processed_docs,
+            "new_docs": new_docs,
+            "reindexed_docs": reindexed_docs,
+            "skipped_docs": skipped_docs,
+            "empty_docs": empty_docs,
+            "no_chunk_docs": no_chunk_docs,
+            "total_chunks_indexed": total_chunks_indexed,
+        }
