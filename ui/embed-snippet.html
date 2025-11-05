@@ -1,0 +1,298 @@
+<!-- CMW Widget Embed Snippet - Add this to KB site footer.php or theme-scripts.php -->
+<!-- This is a complete, self-contained widget embed for production use -->
+
+<!-- Widget CSS -->
+<link rel="stylesheet" href="<?php echo $path_kb; ?>/assets/css/cmw-widget-theme.css">
+<link href="<?php echo $path_kb; ?>/assets/fontawesome/css/fontawesome.min.css" rel="stylesheet">
+<link href="<?php echo $path_kb; ?>/assets/fontawesome/css/brands.min.css" rel="stylesheet">
+<link href="<?php echo $path_kb; ?>/assets/fontawesome/css/solid.min.css" rel="stylesheet">
+<link href="<?php echo $path_kb; ?>/assets/fontawesome/css/light.min.css" rel="stylesheet">
+
+<!-- Widget HTML Structure -->
+<div id="cmw-widget" class="cmw-widget">
+    <!-- Toggle Button -->
+    <button 
+        id="cmw-widget-toggle" 
+        class="cmw-widget-toggle" 
+        aria-label="Открыть Ассистент базы знаний Comindware"
+        title="Открыть Ассистент базы знаний Comindware">
+        <i class="fa-light fa-microchip-ai"></i>
+    </button>
+
+    <!-- Widget Container -->
+    <div id="cmw-widget-container" class="cmw-widget-container cmw-widget-hidden">
+        <!-- Custom resize handle (top-left) -->
+        <div class="cmw-widget-container-resize-handle" id="cmw-widget-resize-handle"></div>
+        
+        <!-- Header -->
+        <div class="cmw-widget-header">
+            <h3>Ассистент базы знаний Comindware</h3>
+            <button 
+                id="cmw-widget-close" 
+                class="cmw-widget-close" 
+                aria-label="Закрыть ассистент"
+                title="Закрыть ассистент">
+                <i class="fa-light fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Gradio App Container -->
+        <div class="cmw-widget-gradio-container">
+            <div id="cmw-widget-loading" class="cmw-widget-loading">
+                Загрузка ассистента...
+            </div>
+            <gradio-app id="cmw-widget-gradio-app" src="" style="display: none;"></gradio-app>
+        </div>
+    </div>
+</div>
+
+<!-- Gradio JavaScript SDK -->
+<script type="module" src="https://gradio.s3-us-west-2.amazonaws.com/5.49.1/gradio.js"></script>
+
+<!-- Widget JavaScript -->
+<script>
+(function() {
+    'use strict';
+    
+    // Configuration - update GRADIO_URL to your production Gradio server
+    const GRADIO_URL = window.CMW_WIDGET_CONFIG?.GRADIO_URL || 'http://10.9.7.7:7860/';
+    
+    // Ensure URL has protocol
+    function normalizeUrl(url) {
+        if (!url) return '';
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            if (url.includes('localhost') || url.match(/^\d+\.\d+\.\d+\.\d+/)) {
+                return `http://${url}`;
+            }
+            return `https://${url}`;
+        }
+        return url;
+    }
+
+    let gradioAppUrl = normalizeUrl(GRADIO_URL);
+
+    // DOM elements
+    const chatToggle = document.getElementById('cmw-widget-toggle');
+    const chatContainer = document.getElementById('cmw-widget-container');
+    const closeChat = document.getElementById('cmw-widget-close');
+    const gradioApp = document.getElementById('cmw-widget-gradio-app');
+    const loadingIndicator = document.getElementById('cmw-widget-loading');
+    const resizeHandle = document.getElementById('cmw-widget-resize-handle');
+    
+    // State management
+    const WIDGET_STORAGE_KEY = 'cmw_chat_widget_state';
+    let isInitialized = false;
+    let isResizing = false;
+    let resizeStartX = 0, resizeStartY = 0, resizeStartWidth = 0, resizeStartHeight = 0;
+    let resizeStartLeft = 0, resizeStartBottom = 0;
+    
+    function getStoredState() {
+        try {
+            const stored = localStorage.getItem(WIDGET_STORAGE_KEY);
+            return stored ? JSON.parse(stored) : { isOpen: false };
+        } catch {
+            return { isOpen: false };
+        }
+    }
+
+    function saveState(state) {
+        try {
+            if (chatContainer && !isContainerHidden() && chatContainer.classList.contains('show')) {
+                const rect = chatContainer.getBoundingClientRect();
+                state.width = rect.width;
+                state.height = rect.height;
+                const calculatedBottom = window.innerHeight - rect.bottom;
+                if (calculatedBottom >= 0 && calculatedBottom < window.innerHeight) {
+                    state.left = rect.left;
+                    state.bottom = calculatedBottom;
+                }
+            }
+            localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+            console.warn('Не удалось сохранить состояние виджета:', e);
+        }
+    }
+
+    function isContainerHidden() {
+        return chatContainer.classList.contains('cmw-widget-hidden') || 
+               getComputedStyle(chatContainer).visibility === 'hidden';
+    }
+
+    function restoreContainerSize() {
+        const storedState = getStoredState();
+        if (storedState.width && storedState.height) {
+            const minW = parseInt(getComputedStyle(chatContainer).minWidth) || 320;
+            const minH = parseInt(getComputedStyle(chatContainer).minHeight) || 400;
+            chatContainer.style.width = Math.max(storedState.width, minW) + 'px';
+            chatContainer.style.height = Math.max(storedState.height, minH) + 'px';
+        }
+        if (storedState.left !== undefined && storedState.left >= 0 && storedState.left < window.innerWidth) {
+            chatContainer.style.left = storedState.left + 'px';
+            chatContainer.style.right = 'auto';
+        }
+        if (storedState.bottom !== undefined && storedState.bottom >= 0 && storedState.bottom < window.innerHeight) {
+            chatContainer.style.bottom = storedState.bottom + 'px';
+        }
+    }
+
+    let resizeTimeout;
+    function handleResize() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => saveState(getStoredState()), 300);
+    }
+
+    function startResize(e) {
+        if (isContainerHidden()) return;
+        isResizing = true;
+        const rect = chatContainer.getBoundingClientRect();
+        resizeStartX = e.clientX;
+        resizeStartY = e.clientY;
+        resizeStartWidth = rect.width;
+        resizeStartHeight = rect.height;
+        resizeStartLeft = rect.left;
+        resizeStartBottom = window.innerHeight - rect.bottom;
+        e.preventDefault();
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('mouseup', stopResize);
+    }
+
+    function doResize(e) {
+        if (!isResizing) return;
+        const deltaX = resizeStartX - e.clientX;
+        const deltaY = resizeStartY - e.clientY;
+        let newWidth = resizeStartWidth + deltaX;
+        let newHeight = resizeStartHeight + deltaY;
+        let newLeft = resizeStartLeft - deltaX;
+        let newBottom = resizeStartBottom + deltaY;
+        const minW = parseInt(getComputedStyle(chatContainer).minWidth) || 320;
+        const minH = parseInt(getComputedStyle(chatContainer).minHeight) || 400;
+        const maxW = parseInt(getComputedStyle(chatContainer).maxWidth) || window.innerWidth * 0.9;
+        const maxH = parseInt(getComputedStyle(chatContainer).maxHeight) || window.innerHeight * 0.9;
+        if (newWidth < minW) {
+            newWidth = minW;
+            newLeft = resizeStartLeft - (newWidth - resizeStartWidth);
+        }
+        if (newWidth > maxW) {
+            newWidth = maxW;
+            newLeft = resizeStartLeft - (newWidth - resizeStartWidth);
+        }
+        if (newHeight < minH) {
+            newHeight = minH;
+            newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
+        }
+        if (newHeight > maxH) {
+            newHeight = maxH;
+            newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
+        }
+        if (newLeft < 0) {
+            newLeft = 0;
+            newWidth = resizeStartWidth + resizeStartLeft;
+        }
+        if (newBottom < 0) {
+            newBottom = 0;
+            newHeight = resizeStartHeight + resizeStartBottom;
+        }
+        chatContainer.style.width = newWidth + 'px';
+        chatContainer.style.height = newHeight + 'px';
+        chatContainer.style.left = newLeft + 'px';
+        chatContainer.style.right = 'auto';
+        chatContainer.style.bottom = newBottom + 'px';
+        handleResize();
+    }
+
+    function stopResize() {
+        if (isResizing) {
+            isResizing = false;
+            document.removeEventListener('mousemove', doResize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+    }
+
+    function toggleWidget(forceState = null) {
+        let newState;
+        if (forceState !== null) {
+            newState = forceState;
+        } else {
+            newState = chatContainer.classList.contains('cmw-widget-hidden');
+        }
+        if (newState) {
+            chatContainer.classList.remove('cmw-widget-hidden');
+            requestAnimationFrame(() => requestAnimationFrame(() => chatContainer.classList.add('show')));
+        } else {
+            chatContainer.classList.remove('show');
+            setTimeout(() => chatContainer.classList.add('cmw-widget-hidden'), 300);
+        }
+        saveState({ isOpen: newState });
+    }
+
+    function initializeGradioApp(url) {
+        if (isInitialized) return;
+        gradioApp.setAttribute('src', url);
+        gradioApp.style.display = 'block';
+        gradioApp.addEventListener('load', () => {
+            loadingIndicator.classList.add('cmw-widget-hidden');
+            isInitialized = true;
+        });
+        setTimeout(() => {
+            if (loadingIndicator && !loadingIndicator.classList.contains('cmw-widget-hidden')) {
+                loadingIndicator.classList.add('cmw-widget-hidden');
+            }
+        }, 5000);
+    }
+
+    // Event listeners
+    if (chatToggle) chatToggle.addEventListener('click', () => toggleWidget());
+    if (closeChat) {
+        closeChat.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWidget(false);
+        });
+    }
+    if (resizeHandle) resizeHandle.addEventListener('mousedown', startResize);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !isContainerHidden()) toggleWidget(false);
+    });
+
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    function init() {
+        if (!gradioAppUrl) {
+            console.error('CMW Widget: GRADIO_URL не настроен');
+            return;
+        }
+
+        const storedState = getStoredState();
+        const hasValidPosition = storedState.bottom !== undefined && 
+                                 storedState.bottom >= 0 && 
+                                 storedState.bottom < window.innerHeight &&
+                                 storedState.left !== undefined &&
+                                 storedState.left >= 0 && 
+                                 storedState.left < window.innerWidth;
+
+        if (!hasValidPosition && (storedState.bottom !== undefined || storedState.left !== undefined)) {
+            delete storedState.bottom;
+            delete storedState.left;
+            localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(storedState));
+        }
+
+        restoreContainerSize();
+
+        const resizeObserver = new ResizeObserver(() => {
+            if (!isContainerHidden()) handleResize();
+        });
+        if (chatContainer) resizeObserver.observe(chatContainer);
+
+        initializeGradioApp(gradioAppUrl);
+
+        if (storedState.isOpen) {
+            setTimeout(() => toggleWidget(true), 100);
+        }
+    }
+})();
+</script>
