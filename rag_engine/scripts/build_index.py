@@ -28,7 +28,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build RAG index from markdown sources")
     parser.add_argument("--source", required=True, help="Path to folder or file")
     parser.add_argument("--mode", choices=["folder", "file", "mkdocs"], default="folder")
-    parser.add_argument("--reindex", action="store_true", help="Force reindex (ignored in MVP)")
+    parser.add_argument(
+        "--reindex",
+        action="store_true",
+        help="Force reindex: delete existing chunks per doc and re-embed",
+    )
     parser.add_argument(
         "--prune-missing",
         action="store_true",
@@ -110,6 +114,7 @@ def main() -> None:
         chunk_size=settings.chunk_size,
         chunk_overlap=settings.chunk_overlap,
         max_files=args.max_files,
+        force_reindex=args.reindex,
     )
     deleted_docs = 0
 
