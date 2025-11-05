@@ -1,6 +1,8 @@
 import contextlib
 import os
+import signal
 import socket
+import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import Tuple
@@ -8,9 +10,20 @@ from typing import Tuple
 import kb_proxy
 
 
+class StaticHandler(SimpleHTTPRequestHandler):
+    def do_GET(self):  # noqa: N802 (http.server API)
+        # Map /favicon.ico -> /images/favicon.png
+        if self.path == "/favicon.ico":
+            self.path = "/images/favicon.png"
+            return super().do_GET()
+        
+        
+        return super().do_GET()
+
+
 def _serve_http(directory: str, host: str, port: int) -> ThreadingHTTPServer:
     os.chdir(directory)
-    httpd = ThreadingHTTPServer((host, port), SimpleHTTPRequestHandler)
+    httpd = ThreadingHTTPServer((host, port), StaticHandler)
     thread = threading.Thread(target=httpd.serve_forever, name="static-http", daemon=True)
     thread.start()
     print(f"Static server running at http://{host}:{port}")
@@ -48,9 +61,33 @@ def run(static_host: str = "0.0.0.0", static_port: int = 8000, proxy_host: str =
 
 
 if __name__ == "__main__":
+    _srv_static = None
+    _srv_proxy = None
+
+    def shutdown_servers(signum=None, frame=None):
+        """Shutdown both servers gracefully."""
+        print("\nShutting down...")
+        if _srv_static:
+            _srv_static.shutdown()
+        if _srv_proxy:
+            _srv_proxy.shutdown()
+        print("Servers stopped.")
+        sys.exit(0)
+
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, shutdown_servers)
+    signal.signal(signal.SIGTERM, shutdown_servers)
+
     try:
         _srv_static, _srv_proxy = run()
-        threading.Event().wait()  # Keep main thread alive
-    except KeyboardInterrupt:
-        print("\nShutting down...")
+        # Keep main thread alive - use a loop with timeout to allow signal handling
+        stop_event = threading.Event()
+        try:
+            while not stop_event.is_set():
+                stop_event.wait(timeout=1.0)
+        except KeyboardInterrupt:
+            shutdown_servers()
+    except Exception as e:
+        print(f"\nError: {e}")
+        shutdown_servers()
 

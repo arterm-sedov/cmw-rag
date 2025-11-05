@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ассистент базы знаний Comindware</title>
+     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+     <link rel="shortcut icon" href="assets/images/favicon.png">
     
     <!-- Preconnect to KB site fonts for faster loading when embedded -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,27 +32,27 @@
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
     ></iframe>
     <!-- Floating Chat Widget -->
-    <div id="chat-widget" class="chat-widget">
+    <div id="cmw-widget" class="cmw-widget">
         <!-- Toggle Button -->
         <button 
-            id="chat-toggle" 
-            class="chat-toggle" 
+            id="cmw-widget-toggle" 
+            class="cmw-widget-toggle" 
             aria-label="Открыть Ассистент базы знаний Comindware"
             title="Открыть Ассистент базы знаний Comindware">
             <i class="fa-light fa-microchip-ai"></i>
         </button>
 
         <!-- Widget Container -->
-        <div id="chat-container" class="chat-container hidden">
+        <div id="cmw-widget-container" class="cmw-widget-container cmw-widget-hidden">
             <!-- Custom resize handle (top-left) -->
-            <div class="chat-container-resize-handle" id="resize-handle"></div>
+            <div class="cmw-widget-container-resize-handle" id="cmw-widget-resize-handle"></div>
             
             <!-- Header -->
-            <div class="chat-header">
+            <div class="cmw-widget-header">
                 <h3>Ассистент базы знаний Comindware</h3>
                 <button 
-                    id="close-chat" 
-                    class="close-chat" 
+                    id="cmw-widget-close" 
+                    class="cmw-widget-close" 
                     aria-label="Закрыть ассистент"
                     title="Закрыть ассистент">
                     <i class="fa-light fa-xmark"></i>
@@ -58,11 +60,11 @@
             </div>
 
             <!-- Gradio App Container -->
-            <div class="gradio-app-container">
-                <div id="loading-indicator" class="loading-indicator">
+            <div class="cmw-widget-gradio-container">
+                <div id="cmw-widget-loading" class="cmw-widget-loading">
                     Загрузка ассистента...
                 </div>
-                <gradio-app id="gradio-app" src="" style="display: none;"></gradio-app>
+                <gradio-app id="cmw-widget-gradio-app" src="" style="display: none;"></gradio-app>
             </div>
         </div>
     </div>
@@ -88,12 +90,12 @@
         let gradioAppUrl;
 
         // DOM elements - declared early for use in functions
-        const chatToggle = document.getElementById('chat-toggle');
-        const chatContainer = document.getElementById('chat-container');
-        const closeChat = document.getElementById('close-chat');
-        const gradioApp = document.getElementById('gradio-app');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const resizeHandle = document.getElementById('resize-handle');
+        const chatToggle = document.getElementById('cmw-widget-toggle');
+        const chatContainer = document.getElementById('cmw-widget-container');
+        const closeChat = document.getElementById('cmw-widget-close');
+        const gradioApp = document.getElementById('cmw-widget-gradio-app');
+        const loadingIndicator = document.getElementById('cmw-widget-loading');
+        const resizeHandle = document.getElementById('cmw-widget-resize-handle');
         
         // State management
         const WIDGET_STORAGE_KEY = 'cmw_chat_widget_state';
@@ -138,7 +140,7 @@
 
         // Check if container is hidden (new logic using visibility)
         function isContainerHidden() {
-            return chatContainer.classList.contains('hidden') || 
+            return chatContainer.classList.contains('cmw-widget-hidden') || 
                    getComputedStyle(chatContainer).visibility === 'hidden';
         }
 
@@ -258,13 +260,13 @@
                 newState = forceState;
             } else {
                 // Otherwise, toggle based on current state
-                const isOpen = !chatContainer.classList.contains('hidden');
+                const isOpen = !chatContainer.classList.contains('cmw-widget-hidden');
                 newState = !isOpen;
             }
 
             if (newState) {
                 // Show immediately
-                chatContainer.classList.remove('hidden');
+                chatContainer.classList.remove('cmw-widget-hidden');
                 
                 // Use requestAnimationFrame to ensure element is visible before animation
                 requestAnimationFrame(() => {
@@ -275,12 +277,12 @@
                 
                 // Hide loading indicator if Gradio is already initialized
                 if (isInitialized && loadingIndicator) {
-                    loadingIndicator.classList.add('hidden');
+                    loadingIndicator.classList.add('cmw-widget-hidden');
                 }
             } else {
                 chatContainer.classList.remove('show');
                 setTimeout(() => {
-                    chatContainer.classList.add('hidden');
+                    chatContainer.classList.add('cmw-widget-hidden');
                 }, 300); // Match --cmw-transition-duration (0.3s)
             }
 
@@ -296,14 +298,14 @@
             
             // Wait for Gradio to load
             gradioApp.addEventListener('load', () => {
-                loadingIndicator.classList.add('hidden');
+                loadingIndicator.classList.add('cmw-widget-hidden');
                 isInitialized = true;
             });
 
             // Fallback: hide loading after timeout
             setTimeout(() => {
-                if (loadingIndicator && !loadingIndicator.classList.contains('hidden')) {
-                    loadingIndicator.classList.add('hidden');
+                if (loadingIndicator && !loadingIndicator.classList.contains('cmw-widget-hidden')) {
+                    loadingIndicator.classList.add('cmw-widget-hidden');
                 }
             }, 5000);
         }
