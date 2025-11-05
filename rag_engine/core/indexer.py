@@ -47,6 +47,7 @@ class RAGIndexer:
         chunk_size: int,
         chunk_overlap: int,
         max_files: int | None = None,
+        force_reindex: bool = False,
     ) -> dict[str, int]:
         """Index documents incrementally with immediate database writes.
 
@@ -121,27 +122,39 @@ class RAGIndexer:
             # Three-tier fallback: frontmatter → Git → file stat
             file_mtime_epoch, file_modified_at_iso, _timestamp_source = get_file_timestamp(source_file, base_meta)
 
-            # Incremental reindexing: skip unchanged docs, replace outdated
+            # Incremental reindexing: skip unchanged docs, replace outdated (or force reindex)
             _was_reindex = False
             _had_existing = False
-            if file_mtime_epoch is not None:
+            if force_reindex or file_mtime_epoch is not None:
                 existing = self.store.get_any_doc_meta({"doc_stable_id": doc_stable_id})
                 
                 # Only skip if we found an exact match (same doc_stable_id) and it's up to date
                 if existing is not None:
                     _had_existing = True
-                    existing_epoch = existing.get("file_mtime_epoch")
-                    if isinstance(existing_epoch, int) and existing_epoch >= file_mtime_epoch:
-                        logger.info("Skipping unchanged document %d/%d (kbId: %s)", doc_idx, total_docs, kb_id)
-                        skipped_docs += 1
-                        continue
-                    # Delete outdated chunks for this document before re-adding
-                    try:
-                        self.store.delete_where({"doc_stable_id": doc_stable_id})
-                        logger.info("Deleted outdated chunks for kbId=%s (doc_stable_id=%s)", kb_id, doc_stable_id)
-                        _was_reindex = True
-                    except Exception as exc:  # noqa: BLE001
-                        logger.warning("Failed to delete outdated chunks for kbId=%s: %s", kb_id, exc)
+                    if force_reindex:
+                        try:
+                            self.store.delete_where({"doc_stable_id": doc_stable_id})
+                            logger.info(
+                                "Force reindex: deleted existing chunks for kbId=%s (doc_stable_id=%s)",
+                                kb_id,
+                                doc_stable_id,
+                            )
+                            _was_reindex = True
+                        except Exception as exc:  # noqa: BLE001
+                            logger.warning("Force reindex: failed to delete for kbId=%s: %s", kb_id, exc)
+                    else:
+                        existing_epoch = existing.get("file_mtime_epoch")
+                        if isinstance(existing_epoch, int) and file_mtime_epoch is not None and existing_epoch >= file_mtime_epoch:
+                            logger.info("Skipping unchanged document %d/%d (kbId: %s)", doc_idx, total_docs, kb_id)
+                            skipped_docs += 1
+                            continue
+                        # Delete outdated chunks for this document before re-adding
+                        try:
+                            self.store.delete_where({"doc_stable_id": doc_stable_id})
+                            logger.info("Deleted outdated chunks for kbId=%s (doc_stable_id=%s)", kb_id, doc_stable_id)
+                            _was_reindex = True
+                        except Exception as exc:  # noqa: BLE001
+                            logger.warning("Failed to delete outdated chunks for kbId=%s: %s", kb_id, exc)
 
             for idx, chunk in enumerate(chunks):
                 # Generate stable ID using normalized kbId
