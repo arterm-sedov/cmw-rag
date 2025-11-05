@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ассистент базы знаний Comindware</title>
+    
+    <!-- Preconnect to KB site fonts for faster loading when embedded -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    
+    <!-- Open Sans font with Cyrillic support -->
+    <link type="text/css" rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:100,300,500,300italic,400,400italic,700&amp;subset=latin,cyrillic">
+    
+    <!-- CMW Widget Theme -->
+    <link rel="stylesheet" href="assets/css/cmw-widget-theme.css">
+    <link href="assets/fontawesome/css/fontawesome.min.css" rel="stylesheet">
+    <link href="assets/fontawesome/css/brands.min.css" rel="stylesheet">
+    <link href="assets/fontawesome/css/solid.min.css" rel="stylesheet">
+    <link href="assets/fontawesome/css/light.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Floating Chat Widget -->
+    <div id="cmw-widget" class="cmw-widget">
+        <!-- Toggle Button -->
+        <button 
+            id="cmw-widget-toggle" 
+            class="cmw-widget-toggle" 
+            aria-label="Открыть Ассистент базы знаний Comindware"
+            title="Открыть Ассистент базы знаний Comindware">
+            <i class="fa-light fa-microchip-ai"></i>
+        </button>
+
+        <!-- Widget Container -->
+        <div id="cmw-widget-container" class="cmw-widget-container cmw-widget-hidden">
+            <!-- Custom resize handle (top-left) -->
+            <div class="cmw-widget-container-resize-handle" id="cmw-widget-resize-handle"></div>
+            
+            <!-- Header -->
+            <div class="cmw-widget-header">
+                <h3>Ассистент базы знаний Comindware</h3>
+                <button 
+                    id="cmw-widget-close" 
+                    class="cmw-widget-close" 
+                    aria-label="Закрыть ассистент"
+                    title="Закрыть ассистент">
+                    <i class="fa-light fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Gradio App Container -->
+            <div class="cmw-widget-gradio-container">
+                <div id="cmw-widget-loading" class="cmw-widget-loading">
+                    Загрузка ассистента...
+                </div>
+                <gradio-app id="cmw-widget-gradio-app" src="" style="display: none;"></gradio-app>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gradio JavaScript SDK -->
+    <script
+        type="module"
+        src="https://gradio.s3-us-west-2.amazonaws.com/5.49.1/gradio.js"
+    ></script>
+
+    <script>
+        // Ensure URL has protocol
+        function normalizeUrl(url) {
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                if (url.includes('localhost') || url.match(/^\d+\.\d+\.\d+\.\d+/)) {
+                    return `http://${url}`;
+                }
+                return `https://${url}`;
+            }
+            return url;
+        }
+
+        let gradioAppUrl;
+
+        // DOM elements - declared early for use in functions
+        const chatToggle = document.getElementById('cmw-widget-toggle');
+        const chatContainer = document.getElementById('cmw-widget-container');
+        const closeChat = document.getElementById('cmw-widget-close');
+        const gradioApp = document.getElementById('cmw-widget-gradio-app');
+        const loadingIndicator = document.getElementById('cmw-widget-loading');
+        const resizeHandle = document.getElementById('cmw-widget-resize-handle');
+        
+        // State management
+        const WIDGET_STORAGE_KEY = 'cmw_chat_widget_state';
+        
+        let isInitialized = false;
+        let isResizing = false;
+        let resizeStartX = 0;
+        let resizeStartY = 0;
+        let resizeStartWidth = 0;
+        let resizeStartHeight = 0;
+        let resizeStartLeft = 0;
+        let resizeStartBottom = 0;
+        
+        function getStoredState() {
+            try {
+                const stored = localStorage.getItem(WIDGET_STORAGE_KEY);
+                return stored ? JSON.parse(stored) : { isOpen: false };
+            } catch {
+                return { isOpen: false };
+            }
+        }
+
+        function saveState(state) {
+            try {
+                // Also save container size and position if it exists and is visible
+                if (chatContainer && !isContainerHidden() && chatContainer.classList.contains('show')) {
+                    const rect = chatContainer.getBoundingClientRect();
+                    state.width = rect.width;
+                    state.height = rect.height;
+                    const calculatedBottom = window.innerHeight - rect.bottom;
+                    // Only save position if it's valid (non-negative and reasonable)
+                    if (calculatedBottom >= 0 && calculatedBottom < window.innerHeight) {
+                        state.left = rect.left;
+                        state.bottom = calculatedBottom;
+                    }
+                }
+                localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.warn('Не удалось сохранить состояние виджета:', e);
+            }
+        }
+
+        // Check if container is hidden (new logic using visibility)
+        function isContainerHidden() {
+            return chatContainer.classList.contains('cmw-widget-hidden') || 
+                   getComputedStyle(chatContainer).visibility === 'hidden';
+        }
+
+        // Restore container size from saved state
+        function restoreContainerSize() {
+            const storedState = getStoredState();
+            if (storedState.width && storedState.height) {
+                const width = Math.max(storedState.width, parseInt(getComputedStyle(chatContainer).minWidth) || 320);
+                const height = Math.max(storedState.height, parseInt(getComputedStyle(chatContainer).minHeight) || 400);
+                chatContainer.style.width = width + 'px';
+                chatContainer.style.height = height + 'px';
+            }
+            // Only restore position if values are valid (non-negative and within reasonable bounds)
+            if (storedState.left !== undefined && storedState.left >= 0 && storedState.left < window.innerWidth) {
+                chatContainer.style.left = storedState.left + 'px';
+                chatContainer.style.right = 'auto';
+            }
+            if (storedState.bottom !== undefined && storedState.bottom >= 0 && storedState.bottom < window.innerHeight) {
+                chatContainer.style.bottom = storedState.bottom + 'px';
+            }
+        }
+
+        // Save size on resize
+        let resizeTimeout;
+        function handleResize() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const storedState = getStoredState();
+                saveState(storedState);
+            }, 300); // Debounce resize events
+        }
+
+        // Custom resize functionality from top-left corner
+        function startResize(e) {
+            if (isContainerHidden()) return;
+            
+            isResizing = true;
+            const rect = chatContainer.getBoundingClientRect();
+            resizeStartX = e.clientX;
+            resizeStartY = e.clientY;
+            resizeStartWidth = rect.width;
+            resizeStartHeight = rect.height;
+            resizeStartLeft = rect.left;
+            resizeStartBottom = window.innerHeight - rect.bottom;
+            
+            e.preventDefault();
+            document.addEventListener('mousemove', doResize);
+            document.addEventListener('mouseup', stopResize);
+        }
+
+        function doResize(e) {
+            if (!isResizing) return;
+            
+            const deltaX = resizeStartX - e.clientX; // Inverted because top-left
+            const deltaY = resizeStartY - e.clientY; // Inverted because top-left
+            
+            let newWidth = resizeStartWidth + deltaX;
+            let newHeight = resizeStartHeight + deltaY;
+            let newLeft = resizeStartLeft - deltaX;
+            let newBottom = resizeStartBottom + deltaY;
+            
+            // Apply min/max constraints
+            const minWidth = parseInt(getComputedStyle(chatContainer).minWidth);
+            const minHeight = parseInt(getComputedStyle(chatContainer).minHeight);
+            const maxWidth = parseInt(getComputedStyle(chatContainer).maxWidth) || window.innerWidth * 0.9;
+            const maxHeight = parseInt(getComputedStyle(chatContainer).maxHeight) || window.innerHeight * 0.9;
+            
+            if (newWidth < minWidth) {
+                newWidth = minWidth;
+                newLeft = resizeStartLeft - (newWidth - resizeStartWidth);
+            }
+            if (newWidth > maxWidth) {
+                newWidth = maxWidth;
+                newLeft = resizeStartLeft - (newWidth - resizeStartWidth);
+            }
+            if (newHeight < minHeight) {
+                newHeight = minHeight;
+                newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
+            }
+            if (newHeight > maxHeight) {
+                newHeight = maxHeight;
+                newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
+            }
+            
+            // Constrain to viewport
+            if (newLeft < 0) {
+                newLeft = 0;
+                newWidth = resizeStartWidth + resizeStartLeft;
+            }
+            if (newBottom < 0) {
+                newBottom = 0;
+                newHeight = resizeStartHeight + resizeStartBottom;
+            }
+            
+            chatContainer.style.width = newWidth + 'px';
+            chatContainer.style.height = newHeight + 'px';
+            chatContainer.style.left = newLeft + 'px';
+            chatContainer.style.right = 'auto';
+            chatContainer.style.bottom = newBottom + 'px';
+            
+            handleResize();
+        }
+
+        function stopResize() {
+            if (isResizing) {
+                isResizing = false;
+                document.removeEventListener('mousemove', doResize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        }
+
+        // Toggle widget visibility
+        function toggleWidget(forceState = null) {
+            let newState;
+            if (forceState !== null) {
+                // If forceState is provided, use it directly
+                newState = forceState;
+            } else {
+                // Otherwise, toggle based on current state
+                const isOpen = !chatContainer.classList.contains('cmw-widget-hidden');
+                newState = !isOpen;
+            }
+
+            if (newState) {
+                // Show immediately
+                chatContainer.classList.remove('cmw-widget-hidden');
+                
+                // Use requestAnimationFrame to ensure element is visible before animation
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        chatContainer.classList.add('show');
+                    });
+                });
+                
+                // Hide loading indicator if Gradio is already initialized
+                if (isInitialized && loadingIndicator) {
+                    loadingIndicator.classList.add('cmw-widget-hidden');
+                }
+            } else {
+                chatContainer.classList.remove('show');
+                setTimeout(() => {
+                    chatContainer.classList.add('cmw-widget-hidden');
+                }, 300); // Match --cmw-transition-duration (0.3s)
+            }
+
+            saveState({ isOpen: newState });
+        }
+
+        // Initialize Gradio app (preloading on page load)
+        function initializeGradioApp(url) {
+            if (isInitialized) return;
+
+            gradioApp.setAttribute('src', url);
+            gradioApp.style.display = 'block';
+            
+            // Wait for Gradio to load
+            gradioApp.addEventListener('load', () => {
+                loadingIndicator.classList.add('cmw-widget-hidden');
+                isInitialized = true;
+            });
+
+            // Fallback: hide loading after timeout
+            setTimeout(() => {
+                if (loadingIndicator && !loadingIndicator.classList.contains('cmw-widget-hidden')) {
+                    loadingIndicator.classList.add('cmw-widget-hidden');
+                }
+            }, 5000);
+        }
+
+        // Event listeners
+        if (chatToggle) {
+            chatToggle.addEventListener('click', () => toggleWidget());
+        }
+        if (closeChat) {
+            closeChat.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleWidget(false);
+            });
+        }
+        
+        // Custom resize handle
+        if (resizeHandle) {
+            resizeHandle.addEventListener('mousedown', startResize);
+        }
+
+        // Keyboard accessibility
+        document.addEventListener('keydown', (e) => {
+            // Escape key to close
+            if (e.key === 'Escape' && !isContainerHidden()) {
+                toggleWidget(false);
+            }
+        });
+
+        // Initialize on page load
+        (async () => {
+            // Load GRADIO_URL from JSON config or window.GRADIO_URL
+            let url;
+            try {
+                const config = await fetch('gradio-config.json').then(r => r.json());
+                url = config.GRADIO_URL;
+            } catch {
+                url = window.GRADIO_URL;
+            }
+            
+            if (!url) {
+                console.error('GRADIO_URL не настроен');
+                return;
+            }
+            
+            gradioAppUrl = normalizeUrl(url);
+            
+            window.GRADIO_URL = gradioAppUrl;
+            
+            // Restore previous state on page load
+            const storedState = getStoredState();
+            
+            // Validate and clean stored position values
+            const hasValidPosition = storedState.bottom !== undefined && 
+                                     storedState.bottom >= 0 && 
+                                     storedState.bottom < window.innerHeight &&
+                                     storedState.left !== undefined &&
+                                     storedState.left >= 0 && 
+                                     storedState.left < window.innerWidth;
+            
+            // If position is invalid, clear it to use default positioning
+            if (!hasValidPosition && (storedState.bottom !== undefined || storedState.left !== undefined)) {
+                delete storedState.bottom;
+                delete storedState.left;
+                localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(storedState));
+            }
+            
+            restoreContainerSize();
+            
+            // Add resize observer to save size changes
+            const resizeObserver = new ResizeObserver(() => {
+                if (!isContainerHidden()) {
+                    handleResize();
+                }
+            });
+            resizeObserver.observe(chatContainer);
+            
+            // Preload Gradio app
+            initializeGradioApp(gradioAppUrl);
+            
+            if (storedState.isOpen) {
+                setTimeout(() => toggleWidget(true), 100);
+            }
+        })();
+    </script>
+</body>
+</html>
