@@ -108,6 +108,7 @@
         let resizeStartHeight = 0;
         let resizeStartLeft = 0;
         let resizeStartBottom = 0;
+        let activePointerId = null;
         
         function getStoredState() {
             try {
@@ -177,6 +178,12 @@
         function startResize(e) {
             if (isContainerHidden()) return;
             
+            // Prefer pointer events for reliable capture across iframes
+            if (e.pointerId !== undefined && e.isPrimary !== false) {
+                activePointerId = e.pointerId;
+                try { resizeHandle.setPointerCapture(activePointerId); } catch {}
+            }
+
             isResizing = true;
             const rect = chatContainer.getBoundingClientRect();
             resizeStartX = e.clientX;
@@ -187,12 +194,19 @@
             resizeStartBottom = window.innerHeight - rect.bottom;
             
             e.preventDefault();
-            document.addEventListener('mousemove', doResize);
-            document.addEventListener('mouseup', stopResize);
+            // Temporarily disable underlying iframe interactions during resize
+            const kbIframe = document.getElementById('kb-iframe');
+            if (kbIframe) {
+                kbIframe.style.pointerEvents = 'none';
+            }
+
+            document.addEventListener('pointermove', doResize);
+            document.addEventListener('pointerup', stopResize);
         }
 
         function doResize(e) {
             if (!isResizing) return;
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
             
             const deltaX = resizeStartX - e.clientX; // Inverted because top-left
             const deltaY = resizeStartY - e.clientY; // Inverted because top-left
@@ -244,11 +258,20 @@
             handleResize();
         }
 
-        function stopResize() {
+        function stopResize(e) {
             if (isResizing) {
                 isResizing = false;
-                document.removeEventListener('mousemove', doResize);
-                document.removeEventListener('mouseup', stopResize);
+                document.removeEventListener('pointermove', doResize);
+                document.removeEventListener('pointerup', stopResize);
+                // Restore iframe interactions
+                const kbIframe = document.getElementById('kb-iframe');
+                if (kbIframe) {
+                    kbIframe.style.pointerEvents = '';
+                }
+                if (activePointerId !== null) {
+                    try { resizeHandle.releasePointerCapture(activePointerId); } catch {}
+                    activePointerId = null;
+                }
             }
         }
 
@@ -324,7 +347,8 @@
         
         // Custom resize handle
         if (resizeHandle) {
-            resizeHandle.addEventListener('mousedown', startResize);
+            // Use Pointer Events for robust capture across iframes/contexts
+            resizeHandle.addEventListener('pointerdown', startResize);
         }
 
         // Keyboard accessibility
