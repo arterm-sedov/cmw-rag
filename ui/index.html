@@ -96,6 +96,7 @@
         let resizeStartHeight = 0;
         let resizeStartLeft = 0;
         let resizeStartBottom = 0;
+        let activePointerId = null;
         
         function getStoredState() {
             try {
@@ -165,6 +166,12 @@
         function startResize(e) {
             if (isContainerHidden()) return;
             
+            // Prefer pointer events; capture to avoid loss over iframes
+            if (e.pointerId !== undefined && e.isPrimary !== false) {
+                activePointerId = e.pointerId;
+                try { resizeHandle.setPointerCapture(activePointerId); } catch {}
+            }
+
             isResizing = true;
             const rect = chatContainer.getBoundingClientRect();
             resizeStartX = e.clientX;
@@ -175,20 +182,26 @@
             resizeStartBottom = window.innerHeight - rect.bottom;
             
             e.preventDefault();
-            document.addEventListener('mousemove', doResize);
-            document.addEventListener('mouseup', stopResize);
+            // If a KB iframe exists on the page, disable pointer events during resize
+            const kbIframe = document.getElementById('kb-iframe');
+            if (kbIframe) kbIframe.style.pointerEvents = 'none';
+            
+            document.addEventListener('pointermove', doResize);
+            document.addEventListener('pointerup', stopResize);
         }
 
         function doResize(e) {
             if (!isResizing) return;
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
             
             const deltaX = resizeStartX - e.clientX; // Inverted because top-left
             const deltaY = resizeStartY - e.clientY; // Inverted because top-left
             
+            // Keep bottom edge fixed - only top-left corner moves
             let newWidth = resizeStartWidth + deltaX;
             let newHeight = resizeStartHeight + deltaY;
             let newLeft = resizeStartLeft - deltaX;
-            let newBottom = resizeStartBottom + deltaY;
+            const newBottom = resizeStartBottom;
             
             // Apply min/max constraints
             const minWidth = parseInt(getComputedStyle(chatContainer).minWidth);
@@ -206,21 +219,19 @@
             }
             if (newHeight < minHeight) {
                 newHeight = minHeight;
-                newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
             }
             if (newHeight > maxHeight) {
                 newHeight = maxHeight;
-                newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
             }
             
-            // Constrain to viewport
+            // Constrain to viewport - ensure bottom stays visible and top within viewport
             if (newLeft < 0) {
                 newLeft = 0;
                 newWidth = resizeStartWidth + resizeStartLeft;
             }
-            if (newBottom < 0) {
-                newBottom = 0;
-                newHeight = resizeStartHeight + resizeStartBottom;
+            const availableHeight = window.innerHeight - newBottom;
+            if (newHeight > availableHeight) {
+                newHeight = Math.max(minHeight, availableHeight);
             }
             
             chatContainer.style.width = newWidth + 'px';
@@ -232,11 +243,17 @@
             handleResize();
         }
 
-        function stopResize() {
+        function stopResize(e) {
             if (isResizing) {
                 isResizing = false;
-                document.removeEventListener('mousemove', doResize);
-                document.removeEventListener('mouseup', stopResize);
+                document.removeEventListener('pointermove', doResize);
+                document.removeEventListener('pointerup', stopResize);
+                const kbIframe = document.getElementById('kb-iframe');
+                if (kbIframe) kbIframe.style.pointerEvents = '';
+                if (activePointerId !== null) {
+                    try { resizeHandle.releasePointerCapture(activePointerId); } catch {}
+                    activePointerId = null;
+                }
             }
         }
 
@@ -312,7 +329,7 @@
         
         // Custom resize handle
         if (resizeHandle) {
-            resizeHandle.addEventListener('mousedown', startResize);
+            resizeHandle.addEventListener('pointerdown', startResize);
         }
 
         // Keyboard accessibility
