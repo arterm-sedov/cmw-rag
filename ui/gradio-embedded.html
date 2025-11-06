@@ -211,10 +211,12 @@
             const deltaX = resizeStartX - e.clientX; // Inverted because top-left
             const deltaY = resizeStartY - e.clientY; // Inverted because top-left
             
+            // Keep bottom edge fixed - only top-left corner moves
             let newWidth = resizeStartWidth + deltaX;
             let newHeight = resizeStartHeight + deltaY;
             let newLeft = resizeStartLeft - deltaX;
-            let newBottom = resizeStartBottom + deltaY;
+            // Bottom stays constant - don't change it
+            const newBottom = resizeStartBottom;
             
             // Apply min/max constraints
             const minWidth = parseInt(getComputedStyle(chatContainer).minWidth);
@@ -232,21 +234,20 @@
             }
             if (newHeight < minHeight) {
                 newHeight = minHeight;
-                newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
             }
             if (newHeight > maxHeight) {
                 newHeight = maxHeight;
-                newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
             }
             
-            // Constrain to viewport
+            // Constrain to viewport - ensure bottom stays visible and top within viewport
             if (newLeft < 0) {
                 newLeft = 0;
                 newWidth = resizeStartWidth + resizeStartLeft;
             }
-            if (newBottom < 0) {
-                newBottom = 0;
-                newHeight = resizeStartHeight + resizeStartBottom;
+            // Available height from fixed bottom to top of viewport
+            const availableHeight = window.innerHeight - newBottom;
+            if (newHeight > availableHeight) {
+                newHeight = Math.max(minHeight, availableHeight);
             }
             
             chatContainer.style.width = newWidth + 'px';

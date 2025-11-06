@@ -85,6 +85,7 @@
     let isResizing = false;
     let resizeStartX = 0, resizeStartY = 0, resizeStartWidth = 0, resizeStartHeight = 0;
     let resizeStartLeft = 0, resizeStartBottom = 0;
+    let activePointerId = null;
     
     function getStoredState() {
         try {
@@ -143,6 +144,10 @@
 
     function startResize(e) {
         if (isContainerHidden()) return;
+        if (e.pointerId !== undefined && e.isPrimary !== false) {
+            activePointerId = e.pointerId;
+            try { resizeHandle.setPointerCapture(activePointerId); } catch {}
+        }
         isResizing = true;
         const rect = chatContainer.getBoundingClientRect();
         resizeStartX = e.clientX;
@@ -152,18 +157,23 @@
         resizeStartLeft = rect.left;
         resizeStartBottom = window.innerHeight - rect.bottom;
         e.preventDefault();
-        document.addEventListener('mousemove', doResize);
-        document.addEventListener('mouseup', stopResize);
+        // If page has underlying iframe, disable during resize (defensive)
+        const kbIframe = document.getElementById('kb-iframe');
+        if (kbIframe) kbIframe.style.pointerEvents = 'none';
+        document.addEventListener('pointermove', doResize);
+        document.addEventListener('pointerup', stopResize);
     }
 
     function doResize(e) {
         if (!isResizing) return;
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
         const deltaX = resizeStartX - e.clientX;
         const deltaY = resizeStartY - e.clientY;
+        // Keep bottom edge fixed - only top-left corner moves
         let newWidth = resizeStartWidth + deltaX;
         let newHeight = resizeStartHeight + deltaY;
         let newLeft = resizeStartLeft - deltaX;
-        let newBottom = resizeStartBottom + deltaY;
+        const newBottom = resizeStartBottom;
         const minW = parseInt(getComputedStyle(chatContainer).minWidth) || 320;
         const minH = parseInt(getComputedStyle(chatContainer).minHeight) || 400;
         const maxW = parseInt(getComputedStyle(chatContainer).maxWidth) || window.innerWidth * 0.9;
@@ -178,19 +188,17 @@
         }
         if (newHeight < minH) {
             newHeight = minH;
-            newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
         }
         if (newHeight > maxH) {
             newHeight = maxH;
-            newBottom = resizeStartBottom + (resizeStartHeight - newHeight);
         }
         if (newLeft < 0) {
             newLeft = 0;
             newWidth = resizeStartWidth + resizeStartLeft;
         }
-        if (newBottom < 0) {
-            newBottom = 0;
-            newHeight = resizeStartHeight + resizeStartBottom;
+        const availableHeight = window.innerHeight - newBottom;
+        if (newHeight > availableHeight) {
+            newHeight = Math.max(minH, availableHeight);
         }
         chatContainer.style.width = newWidth + 'px';
         chatContainer.style.height = newHeight + 'px';
@@ -200,11 +208,17 @@
         handleResize();
     }
 
-    function stopResize() {
+    function stopResize(e) {
         if (isResizing) {
             isResizing = false;
-            document.removeEventListener('mousemove', doResize);
-            document.removeEventListener('mouseup', stopResize);
+            document.removeEventListener('pointermove', doResize);
+            document.removeEventListener('pointerup', stopResize);
+            const kbIframe = document.getElementById('kb-iframe');
+            if (kbIframe) kbIframe.style.pointerEvents = '';
+            if (activePointerId !== null) {
+                try { resizeHandle.releasePointerCapture(activePointerId); } catch {}
+                activePointerId = null;
+            }
         }
     }
 
@@ -249,7 +263,7 @@
             toggleWidget(false);
         });
     }
-    if (resizeHandle) resizeHandle.addEventListener('mousedown', startResize);
+    if (resizeHandle) resizeHandle.addEventListener('pointerdown', startResize);
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !isContainerHidden()) toggleWidget(false);
     });
