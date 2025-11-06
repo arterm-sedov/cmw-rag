@@ -682,6 +682,7 @@ chatbot_config = gr.Chatbot(
     max_height=chatbot_max_height,
     resizable=True,
     elem_classes=["gradio-chatbot"],
+    label="Диалог с агентом",
 )
 
 # Force agent-based handler; legacy direct handler removed
