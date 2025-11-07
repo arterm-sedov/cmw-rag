@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from pathlib import Path
 from typing import Any
 
 import tiktoken
@@ -13,6 +12,7 @@ from rag_engine.core.chunker import split_text
 from rag_engine.retrieval.reranker import build_reranker
 from rag_engine.retrieval.vector_search import top_k_search
 from rag_engine.utils.metadata_utils import extract_numeric_kbid
+from rag_engine.utils.path_utils import normalize_path
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,8 @@ class RAGRetriever:
                     {"model_name": "DiTy/cross-encoder-russian-msmarco", "batch_size": 16},
                     {"model_name": "BAAI/bge-reranker-v2-m3", "batch_size": 16},
                     {"model_name": "jinaai/jina-reranker-v2-base-multilingual", "batch_size": 16},
-                ]
+                ],
+                device=settings.embedding_device,  # Reuse embedding device setting
             )
             if rerank_enabled
             else None
@@ -298,11 +299,13 @@ class RAGRetriever:
 
         Args:
             source_file: Absolute or relative path to article file
+                         (may contain Windows-style backslashes)
 
         Returns:
             Complete article content (without frontmatter)
         """
-        file_path = Path(source_file)
+        # Normalize path to handle Windows-style backslashes on POSIX systems
+        file_path = normalize_path(source_file)
         if not file_path.exists():
             raise FileNotFoundError(f"Article file not found: {source_file}")
 

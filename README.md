@@ -377,7 +377,7 @@ Environment variables (configure in `.env`):
 - `GRADIO_SERVER_PORT`: Web UI port (default: 7860)
 - `GRADIO_SHARE`: Enable Gradio share link for public access (`true`/`false`, default: `false`)
 - `EMBEDDING_MODEL`: Embedding model name (default: `ai-forever/FRIDA`)
-- `EMBEDDING_DEVICE`: Device for embeddings (`cpu` or `cuda`)
+- `EMBEDDING_DEVICE`: Device for embeddings and reranking (`auto`, `cpu`, or `cuda`). `auto` will detect and use GPU if available, else CPU. Both the FRIDA embedder and cross-encoder reranker use this setting.
 - `MEMORY_COMPRESSION_THRESHOLD_PCT`: Trigger compression when estimated request exceeds this percent of the model window (default: `85`)
 - `MEMORY_COMPRESSION_TARGET_TOKENS`: Target tokens for the compressed history turn (default: `1000`)
 - `RETRIEVAL_FAST_TOKEN_CHAR_THRESHOLD`: For strings exceeding this length, approximate tokens as chars // 4 instead of full encode (default: `200000`)

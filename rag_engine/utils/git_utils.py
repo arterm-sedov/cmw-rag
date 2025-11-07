@@ -15,13 +15,16 @@ def get_git_timestamp(file_path: str | Path) -> tuple[int | None, str | None]:
     even if files come from different repositories.
 
     Args:
-        file_path: Path to the file (absolute or relative)
+        file_path: Path to the file (absolute or relative, may contain Windows-style backslashes)
 
     Returns:
         Tuple of (epoch: int, iso_string: str) or (None, None) on failure
     """
     try:
-        file_path = Path(file_path)
+        from rag_engine.utils.path_utils import normalize_path
+
+        # Normalize path to handle Windows-style backslashes on POSIX systems
+        file_path = normalize_path(file_path)
         if not file_path.is_absolute():
             file_path = file_path.resolve()
 
@@ -103,7 +106,9 @@ def get_file_timestamp(
     # Tier 3: File modification date
     if source_file:
         try:
-            p = Path(source_file)
+            from rag_engine.utils.path_utils import normalize_path
+
+            p = normalize_path(source_file)
             if p.exists():
                 stat = p.stat()
                 epoch = int(stat.st_mtime)

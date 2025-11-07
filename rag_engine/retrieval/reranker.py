@@ -4,6 +4,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from rag_engine.utils.device_utils import detect_device
+
 try:  # Provide a module-level alias for monkeypatch-friendly tests
     from sentence_transformers import CrossEncoder as CrossEncoder  # type: ignore
 except Exception:  # noqa: BLE001
@@ -25,7 +27,26 @@ class IdentityReranker:
 class CrossEncoderReranker:
     """Cross-encoder reranker using sentence-transformers CrossEncoder."""
 
-    def __init__(self, model_name: str, batch_size: int = 16, model: Any | None = None):
+    def __init__(
+        self,
+        model_name: str,
+        batch_size: int = 16,
+        device: str = "auto",
+        model: Any | None = None,
+    ):
+        """Initialize cross-encoder reranker.
+
+        Args:
+            model_name: Name of the CrossEncoder model
+            batch_size: Batch size for reranking
+            device: Device to run the model on ('auto', 'cpu', or 'cuda').
+                    'auto' will detect and use GPU if available, else CPU.
+            model: Optional pre-initialized model (for testing)
+        """
+        # Auto-detect device if "auto" is specified
+        if device == "auto":
+            device = detect_device("auto")
+
         # Allow injecting a fake model for tests; otherwise construct via module-level alias
         global CrossEncoder  # use the module-level symbol (monkeypatchable)
         if model is not None:
@@ -35,7 +56,7 @@ class CrossEncoderReranker:
                 # Import here if alias was not resolved at import time
                 from sentence_transformers import CrossEncoder as _CE  # type: ignore
                 CrossEncoder = _CE  # type: ignore
-            self.model = CrossEncoder(model_name)  # type: ignore[operator]
+            self.model = CrossEncoder(model_name, device=device)  # type: ignore[operator]
         self.batch_size = batch_size
 
     def rerank(
@@ -67,11 +88,23 @@ class CrossEncoderReranker:
         return scored[:top_k]
 
 
-def build_reranker(prioritized_models: list[dict[str, Any]]) -> Any:
-    """Return first available cross-encoder; fallback to identity reranker."""
+def build_reranker(
+    prioritized_models: list[dict[str, Any]], device: str = "auto"
+) -> Any:
+    """Return first available cross-encoder; fallback to identity reranker.
+
+    Args:
+        prioritized_models: List of model configs to try in order
+        device: Device to run the model on ('auto', 'cpu', or 'cuda').
+                'auto' will detect and use GPU if available, else CPU.
+    """
     for cfg in prioritized_models:
         try:
-            return CrossEncoderReranker(cfg["model_name"], batch_size=cfg.get("batch_size", 16))
+            return CrossEncoderReranker(
+                cfg["model_name"],
+                batch_size=cfg.get("batch_size", 16),
+                device=cfg.get("device", device),
+            )
         except Exception:  # noqa: BLE001
             continue
     return IdentityReranker()

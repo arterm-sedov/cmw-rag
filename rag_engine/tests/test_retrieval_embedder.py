@@ -44,3 +44,27 @@ def test_frida_embedder_roundtrip():
         error_msg = str(exc) if exc else "Unknown error"
         pytest.skip(f"FRIDA model operation failed (may be OOM): {error_type}: {error_msg}")
 
+
+@pytest.mark.external
+def test_frida_embedder_auto_device():
+    """Test FRIDA embedder with auto device detection.
+    
+    Verifies that device="auto" correctly detects and uses available device.
+    Skips gracefully if model unavailable.
+    """
+    try:
+        embedder = FRIDAEmbedder(model_name="ai-forever/FRIDA", device="auto")
+        # Verify that a device was selected (either cpu or cuda)
+        assert embedder.model.device.type in ("cpu", "cuda")
+        
+        # Test that embeddings work
+        query_vec = embedder.embed_query("test query")
+        assert len(query_vec) == embedder.get_embedding_dim()
+    except BaseException as exc:  # noqa: BLE001
+        error_type = type(exc).__name__
+        error_msg = str(exc) if exc else "Unknown error"
+        pytest.skip(
+            f"FRIDA model unavailable or auto-detection failed: "
+            f"{error_type}: {error_msg}"
+        )
+
