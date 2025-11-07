@@ -6,6 +6,7 @@ import threading
 
 from sentence_transformers import SentenceTransformer
 
+from rag_engine.utils.device_utils import detect_device
 from rag_engine.utils.disk_space import check_disk_space_available, get_huggingface_cache_dir
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ class FRIDAEmbedder:
     def __init__(
         self,
         model_name: str = "ai-forever/FRIDA",
-        device: str = "cpu",
+        device: str = "auto",
         max_seq_length: int = 512,
         check_disk_space: bool = True,
     ):
@@ -31,13 +32,17 @@ class FRIDAEmbedder:
 
         Args:
             model_name: Name of the SentenceTransformer model
-            device: Device to run the model on ('cpu' or 'cuda')
+            device: Device to run the model on ('auto', 'cpu', or 'cuda').
+                    'auto' will detect and use GPU if available, else CPU.
             max_seq_length: Maximum sequence length
             check_disk_space: Whether to check disk space before downloading model
 
         Raises:
             OSError: If insufficient disk space for model download
         """
+        # Auto-detect device if "auto" is specified
+        if device == "auto":
+            device = detect_device("auto")
         if check_disk_space and model_name == "ai-forever/FRIDA":
             cache_dir = get_huggingface_cache_dir()
             available, free_gb, message = check_disk_space_available(
