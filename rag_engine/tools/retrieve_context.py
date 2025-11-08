@@ -159,13 +159,12 @@ def retrieve_context(
     top_k: int | None = None,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
-    """Retrieve relevant context documents from the knowledge base using semantic search.
+    """Retrieve relevant context articles from the knowledge base using semantic search.
 
-    This tool searches the indexed knowledge base for articles relevant to your query using
-    vector search, and reranking. It returns formatted context
-    with article titles, URLs, and content ready for consumption.
+    This tool searches the knowledge base for articles relevant to your query using.
+    It returns formatted context with article titles, URLs, and content ready for consumption.
 
-    **When to use this tool:**
+    **Use this tool:**
     - When you need information from the knowledge base to answer a user's question
     - When the user's request is vague or ambiguous - you can call this tool multiple times
       with different query variations to find comprehensive information
@@ -188,7 +187,7 @@ def retrieve_context(
     - Consider different aspects of the topic (e.g., "configuration", "troubleshooting", "examples")
 
     Args:
-        query: Search query or question to find relevant documents. Be specific and focused.
+        query: Search query or question to find relevant articles. Be specific and focused.
         top_k: Optional limit on number of articles (default uses system setting, typically 5-10)
 
     Returns:
