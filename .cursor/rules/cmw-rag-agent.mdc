@@ -21,6 +21,8 @@ alwaysApply: true
 - Prefer LangChain purity for LangChain code.
 - Use sentence_transformers when needed and practical.
 - Follow LangChain's best practices, patterns, and conventions:
+    - .reference-repos\langchain
+    - https://github.com/langchain-ai/langchain
     - https://docs.langchain.com/oss/python/langchain/overview
     - https://docs.langchain.com/oss/python/langchain/agents
     - https://reference.langchain.com/python/langchain/agents/
@@ -45,6 +47,8 @@ alwaysApply: true
     - https://langchain-ai.github.io/langgraph/concepts/memory/
 - Ensure Gradio purity when possible.
 - Follow Gradio's best practices, patterns, and conventions:
+    - ./reference-repos/gradio
+    - https://github.com/gradio-app/gradio
     - https://www.gradio.app/docs
     - https://www.gradio.app/guides/the-interface-class/
     - https://www.gradio.app/guides/interface-state/
