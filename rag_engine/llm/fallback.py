@@ -85,10 +85,13 @@ def check_context_fallback(messages: list[dict], overhead: int | None = None) ->
     # Estimate tokens using centralized utility
     total_tokens = count_messages_tokens(messages)
 
-    # Add buffer for system prompt and output
-    if overhead is None:
-        overhead = int(getattr(settings, "llm_tool_results_overhead_tokens", 40000))
-    total_tokens += overhead
+    # Add buffer for system prompt and tool schemas (actual counts)
+    from rag_engine.utils.context_tracker import compute_overhead_tokens
+    from rag_engine.tools.retrieve_context import retrieve_context
+
+    # Overhead parameter is ignored (kept for backward compatibility)
+    overhead_tokens = compute_overhead_tokens(tools=[retrieve_context])
+    total_tokens += overhead_tokens
 
     # Check if approaching limit (90% threshold)
     pre = float(getattr(settings, "llm_pre_context_threshold_pct", 0.90))

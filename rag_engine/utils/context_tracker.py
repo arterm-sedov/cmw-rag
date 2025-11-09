@@ -7,7 +7,7 @@ enabling progressive budgeting and preventing context overflow.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
@@ -40,14 +40,125 @@ class AgentContext(BaseModel):
     )
 
 
+def compute_context_tokens(
+    messages: list[dict | Any],
+    tool_results: list[str] | None = None,
+    add_json_overhead: bool = True,
+) -> tuple[int, int]:
+    """Unified function to compute tokens from messages or separate lists.
+
+    Handles both:
+    - LangChain message objects from state (with tool messages embedded)
+    - Separate dict messages + tool_results lists
+
+    This is the centralized token counting function used throughout the codebase
+    for consistent budgeting. It deduplicates articles by kb_id and optionally
+    adds JSON overhead percentage for tool results.
+
+    Args:
+        messages: List of messages (dict or LangChain objects). If tool_results
+                 is None, tool messages are extracted from this list.
+        tool_results: Optional separate list of tool result JSON strings. If provided,
+                     only these are counted (messages are treated as conversation only).
+        add_json_overhead: Whether to add configurable JSON overhead percentage
+                          for tool results (default: True)
+
+    Returns:
+        Tuple of (conversation_tokens, accumulated_tool_tokens)
+        - conversation_tokens: Tokens from non-tool messages
+        - accumulated_tool_tokens: Tokens from tool results (deduplicated, with optional JSON overhead)
+
+    Example:
+        >>> # From agent state (LangChain messages)
+        >>> from rag_engine.utils.context_tracker import compute_context_tokens
+        >>> conv_toks, tool_toks = compute_context_tokens(state_messages)
+        >>> total = conv_toks + tool_toks
+
+        >>> # From separate lists (dict messages + tool results)
+        >>> conv_toks, tool_toks = compute_context_tokens(messages, tool_results)
+        >>> total = conv_toks + tool_toks
+    """
+    from rag_engine.config.settings import settings
+    from rag_engine.llm.token_utils import count_tokens
+    from rag_engine.tools.utils import parse_tool_result_to_articles
+
+    conversation_tokens = 0
+    accumulated_tool_tokens = 0
+    seen_kb_ids: set[str] = set()
+
+    # If tool_results is provided, count only those (messages are conversation only)
+    if tool_results is not None:
+        # Count conversation messages
+        for msg in messages:
+            content = msg.get("content", "") if isinstance(msg, dict) else getattr(msg, "content", "")
+            if isinstance(content, str) and content:
+                conversation_tokens += count_tokens(content)
+
+        # Count tool results from separate list
+        for tool_result in tool_results:
+            if not isinstance(tool_result, str):
+                continue
+            try:
+                articles = parse_tool_result_to_articles(tool_result)
+                for article in articles:
+                    if article.kb_id and article.kb_id not in seen_kb_ids:
+                        seen_kb_ids.add(article.kb_id)
+                        accumulated_tool_tokens += count_tokens(article.content)
+            except Exception as exc:
+                # If parsing fails, fall back to rough estimate
+                logger.warning("Failed to parse tool result for token counting: %s", exc)
+                accumulated_tool_tokens += count_tokens(tool_result) // 2
+    else:
+        # Extract tool messages from messages list (LangChain state format)
+        for msg in messages:
+            # Handle both dict and LangChain message objects
+            content = getattr(msg, "content", "") if hasattr(msg, "content") else msg.get("content", "")
+            if not isinstance(content, str) or not content:
+                continue
+
+            # Check message type
+            msg_type = getattr(msg, "type", None) if hasattr(msg, "type") else msg.get("type")
+
+            if msg_type == "tool":
+                # Tool message - parse and count articles
+                try:
+                    articles = parse_tool_result_to_articles(content)
+                    for art in articles:
+                        if art.kb_id and art.kb_id not in seen_kb_ids:
+                            seen_kb_ids.add(art.kb_id)
+                            accumulated_tool_tokens += count_tokens(art.content)
+                except Exception as exc:
+                    # If parsing fails, log and skip rather than guessing; keep accounting strict
+                    logger.warning("Failed to parse tool result for token accounting: %s", exc)
+                    continue
+            else:
+                # Conversation message
+                conversation_tokens += count_tokens(content)
+
+    # Add configurable JSON overhead percentage if requested
+    if add_json_overhead and accumulated_tool_tokens > 0:
+        json_overhead_pct = getattr(settings, "llm_tool_results_json_overhead_pct", 0.30)
+        accumulated_tool_tokens = int(accumulated_tool_tokens * (1.0 + json_overhead_pct))
+
+    logger.debug(
+        "Context tokens: conversation=%d, tools=%d (with JSON overhead=%s, %d unique articles)",
+        conversation_tokens,
+        accumulated_tool_tokens,
+        add_json_overhead,
+        len(seen_kb_ids),
+    )
+
+    return conversation_tokens, accumulated_tool_tokens
+
+
 def estimate_accumulated_tokens(
     conversation_messages: list[dict],
     tool_results: list[str],
 ) -> tuple[int, int]:
     """Estimate tokens from conversation and accumulated tool results.
 
-    This is the agent's responsibility - counting context as tool calls accumulate.
-    The tool should just receive this information and pass it to the retriever.
+    This is a convenience wrapper for the unified compute_context_tokens function.
+    Maintains backward compatibility with existing code.
 
     Args:
         conversation_messages: List of user/assistant messages from history
@@ -62,43 +173,11 @@ def estimate_accumulated_tokens(
         >>> conv_tokens, tool_tokens = estimate_accumulated_tokens(messages, tool_results)
         >>> total = conv_tokens + tool_tokens  # Pass this to retriever
     """
-    from rag_engine.llm.token_utils import count_tokens
-    from rag_engine.tools.utils import parse_tool_result_to_articles
-
-    conversation_tokens = 0
-    accumulated_tool_tokens = 0
-
-    # Count conversation history tokens
-    for msg in conversation_messages:
-        content = msg.get("content", "")
-        if isinstance(content, str) and content:
-            conversation_tokens += count_tokens(content)
-
-    # Count accumulated tool result tokens (deduplicated by kb_id)
-    if tool_results:
-        seen_kb_ids = set()
-
-        for tool_result in tool_results:
-            try:
-                articles = parse_tool_result_to_articles(tool_result)
-                for article in articles:
-                    if article.kb_id and article.kb_id not in seen_kb_ids:
-                        seen_kb_ids.add(article.kb_id)
-                        # Count only unique articles
-                        accumulated_tool_tokens += count_tokens(article.content)
-            except Exception as exc:
-                # If parsing fails, fall back to rough estimate
-                logger.warning("Failed to parse tool result for token counting: %s", exc)
-                accumulated_tool_tokens += count_tokens(tool_result) // 2
-
-        logger.debug(
-            "Accumulated context: conversation=%d tokens, tools=%d tokens (%d unique articles)",
-            conversation_tokens,
-            accumulated_tool_tokens,
-            len(seen_kb_ids),
-        )
-
-    return conversation_tokens, accumulated_tool_tokens
+    return compute_context_tokens(
+        conversation_messages,
+        tool_results=tool_results,
+        add_json_overhead=False,  # Legacy behavior: no JSON overhead
+    )
 
 
 def extract_articles_from_runtime_state(runtime_state: dict) -> list[Article]:
@@ -166,19 +245,96 @@ def compute_thresholds(
     return int(window * pre_pct), int(window * post_pct)
 
 
-def estimate_accumulated_context(
-    messages: list[dict], tool_results: list[str], overhead: int = 40000
+def compute_overhead_tokens(
+    system_prompt: str | None = None,
+    tools: list | None = None,
+    safety_margin: int | None = None,
 ) -> int:
-    """Estimate total tokens for messages + tool results (JSON format).
+    """Compute overhead tokens from actual system prompt and tool schemas.
 
-    This function combines conversation messages and tool result JSON strings
-    to estimate the total accumulated context. Matches the logic from
-    `_estimate_accumulated_context` in app.py but uses centralized token counting.
+    Counts actual tokens in:
+    - System prompt (if provided, otherwise uses SYSTEM_PROMPT)
+    - Tool schemas (if provided, otherwise uses retrieve_context tool)
+    - Safety margin for formatting overhead (if provided, otherwise uses settings)
+
+    Args:
+        system_prompt: System prompt string (if None, uses SYSTEM_PROMPT)
+        tools: List of LangChain tools (if None, uses retrieve_context tool)
+        safety_margin: Additional safety margin for formatting overhead (if None, uses settings)
+
+    Returns:
+        Total overhead tokens (system prompt + tool schemas + safety margin)
+
+    Example:
+        >>> from rag_engine.utils.context_tracker import compute_overhead_tokens
+        >>> overhead = compute_overhead_tokens()  # Uses defaults
+        >>> overhead > 0
+        True
+    """
+    import json
+
+    from rag_engine.config.settings import settings
+    from rag_engine.llm.prompts import SYSTEM_PROMPT
+    from rag_engine.llm.token_utils import count_tokens
+    from rag_engine.tools.retrieve_context import retrieve_context
+
+    total_overhead = 0
+
+    # Count system prompt tokens
+    if system_prompt is None:
+        system_prompt = SYSTEM_PROMPT
+    total_overhead += count_tokens(system_prompt)
+
+    # Count tool schema tokens
+    if tools is None:
+        tools = [retrieve_context]
+
+    for tool in tools:
+        # Get tool schema JSON from Pydantic model
+        if hasattr(tool, "args_schema") and tool.args_schema:
+            try:
+                schema_json = tool.args_schema.model_json_schema()
+                schema_str = json.dumps(schema_json, separators=(",", ":"))
+                total_overhead += count_tokens(schema_str)
+            except Exception as exc:
+                logger.warning("Failed to get tool schema for token counting: %s", exc)
+        # Also count tool description
+        if hasattr(tool, "description") and tool.description:
+            total_overhead += count_tokens(tool.description)
+
+    # Add safety margin for formatting overhead
+    if safety_margin is None:
+        safety_margin = getattr(settings, "llm_context_overhead_safety_margin", 2000)
+    try:
+        safety_margin = int(safety_margin)
+    except (TypeError, ValueError):
+        safety_margin = 2000  # Default fallback
+    total_overhead += safety_margin
+
+    logger.debug(
+        "Overhead tokens: system_prompt + tool_schemas + safety_margin = %d",
+        total_overhead,
+    )
+
+    return total_overhead
+
+
+def estimate_accumulated_context(
+    messages: list[dict],
+    tool_results: list[str],
+    system_prompt: str | None = None,
+    tools: list | None = None,
+) -> int:
+    """Estimate total tokens for messages + tool results + overhead.
+
+    Uses actual token counts for system prompt and tool schemas,
+    not percentage-based estimates.
 
     Args:
         messages: Conversation messages (dict or LangChain messages)
         tool_results: List of tool result JSON strings
-        overhead: Buffer for system prompt, tool schemas, overhead (default: 40000)
+        system_prompt: System prompt string (if None, uses SYSTEM_PROMPT)
+        tools: List of LangChain tools (if None, uses retrieve_context tool)
 
     Returns:
         Estimated total token count including overhead
@@ -200,7 +356,8 @@ def estimate_accumulated_context(
         if isinstance(result, str):
             total_tokens += count_tokens(result)
 
-    # Add buffer for system prompt, tool schemas, overhead
-    total_tokens += overhead
+    # Add overhead from actual system prompt + tool schemas
+    overhead_tokens = compute_overhead_tokens(system_prompt, tools)
+    total_tokens += overhead_tokens
 
     return total_tokens
