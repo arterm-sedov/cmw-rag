@@ -91,8 +91,17 @@ class Settings(BaseSettings):
     llm_pre_context_threshold_pct: float = 0.90
     llm_post_context_threshold_pct: float = 0.80
 
-    # Estimated overhead tokens for tool schemas/system prompt when combining messages + tool JSON
-    llm_tool_results_overhead_tokens: int = 40000
+    # Context overhead safety margin for formatting and message structure
+    # Additional tokens reserved beyond actual system prompt and tool schema counts
+    # Accounts for: message formatting, JSON structure overhead, output buffer
+    # Default 2000 tokens (configurable via LLM_CONTEXT_OVERHEAD_SAFETY_MARGIN)
+    # Note: System prompt and tool schemas are counted directly, this is just a safety buffer
+    llm_context_overhead_safety_margin: int = 2000
+
+    # JSON overhead percentage for tool results (JSON format adds overhead vs raw content)
+    # Applied to accumulated tool result tokens to account for JSON serialization overhead
+    # Default 0.30 = 30% overhead (configurable via LLM_TOOL_RESULTS_JSON_OVERHEAD_PCT)
+    llm_tool_results_json_overhead_pct: float = 0.30
 
     # Tool-results compression controls
     # When total tokens exceed this fraction, trigger compression

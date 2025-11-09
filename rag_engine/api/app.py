@@ -22,6 +22,7 @@ from rag_engine.storage.vector_store import ChromaStore
 from rag_engine.tools import retrieve_context
 from rag_engine.utils.context_tracker import (
     AgentContext,
+    compute_context_tokens,
     estimate_accumulated_context,
     estimate_accumulated_tokens,
 )
@@ -95,8 +96,11 @@ def _check_context_fallback(messages: list[dict]) -> str | None:
 
     current_window = int(model_config.get("token_limit", 0))
     total_tokens = count_messages_tokens(messages)
-    # Get overhead from settings (with fallback for tests that don't set it)
-    overhead = int(getattr(settings, "llm_tool_results_overhead_tokens", None) or 40000)
+    # Calculate overhead from actual system prompt and tool schemas
+    from rag_engine.utils.context_tracker import compute_overhead_tokens
+    from rag_engine.tools.retrieve_context import retrieve_context
+
+    overhead = compute_overhead_tokens(tools=[retrieve_context])
     total_tokens += overhead
 
     # Get threshold percentage from settings (with fallback for tests)
@@ -164,38 +168,14 @@ def compress_tool_results(state: dict, runtime) -> dict | None:
 def _compute_context_tokens_from_state(messages: list[dict]) -> tuple[int, int]:
     """Compute (conversation_tokens, accumulated_tool_tokens) from agent state messages.
 
+    This is a wrapper for the unified compute_context_tokens function.
+    Uses configurable JSON overhead percentage from settings.
+
     - Conversation tokens: count non-tool message contents
-    - Accumulated tool tokens: parse tool JSONs, dedupe by kb_id, sum content tokens, add ~30% JSON overhead
+    - Accumulated tool tokens: parse tool JSONs, dedupe by kb_id, sum content tokens,
+      add configurable JSON overhead percentage (default 30%)
     """
-    from rag_engine.llm.token_utils import count_tokens
-    from rag_engine.tools.utils import parse_tool_result_to_articles
-
-    conversation_tokens = 0
-    accumulated_tool_tokens = 0
-    seen_kb_ids: set[str] = set()
-
-    for msg in messages:
-        content = getattr(msg, "content", "") if hasattr(msg, "content") else msg.get("content", "")
-        if not isinstance(content, str) or not content:
-            continue
-        msg_type = getattr(msg, "type", None) if hasattr(msg, "type") else msg.get("type")
-        if msg_type == "tool":
-            try:
-                articles = parse_tool_result_to_articles(content)
-                for art in articles:
-                    if art.kb_id and art.kb_id not in seen_kb_ids:
-                        accumulated_tool_tokens += count_tokens(art.content)
-                        seen_kb_ids.add(art.kb_id)
-            except Exception as exc:
-                # If parsing fails, log and skip rather than guessing; keep accounting strict
-                logger.warning("Failed to parse tool result for token accounting: %s", exc)
-                continue
-        else:
-            conversation_tokens += count_tokens(content)
-
-    # JSON overhead ~30%
-    accumulated_tool_tokens = int(accumulated_tool_tokens * 1.3)
-    return conversation_tokens, accumulated_tool_tokens
+    return compute_context_tokens(messages, tool_results=None, add_json_overhead=True)
 
 
 def update_context_budget(state: dict, runtime) -> dict | None:
@@ -268,8 +248,12 @@ class ToolBudgetMiddleware(AgentMiddleware):
 def _create_rag_agent(override_model: str | None = None):
     """Create LangChain agent with forced retrieval tool execution and memory compression.
 
-    Local implementation to preserve test patch points for model construction
-    and create_agent invocation.
+    Uses centralized factory with app-specific middleware. The factory enforces
+    tool execution via tool_choice="retrieve_context" to ensure the agent always
+    searches the knowledge base before answering.
+
+    This wrapper preserves test patch points while delegating to the centralized
+    agent_factory for consistent agent creation.
 
     Args:
         override_model: Optional model name to use instead of default
@@ -278,57 +262,48 @@ def _create_rag_agent(override_model: str | None = None):
     Returns:
         Configured LangChain agent with retrieve_context tool and middleware
     """
-    from langchain.agents import create_agent
-    from langchain.agents.middleware import SummarizationMiddleware, before_model
+    from rag_engine.llm.agent_factory import create_rag_agent
 
-    from rag_engine.llm.llm_manager import get_context_window
-    from rag_engine.llm.prompts import SUMMARIZATION_PROMPT, SYSTEM_PROMPT
-    from rag_engine.tools import retrieve_context
-
-    # Use override model if provided (for fallback), otherwise use default
-    selected_model = override_model or settings.default_model
-
-    # Create LLMManager instance to handle all LLM operations
-    # This centralizes model construction, config lookup, and provider logic
-    temp_llm_manager = LLMManager(
-        provider=settings.default_llm_provider,
-        model=selected_model,
-        temperature=settings.llm_temperature,
-    )
-    base_model = temp_llm_manager._chat_model()
-
-    # Force tool execution
-    model_with_tools = base_model.bind_tools([retrieve_context], tool_choice="retrieve_context")
-
-    # Memory compression threshold (messages to keep from settings)
-    messages_to_keep = getattr(settings, "memory_compression_messages_to_keep", 2)
-    threshold_tokens = int(
-        get_context_window(selected_model)
-        * (getattr(settings, "memory_compression_threshold_pct", 80) / 100)
+    return create_rag_agent(
+        override_model=override_model,
+        tool_budget_middleware=ToolBudgetMiddleware(),
+        update_context_budget_middleware=update_context_budget,
+        compress_tool_results_middleware=compress_tool_results,
     )
 
-    middleware_list = [
-        ToolBudgetMiddleware(),
-        before_model(update_context_budget),
-        before_model(compress_tool_results),
-        SummarizationMiddleware(
-            model=base_model,
-            token_counter=lambda _msgs: 0,
-            max_tokens_before_summary=threshold_tokens,
-            messages_to_keep=messages_to_keep,
-            summary_prompt=SUMMARIZATION_PROMPT,
-            summary_prefix="## Предыдущее обсуждение / Previous conversation:",
-        ),
-    ]
 
-    agent = create_agent(
-        model=model_with_tools,
-        tools=[retrieve_context],
-        system_prompt=SYSTEM_PROMPT,
-        context_schema=AgentContext,
-        middleware=middleware_list,
-    )
-    return agent
+def _process_text_chunk_for_streaming(
+    text_chunk: str,
+    answer: str,
+    disclaimer_prepended: bool,
+    has_seen_tool_results: bool,
+) -> tuple[str, bool]:
+    """Process a text chunk for streaming with disclaimer and formatting.
+
+    Prepends disclaimer to first chunk, handles newline after tool results,
+    and accumulates the answer.
+
+    Args:
+        text_chunk: Raw text chunk from agent
+        answer: Accumulated answer so far
+        disclaimer_prepended: Whether disclaimer has already been added
+        has_seen_tool_results: Whether tool results have been seen
+
+    Returns:
+        Tuple of (updated_answer, updated_disclaimer_prepended)
+    """
+    from rag_engine.llm.prompts import AI_DISCLAIMER
+
+    # Prepend disclaimer to first text chunk
+    if not disclaimer_prepended:
+        text_chunk = AI_DISCLAIMER + text_chunk
+        disclaimer_prepended = True
+    # Prepend newline before first text chunk after tool results
+    elif has_seen_tool_results and not answer:
+        text_chunk = "\n" + text_chunk
+
+    answer = answer + text_chunk
+    return answer, disclaimer_prepended
 
 
 def agent_chat_handler(
@@ -358,6 +333,11 @@ def agent_chat_handler(
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
     session_id = salt_session_id(base_session_id, history, message)
 
+    # Wrap user message in template (if needed for future enhancements)
+    from rag_engine.llm.prompts import USER_QUESTION_TEMPLATE
+
+    wrapped_message = USER_QUESTION_TEMPLATE.format(question=message)
+
     # Save user message to conversation store (BEFORE agent execution)
     # This ensures conversation history is tracked for memory compression
     if session_id:
@@ -367,7 +347,7 @@ def agent_chat_handler(
     messages = []
     for msg in history:
         messages.append(msg)
-    messages.append({"role": "user", "content": message})
+    messages.append({"role": "user", "content": wrapped_message})
 
     # Note: pre-agent trimming removed by request; rely on existing middleware
 
@@ -383,6 +363,7 @@ def agent_chat_handler(
     answer = ""
     current_model = selected_model or settings.default_model
     has_seen_tool_results = False
+    disclaimer_prepended = False  # Track if disclaimer has been prepended to stream
 
     # Track accumulated context for progressive budgeting
     # Agent is responsible for counting context, not the tool
@@ -509,10 +490,9 @@ def agent_chat_handler(
                             # This prevents streaming the agent's "reasoning" about tool calls
                             if not tool_executing:
                                 text_chunk = block["text"]
-                                # Prepend newline before first text chunk after tool results
-                                if has_seen_tool_results and not answer:
-                                    text_chunk = "\n" + text_chunk
-                                answer = answer + text_chunk
+                                answer, disclaimer_prepended = _process_text_chunk_for_streaming(
+                                    text_chunk, answer, disclaimer_prepended, has_seen_tool_results
+                                )
                                 yield answer
 
             # Handle "updates" mode for agent state updates
@@ -552,10 +532,23 @@ def agent_chat_handler(
         if settings.llm_fallback_enabled and is_context_overflow:
             try:  # Single-shot fallback retry
                 # Estimate required tokens and pick a capable fallback model
+                # Get current model context window for adaptive overhead calculation
+                from rag_engine.llm.model_configs import MODEL_CONFIGS
+
+                current_model_config = MODEL_CONFIGS.get(current_model)
+                if not current_model_config:
+                    for key in MODEL_CONFIGS:
+                        if key != "default" and key in current_model:
+                            current_model_config = MODEL_CONFIGS[key]
+                            break
+                if not current_model_config:
+                    current_model_config = MODEL_CONFIGS["default"]
+                current_window = int(current_model_config.get("token_limit", 0))
+
                 required_tokens = estimate_accumulated_context(
                     messages,
                     tool_results,
-                    overhead=int(getattr(settings, "llm_tool_results_overhead_tokens", 40000)),
+                    context_window=current_window,
                 )
                 fallback_model = _find_model_for_tokens(required_tokens) or None
 
@@ -585,6 +578,7 @@ def agent_chat_handler(
                     answer = ""
                     tool_results = []
                     has_seen_tool_results = False
+                    disclaimer_prepended = False  # Track if disclaimer has been prepended to stream
 
                     for stream_mode, chunk in agent.stream(
                         {"messages": messages},
@@ -610,18 +604,21 @@ def agent_chat_handler(
                                 for block in token.content_blocks:
                                     if block.get("type") == "text" and block.get("text"):
                                         text_chunk = block["text"]
-                                        # Prepend newline before first text chunk after tool results
-                                        if has_seen_tool_results and not answer:
-                                            text_chunk = "\n" + text_chunk
-                                        answer = answer + text_chunk
+                                        answer, disclaimer_prepended = _process_text_chunk_for_streaming(
+                                            text_chunk, answer, disclaimer_prepended, has_seen_tool_results
+                                        )
                                         yield answer
                         elif stream_mode == "updates":
                             # No-op for UI
                             pass
 
                     from rag_engine.tools import accumulate_articles_from_tool_results
+
                     articles = accumulate_articles_from_tool_results(tool_results)
-                    final_text = answer if not articles else format_with_citations(answer, articles)
+                    if not articles:
+                        final_text = answer
+                    else:
+                        final_text = format_with_citations(answer, articles)
 
                     if session_id:
                         llm_manager.save_assistant_turn(session_id, final_text)
@@ -689,9 +686,8 @@ chatbot_config = gr.Chatbot(
 handler_fn = agent_chat_handler
 logger.info("Using agent-based (LangChain) handler for chat interface")
 
-
 # Wrapper function to expose retrieve_context tool as API endpoint
-    # The tool is a StructuredTool, so we need to extract the underlying function
+# The tool is a StructuredTool, so we need to extract the underlying function
 def get_knowledge_base_articles(query: str, top_k: int | None = None) -> str:
     """API endpoint wrapper for retrieve_context tool.
 
@@ -721,11 +717,11 @@ with gr.Blocks() as demo:
     gr.api(
         fn=get_knowledge_base_articles,
         api_name="get_knowledge_base_articles",
-        api_description="Retrieve relevant documents from the knowledge base using semantic search. Returns JSON with article titles, URLs, content, and metadata.",
+        api_description="Retrieve relevant articles from the Comindware knowledge base. Returns JSON with article titles, URLs, content, and metadata.",
     )
 
     # Explicitly set a plain attribute for tests and downstream code to read
-    title = "Comindware Platform Documentation Assistant"
+    demo.title = "Comindware Platform Documentation Assistant"
 
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)

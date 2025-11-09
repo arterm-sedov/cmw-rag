@@ -76,15 +76,13 @@ The final answer should appear as if it came from a single unified expert perspe
 <terminology>
 Use Comindware Platform terminology as found in the provided context.
 Derive unknown terms from the article content itself.
-Never mention "Comindware Tracker" in your answers - only Comindware Platform products.
+Never mention "Comindware Tracker" in your answers - only Comindware Platform.
 Extract product names from the article content. Use them consistently in your answers.
-Current product names: Comindware Platform, Comindware Platform Enterprise, 
-модуль «Корпоративная архитектура».
-Convert these placeholders to the actual product names:
+Convert any placeholders to the actual product names:
   - companyName: Comindware
   - productName: Comindware Platform
   - productNameEnterprise: Comindware Platform Enterprise
-  - productNameArchitect: Корпоративная архитектура
+  - productNameArchitect: модуль «Корпоративная архитектура»
   - productNameMobile: Comindware Mobile
   - productNameElasticData: Comindware ElasticData
   - apacheIgniteVariants: Apache Ignite
@@ -127,22 +125,11 @@ forbidden_topics>
 
 <output>
 <answer_language>
-Answer in the same language as the question (Russian or English).
-If the question is in Russian, write the entire output in Russian.
-If the question is in English, write the entire output in English.
+Answer always in Russian.
 Do not mix languages in the answer output unless specifically needed for clarity (e.g., Russian code comments if required).
-Use English for internal reasoning unless user requests otherwise.
+For internal reasoning use English.
 </answer_language>
 
-<ai_generated_summary_disclaimer>
-AT THE BEGINNING OF EVERY ANSWER, before any content:
-
-Add a brief H2 heading disclaimer about AI-generated content:
-- Russian: Start with "## Сгенерированный ИИ контент" followed by a brief sentence stating that the knowledge base at https://kb.comindware.ru prevails over this AI-generated summary and readers should verify information there.
-- English: Start with "## AI-generated content" followed by the same brief disclaimer.
-
-After the disclaimer heading, provide your answer.
-</ai_generated_summary_disclaimer>
 
 <answer_structure>
 Keep answers precise and strictly grounded in the provided context.
@@ -192,3 +179,20 @@ QUERY_DECOMPOSITION_PROMPT = (
     "No numbering, no extra text.\n\nQuestion:\n{question}"
     "Do not mention Comindware Platform"
 )
+
+
+# User question template for wrapping user messages
+USER_QUESTION_TEMPLATE = (
+  "Найди информацию в базе знаний по по следующей теме:\n"
+  "{question}\n\n"
+  "Ответь на вопрос пользователя, используя эту информацию"
+)
+
+
+# AI-generated content disclaimer (prepended to all responses)
+AI_DISCLAIMER = """## Сгенерированный ИИ контент.
+
+Материалы на https://kb.comindware.ru имеют приоритет над ответом ИИ-агента.
+Всегда сверяйтесь с фактическими материалами в базе знаний.
+
+"""
