@@ -31,6 +31,7 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
     - metadata contains numeric kbId (enforced by indexer)
     - metadata may already contain a canonical 'url' or precomputed 'article_url'
     """
+    # Disclaimer already prepended during streaming
     # Deduplicate by kbId to avoid citing the same article multiple times
     seen_kbids: Dict[str, Dict[str, Any]] = {}
     seen_urls: set[str] = set()
