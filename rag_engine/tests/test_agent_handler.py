@@ -9,24 +9,26 @@ from rag_engine.api.app import _check_context_fallback, _create_rag_agent, agent
 class TestCreateRagAgent:
     """Tests for _create_rag_agent function."""
 
-    @patch("rag_engine.api.app.settings")
-    @patch("langchain.agents.create_agent")
-    @patch("rag_engine.api.app.LLMManager")
+    @patch("rag_engine.llm.agent_factory.settings")
+    @patch("rag_engine.llm.agent_factory.create_agent")
+    @patch("rag_engine.llm.agent_factory.LLMManager")
     def test_create_agent_gemini(self, mock_llm_manager_cls, mock_create_agent, mock_settings):
         """Test agent creation with Gemini provider."""
         mock_settings.default_llm_provider = "gemini"
         mock_settings.default_model = "gemini-2.5-flash"
         mock_settings.llm_temperature = 0.1
         mock_settings.google_api_key = "test_key"
+        mock_settings.memory_compression_threshold_pct = 80
+        mock_settings.memory_compression_messages_to_keep = 2
 
         mock_model = Mock()
         mock_model_with_tools = Mock()
         mock_model.bind_tools.return_value = mock_model_with_tools
-        
+
         mock_llm_manager = Mock()
         mock_llm_manager._chat_model.return_value = mock_model
         mock_llm_manager_cls.return_value = mock_llm_manager
-        
+
         mock_agent = Mock()
         mock_create_agent.return_value = mock_agent
 
@@ -57,9 +59,9 @@ class TestCreateRagAgent:
 
         assert agent is mock_agent
 
-    @patch("rag_engine.api.app.settings")
-    @patch("langchain.agents.create_agent")
-    @patch("rag_engine.api.app.LLMManager")
+    @patch("rag_engine.llm.agent_factory.settings")
+    @patch("rag_engine.llm.agent_factory.create_agent")
+    @patch("rag_engine.llm.agent_factory.LLMManager")
     def test_create_agent_openrouter(self, mock_llm_manager_cls, mock_create_agent, mock_settings):
         """Test agent creation with OpenRouter provider."""
         mock_settings.default_llm_provider = "openrouter"
@@ -72,7 +74,7 @@ class TestCreateRagAgent:
         mock_llm_manager = Mock()
         mock_llm_manager._chat_model.return_value = mock_model
         mock_llm_manager_cls.return_value = mock_llm_manager
-        
+
         mock_agent = Mock()
         mock_create_agent.return_value = mock_agent
 
@@ -91,23 +93,25 @@ class TestCreateRagAgent:
         mock_create_agent.assert_called_once()
         assert agent is mock_agent
 
-    @patch("rag_engine.api.app.settings")
-    @patch("langchain.agents.create_agent")
-    @patch("rag_engine.api.app.LLMManager")
+    @patch("rag_engine.llm.agent_factory.settings")
+    @patch("rag_engine.llm.agent_factory.create_agent")
+    @patch("rag_engine.llm.agent_factory.LLMManager")
     def test_system_prompt_uses_standard_prompt(self, mock_llm_manager_cls, mock_create_agent, mock_settings):
         """Test that agent uses standard Comindware Platform system prompt."""
         mock_settings.default_llm_provider = "gemini"
         mock_settings.default_model = "gemini-2.5-flash"
         mock_settings.llm_temperature = 0.1
         mock_settings.google_api_key = "test_key"
+        mock_settings.memory_compression_threshold_pct = 80
+        mock_settings.memory_compression_messages_to_keep = 2
 
         mock_model = Mock()
         mock_model.bind_tools.return_value = Mock()
-        
+
         mock_llm_manager = Mock()
         mock_llm_manager._chat_model.return_value = mock_model
         mock_llm_manager_cls.return_value = mock_llm_manager
-        
+
         mock_create_agent.return_value = Mock()
 
         _create_rag_agent()
@@ -119,9 +123,9 @@ class TestCreateRagAgent:
         assert "technical documentation assistant" in system_prompt
         assert "<role>" in system_prompt  # Characteristic of SYSTEM_PROMPT
 
-    @patch("rag_engine.api.app.settings")
-    @patch("langchain.agents.create_agent")
-    @patch("rag_engine.api.app.LLMManager")
+    @patch("rag_engine.llm.agent_factory.settings")
+    @patch("rag_engine.llm.agent_factory.create_agent")
+    @patch("rag_engine.llm.agent_factory.LLMManager")
     def test_create_agent_with_fallback_model(self, mock_llm_manager_cls, mock_create_agent, mock_settings):
         """Test agent creation with fallback model override."""
         mock_settings.default_llm_provider = "gemini"
@@ -134,11 +138,11 @@ class TestCreateRagAgent:
         mock_model = Mock()
         mock_model_with_tools = Mock()
         mock_model.bind_tools.return_value = mock_model_with_tools
-        
+
         mock_llm_manager = Mock()
         mock_llm_manager._chat_model.return_value = mock_model
         mock_llm_manager_cls.return_value = mock_llm_manager
-        
+
         mock_agent = Mock()
         mock_create_agent.return_value = mock_agent
 
@@ -184,18 +188,17 @@ class TestContextFallback:
         """Test fallback triggered when approaching context window limit."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
-        mock_settings.llm_tool_results_overhead_tokens = 40000
         mock_settings.llm_pre_context_threshold_pct = 0.90
         mock_get_fallbacks.return_value = ["openai/gpt-5-mini"]  # 400K tokens
 
         # Large conversation - simulate approaching limit
         # qwen/qwen3-coder-flash has token_limit=128,000
         # 90% threshold = 115,200 tokens
-        # We need: message_tokens + 35K buffer > 115,200
-        # So message_tokens > 80,200 tokens
+        # We need: message_tokens + overhead (system prompt + tool schema + safety margin) > 115,200
+        # Overhead is ~5K tokens (actual counts), so message_tokens > ~110K
         # With fast path (>50K chars), chars // 4 approximation
-        # So chars > 320,800. Use 400K to be safe.
-        large_content = "x" * 400_000  # Exceeds 90% threshold with fast path
+        # So chars > 440,000. Use 500K to be safe.
+        large_content = "x" * 500_000  # ~125K tokens, exceeds 90% threshold with overhead
 
         messages = [
             {"role": "user", "content": large_content},
@@ -228,7 +231,6 @@ class TestContextFallback:
         """Test fallback skips current model in selection."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
-        mock_settings.llm_tool_results_overhead_tokens = 40000
         mock_settings.llm_pre_context_threshold_pct = 0.90
         # List includes current model - should skip to next
         mock_get_fallbacks.return_value = [
@@ -237,7 +239,7 @@ class TestContextFallback:
         ]
 
         messages = [
-            {"role": "user", "content": "x" * 400_000},  # Large content
+            {"role": "user", "content": "x" * 500_000},  # Large content (~125K tokens)
         ]
 
         result = _check_context_fallback(messages)
@@ -250,7 +252,6 @@ class TestContextFallback:
         """Test fallback selects first model with sufficient capacity."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
-        mock_settings.llm_tool_results_overhead_tokens = 40000
         mock_settings.llm_pre_context_threshold_pct = 0.90
         # List of increasing capacity models
         mock_get_fallbacks.return_value = [
@@ -261,7 +262,7 @@ class TestContextFallback:
         ]
 
         messages = [
-            {"role": "user", "content": "x" * 350_000},  # ~87K tokens, triggers fallback
+            {"role": "user", "content": "x" * 500_000},  # ~125K tokens, with ~5K overhead = 130K > 115.2K threshold
         ]
 
         result = _check_context_fallback(messages)
@@ -369,9 +370,11 @@ class TestAgentChatHandler:
         tool_results_arg = mock_accumulate.call_args[0][0]
         assert len(tool_results_arg) == 1
 
-        # Verify citations were formatted
+        # Verify citations were formatted (answer includes disclaimer from streaming)
+        from rag_engine.llm.prompts import AI_DISCLAIMER
+        expected_answer = AI_DISCLAIMER + "Based on the search results, here is the answer."
         mock_format.assert_called_once_with(
-            "Based on the search results, here is the answer.",
+            expected_answer,
             [mock_article]
         )
 
@@ -382,7 +385,7 @@ class TestAgentChatHandler:
             "user",
             "test question"
         )
-        # Assistant response saved after execution
+        # Assistant response saved after execution (uses mocked format_with_citations return value)
         mock_llm_manager.save_assistant_turn.assert_called_once_with(
             "test_session_123",
             "Answer with citations"
@@ -437,8 +440,10 @@ class TestAgentChatHandler:
 
         # Verify no citations added when no articles
         assert len(result) >= 1
-        # Last result should be the final answer (same text, no citations)
-        assert result[-1] == "I couldn't find relevant information."
+        # Last result should be the final answer with disclaimer (no citations)
+        from rag_engine.llm.prompts import AI_DISCLAIMER
+        expected_answer = AI_DISCLAIMER + "I couldn't find relevant information."
+        assert result[-1] == expected_answer
 
     @patch("rag_engine.api.app._create_rag_agent")
     @patch("rag_engine.api.app.salt_session_id")
@@ -506,7 +511,10 @@ class TestAgentChatHandler:
         assert len(call_args["messages"]) == 3  # 2 history + 1 current
         assert call_args["messages"][0]["content"] == "First question"
         assert call_args["messages"][1]["content"] == "First answer"
-        assert call_args["messages"][2]["content"] == "Follow-up question"
+        # Current message should be wrapped in template
+        from rag_engine.llm.prompts import USER_QUESTION_TEMPLATE
+        expected_content = USER_QUESTION_TEMPLATE.format(question="Follow-up question")
+        assert call_args["messages"][2]["content"] == expected_content
 
 
 class TestAgentIntegration:

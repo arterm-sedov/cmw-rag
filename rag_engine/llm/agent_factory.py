@@ -7,7 +7,7 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import SummarizationMiddleware, before_model
 
 from rag_engine.config.settings import settings
-from rag_engine.llm.llm_manager import get_context_window
+from rag_engine.llm.llm_manager import LLMManager, get_context_window
 from rag_engine.llm.prompts import SUMMARIZATION_PROMPT, SYSTEM_PROMPT
 from rag_engine.llm.token_utils import count_messages_tokens
 from rag_engine.utils.context_tracker import AgentContext
@@ -53,24 +53,14 @@ def create_rag_agent(
     # Use override model if provided (for fallback), otherwise use default
     selected_model = override_model or settings.default_model
 
-    # Select model based on provider
-    if settings.default_llm_provider == "gemini":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-
-        base_model = ChatGoogleGenerativeAI(
-            model=selected_model,
-            temperature=settings.llm_temperature,
-            google_api_key=settings.google_api_key,
-        )
-    else:  # openrouter or other
-        from langchain_openai import ChatOpenAI
-
-        base_model = ChatOpenAI(
-            model=selected_model,
-            temperature=settings.llm_temperature,
-            openai_api_key=settings.openrouter_api_key,
-            openai_api_base=settings.openrouter_base_url,
-        )
+    # Use centralized LLMManager for consistent model construction
+    # This ensures max_tokens, OpenRouter headers, streaming, and config lookup
+    temp_llm_manager = LLMManager(
+        provider=settings.default_llm_provider,
+        model=selected_model,
+        temperature=settings.llm_temperature,
+    )
+    base_model = temp_llm_manager._chat_model()
 
     # Get model configuration for context window
     context_window = get_context_window(selected_model)

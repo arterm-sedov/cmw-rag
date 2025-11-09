@@ -292,14 +292,17 @@ def compress_tool_messages(
     total_tokens = count_messages_tokens(messages)
 
     # Add safety margin for JSON serialization overhead (tool messages are JSON strings)
-    # Tool message content is JSON, which adds ~30% overhead vs raw content
+    # Tool message content is JSON, which adds configurable overhead percentage vs raw content
     tool_message_count = sum(1 for m in messages if is_tool_message(m))
     if tool_message_count > 0:
-        # Estimate JSON overhead: count tool message content separately and add 30% overhead
+        # Estimate JSON overhead: count tool message content separately and add configurable overhead
         tool_tokens_raw = sum(
             count_tokens(get_message_content(m) or "") for m in messages if is_tool_message(m)
         )
-        json_overhead = int(tool_tokens_raw * 0.3)
+        from rag_engine.config.settings import settings
+
+        json_overhead_pct = getattr(settings, "llm_tool_results_json_overhead_pct", 0.30)
+        json_overhead = int(tool_tokens_raw * json_overhead_pct)
         total_tokens_adjusted = total_tokens + json_overhead
     else:
         total_tokens_adjusted = total_tokens
@@ -395,8 +398,11 @@ def compress_tool_messages(
     # Count non-tool message tokens (conversation + system prompts)
     non_tool_tokens = sum(count_messages_tokens([m]) for m in messages if not is_tool_message(m))
 
-    # Reserve space for LLM output/reasoning using configurable overhead from .env
-    overhead_tokens = getattr(settings, "llm_tool_results_overhead_tokens", 40000)
+    # Reserve space for LLM output/reasoning using actual system prompt and tool schemas
+    from rag_engine.utils.context_tracker import compute_overhead_tokens
+    from rag_engine.tools.retrieve_context import retrieve_context
+
+    overhead_tokens = compute_overhead_tokens(tools=[retrieve_context])
 
     # Available budget for articles = target - conversation - LLM overhead
     available_for_articles = max(0, int(target_tokens - non_tool_tokens - overhead_tokens))
