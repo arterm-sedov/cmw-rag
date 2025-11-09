@@ -88,6 +88,15 @@
         // State management
         const WIDGET_STORAGE_KEY = 'cmw_chat_widget_state';
         
+        // Constants for chatbot height calculation
+        const CHATBOT_HEIGHT_PERCENTAGE_NARROW = 0.7; // 70% of available height when narrow
+        const CHATBOT_HEIGHT_PERCENTAGE_WIDE = 0.8; // 80% of available height when wide
+        const WIDGET_WIDTH_THRESHOLD = 470; // Width threshold in pixels (narrow vs wide)
+        const HEADER_HEIGHT_FALLBACK = 60; // Fallback header height in pixels
+        const RESIZE_DEBOUNCE_MS = 300; // Debounce delay for resize events
+        const WIDGET_SHOW_DELAY_MS = 100; // Delay before updating height after widget shows
+        const WIDGET_OPEN_DELAY_MS = 200; // Delay before updating height after widget opens
+        
         let isInitialized = false;
         let isResizing = false;
         let resizeStartX = 0;
@@ -152,14 +161,35 @@
             }
         }
 
+        // Update chatbot height to percentage of container height
+        // Uses 70% when narrow (<= 434px) and 80% when wide (> 434px)
+        function updateChatbotHeight() {
+            if (isContainerHidden()) return;
+            const container = chatContainer;
+            const containerRect = container.getBoundingClientRect();
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+            
+            // Determine percentage based on width
+            const isWide = containerWidth > WIDGET_WIDTH_THRESHOLD;
+            const heightPercentage = isWide ? CHATBOT_HEIGHT_PERCENTAGE_WIDE : CHATBOT_HEIGHT_PERCENTAGE_NARROW;
+            
+            // Account for header height
+            const headerHeight = container.querySelector('.cmw-widget-header')?.getBoundingClientRect().height || HEADER_HEIGHT_FALLBACK;
+            const availableHeight = containerHeight - headerHeight;
+            const chatbotHeight = availableHeight * heightPercentage;
+            container.style.setProperty('--chatbot-height', `${chatbotHeight}px`);
+        }
+
         // Save size on resize
         let resizeTimeout;
         function handleResize() {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
+                updateChatbotHeight();
                 const storedState = getStoredState();
                 saveState(storedState);
-            }, 300); // Debounce resize events
+            }, RESIZE_DEBOUNCE_MS);
         }
 
         // Custom resize functionality from top-left corner
@@ -240,6 +270,8 @@
             chatContainer.style.right = 'auto';
             chatContainer.style.bottom = newBottom + 'px';
             
+            // Update chatbot height immediately during resize
+            updateChatbotHeight();
             handleResize();
         }
 
@@ -277,6 +309,8 @@
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         chatContainer.classList.add('show');
+                        // Update chatbot height after widget is shown
+                        setTimeout(() => updateChatbotHeight(), WIDGET_SHOW_DELAY_MS);
                     });
                 });
                 
@@ -288,7 +322,7 @@
                 chatContainer.classList.remove('show');
                 setTimeout(() => {
                     chatContainer.classList.add('cmw-widget-hidden');
-                }, 300); // Match --cmw-transition-duration (0.3s)
+                }, RESIZE_DEBOUNCE_MS); // Match --cmw-transition-duration
             }
 
             saveState({ isOpen: newState });
@@ -380,9 +414,10 @@
             
             restoreContainerSize();
             
-            // Add resize observer to save size changes
+            // Add resize observer to save size changes and update chatbot height
             const resizeObserver = new ResizeObserver(() => {
                 if (!isContainerHidden()) {
+                    updateChatbotHeight();
                     handleResize();
                 }
             });
@@ -392,7 +427,11 @@
             initializeGradioApp(gradioAppUrl);
             
             if (storedState.isOpen) {
-                setTimeout(() => toggleWidget(true), 100);
+                setTimeout(() => {
+                    toggleWidget(true);
+                    // Update chatbot height after widget opens
+                    setTimeout(() => updateChatbotHeight(), WIDGET_OPEN_DELAY_MS);
+                }, WIDGET_SHOW_DELAY_MS);
             }
         })();
     </script>
