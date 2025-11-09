@@ -190,7 +190,7 @@ USER_QUESTION_TEMPLATE = (
 
 
 # AI-generated content disclaimer (prepended to all responses)
-AI_DISCLAIMER = """## Сгенерированный ИИ контент.
+AI_DISCLAIMER = """## Сгенерированный ИИ контент
 
 Материалы на https://kb.comindware.ru имеют приоритет над ответом ИИ-агента.
 Всегда сверяйтесь с фактическими материалами в базе знаний.

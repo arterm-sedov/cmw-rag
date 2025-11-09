@@ -513,8 +513,11 @@ def agent_chat_handler(
             logger.info("Agent completed with %d articles", len(articles))
 
         # Save conversation turn (reuse existing pattern)
+        # Strip disclaimer from memory - it's only for display in stream
         if session_id:
-            llm_manager.save_assistant_turn(session_id, final_text)
+            from rag_engine.llm.prompts import AI_DISCLAIMER
+            text_for_memory = final_text.removeprefix(AI_DISCLAIMER)
+            llm_manager.save_assistant_turn(session_id, text_for_memory)
 
         yield final_text
 
@@ -621,7 +624,10 @@ def agent_chat_handler(
                         final_text = format_with_citations(answer, articles)
 
                     if session_id:
-                        llm_manager.save_assistant_turn(session_id, final_text)
+                        # Strip disclaimer from memory - it's only for display in stream
+                        from rag_engine.llm.prompts import AI_DISCLAIMER
+                        text_for_memory = final_text.removeprefix(AI_DISCLAIMER)
+                        llm_manager.save_assistant_turn(session_id, text_for_memory)
                     yield final_text
                     return
             except Exception as retry_exc:  # If fallback retry fails, emit original-style error
