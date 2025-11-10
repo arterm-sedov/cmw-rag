@@ -90,9 +90,9 @@
     function getStoredState() {
         try {
             const stored = localStorage.getItem(WIDGET_STORAGE_KEY);
-            return stored ? JSON.parse(stored) : { isOpen: false };
+            return stored ? JSON.parse(stored) : { isOpen: true };
         } catch {
-            return { isOpen: false };
+            return { isOpen: true };
         }
     }
 
