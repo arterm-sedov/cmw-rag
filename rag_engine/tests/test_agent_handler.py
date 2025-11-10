@@ -481,7 +481,7 @@ class TestAgentChatHandler:
         mock_salt_session,
         mock_create_agent,
     ):
-        """Test handler preserves conversation history."""
+        """Test handler preserves conversation history and uses USER_QUESTION_TEMPLATE_SUBSEQUENT for follow-up messages."""
         mock_salt_session.return_value = "test_session_abc"
 
         # Mock agent
@@ -511,10 +511,53 @@ class TestAgentChatHandler:
         assert len(call_args["messages"]) == 3  # 2 history + 1 current
         assert call_args["messages"][0]["content"] == "First question"
         assert call_args["messages"][1]["content"] == "First answer"
-        # Current message should be wrapped in template
-        from rag_engine.llm.prompts import USER_QUESTION_TEMPLATE
-        expected_content = USER_QUESTION_TEMPLATE.format(question="Follow-up question")
+        # Follow-up message should be wrapped in USER_QUESTION_TEMPLATE_SUBSEQUENT
+        from rag_engine.llm.prompts import USER_QUESTION_TEMPLATE_SUBSEQUENT
+        expected_content = USER_QUESTION_TEMPLATE_SUBSEQUENT.format(question="Follow-up question")
         assert call_args["messages"][2]["content"] == expected_content
+
+    @patch("rag_engine.api.app._create_rag_agent")
+    @patch("rag_engine.api.app.salt_session_id")
+    @patch("rag_engine.api.app.llm_manager")
+    @patch("rag_engine.api.app.format_with_citations")
+    @patch("rag_engine.tools.accumulate_articles_from_tool_results")
+    def test_agent_handler_first_message_uses_template(
+        self,
+        mock_accumulate,
+        mock_format,
+        mock_llm_manager,
+        mock_salt_session,
+        mock_create_agent,
+    ):
+        """Test that first message in conversation is wrapped in USER_QUESTION_TEMPLATE_FIRST."""
+        mock_salt_session.return_value = "test_session_first"
+
+        # Mock agent
+        mock_ai_msg = Mock()
+        mock_ai_msg.type = "ai"
+        mock_ai_msg.content = "First answer"
+        mock_ai_msg.tool_calls = None
+
+        mock_agent = Mock()
+        mock_agent.stream.return_value = [{"messages": [mock_ai_msg]}]
+        mock_create_agent.return_value = mock_agent
+
+        mock_accumulate.return_value = []
+
+        # Empty history (first message)
+        history = []
+
+        # Execute handler with empty history (first message)
+        list(agent_chat_handler("First question", history, None))
+
+        # Verify agent received message wrapped in template
+        mock_agent.stream.assert_called_once()
+        call_args = mock_agent.stream.call_args[0][0]
+        assert len(call_args["messages"]) == 1  # Only current message
+        # First message should be wrapped in USER_QUESTION_TEMPLATE_FIRST
+        from rag_engine.llm.prompts import USER_QUESTION_TEMPLATE_FIRST
+        expected_content = USER_QUESTION_TEMPLATE_FIRST.format(question="First question")
+        assert call_args["messages"][0]["content"] == expected_content
 
 
 class TestAgentIntegration:

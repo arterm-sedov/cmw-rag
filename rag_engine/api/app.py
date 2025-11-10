@@ -333,10 +333,16 @@ def agent_chat_handler(
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
     session_id = salt_session_id(base_session_id, history, message)
 
-    # Wrap user message in template (if needed for future enhancements)
-    from rag_engine.llm.prompts import USER_QUESTION_TEMPLATE
+    # Wrap user message in template only for the first question in the conversation
+    from rag_engine.llm.prompts import USER_QUESTION_TEMPLATE_FIRST, USER_QUESTION_TEMPLATE_SUBSEQUENT
 
-    wrapped_message = USER_QUESTION_TEMPLATE.format(question=message)
+    # Apply template only if this is the first message (empty history)
+    is_first_message = not history
+    wrapped_message = (
+        USER_QUESTION_TEMPLATE_FIRST.format(question=message)
+        if is_first_message
+        else USER_QUESTION_TEMPLATE_SUBSEQUENT.format(question=message)
+    )
 
     # Save user message to conversation store (BEFORE agent execution)
     # This ensures conversation history is tracked for memory compression
