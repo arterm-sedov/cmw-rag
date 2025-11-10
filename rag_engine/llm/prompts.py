@@ -189,12 +189,18 @@ QUERY_DECOMPOSITION_PROMPT = (
 
 
 # User question template for wrapping user messages
-USER_QUESTION_TEMPLATE = (
+USER_QUESTION_TEMPLATE_FIRST = (
   "Найди информацию в базе знаний по по следующей теме:\n"
   "{question}\n\n"
   "Ответь на вопрос пользователя, используя эту информацию"
 )
 
+USER_QUESTION_TEMPLATE_SUBSEQUENT = (
+  "Ответь на вопрос пользователя:\n\n"
+  "{question}\n\n"
+  "Учти предыдущие сообщения.\n"
+  "Если требуется, найди в базе знаний информацию для ответа на вопрос.\n"
+)
 
 # AI-generated content disclaimer (prepended to all responses)
 AI_DISCLAIMER = """## Сгенерированный ИИ контент
