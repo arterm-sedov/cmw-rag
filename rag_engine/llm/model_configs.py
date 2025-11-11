@@ -80,6 +80,12 @@ MODEL_CONFIGS: Dict[str, Dict] = {
         "max_tokens": 32_768,
         "temperature": 0,
     },
+    # vLLM Qwen model (with capital letters, matches vLLM max_model_len=40000)
+    "Qwen/Qwen3-30B-A3B-Instruct-2507": {
+        "token_limit": 40_000,  # Matches vLLM max_model_len configuration
+        "max_tokens": 40_000,  # Matches LLM_MAX_TOKENS in .env
+        "temperature": 0,
+    },
     "qwen/qwen3-coder-plus": {
         "token_limit": 128_000,
         "max_tokens": 65_536,
