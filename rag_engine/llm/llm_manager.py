@@ -139,6 +139,24 @@ class LLMManager:
                     "X-Title": "CMW RAG Engine",
                 },
             )
+        if p == "vllm":
+            # vLLM via OpenAI-compatible API
+            api_key = settings.vllm_api_key
+            base_url = settings.vllm_base_url
+            
+            logger.info(
+                f"Initializing vLLM client: model={self.model_name}, "
+                f"base_url={base_url}"
+            )
+            
+            return ChatOpenAI(
+                model=self.model_name,
+                api_key=api_key if api_key and api_key != "EMPTY" else "not-needed",
+                base_url=base_url,
+                temperature=self.temperature,
+                max_tokens=self._model_config["max_tokens"],
+                streaming=True,  # Enable streaming for vLLM
+            )
         # default fallback to Gemini
         logger.warning(f"Unknown provider {p}, falling back to Gemini")
         return ChatGoogleGenerativeAI(

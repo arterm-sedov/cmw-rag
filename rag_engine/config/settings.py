@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     google_api_key: str
     openrouter_api_key: str
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    # vLLM configuration (OpenAI-compatible API)
+    vllm_base_url: str = "http://localhost:8000/v1"
+    vllm_api_key: str = "EMPTY"
 
     # Embedding
     embedding_model: str
