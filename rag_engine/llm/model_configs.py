@@ -86,6 +86,18 @@ MODEL_CONFIGS: Dict[str, Dict] = {
         "max_tokens": 40_000,  # Matches LLM_MAX_TOKENS in .env
         "temperature": 0,
     },
+    # vLLM Mistral model (matches vLLM max_model_len=32768)
+    "mistralai/Ministral-3-14B-Instruct-2512": {
+        "token_limit": 32768,  # Matches vLLM max_model_len configuration
+        "max_tokens": 32768,  # Matches model's context window
+        "temperature": 0,
+    },
+    # vLLM OSS-20 model (matches vLLM max_model_len=40000)
+    "openai/gpt-oss-20b": {
+        "token_limit": 40000,  # Matches vLLM max_model_len configuration
+        "max_tokens": 40000,  # Matches vLLM max_model_len configuration
+        "temperature": 0,
+    },
     "qwen/qwen3-coder-plus": {
         "token_limit": 128_000,
         "max_tokens": 65_536,
