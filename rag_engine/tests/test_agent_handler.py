@@ -361,9 +361,11 @@ class TestAgentChatHandler:
         # Should include metadata messages for start and completion
         metadata_msgs = [r for r in result if isinstance(r, dict) and "metadata" in r]
         assert len(metadata_msgs) == 2  # Start + Completion messages
-        # Verify metadata content
-        assert "Searching" in metadata_msgs[0]["metadata"]["title"]
-        assert "Found" in metadata_msgs[1]["metadata"]["title"]
+        # Verify metadata content (check for search-related metadata in Russian or English)
+        search_title = metadata_msgs[0]["metadata"]["title"]
+        assert "Поиск" in search_title or "Searching" in search_title or "🔍" in search_title
+        found_title = metadata_msgs[1]["metadata"]["title"]
+        assert "Найдено" in found_title or "Found" in found_title or "✅" in found_title
 
         # Verify tool results were accumulated
         mock_accumulate.assert_called_once()

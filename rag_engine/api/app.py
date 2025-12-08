@@ -311,14 +311,15 @@ def agent_chat_handler(
     history: list[dict],
     request: gr.Request | None = None,
 ) -> Generator[str, None, None]:
-    """Agent-based chat handler using LangChain agent with tool calling.
+    """Ask questions about Comindware Platform documentation and get intelligent answers with citations.
 
-    This handler uses a LangChain agent that decides when to call the
-    retrieve_context tool. The agent is prompted to always search the
-    knowledge base before answering.
+    The assistant automatically searches the knowledge base to find relevant articles
+    and provides comprehensive answers based on official documentation. Use this for
+    technical questions, configuration help, API usage, troubleshooting, and general
+    platform guidance.
 
     Args:
-        message: User's current message
+        message: User's current message or question
         history: Chat history from Gradio
         request: Gradio request object for session management
 
@@ -702,35 +703,144 @@ logger.info("Using agent-based (LangChain) handler for chat interface")
 # Wrapper function to expose retrieve_context tool as API endpoint
 # The tool is a StructuredTool, so we need to extract the underlying function
 def get_knowledge_base_articles(query: str, top_k: int | None = None) -> str:
-    """API endpoint wrapper for retrieve_context tool.
+    """Search and retrieve documentation articles from the Comindware Platform knowledge base.
 
-    This exposes the retrieve_context LangChain tool as a Gradio API endpoint.
-    The runtime parameter is automatically set to None when called directly.
+    Use this tool when you need raw search results with article metadata. For intelligent
+    answers with automatic context retrieval, use agent_chat_handler instead.
 
     Args:
-        query: Search query or question to find relevant documents.
-        top_k: Optional limit on number of articles.
+        query: Search query or question to find relevant documentation articles.
+               Examples: "authentication", "API integration", "user management"
+        top_k: Optional limit on number of articles to return. If not specified,
+               returns the default number of most relevant articles (typically 10-20).
 
     Returns:
-        JSON string with article data.
+        JSON string containing an array of articles, each with:
+        - kb_id: Article identifier
+        - title: Article title
+        - url: Link to the article
+        - content: Full article content (markdown format)
+        - metadata: Additional metadata including rerank scores and source information
     """
     # Access the underlying function from the StructuredTool
     return retrieve_context.func(query=query, top_k=top_k)
 
+
+# MCP-compatible wrapper for agent_chat_handler
+# Collects streaming response into a single string for MCP tools
+def ask_comindware(message: str) -> str:
+    """Ask questions about Comindware Platform documentation and get intelligent answers with citations.
+
+    The assistant automatically searches the knowledge base to find relevant articles
+    and provides comprehensive answers based on official documentation. Use this for
+    technical questions, configuration help, API usage, troubleshooting, and general
+    platform guidance.
+
+    Args:
+        message: User's current message or question
+
+    Returns:
+        Complete response text with citations
+    """
+    # Collect all chunks from the generator into a single response
+    response_parts = []
+    last_text_response = None
+    generator = None
+    try:
+        # Call the handler with empty history and None request (MCP context)
+        # Note: agent_chat_handler is the generator function used by ChatInterface
+        generator = agent_chat_handler(message=message, history=[], request=None)
+        
+        # Consume the entire generator to collect all responses
+        # The generator yields: metadata dicts, incremental answer strings, and final formatted text
+        for chunk in generator:
+            if chunk is None:
+                continue
+                
+            # Handle string responses (incremental answers and final formatted text)
+            if isinstance(chunk, str):
+                if chunk.strip():  # Only add non-empty strings
+                    response_parts.append(chunk)
+                    last_text_response = chunk
+            # Handle dict responses (metadata messages like search started/completed)
+            elif isinstance(chunk, dict):
+                # Only extract text content from dicts, skip pure metadata
+                content = chunk.get("content", "")
+                if content and isinstance(content, str) and content.strip():
+                    response_parts.append(content)
+                    last_text_response = content
+        
+        # Ensure generator is fully consumed
+        if generator:
+            try:
+                # Try to close the generator if it's still open
+                generator.close()
+            except Exception:
+                pass
+        
+        # Return the final accumulated response (last chunk contains the full formatted text)
+        if last_text_response:
+            return last_text_response
+        elif response_parts:
+            # Fallback: join all parts if no single final response
+            return "\n".join(response_parts)
+        else:
+            return "No response generated. Please try rephrasing your question."
+            
+    except StopIteration:
+        # Generator exhausted normally
+        if last_text_response:
+            return last_text_response
+        elif response_parts:
+            return "\n".join(response_parts)
+        return "No response generated."
+    except IndexError as e:
+        # Handle specific "pop index out of range" error
+        logger.error("IndexError in ask_comindware (pop index): %s", e, exc_info=True)
+        import traceback
+        logger.error("Traceback: %s", traceback.format_exc())
+        # Try to return whatever we collected
+        if last_text_response:
+            return last_text_response
+        elif response_parts:
+            return "\n".join(response_parts)
+        return f"Error processing response: {str(e)}. Please try again."
+    except Exception as e:
+        logger.error("Error in ask_comindware: %s", e, exc_info=True)
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error("Full traceback: %s", error_details)
+        # Try to return whatever we collected before the error
+        if last_text_response:
+            return last_text_response + f"\n\n[Note: An error occurred during processing: {type(e).__name__}]"
+        elif response_parts:
+            return "\n".join(response_parts) + f"\n\n[Note: An error occurred: {str(e)}]"
+        return f"Error: {str(e)}. Please try rephrasing your question or contact support."
+
 with gr.Blocks() as demo:
+    # ChatInterface for UI only
+    # Note: ChatInterface automatically exposes its function (agent_chat_handler generator),
+    # but we register ask_comindware separately for MCP access via filtered endpoint
     gr.ChatInterface(
-    fn=handler_fn,
-    title=chat_title,
-    description=chat_description,
-    type="messages",
-    save_history=True,
-    #fill_width=True,
-    chatbot=chatbot_config,
+        fn=handler_fn,
+        title=chat_title,
+        description=chat_description,
+        type="messages",
+        save_history=True,
+        #fill_width=True,
+        chatbot=chatbot_config,
     )
     gr.api(
         fn=get_knowledge_base_articles,
         api_name="get_knowledge_base_articles",
-        api_description="Retrieve relevant articles from the Comindware knowledge base. Returns JSON with article titles, URLs, content, and metadata.",
+        api_description="Search the Comindware Platform documentation knowledge base and retrieve relevant articles with full content. Returns structured JSON with article titles, URLs, content, and metadata. Use this for programmatic access to documentation content. For conversational answers, use ask_comindware instead.",
+    )
+    # Register the working wrapper function with a business-oriented name for MCP consumers
+    # This provides a clean API name that's meaningful to external tools like Cursor
+    gr.api(
+        fn=ask_comindware,
+        api_name="ask_comindware",
+        api_description="Ask questions about Comindware Platform documentation and get intelligent answers with citations. The assistant automatically searches the knowledge base to find relevant articles and provides comprehensive answers based on official documentation. Use this for technical questions, configuration help, API usage, troubleshooting, and general platform guidance.",
     )
 
     # Explicitly set a plain attribute for tests and downstream code to read
