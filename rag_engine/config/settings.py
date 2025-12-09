@@ -85,10 +85,6 @@ class Settings(BaseSettings):
     # Number of recent messages to keep uncompressed (for agent mode)
     memory_compression_messages_to_keep: int = 2  # Match old handler
 
-    # Performance guardrails
-    # When counting tokens, approximate for very large strings beyond this char length
-    retrieval_fast_token_char_threshold: int = 200000
-
     # Context thresholds and compression (env-driven)
     # Pre/post safety thresholds as fractions of the model context window
     llm_pre_context_threshold_pct: float = 0.90

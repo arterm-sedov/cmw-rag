@@ -9,50 +9,34 @@ question, context, and reserved output/overhead.
 
 import tiktoken
 
-from rag_engine.config.settings import settings
-
 _ENCODING = tiktoken.get_encoding("cl100k_base")
-
-# Heuristic threshold to avoid expensive encodes on very large inputs
-_FAST_PATH_CHAR_LEN = settings.retrieval_fast_token_char_threshold
 
 
 def count_tokens(content: str) -> int:
-    """Count tokens in a string using tiktoken with fast path for large content.
+    """Count tokens in a string using exact tiktoken encoding.
 
     This is the centralized token counting utility used throughout the codebase.
-    For small to medium content (< threshold), uses exact tiktoken encoding.
-    For very large content (>= threshold), uses fast approximation (chars // 4).
+    Uses tiktoken's cl100k_base encoding for accurate token counting
+    across all languages, including Russian/Cyrillic text.
+
+    Performance: Typically < 15ms for 200K chars, < 70ms for 1M chars.
 
     Args:
         content: Text to count tokens for
 
     Returns:
-        Estimated token count
+        Exact token count
 
     Example:
         >>> from rag_engine.llm.token_utils import count_tokens
         >>> tokens = count_tokens("Hello, world!")
         >>> tokens >= 3  # Exact count varies by encoding
         True
-
-        >>> # For large content, automatically uses fast path
-        >>> large_text = "x" * 100_000
-        >>> tokens = count_tokens(large_text)  # Uses len(content) // 4
-        >>> tokens == 25000
-        True
     """
     if not content:
         return 0
 
     content_str = str(content)
-
-    # Fast path for very large content to avoid performance issues
-    # Matches the same logic used in estimate_tokens_for_request
-    if len(content_str) > _FAST_PATH_CHAR_LEN:
-        return len(content_str) // 4
-
-    # Use exact tiktoken counting for smaller content
     return len(_ENCODING.encode(content_str))
 
 
@@ -60,9 +44,7 @@ def count_messages_tokens(messages: list) -> int:
     """Count tokens for a list of messages (dict or LangChain message objects).
 
     Handles both dict messages (from Gradio) and LangChain message objects.
-    Uses exact tiktoken encoding for normal content, but switches to
-    fast approximation (chars // 4) for very large strings (>50K chars)
-    to avoid performance issues.
+    Uses exact tiktoken encoding for accurate token counting across all languages.
 
     Args:
         messages: List of message objects (dict or LangChain messages)
