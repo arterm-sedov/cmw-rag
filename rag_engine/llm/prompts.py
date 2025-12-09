@@ -169,13 +169,12 @@ article content to only what is necessary to answer the user's question,
 strictly using the provided content. Do not invent facts.
 
 Guidelines:
-- Follow the given target token limit strictly.
+- Follow the given target token limit strictly. Keep the output concise and under the specified token target.
 - Prioritize content from the provided relevant chunks.
+- Boost inclusion of relevant code/config/CLI examples.
 - If additional article content is provided, use where it is relevant.
 - Preserve technical accuracy and key terminology.
 - Prefer concrete steps, constraints, definitions, and error conditions.
-- Boost inclusion of code/config/CLI examples when relevant.
-- Keep the output concise and under the specified token target.
 - Do not include content unrelated to the question.
 """
 
