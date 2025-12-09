@@ -73,7 +73,7 @@ def create_rag_agent(
         """Count tokens using centralized utility.
 
         Uses count_messages_tokens which handles both dict and LangChain
-        message objects with fast-path for large content.
+        message objects with exact tiktoken encoding.
         """
         return count_messages_tokens(messages)
 

@@ -52,19 +52,3 @@ def test_environment_overrides_take_precedence(tmp_path, monkeypatch):
 
     assert settings.top_k_retrieve == 42
 
-
-def test_retrieval_fast_token_char_threshold_default(tmp_path):
-    """Test that retrieval_fast_token_char_threshold has correct default."""
-    env_file = _write_env(tmp_path, _base_env())
-    settings = Settings(_env_file=env_file)
-
-    assert settings.retrieval_fast_token_char_threshold == 200_000
-
-
-def test_retrieval_fast_token_char_threshold_can_be_overridden(tmp_path):
-    """Test that retrieval_fast_token_char_threshold can be set via env."""
-    env_content = _base_env() + "\n    RETRIEVAL_FAST_TOKEN_CHAR_THRESHOLD=150000"
-    env_file = _write_env(tmp_path, env_content)
-    settings = Settings(_env_file=env_file)
-
-    assert settings.retrieval_fast_token_char_threshold == 150_000

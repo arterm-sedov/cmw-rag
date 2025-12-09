@@ -196,9 +196,9 @@ class TestContextFallback:
         # 90% threshold = 115,200 tokens
         # We need: message_tokens + overhead (system prompt + tool schema + safety margin) > 115,200
         # Overhead is ~5K tokens (actual counts), so message_tokens > ~110K
-        # With fast path (>50K chars), chars // 4 approximation
-        # So chars > 440,000. Use 500K to be safe.
-        large_content = "x" * 500_000  # ~125K tokens, exceeds 90% threshold with overhead
+        # Using exact tiktoken counting
+        # 500K chars ≈ actual token count (varies by content), exceeds 90% threshold with overhead
+        large_content = "x" * 500_000  # Exceeds 90% threshold with overhead
 
         messages = [
             {"role": "user", "content": large_content},

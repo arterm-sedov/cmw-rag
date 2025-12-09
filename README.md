@@ -343,7 +343,7 @@ print(response.json())
 Environment-driven behavior:
 - If `LLM_FALLBACK_ENABLED=true`, the engine will estimate total tokens and immediately select a larger allowed model when necessary.
 - Summarization-first budgeting compresses overflow articles (guided by the question) before falling back to lightweight stitching.
-- Token counting uses fast approximation (chars // 4) for strings exceeding `RETRIEVAL_FAST_TOKEN_CHAR_THRESHOLD` to avoid slow encodes.
+- Token counting uses exact tiktoken encoding for accurate counting across all languages.
 
 **Response**:
 ```json
@@ -380,7 +380,6 @@ Environment variables (configure in `.env`):
 - `EMBEDDING_DEVICE`: Device for embeddings and reranking (`auto`, `cpu`, or `cuda`). `auto` will detect and use GPU if available, else CPU. Both the FRIDA embedder and cross-encoder reranker use this setting.
 - `MEMORY_COMPRESSION_THRESHOLD_PCT`: Trigger compression when estimated request exceeds this percent of the model window (default: `85`)
 - `MEMORY_COMPRESSION_TARGET_TOKENS`: Target tokens for the compressed history turn (default: `1000`)
-- `RETRIEVAL_FAST_TOKEN_CHAR_THRESHOLD`: For strings exceeding this length, approximate tokens as chars // 4 instead of full encode (default: `200000`)
 - `USE_AGENT_MODE`: Enable LangChain agent mode with tool calling (`true`/`false`, default: `false`)
 
 See `.env.example` for full configuration options.
