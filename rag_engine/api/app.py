@@ -702,7 +702,7 @@ logger.info("Using agent-based (LangChain) handler for chat interface")
 
 # Wrapper function to expose retrieve_context tool as API endpoint
 # The tool is a StructuredTool, so we need to extract the underlying function
-def get_knowledge_base_articles(query: str, top_k: int | None = None) -> str:
+def get_knowledge_base_articles(query: str, top_k: int | str | None = None) -> str:
     """Search and retrieve documentation articles from the Comindware Platform knowledge base.
 
     Use this tool when you need raw search results with article metadata. For intelligent
@@ -713,6 +713,7 @@ def get_knowledge_base_articles(query: str, top_k: int | None = None) -> str:
                Examples: "authentication", "API integration", "user management"
         top_k: Optional limit on number of articles to return. If not specified,
                returns the default number of most relevant articles (typically 10-20).
+               Can be provided as int or string (will be converted).
 
     Returns:
         JSON string containing an array of articles, each with:
@@ -722,8 +723,25 @@ def get_knowledge_base_articles(query: str, top_k: int | None = None) -> str:
         - content: Full article content (markdown format)
         - metadata: Additional metadata including rerank scores and source information
     """
+    # Convert top_k from string to int if needed (Gradio/MCP may pass strings)
+    converted_top_k: int | None = None
+    if top_k is not None:
+        if isinstance(top_k, str):
+            try:
+                converted_top_k = int(top_k)
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"top_k must be a valid integer, got: {top_k!r}") from e
+        elif isinstance(top_k, int):
+            converted_top_k = top_k
+        else:
+            raise ValueError(f"top_k must be an integer or None, got: {type(top_k).__name__}")
+
+        # Validate positive integer
+        if converted_top_k <= 0:
+            raise ValueError(f"top_k must be a positive integer, got: {converted_top_k}")
+
     # Access the underlying function from the StructuredTool
-    return retrieve_context.func(query=query, top_k=top_k)
+    return retrieve_context.func(query=query, top_k=converted_top_k)
 
 
 # MCP-compatible wrapper for agent_chat_handler
