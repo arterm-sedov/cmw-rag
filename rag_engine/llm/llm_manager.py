@@ -20,16 +20,21 @@ from rag_engine.llm.model_configs import MODEL_CONFIGS
 
 
 def get_model_config(model_name: str) -> dict:
-    """Get model configuration with partial-match fallback.
+    """Get model configuration with partial-match fallback and .env overrides.
 
     Tries exact match first, then partial match (e.g., "gemini-2.5-flash-latest"
     matches "gemini-2.5-flash"), then falls back to "default" config.
+
+    Applies .env overrides if set:
+    - LLM_TOKEN_LIMIT overrides token_limit
+    - LLM_MAX_TOKENS overrides max_tokens
 
     Args:
         model_name: Model identifier to look up
 
     Returns:
         Model configuration dict with token_limit, max_tokens, temperature
+        (with .env overrides applied if set)
 
     Example:
         >>> from rag_engine.llm.llm_manager import get_model_config
@@ -38,18 +43,35 @@ def get_model_config(model_name: str) -> dict:
         True
     """
     # Try exact match first
+    base_config = None
     if model_name in MODEL_CONFIGS:
-        return MODEL_CONFIGS[model_name]
+        base_config = MODEL_CONFIGS[model_name]
+    else:
+        # Try partial match (e.g., "gemini-2.5-flash-latest" → "gemini-2.5-flash")
+        for key in MODEL_CONFIGS:
+            if key != "default" and key in model_name:
+                logger.debug("Using config for %s (matched from %s)", key, model_name)
+                base_config = MODEL_CONFIGS[key]
+                break
 
-    # Try partial match (e.g., "gemini-2.5-flash-latest" → "gemini-2.5-flash")
-    for key in MODEL_CONFIGS:
-        if key != "default" and key in model_name:
-            logger.debug("Using config for %s (matched from %s)", key, model_name)
-            return MODEL_CONFIGS[key]
+        # Fallback to default
+        if base_config is None:
+            logger.warning("No config for %s, using default", model_name)
+            base_config = MODEL_CONFIGS["default"]
 
-    # Fallback to default
-    logger.warning("No config for %s, using default", model_name)
-    return MODEL_CONFIGS["default"]
+    # Create a copy to avoid mutating the original
+    config = base_config.copy()
+
+    # Apply .env overrides if set
+    if settings.llm_token_limit is not None:
+        logger.debug("Overriding token_limit with .env value: %d", settings.llm_token_limit)
+        config["token_limit"] = settings.llm_token_limit
+
+    if settings.llm_max_tokens is not None:
+        logger.debug("Overriding max_tokens with .env value: %d", settings.llm_max_tokens)
+        config["max_tokens"] = settings.llm_max_tokens
+
+    return config
 
 
 def get_context_window(model_name: str, default: int = 262144) -> int:
@@ -141,17 +163,18 @@ class LLMManager:
             )
         if p == "vllm":
             # vLLM via OpenAI-compatible API
-            api_key = settings.vllm_api_key
+            # OpenAI client requires api_key to be set, use "EMPTY" as default if not provided
+            api_key = settings.vllm_api_key or "EMPTY"
             base_url = settings.vllm_base_url
-            
+
             logger.info(
                 f"Initializing vLLM client: model={self.model_name}, "
-                f"base_url={base_url}"
+                f"base_url={base_url}, api_key={api_key if api_key == 'EMPTY' else api_key[:10] + '...'}"
             )
-            
+
             return ChatOpenAI(
                 model=self.model_name,
-                api_key=api_key if api_key and api_key != "EMPTY" else "not-needed",
+                api_key=api_key,
                 base_url=base_url,
                 temperature=self.temperature,
                 max_tokens=self._model_config["max_tokens"],

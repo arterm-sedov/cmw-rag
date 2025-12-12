@@ -51,7 +51,9 @@ class Settings(BaseSettings):
     default_llm_provider: str
     default_model: str
     llm_temperature: float
-    llm_max_tokens: int
+    llm_max_tokens: int | None = None  # Optional override for max_tokens from model config
+    # Optional overrides for model config (if set, overrides model_configs.py values)
+    llm_token_limit: int | None = None  # Optional override for token_limit from model config
 
     # Fallback and summarization
     llm_fallback_enabled: bool = False
