@@ -61,17 +61,17 @@ The RAG system uses a multi-layered memory management system with different thre
 - **Action**: If exceeded, triggers context fallback to a larger model (if enabled)
 - **Example**: For 262K window: `262,144 * 0.90 = 235,930 tokens`
 
-#### `LLM_POST_CONTEXT_THRESHOLD_PCT=0.80`
+#### Post-Tool Context Check (reuses `LLM_COMPRESSION_THRESHOLD_PCT`)
 - **Type**: Float (0.0-1.0)
-- **Default**: 0.80 (80%)
-- **Purpose**: Safety threshold for checking context size **AFTER** tool calls complete (post-tool check)
-- **Location**: `rag_engine/config/settings.py:93`
-- **Applied in**: `rag_engine/utils/context_tracker.py:compute_thresholds()` (line 226)
-- **Code**: `return int(window * pre_pct), int(window * post_pct)`
-- **When**: **AFTER tool calls complete**, before final LLM answer generation
-- **Calculation**: `post_threshold = context_window * llm_post_context_threshold_pct`
-- **Action**: Used for validation and monitoring (not directly triggering compression, but used in context tracking)
-- **Example**: For 262K window: `262,144 * 0.80 = 209,715 tokens`
+- **Default**: 0.85 (85%)
+- **Purpose**: Safety threshold for checking context size **AFTER** tool calls complete (post-tool check), shared with tool-results compression
+- **Location**: `rag_engine/llm/fallback.py:select_mid_turn_fallback_model()`
+- **Applied in**: `rag_engine/llm/fallback.py:select_mid_turn_fallback_model()` via `compute_thresholds()`
+- **Code**: `_, post_threshold = compute_thresholds(window, pre_pct=llm_pre_context_threshold_pct, post_pct=llm_compression_threshold_pct)`
+- **When**: **AFTER tool calls complete**, before final LLM answer generation (for fallback decisions)
+- **Calculation**: `post_threshold = context_window * llm_compression_threshold_pct`
+- **Action**: If exceeded, can trigger mid-turn model fallback to a larger model (if enabled)
+- **Example**: For 262K window and 0.85 compression threshold: `262,144 * 0.85 = 222,822 tokens`
 
 ---
 
@@ -171,13 +171,12 @@ All parameters listed are **actively used** in the codebase:
 2. ✅ `MEMORY_COMPRESSION_TARGET_TOKENS` - Used in `SummarizationMiddleware`
 3. ✅ `MEMORY_COMPRESSION_MESSAGES_TO_KEEP` - Used in `agent_factory.py`
 4. ✅ `LLM_PRE_CONTEXT_THRESHOLD_PCT` - Used in `app.py` and `fallback.py`
-5. ✅ `LLM_POST_CONTEXT_THRESHOLD_PCT` - Used in `context_tracker.py`
-6. ✅ `LLM_CONTEXT_OVERHEAD_SAFETY_MARGIN` - Used in `context_tracker.py`
-7. ✅ `LLM_COMPRESSION_THRESHOLD_PCT` - Used in `app.py` and `compression.py`
-8. ✅ `LLM_COMPRESSION_TARGET_PCT` - Used in `compression.py`
-9. ✅ `LLM_COMPRESSION_ARTICLE_RATIO` - Used in `compression.py`
-10. ✅ `LLM_COMPRESSION_MIN_TOKENS` - Used in `compression.py`
-11. ✅ `LLM_TOOL_RESULTS_JSON_OVERHEAD_PCT` - Used in `compression.py` and `context_tracker.py`
+5. ✅ `LLM_CONTEXT_OVERHEAD_SAFETY_MARGIN` - Used in `context_tracker.py`
+6. ✅ `LLM_COMPRESSION_THRESHOLD_PCT` - Used in `app.py`, `compression.py`, and `fallback.py`
+7. ✅ `LLM_COMPRESSION_TARGET_PCT` - Used in `compression.py`
+8. ✅ `LLM_COMPRESSION_ARTICLE_RATIO` - Used in `compression.py`
+9. ✅ `LLM_COMPRESSION_MIN_TOKENS` - Used in `compression.py`
+10. ✅ `LLM_TOOL_RESULTS_JSON_OVERHEAD_PCT` - Used in `compression.py` and `context_tracker.py`
 
 ---
 
@@ -189,9 +188,8 @@ All parameters listed are **actively used** in the codebase:
 | `MEMORY_COMPRESSION_TARGET_TOKENS` | 1000 | 1000 | ✅ Same | No change |
 | `MEMORY_COMPRESSION_MESSAGES_TO_KEEP` | 2 | 2 | ✅ Same | No change |
 | `LLM_PRE_CONTEXT_THRESHOLD_PCT` | 0.90 | 0.80 | ⚠️ **-10%** | **More aggressive** - triggers fallback earlier |
-| `LLM_POST_CONTEXT_THRESHOLD_PCT` | 0.80 | 0.70 | ⚠️ **-10%** | **More aggressive** - stricter monitoring |
 | `LLM_CONTEXT_OVERHEAD_SAFETY_MARGIN` | 2000 | 4000 | ⚠️ **+2000** | **More conservative** - reserves more tokens |
-| `LLM_COMPRESSION_THRESHOLD_PCT` | 0.85 | 0.80 | ⚠️ **-5%** | **More aggressive** - triggers compression earlier |
+| `LLM_COMPRESSION_THRESHOLD_PCT` | 0.85 | 0.80 | ⚠️ **-5%** | **More aggressive** - triggers compression and post-tool checks earlier |
 | `LLM_COMPRESSION_TARGET_PCT` | 0.80 | 0.80 | ✅ Same | No change |
 | `LLM_COMPRESSION_ARTICLE_RATIO` | 0.30 | 0.30 | ✅ Same | No change |
 | `LLM_COMPRESSION_MIN_TOKENS` | 300 | 300 | ✅ Same | No change |
@@ -217,8 +215,7 @@ A more aggressive configuration (lower thresholds, higher safety margins) makes 
 |-------|-------------------|---------------------|------------|
 | Pre-context fallback | 235,930 tokens (90%) | 209,715 tokens (80%) | **-26,215 tokens** |
 | Memory compression | 209,715 tokens (80%) | 209,715 tokens (80%) | Same |
-| Tool compression | 222,822 tokens (85%) | 209,715 tokens (80%) | **-13,107 tokens** |
-| Post-context monitoring | 209,715 tokens (80%) | 183,501 tokens (70%) | **-26,214 tokens** |
+| Tool compression & post-context checks | 222,822 tokens (85%) | 209,715 tokens (80%) | **-13,107 tokens** |
 | Overhead safety margin | +2000 tokens | +4000 tokens | **+2000 tokens** |
 
 ### Benefits of More Aggressive Configuration
@@ -327,21 +324,21 @@ If NO → Continue
 
 ---
 
-### 5. Post-Tool Check (Monitoring/Validation)
+### 5. Post-Tool Check (Monitoring/Validation & Fallback)
 
 ```text
 [After compression]
     ↓
 [POST-TOOL CHECK]
     ↓
-Check: total_tokens > (context_window * LLM_POST_CONTEXT_THRESHOLD_PCT)
+Check: total_tokens > (context_window * LLM_COMPRESSION_THRESHOLD_PCT)
     ↓
-Used for: Monitoring, validation, logging
+Used for: Monitoring, validation, logging, and mid-turn fallback decisions
 ```
 
-**Applied**: `LLM_POST_CONTEXT_THRESHOLD_PCT=0.80` (default) or `0.70` (aggressive)
+**Applied**: Reuses `LLM_COMPRESSION_THRESHOLD_PCT` (0.85 default, or more aggressive value if configured)
 
-**Purpose**: Validation and monitoring (does not trigger actions, but used in context tracking)
+**Purpose**: Validation and monitoring (and for mid-turn fallback), shared with tool-results compression
 
 ---
 
@@ -351,17 +348,15 @@ Used for: Monitoring, validation, logging
 
 1. **`LLM_PRE_CONTEXT_THRESHOLD_PCT`** (90% default / 80% aggressive) - Pre-agent check, triggers fallback
 2. **`MEMORY_COMPRESSION_THRESHOLD_PCT`** (80%) - Before each LLM call, compresses history
-3. **`LLM_COMPRESSION_THRESHOLD_PCT`** (85% default / 80% aggressive) - After tool calls, compresses articles
-4. **`LLM_POST_CONTEXT_THRESHOLD_PCT`** (80% default / 70% aggressive) - Post-tool validation/monitoring
+3. **`LLM_COMPRESSION_THRESHOLD_PCT`** (85% default / 80% aggressive) - After tool calls, compresses articles and defines post-tool check threshold
 
 ### Threshold Hierarchy (By Strictness)
 
 From **most strict** (triggers earliest) to **least strict**:
 
 1. **`LLM_PRE_CONTEXT_THRESHOLD_PCT=0.90`** (90% default) - **Most strict** - Prevents overflow before agent starts
-2. **`LLM_COMPRESSION_THRESHOLD_PCT=0.85`** (85% default) - Triggers tool results compression
+2. **`LLM_COMPRESSION_THRESHOLD_PCT=0.85`** (85% default) - Triggers tool results compression and defines post-tool check threshold
 3. **`MEMORY_COMPRESSION_THRESHOLD_PCT=80`** (80%) - Triggers history compression
-4. **`LLM_POST_CONTEXT_THRESHOLD_PCT=0.80`** (80% default) - **Least strict** - Only for monitoring
 
 ### Key Relationships
 
@@ -451,10 +446,9 @@ Next turn: Memory check: 220K tokens > 209,715 ✗ (80%) → Compress history to
 
 ### For Production with Agent Mode and Multiple Tool Calls
 - `MEMORY_COMPRESSION_THRESHOLD_PCT=80` - Standard
-- `LLM_COMPRESSION_THRESHOLD_PCT=0.80` - More aggressive to handle accumulation
+- `LLM_COMPRESSION_THRESHOLD_PCT=0.80` - More aggressive to handle accumulation and post-tool checks
 - `LLM_PRE_CONTEXT_THRESHOLD_PCT=0.80` - Early fallback detection
 - `LLM_CONTEXT_OVERHEAD_SAFETY_MARGIN=4000` - Extra headroom for JSON overhead
-- `LLM_POST_CONTEXT_THRESHOLD_PCT=0.70` - Stricter monitoring
 
 ---
 

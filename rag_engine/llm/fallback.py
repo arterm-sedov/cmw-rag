@@ -93,9 +93,10 @@ def check_context_fallback(messages: list[dict], overhead: int | None = None) ->
     overhead_tokens = compute_overhead_tokens(tools=[retrieve_context])
     total_tokens += overhead_tokens
 
-    # Check if approaching limit (90% threshold)
+    # Check if approaching limit (pre-agent threshold)
     pre = float(getattr(settings, "llm_pre_context_threshold_pct", 0.90))
-    post = float(getattr(settings, "llm_post_context_threshold_pct", 0.80))
+    # Use compression threshold for post-tool checks (kept for future use)
+    post = float(getattr(settings, "llm_compression_threshold_pct", 0.85))
     pre_threshold, _ = compute_thresholds(current_window, pre_pct=pre, post_pct=post)
 
     if total_tokens > pre_threshold:
@@ -164,14 +165,17 @@ def select_mid_turn_fallback_model(
     # Get current model's context window
     context_window = get_context_window(current_model)
 
-    # Use 80% threshold for post-tool check (more conservative)
-    _, post_threshold = compute_thresholds(context_window, pre_pct=0.90, post_pct=0.80)
+    # Use env-driven thresholds: pre for agent start, compression for post-tool check
+    pre_pct = float(getattr(settings, "llm_pre_context_threshold_pct", 0.90))
+    post_pct = float(getattr(settings, "llm_compression_threshold_pct", 0.85))
+    _, post_threshold = compute_thresholds(context_window, pre_pct=pre_pct, post_pct=post_pct)
 
     if accumulated_tokens > post_threshold:
         logger.warning(
-            "Accumulated context (%d tokens) exceeds 80%% threshold (%d) after tool calls. "
+            "Accumulated context (%d tokens) exceeds %.1f%% threshold (%d) after tool calls. "
             "Checking for model fallback before final answer generation.",
             accumulated_tokens,
+            post_pct * 100.0,
             post_threshold,
         )
 
