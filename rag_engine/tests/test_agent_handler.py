@@ -182,26 +182,34 @@ class TestContextFallback:
 
         assert result is None  # No fallback needed
 
+    @patch("rag_engine.llm.fallback.find_fallback_model")
+    @patch("rag_engine.llm.fallback.count_messages_tokens")
     @patch("rag_engine.api.app.get_allowed_fallback_models")
     @patch("rag_engine.api.app.settings")
-    def test_fallback_triggered_when_approaching_limit(self, mock_settings, mock_get_fallbacks):
+    def test_fallback_triggered_when_approaching_limit(
+        self,
+        mock_settings,
+        mock_get_fallbacks,
+        mock_count_messages_tokens,
+        mock_find_fallback_model,
+    ):
         """Test fallback triggered when approaching context window limit."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
         mock_settings.llm_pre_context_threshold_pct = 0.90
         mock_get_fallbacks.return_value = ["openai/gpt-5-mini"]  # 400K tokens
 
-        # Large conversation - simulate approaching limit
-        # qwen/qwen3-coder-flash has token_limit=128,000
-        # 90% threshold = 115,200 tokens
-        # We need: message_tokens + overhead (system prompt + tool schema + safety margin) > 115,200
-        # Overhead is ~5K tokens (actual counts), so message_tokens > ~110K
-        # Using exact tiktoken counting
-        # 500K chars ≈ actual token count (varies by content), exceeds 90% threshold with overhead
-        large_content = "x" * 500_000  # Exceeds 90% threshold with overhead
+        # Simulate large conversation by mocking token count instead of actually
+        # tokenizing a huge string (which is very slow with tiktoken on 500K+ chars).
+        # qwen/qwen3-coder-flash has token_limit=128,000 and 90% threshold = 115,200 tokens.
+        # We return a value that already exceeds the threshold so fallback must trigger.
+        mock_count_messages_tokens.return_value = 120_000
+        # Ensure fallback selection returns the expected model regardless of
+        # concrete model configs or token limits.
+        mock_find_fallback_model.return_value = "openai/gpt-5-mini"
 
         messages = [
-            {"role": "user", "content": large_content},
+            {"role": "user", "content": "x" * 1_000},  # content size irrelevant due to mocking
         ]
 
         result = _check_context_fallback(messages)
