@@ -29,7 +29,7 @@ def test_summarize_to_tokens_uses_chunks_only_when_body_would_overflow():
     title = "T"
     url = "http://u"
     chunks = ["relevant chunk"]
-    full_body = "x" * 2000
+    full_body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " * 40
 
     out = summarize_to_tokens(
         title=title,

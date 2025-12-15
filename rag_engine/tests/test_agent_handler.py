@@ -217,25 +217,44 @@ class TestContextFallback:
         # Should fall back to larger model
         assert result == "openai/gpt-5-mini"
 
+    @patch("rag_engine.llm.fallback.count_messages_tokens")
     @patch("rag_engine.api.app.get_allowed_fallback_models")
     @patch("rag_engine.api.app.settings")
-    def test_no_fallback_when_no_allowed_models(self, mock_settings, mock_get_fallbacks):
+    def test_no_fallback_when_no_allowed_models(
+        self,
+        mock_settings,
+        mock_get_fallbacks,
+        mock_count_messages_tokens,
+    ):
         """Test no fallback when no allowed models configured."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
         mock_get_fallbacks.return_value = []  # No fallback models
 
+        # Force token count over threshold but with no allowed models configured,
+        # so fallback must return None without doing heavy tokenization.
+        mock_count_messages_tokens.return_value = 120_000
+
         messages = [
-            {"role": "user", "content": "x" * 400_000},  # Large content
+            {
+                "role": "user",
+                "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            },
         ]
 
         result = _check_context_fallback(messages)
 
         assert result is None  # No fallback available
 
+    @patch("rag_engine.llm.fallback.count_messages_tokens")
     @patch("rag_engine.api.app.get_allowed_fallback_models")
     @patch("rag_engine.api.app.settings")
-    def test_fallback_skips_current_model(self, mock_settings, mock_get_fallbacks):
+    def test_fallback_skips_current_model(
+        self,
+        mock_settings,
+        mock_get_fallbacks,
+        mock_count_messages_tokens,
+    ):
         """Test fallback skips current model in selection."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
@@ -246,17 +265,30 @@ class TestContextFallback:
             "openai/gpt-5-mini",  # Should select this (400K tokens)
         ]
 
+        # Force token count over threshold so fallback logic runs, but avoid
+        # constructing a huge monotonous string that would be slow to tokenize.
+        mock_count_messages_tokens.return_value = 120_000
+
         messages = [
-            {"role": "user", "content": "x" * 500_000},  # Large content (~125K tokens)
+            {
+                "role": "user",
+                "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            },
         ]
 
         result = _check_context_fallback(messages)
 
         assert result == "openai/gpt-5-mini"
 
+    @patch("rag_engine.llm.fallback.count_messages_tokens")
     @patch("rag_engine.api.app.get_allowed_fallback_models")
     @patch("rag_engine.api.app.settings")
-    def test_fallback_selects_first_sufficient_model(self, mock_settings, mock_get_fallbacks):
+    def test_fallback_selects_first_sufficient_model(
+        self,
+        mock_settings,
+        mock_get_fallbacks,
+        mock_count_messages_tokens,
+    ):
         """Test fallback selects first model with sufficient capacity."""
         mock_settings.default_model = "qwen/qwen3-coder-flash"  # 128K tokens
         mock_settings.llm_fallback_enabled = True
@@ -269,8 +301,15 @@ class TestContextFallback:
             "gemini-2.5-flash",  # Also sufficient but not selected (1M)
         ]
 
+        # Force token count over threshold so fallback selection logic is exercised,
+        # without incurring slow tiktoken behavior on gigantic monotone strings.
+        mock_count_messages_tokens.return_value = 120_000
+
         messages = [
-            {"role": "user", "content": "x" * 500_000},  # ~125K tokens, with ~5K overhead = 130K > 115.2K threshold
+            {
+                "role": "user",
+                "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            },
         ]
 
         result = _check_context_fallback(messages)
