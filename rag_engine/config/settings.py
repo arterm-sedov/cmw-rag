@@ -88,9 +88,8 @@ class Settings(BaseSettings):
     memory_compression_messages_to_keep: int = 2  # Match old handler
 
     # Context thresholds and compression (env-driven)
-    # Pre/post safety thresholds as fractions of the model context window
+    # Pre-agent safety threshold as a fraction of the model context window
     llm_pre_context_threshold_pct: float = 0.90
-    llm_post_context_threshold_pct: float = 0.80
 
     # Context overhead safety margin for formatting and message structure
     # Additional tokens reserved beyond actual system prompt and tool schema counts

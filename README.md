@@ -378,8 +378,10 @@ Environment variables (configure in `.env`):
 - `GRADIO_SHARE`: Enable Gradio share link for public access (`true`/`false`, default: `false`)
 - `EMBEDDING_MODEL`: Embedding model name (default: `ai-forever/FRIDA`)
 - `EMBEDDING_DEVICE`: Device for embeddings and reranking (`auto`, `cpu`, or `cuda`). `auto` will detect and use GPU if available, else CPU. Both the FRIDA embedder and cross-encoder reranker use this setting.
-- `MEMORY_COMPRESSION_THRESHOLD_PCT`: Trigger compression when estimated request exceeds this percent of the model window (default: `85`)
+- `MEMORY_COMPRESSION_THRESHOLD_PCT`: Trigger compression when estimated request exceeds this percent of the model window (default: `80`)
 - `MEMORY_COMPRESSION_TARGET_TOKENS`: Target tokens for the compressed history turn (default: `1000`)
+- `LLM_COMPRESSION_THRESHOLD_PCT`: Trigger tool-results compression (and define post-tool checks) when total context exceeds this fraction of the model window (default: `0.85`)
+- `LLM_COMPRESSION_TARGET_PCT`: Target fraction of the model window to fit into after tool-results compression (default: `0.80`)
 - `USE_AGENT_MODE`: Enable LangChain agent mode with tool calling (`true`/`false`, default: `false`)
 
 See `.env.example` for full configuration options.
