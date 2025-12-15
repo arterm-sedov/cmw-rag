@@ -646,7 +646,6 @@ else:
     chat_description = None  # "RAG-агент базы знаний Comindware Platform"
 
 chatbot_config = gr.Chatbot(
-    type="messages",
     show_copy_button=True,
     min_height="30vh",
     height=chatbot_height,
