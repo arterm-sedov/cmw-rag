@@ -108,8 +108,7 @@ class Settings(BaseSettings):
     llm_compression_threshold_pct: float = 0.85
     # After compression, target total tokens to be at/below this fraction
     llm_compression_target_pct: float = 0.80
-    # Per-article compression target ratio and minimum tokens
-    llm_compression_article_ratio: float = 0.30
+    # Minimum tokens to preserve per article during compression
     llm_compression_min_tokens: int = 300
 
     # Pydantic v2 configuration: accept extra env vars and set env file

@@ -155,93 +155,6 @@ def compress_all_articles_proportionally_by_rank(
     return compressed_articles, tokens_saved
 
 
-def compress_articles_to_target_tokens(
-    articles: list[dict],
-    target_ratio: float | None = None,
-    min_tokens: int | None = None,
-    guidance: str | None = None,
-    llm_manager=None,
-) -> tuple[list[dict], int]:
-    """Compress articles to target token ratio.
-
-    Compresses articles starting from the end (least relevant first) until
-    target token reduction is achieved.
-
-    Args:
-        articles: List of article dicts with 'content', 'title', 'url', 'metadata'
-        target_ratio: Target compression ratio (default: 0.30 = 30% of original)
-        min_tokens: Minimum tokens per compressed article (default: 300)
-        guidance: Optional user question for summarization guidance
-        llm_manager: LLMManager instance for summarization
-
-    Returns:
-        Tuple of (compressed_articles, tokens_saved)
-
-    Example:
-        >>> from rag_engine.llm.compression import compress_articles_to_target_tokens
-        >>> articles = [{"content": "..."}]
-        >>> compressed, saved = compress_articles_to_target_tokens(articles)
-        >>> saved >= 0
-        True
-    """
-    from rag_engine.config.settings import settings
-
-    if target_ratio is None:
-        target_ratio = settings.llm_compression_article_ratio
-    if min_tokens is None:
-        min_tokens = settings.llm_compression_min_tokens
-
-    if not articles or not llm_manager:
-        return articles, 0
-
-    tokens_saved = 0
-    compressed_articles = list(articles)
-
-    # Compress from the end (least relevant first)
-    for i in range(len(compressed_articles) - 1, -1, -1):
-        article = compressed_articles[i]
-        original_content = article.get("content", "")
-        if not original_content:
-            continue
-
-        original_tokens = count_tokens(original_content)
-        article_target = max(min_tokens, int(original_tokens * target_ratio))
-
-        try:
-            compressed = summarize_to_tokens(
-                title=article.get("title", "Article"),
-                url=article.get("url", ""),
-                matched_chunks=[original_content],
-                full_body=None,
-                target_tokens=article_target,
-                guidance=guidance,
-                llm=llm_manager,
-                max_retries=1,  # Quick compression
-            )
-
-            compressed_tokens = count_tokens(compressed)
-            compressed_articles[i]["content"] = compressed
-            if "metadata" not in compressed_articles[i]:
-                compressed_articles[i]["metadata"] = {}
-            compressed_articles[i]["metadata"]["compressed"] = True
-
-            saved = original_tokens - compressed_tokens
-            tokens_saved += saved
-
-            logger.info(
-                "Compressed article '%s': %d → %d tokens (saved %d)",
-                article.get("title", "")[:50],
-                original_tokens,
-                compressed_tokens,
-                saved,
-            )
-        except Exception as exc:
-            logger.warning("Failed to compress article at index %d: %s", i, exc)
-            continue
-
-    return compressed_articles, tokens_saved
-
-
 def compress_tool_messages(
     messages: list,
     runtime,
@@ -399,8 +312,8 @@ def compress_tool_messages(
     non_tool_tokens = sum(count_messages_tokens([m]) for m in messages if not is_tool_message(m))
 
     # Reserve space for LLM output/reasoning using actual system prompt and tool schemas
-    from rag_engine.utils.context_tracker import compute_overhead_tokens
-    from rag_engine.tools.retrieve_context import retrieve_context
+    from rag_engine.utils.context_tracker import compute_overhead_tokens  # noqa: I001
+    from rag_engine.tools.retrieve_context import retrieve_context  # noqa: I001
 
     overhead_tokens = compute_overhead_tokens(tools=[retrieve_context])
 

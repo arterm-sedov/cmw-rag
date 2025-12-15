@@ -382,6 +382,7 @@ Environment variables (configure in `.env`):
 - `MEMORY_COMPRESSION_TARGET_TOKENS`: Target tokens for the compressed history turn (default: `1000`)
 - `LLM_COMPRESSION_THRESHOLD_PCT`: Trigger tool-results compression (and define post-tool checks) when total context exceeds this fraction of the model window (default: `0.85`)
 - `LLM_COMPRESSION_TARGET_PCT`: Target fraction of the model window to fit into after tool-results compression (default: `0.80`)
+- `LLM_COMPRESSION_MIN_TOKENS`: Minimum tokens to preserve per article during proportional-by-rank tool-results compression (default: `300`)
 - `USE_AGENT_MODE`: Enable LangChain agent mode with tool calling (`true`/`false`, default: `false`)
 
 See `.env.example` for full configuration options.
