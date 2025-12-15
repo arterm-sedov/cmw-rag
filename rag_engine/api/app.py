@@ -14,7 +14,8 @@ import logging
 
 import gradio as gr
 
-from rag_engine.config.settings import get_allowed_fallback_models, settings
+from rag_engine.config.settings import get_allowed_fallback_models, settings  # noqa: F401
+from rag_engine.llm.fallback import check_context_fallback
 from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.retrieval.embedder import FRIDAEmbedder
 from rag_engine.retrieval.retriever import RAGRetriever
@@ -76,59 +77,15 @@ def _find_model_for_tokens(required_tokens: int) -> str | None:
 def _check_context_fallback(messages: list[dict]) -> str | None:
     """Check if context fallback is needed and return fallback model.
 
-    Uses app-level settings and allowed fallbacks (patch-friendly for tests).
+    Thin wrapper around ``rag_engine.llm.fallback.check_context_fallback`` so
+    that all pre-agent fallback logic is centralized in the LLM fallback
+    module. Kept for backward compatibility and tests.
     """
     # Early return if fallback is disabled
     if not getattr(settings, "llm_fallback_enabled", False):
         return None
 
-    from rag_engine.llm.model_configs import MODEL_CONFIGS
-    from rag_engine.llm.token_utils import count_messages_tokens
-
-    model_config = MODEL_CONFIGS.get(settings.default_model)
-    if not model_config:
-        for key in MODEL_CONFIGS:
-            if key != "default" and key in settings.default_model:
-                model_config = MODEL_CONFIGS[key]
-                break
-    if not model_config:
-        model_config = MODEL_CONFIGS["default"]
-
-    current_window = int(model_config.get("token_limit", 0))
-    total_tokens = count_messages_tokens(messages)
-    # Calculate overhead from actual system prompt and tool schemas
-    from rag_engine.utils.context_tracker import compute_overhead_tokens
-    from rag_engine.tools.retrieve_context import retrieve_context
-
-    overhead = compute_overhead_tokens(tools=[retrieve_context])
-    total_tokens += overhead
-
-    # Get threshold percentage from settings (with fallback for tests)
-    pre_pct = float(getattr(settings, "llm_pre_context_threshold_pct", None) or 0.90)
-    threshold = int(current_window * pre_pct)
-
-    if total_tokens <= threshold:
-        return None
-
-    allowed = get_allowed_fallback_models()
-    if not allowed:
-        return None
-
-    required = int(total_tokens * 1.1)
-    for candidate in allowed:
-        if candidate == settings.default_model:
-            continue
-        cfg = MODEL_CONFIGS.get(candidate)
-        if not cfg:
-            for key in MODEL_CONFIGS:
-                if key != "default" and key in candidate:
-                    cfg = MODEL_CONFIGS[key]
-                    break
-        if not cfg:
-            continue
-        if int(cfg.get("token_limit", 0)) >= required:
-            return candidate
-    return None
+    return check_context_fallback(messages)
 
 
 def compress_tool_results(state: dict, runtime) -> dict | None:
@@ -335,7 +292,10 @@ def agent_chat_handler(
     session_id = salt_session_id(base_session_id, history, message)
 
     # Wrap user message in template only for the first question in the conversation
-    from rag_engine.llm.prompts import USER_QUESTION_TEMPLATE_FIRST, USER_QUESTION_TEMPLATE_SUBSEQUENT
+    from rag_engine.llm.prompts import (
+        USER_QUESTION_TEMPLATE_FIRST,
+        USER_QUESTION_TEMPLATE_SUBSEQUENT,
+    )
 
     # Apply template only if this is the first message (empty history)
     is_first_message = not history
@@ -768,13 +728,13 @@ def ask_comindware(message: str) -> str:
         # Call the handler with empty history and None request (MCP context)
         # Note: agent_chat_handler is the generator function used by ChatInterface
         generator = agent_chat_handler(message=message, history=[], request=None)
-        
+
         # Consume the entire generator to collect all responses
         # The generator yields: metadata dicts, incremental answer strings, and final formatted text
         for chunk in generator:
             if chunk is None:
                 continue
-                
+
             # Handle string responses (incremental answers and final formatted text)
             if isinstance(chunk, str):
                 if chunk.strip():  # Only add non-empty strings
@@ -787,7 +747,7 @@ def ask_comindware(message: str) -> str:
                 if content and isinstance(content, str) and content.strip():
                     response_parts.append(content)
                     last_text_response = content
-        
+
         # Ensure generator is fully consumed
         if generator:
             try:
@@ -795,7 +755,7 @@ def ask_comindware(message: str) -> str:
                 generator.close()
             except Exception:
                 pass
-        
+
         # Return the final accumulated response (last chunk contains the full formatted text)
         if last_text_response:
             return last_text_response
@@ -804,7 +764,7 @@ def ask_comindware(message: str) -> str:
             return "\n".join(response_parts)
         else:
             return "No response generated. Please try rephrasing your question."
-            
+
     except StopIteration:
         # Generator exhausted normally
         if last_text_response:

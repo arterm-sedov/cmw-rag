@@ -86,8 +86,8 @@ def check_context_fallback(messages: list[dict], overhead: int | None = None) ->
     total_tokens = count_messages_tokens(messages)
 
     # Add buffer for system prompt and tool schemas (actual counts)
-    from rag_engine.utils.context_tracker import compute_overhead_tokens
     from rag_engine.tools.retrieve_context import retrieve_context
+    from rag_engine.utils.context_tracker import compute_overhead_tokens
 
     # Overhead parameter is ignored (kept for backward compatibility)
     overhead_tokens = compute_overhead_tokens(tools=[retrieve_context])
