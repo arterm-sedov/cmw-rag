@@ -646,13 +646,13 @@ else:
     chat_description = None  # "RAG-агент базы знаний Comindware Platform"
 
 chatbot_config = gr.Chatbot(
-    show_copy_button=True,
     min_height="30vh",
     height=chatbot_height,
     max_height=chatbot_max_height,
     resizable=True,
     elem_classes=["gradio-chatbot"],
     label="Диалог с агентом",
+    buttons=["copy", "copy_all"],
 )
 
 # Force agent-based handler; legacy direct handler removed
@@ -802,7 +802,6 @@ with gr.Blocks() as demo:
         fn=handler_fn,
         title=chat_title,
         description=chat_description,
-        type="messages",
         save_history=True,
         #fill_width=True,
         chatbot=chatbot_config,
