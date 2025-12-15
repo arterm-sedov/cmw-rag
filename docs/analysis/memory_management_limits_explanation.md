@@ -103,16 +103,14 @@ The RAG system uses a multi-layered memory management system with different thre
 - **Behavior**: Compresses articles proportionally by rank to fit within this target
 - **Example**: For 262K window: `262,144 * 0.80 = 209,715 tokens`
 
-#### `LLM_COMPRESSION_ARTICLE_RATIO=0.30`
-- **Type**: Float (0.0-1.0)
-- **Default**: 0.30 (30%)
-- **Purpose**: Target compression ratio for individual articles (used in legacy compression path)
-- **Location**: `rag_engine/config/settings.py:113`
-- **Applied in**: `rag_engine/llm/compression.py:compress_articles_to_target_tokens()` (line 190)
-- **Code**: `target_ratio = settings.llm_compression_article_ratio`
-- **When**: When compressing articles using the legacy method (not the proportional-by-rank method)
-- **Calculation**: `article_target = max(min_tokens, original_tokens * llm_compression_article_ratio)`
-- **Note**: This is used in `compress_articles_to_target_tokens()` but **NOT** in the main `compress_tool_messages()` flow which uses proportional allocation
+#### `LLM_COMPRESSION_ARTICLE_RATIO` (removed)
+- **Status**: Removed (legacy, no longer used)
+- **Previous Purpose**: Per-article compression ratio for an older, non-proportional compression helper.
+- **Reason for removal**: The system now uses a single robust path that:
+  - Computes a global article budget from `LLM_COMPRESSION_TARGET_PCT`
+  - Allocates tokens proportionally by rank across all articles
+  - Enforces only `LLM_COMPRESSION_MIN_TOKENS` as a per-article floor.
+- **Impact**: Configuration is simplified; use `LLM_COMPRESSION_THRESHOLD_PCT`, `LLM_COMPRESSION_TARGET_PCT`, and `LLM_COMPRESSION_MIN_TOKENS` to tune tool-results compression.
 
 #### `LLM_COMPRESSION_MIN_TOKENS=300`
 - **Type**: Integer (absolute token count)
@@ -174,9 +172,8 @@ All parameters listed are **actively used** in the codebase:
 5. ✅ `LLM_CONTEXT_OVERHEAD_SAFETY_MARGIN` - Used in `context_tracker.py`
 6. ✅ `LLM_COMPRESSION_THRESHOLD_PCT` - Used in `app.py`, `compression.py`, and `fallback.py`
 7. ✅ `LLM_COMPRESSION_TARGET_PCT` - Used in `compression.py`
-8. ✅ `LLM_COMPRESSION_ARTICLE_RATIO` - Used in `compression.py`
-9. ✅ `LLM_COMPRESSION_MIN_TOKENS` - Used in `compression.py`
-10. ✅ `LLM_TOOL_RESULTS_JSON_OVERHEAD_PCT` - Used in `compression.py` and `context_tracker.py`
+8. ✅ `LLM_COMPRESSION_MIN_TOKENS` - Used in `compression.py`
+9. ✅ `LLM_TOOL_RESULTS_JSON_OVERHEAD_PCT` - Used in `compression.py` and `context_tracker.py`
 
 ---
 
@@ -191,7 +188,6 @@ All parameters listed are **actively used** in the codebase:
 | `LLM_CONTEXT_OVERHEAD_SAFETY_MARGIN` | 2000 | 4000 | ⚠️ **+2000** | **More conservative** - reserves more tokens |
 | `LLM_COMPRESSION_THRESHOLD_PCT` | 0.85 | 0.80 | ⚠️ **-5%** | **More aggressive** - triggers compression and post-tool checks earlier |
 | `LLM_COMPRESSION_TARGET_PCT` | 0.80 | 0.80 | ✅ Same | No change |
-| `LLM_COMPRESSION_ARTICLE_RATIO` | 0.30 | 0.30 | ✅ Same | No change |
 | `LLM_COMPRESSION_MIN_TOKENS` | 300 | 300 | ✅ Same | No change |
 | `LLM_TOOL_RESULTS_JSON_OVERHEAD_PCT` | 0.30 | 0.30 | ✅ Same | No change |
 
@@ -460,7 +456,8 @@ Next turn: Memory check: 220K tokens > 209,715 ✗ (80%) → Compress history to
    
    If you need this parameter, it should be added to `settings.py` and used in the compression logic.
 
-2. **`LLM_COMPRESSION_ARTICLE_RATIO=0.30`** is used in the legacy `compress_articles_to_target_tokens()` function but **NOT** in the main `compress_tool_messages()` flow which uses proportional allocation by rank.
+2. **`LLM_COMPRESSION_ARTICLE_RATIO`** has been removed along with the legacy `compress_articles_to_target_tokens()` helper.
+   The system now relies solely on proportional-by-rank compression driven by `LLM_COMPRESSION_THRESHOLD_PCT`, `LLM_COMPRESSION_TARGET_PCT`, and `LLM_COMPRESSION_MIN_TOKENS`.
 
 3. **JSON Overhead**: Tool messages are JSON strings, so `llm_tool_results_json_overhead_pct` (30%) is added to the token count **before** comparing against `llm_compression_threshold_pct`.
 
