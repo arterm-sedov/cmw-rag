@@ -19,9 +19,11 @@ def test_estimate_tokens_for_request_counts_components():
 
 
 def test_estimate_tokens_for_request_counts_large_strings():
-    """Test that very large strings are counted accurately using tiktoken."""
-    # Create a string larger than the old threshold (200k chars)
-    large_string = "x" * 300_000
+    """Test that large-ish strings are counted accurately using tiktoken."""
+    # Use a reasonably large, natural-language-like string without relying on
+    # pathological long runs of a single character that make tiktoken slow.
+    base = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+    large_string = base * 800  # ~50K+ characters
     out = estimate_tokens_for_request(
         system_prompt="",
         question="",
