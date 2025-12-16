@@ -6,7 +6,7 @@ The Comindware RAG Engine exposes an MCP (Model Context Protocol) server via Gra
 
 ## Server URL
 
-**Base URL:** `http://skepseis1.slickjump.org:7860/gradio_api/mcp/`
+**Base URL:** `https://<host>/gradio_api/mcp/`
 
 ## Recommended Configuration
 
@@ -16,7 +16,7 @@ The Comindware RAG Engine exposes an MCP (Model Context Protocol) server via Gra
 {
   "mcpServers": {
     "gradio": {
-      "url": "http://skepseis1.slickjump.org:7860/gradio_api/mcp/?tools=get_knowledge_base_articles,ask_comindware"
+      "url": "https://<host>/gradio_api/mcp/?tools=get_knowledge_base_articles,ask_comindware"
     }
   }
 }
