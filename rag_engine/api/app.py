@@ -30,6 +30,12 @@ from rag_engine.utils.context_tracker import (
 from rag_engine.utils.conversation_store import salt_session_id
 from rag_engine.utils.formatters import format_with_citations
 from rag_engine.utils.logging_manager import setup_logging
+from rag_engine.utils.vllm_fallback import (
+    check_stream_completion,
+    execute_fallback_invoke,
+    is_vllm_provider,
+    should_use_fallback,
+)
 
 setup_logging()
 
@@ -352,126 +358,285 @@ def agent_chat_handler(
             accumulated_tool_tokens=0,  # Updated as we go
         )
 
+        # vLLM streaming limitation: tool_choice doesn't work in streaming mode
+        # vLLM ignores tool_choice="retrieve_context" in streaming and returns finish_reason=stop
+        # instead of finish_reason=tool_calls. This means forced tool execution requires invoke() mode.
+        # The fallback ensures tool calls are executed even when streaming detection fails.
+        # Can be disabled via vllm_streaming_fallback_enabled=False for testing (will fail to execute tools)
+        is_vllm = is_vllm_provider()
+        fallback_to_invoke = False
+
         # Use multiple stream modes for complete streaming experience
         # Per https://docs.langchain.com/oss/python/langchain/streaming#stream-multiple-modes
-        for stream_mode, chunk in agent.stream(
-            {"messages": messages},
-            context=agent_context,
-            stream_mode=["updates", "messages"]
-        ):
-            # Handle "messages" mode for token streaming
-            if stream_mode == "messages":
-                token, metadata = chunk
+        # Always try streaming first - improved detection should catch tool calls via content_blocks/finish_reason
+        logger.info("Starting agent.stream() with %d messages", len(messages))
+        stream_chunk_count = 0
+        tool_calls_detected_in_stream = False
 
-                # Filter out tool-related messages (DO NOT display in chat)
-                # 1. Tool results (type="tool") - processed internally for citations
-                if hasattr(token, "type") and token.type == "tool":
-                    tool_results.append(token.content)
-                    logger.debug("Tool result received, %d total results", len(tool_results))
-                    tool_executing = False
+        try:
+            for stream_mode, chunk in agent.stream(
+                {"messages": messages},
+                context=agent_context,
+                stream_mode=["updates", "messages"]
+            ):
+                stream_chunk_count += 1
+                logger.debug("Stream chunk #%d: mode=%s", stream_chunk_count, stream_mode)
+
+                # Handle "messages" mode for token streaming
+                if stream_mode == "messages":
+                    token, metadata = chunk
+                    token_type = getattr(token, "type", "unknown")
+                    # Disabled verbose token logging for production
+                    # logger.info("Messages token #%d: type=%s", stream_chunk_count, token_type)
+
+                    # Debug logging for vLLM tool calling issues (only when expecting tool calls)
+                    # Check for both "ai" type and AIMessageChunk class (LangChain uses different representations)
+                    token_class = type(token).__name__
+                    is_ai_message = token_type == "ai" or "AIMessage" in token_class or "AIMessage" in str(token_type)
+                    if is_ai_message:
+                        has_tool_calls = bool(getattr(token, "tool_calls", None))
+                        content = str(getattr(token, "content", ""))
+                        response_metadata = getattr(token, "response_metadata", {})
+                        finish_reason = response_metadata.get("finish_reason", "N/A") if isinstance(response_metadata, dict) else "N/A"
+
+                        # Check content_blocks for tool_call_chunk (critical for vLLM streaming)
+                        content_blocks = getattr(token, "content_blocks", None)
+                        has_content_blocks = bool(content_blocks)
+                        tool_call_chunks_in_blocks = 0
+                        if content_blocks:
+                            tool_call_chunks_in_blocks = sum(1 for block in content_blocks if block.get("type") == "tool_call_chunk")
+                            # Log first few content_blocks in detail for debugging (only when tool calls detected)
+                            if tool_call_chunks_in_blocks > 0 or finish_reason == "tool_calls":
+                                logger.debug("Content blocks detail: %s", content_blocks[:3] if len(content_blocks) > 3 else content_blocks)
+
+                        # Enhanced logging only when we expect tool calls but haven't detected them yet
+                        expected_tool_calls = is_vllm and not has_seen_tool_results
+                        if expected_tool_calls and not tool_calls_detected_in_stream:
+                            # Only log when we're actively debugging missing tool calls
+                            logger.debug(
+                                "AI token #%d: has_tool_calls=%s, content_length=%d, finish_reason=%s, "
+                                "has_content_blocks=%s, tool_call_chunks=%d",
+                                stream_chunk_count,
+                                has_tool_calls,
+                                len(content),
+                                finish_reason,
+                                has_content_blocks,
+                                tool_call_chunks_in_blocks,
+                            )
+                        # Disabled verbose AI token logging for production
+                        # else:
+                        #     logger.debug(
+                        #         "AI token: has_tool_calls=%s, content_length=%d, finish_reason=%s",
+                        #         has_tool_calls,
+                        #         len(content),
+                        #         finish_reason,
+                        #     )
+
+                    # Filter out tool-related messages (DO NOT display in chat)
+                    # 1. Tool results (type="tool") - processed internally for citations
+                    if hasattr(token, "type") and token.type == "tool":
+                        tool_results.append(token.content)
+                        logger.debug("Tool result received, %d total results", len(tool_results))
+                        tool_executing = False
+                        has_seen_tool_results = True
+
+                        # Update accumulated context for next tool call
+                        # Agent tracks context, not the tool!
+                        _, accumulated_tool_tokens = estimate_accumulated_tokens([], tool_results)
+                        agent_context.accumulated_tool_tokens = accumulated_tool_tokens
+
+                        logger.debug(
+                            "Updated accumulated context: conversation=%d, tools=%d (total: %d)",
+                            conversation_tokens,
+                            accumulated_tool_tokens,
+                            conversation_tokens + accumulated_tool_tokens,
+                        )
+
+                        # Parse result to get article count and emit completion metadata
+                        from rag_engine.api.stream_helpers import (
+                            extract_article_count_from_tool_result,
+                            yield_search_completed,
+                        )
+
+                        articles_count = extract_article_count_from_tool_result(token.content)
+                        yield yield_search_completed(articles_count)
+
+                        # CRITICAL: Check if accumulated tool results exceed safe threshold
+                        # This prevents overflow when agent makes multiple tool calls
+                        if settings.llm_fallback_enabled and not selected_model:
+                            from rag_engine.config.settings import get_allowed_fallback_models
+                            from rag_engine.llm.fallback import select_mid_turn_fallback_model
+
+                            fallback_model = select_mid_turn_fallback_model(
+                                current_model,
+                                messages,
+                                tool_results,
+                                get_allowed_fallback_models(),
+                            )
+
+                            if fallback_model:
+                                from rag_engine.api.stream_helpers import yield_model_switch_notice
+
+                                yield yield_model_switch_notice(fallback_model)
+
+                                # Recreate agent with larger model
+                                # Note: This is expensive but prevents catastrophic overflow
+                                agent = _create_rag_agent(override_model=fallback_model)
+                                current_model = fallback_model
+
+                                # Note: Can't restart stream here - agent will continue with new model
+                                # for subsequent calls
+
+                        # Skip further processing of tool messages
+                        continue
+
+                    # 2. AI messages with tool_calls (when agent decides to call tools)
+                    # Check multiple indicators: token.tool_calls, content_blocks, and finish_reason
+                    # These should NEVER be displayed - only show metadata
+                    has_tool_calls_attr = hasattr(token, "tool_calls") and bool(token.tool_calls)
+
+                    # Check content_blocks for tool_call_chunk (critical for vLLM streaming)
+                    token_content_blocks = getattr(token, "content_blocks", None)
+                    has_tool_call_chunks = bool(token_content_blocks) and any(
+                        block.get("type") == "tool_call_chunk" for block in token_content_blocks
+                    )
+
+                    # Check finish_reason (indicates tool calls completed)
+                    token_response_metadata = getattr(token, "response_metadata", {})
+                    token_finish_reason = token_response_metadata.get("finish_reason") if isinstance(token_response_metadata, dict) else None
+                    finish_reason_is_tool_calls = token_finish_reason == "tool_calls"
+
+                    # Tool call detected if any of these conditions are true
+                    tool_call_detected = has_tool_calls_attr or has_tool_call_chunks or finish_reason_is_tool_calls
+
+                    if tool_call_detected:
+                        tool_calls_detected_in_stream = True
+                        if not tool_executing:
+                            tool_executing = True
+                            # Log which method detected the tool call
+                            if has_tool_calls_attr:
+                                call_count = len(token.tool_calls) if isinstance(token.tool_calls, list) else "?"
+                                logger.info("Agent calling tool(s) via token.tool_calls: %s call(s)", call_count)
+                            elif has_tool_call_chunks:
+                                logger.info("Agent calling tool(s) via content_blocks tool_call_chunk")
+                            elif finish_reason_is_tool_calls:
+                                logger.info("Agent calling tool(s) detected via finish_reason=tool_calls")
+                                # Check if tool_calls are now available in the token
+                                final_tool_calls = getattr(token, "tool_calls", None)
+                                if final_tool_calls:
+                                    logger.info("Final tool_calls after finish_reason: %s call(s)",
+                                               len(final_tool_calls) if isinstance(final_tool_calls, list) else "?")
+
+                            # Yield metadata message to Gradio
+                            from rag_engine.api.stream_helpers import yield_search_started
+
+                            yield yield_search_started()
+                        # Skip displaying the tool call itself and any content
+                        continue
+
+                    # 3. Only stream text content from messages WITHOUT tool_calls
+                    # This ensures we only show the final answer, not tool reasoning
+                    if hasattr(token, "tool_calls") and token.tool_calls:
+                        # Skip any message that has tool_calls (redundant check for safety)
+                        continue
+
+                    # Process content blocks for final answer text streaming
+                    if hasattr(token, "content_blocks") and token.content_blocks:
+                        for block in token.content_blocks:
+                            if block.get("type") == "tool_call_chunk":
+                                # Tool call chunk detected - emit metadata if not already done
+                                if not tool_executing:
+                                    tool_executing = True
+                                    logger.debug("Agent calling tool via chunk")
+                                    from rag_engine.api.stream_helpers import yield_search_started
+
+                                    yield yield_search_started()
+                                # Never stream tool call chunks as text
+                                continue
+
+                            elif block.get("type") == "text" and block.get("text"):
+                                # Only stream text if we're not currently executing tools
+                                # This prevents streaming the agent's "reasoning" about tool calls
+                                if not tool_executing:
+                                    text_chunk = block["text"]
+                                    answer, disclaimer_prepended = _process_text_chunk_for_streaming(
+                                        text_chunk, answer, disclaimer_prepended, has_seen_tool_results
+                                    )
+                                    yield answer
+
+                # Handle "updates" mode for agent state updates
+                elif stream_mode == "updates":
+                    # We can log updates but don't need to yield them
+                    logger.debug("Agent update: %s", list(chunk.keys()) if isinstance(chunk, dict) else chunk)
+
+            # After stream completes, check if we expected tool calls but didn't get results
+            # Only check for vLLM on first message (when we expect tool calls)
+            should_fallback, fallback_enabled = check_stream_completion(
+                is_vllm=is_vllm,
+                has_seen_tool_results=has_seen_tool_results,
+                tool_calls_detected=tool_calls_detected_in_stream,
+                tool_results_count=len(tool_results),
+                stream_chunk_count=stream_chunk_count,
+            )
+
+        except Exception as stream_error:
+            # If streaming fails and we expected tool calls, fall back to invoke()
+            # Only if fallback is enabled
+            if should_use_fallback(
+                is_vllm=is_vllm,
+                has_seen_tool_results=has_seen_tool_results,
+                tool_calls_detected=False,
+                tool_results_count=len(tool_results),
+            ):
+                logger.warning(
+                    "Streaming failed for vLLM, falling back to invoke() mode: %s", stream_error
+                )
+                fallback_to_invoke = True
+            else:
+                raise
+
+        # Fallback to invoke() only if we expected tool calls but didn't get them
+        # This ensures tool execution happens even if streaming detection fails
+        # Can be disabled via vllm_streaming_fallback_enabled setting for testing
+        if fallback_to_invoke or should_fallback:
+            # Execute fallback and process results
+            fallback_results = {}
+            for chunk in execute_fallback_invoke(
+                agent=agent,
+                messages=messages,
+                agent_context=agent_context,
+                has_seen_tool_results=has_seen_tool_results,
+                result_container=fallback_results,
+            ):
+                # Yield metadata (dict) or text chunks (str)
+                if isinstance(chunk, dict):
+                    # Metadata message (search_started, search_completed, etc.)
+                    yield chunk
+                elif isinstance(chunk, str):
+                    # Text chunk - yield directly
+                    yield chunk
+
+            # Extract results from container
+            if fallback_results:
+                fallback_tool_results = fallback_results.get("tool_results", [])
+                fallback_answer = fallback_results.get("final_answer", "")
+                fallback_disclaimer = fallback_results.get("disclaimer_prepended", False)
+
+                # Update tool results
+                if fallback_tool_results:
+                    tool_results.extend(fallback_tool_results)
                     has_seen_tool_results = True
-
-                    # Update accumulated context for next tool call
-                    # Agent tracks context, not the tool!
+                    # Update accumulated context
                     _, accumulated_tool_tokens = estimate_accumulated_tokens([], tool_results)
                     agent_context.accumulated_tool_tokens = accumulated_tool_tokens
 
-                    logger.debug(
-                        "Updated accumulated context: conversation=%d, tools=%d (total: %d)",
-                        conversation_tokens,
-                        accumulated_tool_tokens,
-                        conversation_tokens + accumulated_tool_tokens,
-                    )
-
-                    # Parse result to get article count and emit completion metadata
-                    from rag_engine.api.stream_helpers import (
-                        extract_article_count_from_tool_result,
-                        yield_search_completed,
-                    )
-
-                    articles_count = extract_article_count_from_tool_result(token.content)
-                    yield yield_search_completed(articles_count)
-
-                    # CRITICAL: Check if accumulated tool results exceed safe threshold
-                    # This prevents overflow when agent makes multiple tool calls
-                    if settings.llm_fallback_enabled and not selected_model:
-                        from rag_engine.config.settings import get_allowed_fallback_models
-                        from rag_engine.llm.fallback import select_mid_turn_fallback_model
-
-                        fallback_model = select_mid_turn_fallback_model(
-                            current_model,
-                            messages,
-                            tool_results,
-                            get_allowed_fallback_models(),
-                        )
-
-                        if fallback_model:
-                            from rag_engine.api.stream_helpers import yield_model_switch_notice
-
-                            yield yield_model_switch_notice(fallback_model)
-
-                            # Recreate agent with larger model
-                            # Note: This is expensive but prevents catastrophic overflow
-                            agent = _create_rag_agent(override_model=fallback_model)
-                            current_model = fallback_model
-
-                            # Note: Can't restart stream here - agent will continue with new model
-                            # for subsequent calls
-
-                    # Skip further processing of tool messages
-                    continue
-
-                # 2. AI messages with tool_calls (when agent decides to call tools)
-                # These should NEVER be displayed - only show metadata
-                if hasattr(token, "tool_calls") and token.tool_calls:
-                    if not tool_executing:
-                        tool_executing = True
-                        # Log tool call count safely (tool_calls might be True or a list)
-                        call_count = len(token.tool_calls) if isinstance(token.tool_calls, list) else "?"
-                        logger.debug("Agent calling tool(s): %s call(s)", call_count)
-                        # Yield metadata message to Gradio
-                        from rag_engine.api.stream_helpers import yield_search_started
-
-                        yield yield_search_started()
-                    # Skip displaying the tool call itself and any content
-                    continue
-
-                # 3. Only stream text content from messages WITHOUT tool_calls
-                # This ensures we only show the final answer, not tool reasoning
-                if hasattr(token, "tool_calls") and token.tool_calls:
-                    # Skip any message that has tool_calls (redundant check for safety)
-                    continue
-
-                # Process content blocks for final answer text streaming
-                if hasattr(token, "content_blocks") and token.content_blocks:
-                    for block in token.content_blocks:
-                        if block.get("type") == "tool_call_chunk":
-                            # Tool call chunk detected - emit metadata if not already done
-                            if not tool_executing:
-                                tool_executing = True
-                                logger.debug("Agent calling tool via chunk")
-                                from rag_engine.api.stream_helpers import yield_search_started
-
-                                yield yield_search_started()
-                            # Never stream tool call chunks as text
-                            continue
-
-                        elif block.get("type") == "text" and block.get("text"):
-                            # Only stream text if we're not currently executing tools
-                            # This prevents streaming the agent's "reasoning" about tool calls
-                            if not tool_executing:
-                                text_chunk = block["text"]
-                                answer, disclaimer_prepended = _process_text_chunk_for_streaming(
-                                    text_chunk, answer, disclaimer_prepended, has_seen_tool_results
-                                )
-                                yield answer
-
-            # Handle "updates" mode for agent state updates
-            elif stream_mode == "updates":
-                # We can log updates but don't need to yield them
-                logger.debug("Agent update: %s", list(chunk.keys()) if isinstance(chunk, dict) else chunk)
+                # Update answer if we got one from fallback
+                if fallback_answer:
+                    answer = fallback_answer
+                    disclaimer_prepended = fallback_disclaimer or disclaimer_prepended
 
         # Accumulate articles from tool results and add citations
+        logger.info("Stream completed: %d chunks processed, %d tool results", stream_chunk_count, len(tool_results))
         from rag_engine.tools import accumulate_articles_from_tool_results
         articles = accumulate_articles_from_tool_results(tool_results)
 

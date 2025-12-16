@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     llm_fallback_provider: str | None = None
     llm_allowed_fallback_models: str = ""
     llm_summarization_enabled: bool = False
+    # vLLM streaming fallback: if True, falls back to invoke() if tool calls aren't detected in stream
+    # Set to False to disable fallback and test pure streaming behavior
+    vllm_streaming_fallback_enabled: bool = False
     # Optional legacy/override; dynamic targets are used by default
     llm_summarization_target_tokens_per_article: int | None = None
 
