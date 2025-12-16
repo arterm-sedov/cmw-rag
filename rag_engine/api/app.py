@@ -805,6 +805,9 @@ with gr.Blocks() as demo:
         save_history=True,
         #fill_width=True,
         chatbot=chatbot_config,
+        # Attempt to hide auto-generated API endpoint from API docs and MCP (Gradio 6.x)
+        # Note: According to docs, this may not be effective for MCP, but worth trying
+        api_visibility="private",  # Completely disable the API endpoint
     )
     gr.api(
         fn=get_knowledge_base_articles,
@@ -842,6 +845,7 @@ if __name__ == "__main__":
         server_port=settings.gradio_server_port,
         share=settings.gradio_share,
         mcp_server=True,
+        footer_links=["api"],
     )
 
 
