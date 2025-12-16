@@ -608,6 +608,57 @@ class TestAgentChatHandler:
         expected_content = USER_QUESTION_TEMPLATE_FIRST.format(question="First question")
         assert call_args["messages"][0]["content"] == expected_content
 
+    @patch("rag_engine.api.app._create_rag_agent")
+    @patch("rag_engine.api.app.salt_session_id")
+    @patch("rag_engine.api.app.llm_manager")
+    @patch("rag_engine.api.app.format_with_citations")
+    @patch("rag_engine.tools.accumulate_articles_from_tool_results")
+    def test_agent_handler_with_gradio6_history_format(
+        self,
+        mock_accumulate,
+        mock_format,
+        mock_llm_manager,
+        mock_salt_session,
+        mock_create_agent,
+    ):
+        """Test that handler correctly handles structured content format."""
+        mock_salt_session.return_value = "test_session_structured"
+
+        # Mock agent
+        mock_ai_msg = Mock()
+        mock_ai_msg.type = "ai"
+        mock_ai_msg.content = "Answer"
+        mock_ai_msg.tool_calls = None
+        mock_ai_msg.content_blocks = None
+
+        mock_agent = Mock()
+        mock_agent.stream.return_value = [("messages", (mock_ai_msg, {}))]
+        mock_create_agent.return_value = mock_agent
+
+        mock_accumulate.return_value = []
+        mock_format.return_value = "Answer"
+
+        # Structured content format: content is a list of content blocks
+        history = [
+            {"role": "user", "content": [{"type": "text", "text": "First question"}]},
+            {"role": "assistant", "content": [{"type": "text", "text": "First answer"}]},
+        ]
+
+        # Execute handler with structured content format history
+        list(agent_chat_handler("Follow-up question", history, None))
+
+        # Verify agent received normalized history (string content, not list)
+        mock_agent.stream.assert_called_once()
+        call_args = mock_agent.stream.call_args[0][0]
+        assert len(call_args["messages"]) == 3  # 2 history + 1 current
+        # Content should be normalized to string format
+        assert call_args["messages"][0]["content"] == "First question"
+        assert call_args["messages"][1]["content"] == "First answer"
+        # Follow-up message should be wrapped in USER_QUESTION_TEMPLATE_SUBSEQUENT
+        from rag_engine.llm.prompts import USER_QUESTION_TEMPLATE_SUBSEQUENT
+        expected_content = USER_QUESTION_TEMPLATE_SUBSEQUENT.format(question="Follow-up question")
+        assert call_args["messages"][2]["content"] == expected_content
+
 
 class TestAgentIntegration:
     """Integration tests for agent mode."""

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 
-from typing import Dict, List, Tuple
+from rag_engine.utils.message_utils import get_message_content
 
 
 class ConversationStore:
@@ -14,12 +14,12 @@ class ConversationStore:
     """
 
     def __init__(self) -> None:
-        self._sessions: Dict[str, List[Tuple[str, str]]] = {}
+        self._sessions: dict[str, list[tuple[str, str]]] = {}
 
-    def get(self, session_id: str) -> List[Tuple[str, str]]:
+    def get(self, session_id: str) -> list[tuple[str, str]]:
         return list(self._sessions.get(session_id, []))
 
-    def set(self, session_id: str, turns: List[Tuple[str, str]]) -> None:
+    def set(self, session_id: str, turns: list[tuple[str, str]]) -> None:
         self._sessions[session_id] = list(turns)
 
     def append(self, session_id: str, role: str, content: str) -> None:
@@ -72,13 +72,8 @@ def salt_session_id(
             role = msg.get("role", "")
             if role != "user":
                 continue
-            content = msg.get("content", "")
-            # Handle both string and dict content (multimodal)
-            if isinstance(content, dict):
-                # Extract text from dict if available, otherwise use path
-                text = content.get("text", "") or str(content.get("path", ""))
-            else:
-                text = str(content)
+            # Use centralized message content extraction utility
+            text = get_message_content(msg) or ""
             if text:
                 salt = text[:100]  # First 100 chars as salt
                 break

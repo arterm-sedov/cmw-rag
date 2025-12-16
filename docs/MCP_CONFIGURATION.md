@@ -33,7 +33,7 @@ The Comindware RAG Engine exposes an MCP (Model Context Protocol) server via Gra
    - ✅ `ask_comindware` - Working Q&A function (business-oriented name)
    - ❌ `agent_chat_handler` - Broken generator function (auto-exposed by ChatInterface)
 
-**Note:** We've attempted to prevent ChatInterface from auto-exposing its function by setting `api_visibility="private"` in Gradio 6.x (see `rag_engine/api/app.py`). However, according to previous testing, this parameter may not be effective for MCP endpoints. The filtered endpoint (`?tools=...`) remains the reliable solution.
+**Note:** We've prevent ChatInterface from auto-exposing its function by setting `api_visibility="private"` (see `rag_engine/api/app.py`). Can also use the filtered endpoint (`?tools=...`).
 
 **Unfiltered endpoint exposes:**
 - ✅ `get_knowledge_base_articles` - Working
