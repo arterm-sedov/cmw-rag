@@ -147,14 +147,15 @@ class LLMManager:
                 f"Initializing OpenRouter client: model={self.model_name}, "
                 f"base_url={base_url}, api_key={api_key[:10]}..."
             )
-            
+
             return ChatOpenAI(
                 model=self.model_name,
                 api_key=api_key,
                 base_url=base_url,
                 temperature=self.temperature,
                 max_tokens=self._model_config["max_tokens"],
-                streaming=True,  # Enable streaming for OpenRouter
+                # Note: streaming is controlled at call site (.stream() vs .invoke()),
+                # not at model construction time, to avoid issues with LangChain agents
                 default_headers={
                     # OpenRouter recommends these headers for attribution/rate-limiting
                     "HTTP-Referer": f"http://{settings.gradio_server_name}:{settings.gradio_server_port}",
@@ -178,7 +179,8 @@ class LLMManager:
                 base_url=base_url,
                 temperature=self.temperature,
                 max_tokens=self._model_config["max_tokens"],
-                streaming=True,  # Enable streaming for vLLM
+                # Note: streaming is controlled at call site (.stream() vs .invoke()),
+                # not at model construction time, to avoid issues with LangChain agents
             )
         # default fallback to Gemini
         logger.warning(f"Unknown provider {p}, falling back to Gemini")
