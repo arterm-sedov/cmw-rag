@@ -13,6 +13,7 @@ def get_message_content(msg: Any) -> str | None:
     """Extract content from a message (dict or LangChain message object).
 
     Handles both dict messages (from Gradio) and LangChain message objects.
+    Supports Gradio structured content format (list of content blocks).
 
     Args:
         msg: Message object (dict or LangChain message)
@@ -22,6 +23,12 @@ def get_message_content(msg: Any) -> str | None:
 
     Example:
         >>> from rag_engine.utils.message_utils import get_message_content
+        >>> # Structured content format (Gradio 6)
+        >>> msg = {"role": "user", "content": [{"type": "text", "text": "Hello"}]}
+        >>> content = get_message_content(msg)
+        >>> content == "Hello"
+        True
+        >>> # String content format
         >>> msg = {"role": "user", "content": "Hello"}
         >>> content = get_message_content(msg)
         >>> content == "Hello"
@@ -32,6 +39,27 @@ def get_message_content(msg: Any) -> str | None:
         return str(content) if content is not None else None
     if isinstance(msg, dict):
         content = msg.get("content")
+        if content is None:
+            return None
+        # Handle structured content format (list of content blocks)
+        if isinstance(content, list):
+            # Extract text from content blocks
+            text_parts = []
+            for block in content:
+                if isinstance(block, dict):
+                    block_type = block.get("type", "")
+                    if block_type == "text":
+                        text = block.get("text", "")
+                        if text:
+                            text_parts.append(str(text))
+                    # Handle other block types if needed (e.g., images)
+                    elif block_type == "image":
+                        # For images, use path or URL if available
+                        img_path = block.get("path") or block.get("url", "")
+                        if img_path:
+                            text_parts.append(f"[Image: {img_path}]")
+            return " ".join(text_parts) if text_parts else None
+        # Handle plain string content
         return str(content) if content is not None else None
     return None
 
@@ -110,6 +138,66 @@ def extract_user_question(messages: list) -> str:
     return ""
 
 
+def normalize_gradio_history_message(msg: dict) -> dict:
+    """Normalize Gradio history message to LangChain-compatible format.
+
+    Converts Gradio 6 structured content format (list of content blocks)
+    to simple string format expected by LangChain.
+
+    Args:
+        msg: Message dict from Gradio history
+
+    Returns:
+        Normalized message dict with string content
+
+    Example:
+        >>> from rag_engine.utils.message_utils import normalize_gradio_history_message
+        >>> # Structured content format
+        >>> msg = {"role": "user", "content": [{"type": "text", "text": "Hello"}]}
+        >>> normalized = normalize_gradio_history_message(msg)
+        >>> normalized == {"role": "user", "content": "Hello"}
+        True
+        >>> # String content format
+        >>> msg = {"role": "user", "content": "Hello"}
+        >>> normalized = normalize_gradio_history_message(msg)
+        >>> normalized == {"role": "user", "content": "Hello"}
+        True
+    """
+    if not isinstance(msg, dict):
+        return msg
+
+    content = msg.get("content")
+    if content is None:
+        return msg
+
+    # If content is already a string, return as-is
+    if isinstance(content, str):
+        return msg
+
+    # Handle structured content format (list of content blocks)
+    if isinstance(content, list):
+        text_parts = []
+        for block in content:
+            if isinstance(block, dict):
+                block_type = block.get("type", "")
+                if block_type == "text":
+                    text = block.get("text", "")
+                    if text:
+                        text_parts.append(str(text))
+                # Handle other block types if needed
+                elif block_type == "image":
+                    img_path = block.get("path") or block.get("url", "")
+                    if img_path:
+                        text_parts.append(f"[Image: {img_path}]")
+
+        # Return normalized message with string content
+        normalized_content = " ".join(text_parts) if text_parts else ""
+        return {**msg, "content": normalized_content}
+
+    # Fallback: convert to string
+    return {**msg, "content": str(content)}
+
+
 def update_tool_message_content(
     messages: list, index: int, new_json_str: str
 ) -> list:
@@ -141,4 +229,5 @@ def update_tool_message_content(
         else:
             updated[index] = {**msg, "content": new_json_str}
     return updated
+
 

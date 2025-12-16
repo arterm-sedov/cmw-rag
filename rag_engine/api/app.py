@@ -311,9 +311,13 @@ def agent_chat_handler(
         llm_manager._conversations.append(session_id, "user", message)
 
     # Build messages from history for agent
+    # Normalize Gradio structured content format to LangChain-compatible format
+    from rag_engine.utils.message_utils import normalize_gradio_history_message
+
     messages = []
     for msg in history:
-        messages.append(msg)
+        normalized_msg = normalize_gradio_history_message(msg)
+        messages.append(normalized_msg)
     messages.append({"role": "user", "content": wrapped_message})
 
     # Note: pre-agent trimming removed by request; rely on existing middleware
@@ -805,7 +809,7 @@ with gr.Blocks() as demo:
         save_history=True,
         #fill_width=True,
         chatbot=chatbot_config,
-        # Attempt to hide auto-generated API endpoint from API docs and MCP (Gradio 6.x)
+        # Attempt to hide auto-generated API endpoint from API docs and MCP
         # Note: According to docs, this may not be effective for MCP, but worth trying
         api_visibility="private",  # Completely disable the API endpoint
     )
