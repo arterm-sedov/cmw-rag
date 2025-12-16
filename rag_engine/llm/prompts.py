@@ -144,11 +144,14 @@ Tie each claim to specific content from the context.
 In each paragraph, concisely reference relevant source information when helpful.
 
 Structure guidelines:
+- Be brief, do not over-engineer the answer
 - Format output in a legible, structured way
 - Add headings and subheadings where helpful
+- Add new lines before and after headings, paragraphs and sections
 - Use Markdown formatting (lists, code blocks, tables) for clarity
 - Never duplicate sections in the output
 - Make sections concise and focused
+- Do not add redundant escape characters like \\\\ and \" in code blocks if not really needed.
 
 When the operating system context is ambiguous or unclear:
 - Provide separate subsections for Linux and Windows
