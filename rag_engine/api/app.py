@@ -11,6 +11,7 @@ if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
 import logging
+import os
 
 import gradio as gr
 from openai import APIError as OpenAIAPIError
@@ -1172,6 +1173,20 @@ logger.info("Using agent-based (LangChain) handler for chat interface")
 
 # Load CSS theme from reference agent
 css_file_path = Path(__file__).parent.parent / "resources" / "css" / "cmw_copilot_theme.css"
+
+# Setup Gradio static resource paths (for logo and other assets)
+# Must use absolute path for GRADIO_ALLOWED_PATHS
+RESOURCES_DIR = (Path(__file__).parent.parent / "resources").resolve()
+try:
+    existing_allowed = os.environ.get("GRADIO_ALLOWED_PATHS", "")
+    parts = [p for p in existing_allowed.split(os.pathsep) if p]
+    resources_dir_str = str(RESOURCES_DIR)
+    if resources_dir_str not in parts:
+        parts.append(resources_dir_str)
+    os.environ["GRADIO_ALLOWED_PATHS"] = os.pathsep.join(parts)
+    logger.info(f"Gradio static allowed paths: {os.environ['GRADIO_ALLOWED_PATHS']}")
+except Exception as e:
+    logger.warning(f"Could not set GRADIO_ALLOWED_PATHS: {e}")
 
 # Wrapper function to expose retrieve_context tool as API endpoint
 # The tool is a StructuredTool, so we need to extract the underlying function

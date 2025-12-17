@@ -89,7 +89,7 @@
     --cmw-white: #ffffff;
 
     /* Assets (optional; set to your local resources if available) */
-    --cmw-logo-url: url('/gradio_api/file=resources/img/comindware_logo.svg');
+    --cmw-logo-url: url('/gradio_api/file=rag_engine/resources/img/comindware_logo.svg');
     --cmw-logo-height: 1.6em;
     --cmw-logo-gap: var(--cmw-space-3);
     --cmw-logo-shadow: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.06));
