@@ -98,6 +98,13 @@ MODEL_CONFIGS: Dict[str, Dict] = {
         "max_tokens": 40000,  # Matches vLLM max_model_len configuration
         "temperature": 0,
     },
+    # vLLM GigaChat3 model (MoE: 10B total, 1.8B active params)
+    # Supports up to 256K context window, optimized for high throughput
+    "ai-sage/GigaChat3-10B-A1.8B-bf16": {
+        "token_limit": 256_000,  # 256K context window as per model card
+        "max_tokens": 65_536,  # Reasonable max output for large context model
+        "temperature": 0,
+    },
     "qwen/qwen3-coder-plus": {
         "token_limit": 128_000,
         "max_tokens": 65_536,
