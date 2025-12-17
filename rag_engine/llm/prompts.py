@@ -59,7 +59,10 @@ Examples of questions and search queries to call the retrieve_context tool:
     - формы
 </question_query_examples>>
 </source_materials>
-
+<tool_use>
+- Call retrieve_context tool for information retrieval.
+- Call math tools for calculations and data processing.
+</tool_use>
 <internal_reasoning>
 <structured_approach>
 Always follow internally: Intent → Plan → Validate → Execute → Result (Намерение → План → Проверка → Выполнение → Результат)".
