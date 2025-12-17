@@ -1360,10 +1360,13 @@ with gr.Blocks(
     
     # Connect events (like reference agent)
     # Submit button (built into Textbox) - triggers on Enter key or submit button click
+    # Configure concurrency limit per Gradio queuing best practices
+    # https://www.gradio.app/guides/queuing
     submit_event = msg.submit(
         fn=handler_fn,
         inputs=[msg, chatbot],
         outputs=[chatbot],
+        concurrency_limit=settings.gradio_default_concurrency_limit,
     ).then(
         lambda: "",  # Clear message input
         outputs=[msg],
@@ -1404,7 +1407,13 @@ if __name__ == "__main__":
             "Share link enabled. If share link creation fails, the app will still run locally."
         )
 
-    demo.queue().launch(
+    # Configure queue with default concurrency limit per Gradio queuing best practices
+    # https://www.gradio.app/guides/queuing
+    # This sets the default for all event listeners unless overridden
+    demo.queue(
+        default_concurrency_limit=settings.gradio_default_concurrency_limit,
+        status_update_rate="auto",
+    ).launch(
         server_name=settings.gradio_server_name,
         server_port=settings.gradio_server_port,
         share=settings.gradio_share,
