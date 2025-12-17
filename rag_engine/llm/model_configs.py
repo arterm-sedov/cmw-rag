@@ -105,6 +105,20 @@ MODEL_CONFIGS: Dict[str, Dict] = {
         "max_tokens": 65_536,  # Reasonable max output for large context model
         "temperature": 0,
     },
+    # vLLM GigaChat3 fp8 model (optimized for high throughput inference)
+    # MoE architecture with MLA and MTP, supports up to 256K context window
+    "ai-sage/GigaChat3-10B-A1.8B": {
+        "token_limit": 256_000,  # 256K context window as per model card
+        "max_tokens": 65_536,  # Reasonable max output for large context model
+        "temperature": 0,
+    },
+    # vLLM Qwen3-Coder-REAP model (REAP: Router-weighted Expert Activation Pruning)
+    # Memory-efficient variant of Qwen3-Coder series, 25B total params
+    "cerebras/Qwen3-Coder-REAP-25B-A3B": {
+        "token_limit": 262_144,  # 256K context window, consistent with Qwen3 models
+        "max_tokens": 32_768,  # Reasonable max output for code generation
+        "temperature": 0,
+    },
     "qwen/qwen3-coder-plus": {
         "token_limit": 128_000,
         "max_tokens": 65_536,
