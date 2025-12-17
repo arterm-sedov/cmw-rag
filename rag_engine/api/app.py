@@ -1161,8 +1161,8 @@ if settings.gradio_embedded_widget:
     chat_description = None
 else:
     # For standalone app
-    chatbot_height = "85vh"
-    chatbot_max_height = "80vh"
+    chatbot_height = "70vh"  # 70% of viewport height for standalone
+    chatbot_max_height = "70vh"  # Same as height for consistency
     chat_title = "Ассистент базы знаний Comindware Platform"
     chat_description = None  # "RAG-агент базы знаний Comindware Platform"
 
@@ -1331,14 +1331,17 @@ with gr.Blocks(
     
     # Chatbot component (like reference agent - NOT ChatInterface)
     # In Gradio 6, Chatbot uses messages format by default (no type parameter needed)
+    # Conditional sizing: embedded widget uses fixed height and follows container, standalone is resizable
     chatbot = gr.Chatbot(
         label="Диалог с агентом",
-        height=500 if settings.gradio_embedded_widget else None,
+        height=chatbot_height,  # Always set height (400px for embedded, 70vh for standalone)
+        max_height=chatbot_max_height,  # Always set max_height (65vh for embedded, 70vh for standalone)
         show_label=True,
         container=True,
         buttons=["copy", "copy_all"],
         elem_id="chatbot-main",
         elem_classes=["chatbot-card"],
+        resizable=not settings.gradio_embedded_widget,  # Resizable only in standalone mode, not embedded
     )
     
     # Message input (regular Textbox, NOT MultimodalTextbox)
