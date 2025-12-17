@@ -208,12 +208,18 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     cursor: nwse-resize;
-    z-index: 20;
+    z-index: 25;
     background: transparent;
     pointer-events: auto;
+    /* Add subtle hover effect for better visibility */
+    transition: background-color 0.2s ease;
+}
+
+.cmw-widget-container-resize-handle:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .cmw-widget-container.cmw-widget-hidden {
@@ -244,7 +250,7 @@
 /* Widget Header */
 .cmw-widget-header {
     padding: var(--cmw-space-4) var(--cmw-space-5);
-    padding-left: calc(var(--cmw-space-5) + 20px); /* Make room for resize handle */
+    padding-left: calc(var(--cmw-space-5) + 28px); /* Make room for resize handle (28px) */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -346,10 +352,19 @@
     --chatbot-height: 400px; /* Default fallback */
 }
 
+/* Target the actual Gradio chatbot container - multiple selectors for compatibility */
+.cmw-widget-container #chatbot-main,
+.cmw-widget-container .chatbot-card,
+.cmw-widget-container [role="log"][aria-label*="chatbot"],
 .cmw-widget-container .gradio-chatbot {
     height: var(--chatbot-height, 400px) !important;
     min-height: 300px !important;
     max-height: var(--chatbot-height, 400px) !important;
+    /* Fix scrollbar: hide by default, JavaScript will set to auto if content overflows */
+    overflow-y: hidden !important;
+    overflow-x: hidden !important;
+    /* Ensure proper box-sizing to account for padding/borders in height calculation */
+    box-sizing: border-box !important;
 }
 
 /* Ensure main element fills available space */
