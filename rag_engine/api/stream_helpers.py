@@ -29,6 +29,38 @@ class ToolCallAccumulator:
         """Initialize accumulator with empty state."""
         self._accumulated_calls: dict[int, dict[str, str]] = {}
 
+    def get_tool_name(self, token) -> str | None:
+        """Extract tool name from token (for any tool, not just retrieve_context).
+
+        Args:
+            token: LangChain token/message that may contain tool_call chunks
+
+        Returns:
+            Tool name if detected, None otherwise
+        """
+        # Try content_blocks for tool_call_chunk (streaming mode)
+        content_blocks = getattr(token, "content_blocks", None)
+        if content_blocks:
+            for block in content_blocks:
+                if block.get("type") == "tool_call_chunk":
+                    chunk_name = block.get("name", "")
+                    if chunk_name:
+                        return chunk_name
+
+        # Try tool_calls attribute (may be complete or partial)
+        tool_calls = getattr(token, "tool_calls", None)
+        if tool_calls:
+            for tool_call in tool_calls:
+                # Handle different formats: dict or object with attributes
+                if isinstance(tool_call, dict):
+                    name = tool_call.get("name", "")
+                else:
+                    name = getattr(tool_call, "name", "")
+                if name:
+                    return name
+
+        return None
+
     def process_token(self, token) -> str | None:
         """Process a streaming token and accumulate tool call chunks.
 
@@ -174,6 +206,36 @@ def yield_search_started(query: str | None = None) -> dict:
     }
 
 
+def yield_thinking_block(tool_name: str) -> dict:
+    """Yield metadata message for generic thinking block (non-search tools).
+
+    Args:
+        tool_name: Name of the tool being used (e.g., "add", "get_current_datetime")
+
+    Returns:
+        Gradio message dict with metadata for thinking block.
+        Content and title are resolved i18n strings (never i18n metadata objects).
+
+    Example:
+        >>> from rag_engine.api.stream_helpers import yield_thinking_block
+        >>> msg = yield_thinking_block("add")
+        >>> "Thinking" in msg["metadata"]["title"] or "Размышление" in msg["metadata"]["title"]
+        True
+    """
+    # Resolve i18n translations to plain strings before yielding
+    # This ensures Chatbot receives strings, not __i18n__ metadata objects
+    title = get_text("thinking_title")
+    content = get_text("thinking_content", tool_name=tool_name)
+
+    return {
+        "role": "assistant",
+        "content": content,
+        "metadata": {
+            "title": title,
+        },
+    }
+
+
 def yield_search_completed(
     count: int | None = None,
     articles: list[dict] | None = None,
@@ -212,7 +274,7 @@ def yield_search_completed(
                 sources_lines.append(f"{i}. [{title_text}]({url})")
             else:
                 sources_lines.append(f"{i}. {title_text}")
-        
+
         if sources_lines:
             content_parts.append("\n\n**Источники / Sources:**")
             content_parts.extend(sources_lines)

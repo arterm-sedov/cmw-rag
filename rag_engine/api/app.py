@@ -267,6 +267,53 @@ def _is_ui_only_message(msg: dict) -> bool:
     return False
 
 
+def _messages_are_equivalent(msg1: dict, msg2: dict) -> bool:
+    """Check if two messages are equivalent (same role and content).
+
+    Used to detect duplicate messages in history.
+
+    Args:
+        msg1: First message dict
+        msg2: Second message dict
+
+    Returns:
+        True if messages are equivalent, False otherwise
+    """
+    if not isinstance(msg1, dict) or not isinstance(msg2, dict):
+        return False
+
+    role1 = msg1.get("role")
+    role2 = msg2.get("role")
+    if role1 != role2:
+        return False
+
+    content1 = msg1.get("content", "")
+    content2 = msg2.get("content", "")
+    
+    # Compare string content
+    if isinstance(content1, str) and isinstance(content2, str):
+        return content1.strip() == content2.strip()
+    
+    # For structured content, compare as strings
+    return str(content1) == str(content2)
+
+
+def _message_exists_in_history(message: dict, history: list[dict]) -> bool:
+    """Check if a message already exists in history.
+
+    Args:
+        message: Message dict to check
+        history: List of message dicts
+
+    Returns:
+        True if message exists in history, False otherwise
+    """
+    for existing_msg in history:
+        if _messages_are_equivalent(message, existing_msg):
+            return True
+    return False
+
+
 def _build_agent_messages_from_gradio_history(
     gradio_history: list[dict],
     current_message: str,
@@ -294,6 +341,8 @@ def _build_agent_messages_from_gradio_history(
     # - Search started/completed metadata
     # - Model switch notices
     # - The current user message (we'll add it wrapped below)
+    from rag_engine.utils.message_utils import normalize_gradio_history_message
+
     for msg in gradio_history:
         # Skip UI-only messages
         if _is_ui_only_message(msg):
@@ -305,8 +354,10 @@ def _build_agent_messages_from_gradio_history(
         if msg_role == "user" and isinstance(msg_content, str) and msg_content.strip() == current_message.strip():
             continue
 
+        # Normalize message for LangChain (convert structured content to string)
+        normalized_msg = normalize_gradio_history_message(msg)
         # Include actual conversation messages
-        messages.append(msg)
+        messages.append(normalized_msg)
 
     # Add wrapped current message for agent
     messages.append({"role": "user", "content": wrapped_message})
@@ -371,21 +422,25 @@ def agent_chat_handler(
 
     # Build full message history starting from provided history
     # This ensures all messages (disclaimer, thinking blocks, answer) persist during streaming
-    from rag_engine.utils.message_utils import normalize_gradio_history_message
+    # Note: We keep original format for ChatInterface, normalize only when needed for agent
 
     # Initialize variables that might be needed in error handling
     current_model = settings.default_model
     messages = []
     tool_results = []
 
-    # Start with normalized history
-    gradio_history = []
-    for msg in history:
-        normalized_msg = normalize_gradio_history_message(msg)
-        gradio_history.append(normalized_msg)
+    # Start with history as-is (ChatInterface manages it)
+    # Keep original format to avoid ChatInterface treating them as new messages
+    # We'll normalize only when needed for agent processing
+    # IMPORTANT: We yield the full history for streaming robustness (especially with vLLM)
+    # ChatInterface should replace its internal history when it receives a full list
+    gradio_history = list(history) if history else []
 
-    # Add user message to history
-    gradio_history.append({"role": "user", "content": message})
+    # Add user message to history if not already present
+    # Use robust duplicate detection to avoid adding messages that already exist
+    user_msg = {"role": "user", "content": message}
+    if not _message_exists_in_history(user_msg, gradio_history):
+        gradio_history.append(user_msg)
 
     # Stream AI-generated content disclaimer as a persistent assistant message
     # so it stays above tool-call progress/thinking chunks in the Chatbot UI.
@@ -403,11 +458,16 @@ def agent_chat_handler(
 
     # Add disclaimer to history only if it doesn't exist yet
     if not disclaimer_exists:
-        gradio_history.append({
+        disclaimer_msg = {
             "role": "assistant",
             "content": AI_DISCLAIMER,
-        })
-        yield gradio_history.copy()
+        }
+        # Double-check it doesn't exist (robust duplicate prevention)
+        if not _message_exists_in_history(disclaimer_msg, gradio_history):
+            gradio_history.append(disclaimer_msg)
+            # Yield full history - ChatInterface will replace its internal history
+            # This is necessary for streaming robustness, especially with vLLM
+            yield gradio_history.copy()
 
     # Show "search started" immediately with user's message (before LLM tool call)
     # This provides instant feedback. We'll update it with LLM-generated query when available.
@@ -416,8 +476,20 @@ def agent_chat_handler(
     # Use user's message as initial query (will be updated when tool call is detected)
     initial_query = message.strip() if message else ""
     search_started_msg = yield_search_started(initial_query)
-    gradio_history.append(search_started_msg)
-    yield gradio_history.copy()
+    # Add search_started message for this turn
+    # Note: LLM can call tools multiple times, so we may need multiple search_started messages
+    # The duplicate check only prevents adding the exact same search_started message (same query)
+    # multiple times in quick succession, not legitimate multiple search_started for different tool calls
+    # Check only the last few messages to avoid adding exact duplicate within same turn
+    recent_messages = gradio_history[-2:] if len(gradio_history) >= 2 else gradio_history
+    if not _message_exists_in_history(search_started_msg, recent_messages):
+        gradio_history.append(search_started_msg)
+        # Yield full history - ChatInterface will replace its internal history
+        # This is necessary for streaming robustness, especially with vLLM
+        # Full history ensures all messages (disclaimer, thinking blocks, answer) persist during streaming
+        # When we yield the full history, ChatInterface replaces its internal state,
+        # ensuring all previous messages and thinking blocks remain visible
+        yield gradio_history.copy()
 
     # Session management (reuse existing pattern)
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
@@ -690,16 +762,27 @@ def agent_chat_handler(
                                     logger.info("Final tool_calls after finish_reason: %s call(s)",
                                                len(final_tool_calls) if isinstance(final_tool_calls, list) else "?")
 
-                            # Update existing "search started" message with LLM-generated query
-                            # Use accumulator to handle streaming chunks properly
-                            from rag_engine.api.stream_helpers import update_search_started_in_history
-
-                            tool_query = tool_call_accumulator.process_token(token)
-                            # If we got a query from tool call, update the existing search_started message
-                            if tool_query:
-                                if update_search_started_in_history(gradio_history, tool_query):
+                            # Get tool name to determine which thinking block to show
+                            tool_name = tool_call_accumulator.get_tool_name(token)
+                            
+                            if tool_name == "retrieve_context":
+                                # Update existing "search started" message with LLM-generated query
+                                from rag_engine.api.stream_helpers import update_search_started_in_history
+                                tool_query = tool_call_accumulator.process_token(token)
+                                # If we got a query from tool call, update the existing search_started message
+                                if tool_query:
+                                    if update_search_started_in_history(gradio_history, tool_query):
+                                        yield gradio_history.copy()
+                                # If no query extracted yet, keep the existing message with user's query
+                            elif tool_name:
+                                # Show generic thinking block for non-search tools
+                                from rag_engine.api.stream_helpers import yield_thinking_block
+                                thinking_msg = yield_thinking_block(tool_name)
+                                # Check if we already added a thinking block for this tool in recent messages
+                                recent_messages = gradio_history[-3:] if len(gradio_history) >= 3 else gradio_history
+                                if not _message_exists_in_history(thinking_msg, recent_messages):
+                                    gradio_history.append(thinking_msg)
                                     yield gradio_history.copy()
-                            # If no query extracted yet, keep the existing message with user's query
                         # Skip displaying the tool call itself and any content
                         continue
 
@@ -719,15 +802,26 @@ def agent_chat_handler(
                                     tool_executing = True
                                     logger.debug("Agent calling tool via chunk")
 
-                                    # Update existing "search started" message with LLM-generated query
-                                    # Use accumulator to handle streaming chunks properly
-                                    from rag_engine.api.stream_helpers import update_search_started_in_history
-
-                                    tool_query = tool_call_accumulator.process_token(token)
-                                    if tool_query:
-                                        if update_search_started_in_history(gradio_history, tool_query):
+                                    # Get tool name to determine which thinking block to show
+                                    tool_name = tool_call_accumulator.get_tool_name(token)
+                                    
+                                    if tool_name == "retrieve_context":
+                                        # Update existing "search started" message with LLM-generated query
+                                        from rag_engine.api.stream_helpers import update_search_started_in_history
+                                        tool_query = tool_call_accumulator.process_token(token)
+                                        if tool_query:
+                                            if update_search_started_in_history(gradio_history, tool_query):
+                                                yield gradio_history.copy()
+                                        # If no query extracted yet, keep the existing message with user's query
+                                    elif tool_name:
+                                        # Show generic thinking block for non-search tools
+                                        from rag_engine.api.stream_helpers import yield_thinking_block
+                                        thinking_msg = yield_thinking_block(tool_name)
+                                        # Check if we already added a thinking block for this tool in recent messages
+                                        recent_messages = gradio_history[-3:] if len(gradio_history) >= 3 else gradio_history
+                                        if not _message_exists_in_history(thinking_msg, recent_messages):
+                                            gradio_history.append(thinking_msg)
                                             yield gradio_history.copy()
-                                    # If no query extracted yet, keep the existing message with user's query
                                 # Never stream tool call chunks as text
                                 continue
 
