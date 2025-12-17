@@ -389,14 +389,25 @@ def agent_chat_handler(
 
     # Stream AI-generated content disclaimer as a persistent assistant message
     # so it stays above tool-call progress/thinking chunks in the Chatbot UI.
+    # Only add it once per conversation (check if it already exists in history)
     from rag_engine.llm.prompts import AI_DISCLAIMER
 
-    # Add disclaimer to history and yield full history
-    gradio_history.append({
-        "role": "assistant",
-        "content": AI_DISCLAIMER,
-    })
-    yield gradio_history.copy()
+    # Check if disclaimer already exists in history
+    disclaimer_exists = False
+    for msg in gradio_history:
+        if isinstance(msg, dict):
+            content = msg.get("content", "")
+            if isinstance(content, str) and AI_DISCLAIMER.strip() in content:
+                disclaimer_exists = True
+                break
+
+    # Add disclaimer to history only if it doesn't exist yet
+    if not disclaimer_exists:
+        gradio_history.append({
+            "role": "assistant",
+            "content": AI_DISCLAIMER,
+        })
+        yield gradio_history.copy()
 
     # Show "search started" immediately with user's message (before LLM tool call)
     # This provides instant feedback. We'll update it with LLM-generated query when available.
