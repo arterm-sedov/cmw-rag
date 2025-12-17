@@ -117,12 +117,6 @@ def execute_fallback_invoke(
 
     # Process answer with disclaimer if needed
     if final_answer:
-        from rag_engine.llm.prompts import AI_DISCLAIMER
-
-        if not has_seen_tool_results and tool_results:
-            final_answer = AI_DISCLAIMER + final_answer
-            disclaimer_prepended = True
-
         # Yield answer (simulate streaming by yielding in chunks for UX)
         chunk_size = 50  # Characters per chunk for simulated streaming
         for i in range(0, len(final_answer), chunk_size):

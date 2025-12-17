@@ -243,8 +243,7 @@ def _process_text_chunk_for_streaming(
 ) -> tuple[str, bool]:
     """Process a text chunk for streaming with disclaimer and formatting.
 
-    Prepends disclaimer to first chunk, handles newline after tool results,
-    and accumulates the answer.
+    Handles optional newline after tool results and accumulates the answer.
 
     Args:
         text_chunk: Raw text chunk from agent
@@ -255,11 +254,8 @@ def _process_text_chunk_for_streaming(
     Returns:
         Tuple of (updated_answer, updated_disclaimer_prepended)
     """
-    from rag_engine.llm.prompts import AI_DISCLAIMER
-
-    # Prepend disclaimer to first text chunk
+    # Mark that we started streaming answer text
     if not disclaimer_prepended:
-        text_chunk = AI_DISCLAIMER + text_chunk
         disclaimer_prepended = True
     # Prepend newline before first text chunk after tool results
     elif has_seen_tool_results and not answer:
@@ -292,6 +288,15 @@ def agent_chat_handler(
     if not message or not message.strip():
         yield "Пожалуйста, введите вопрос / Please enter a question."
         return
+
+    # Stream AI-generated content disclaimer as a persistent assistant message
+    # so it stays above tool-call progress/thinking chunks in the Chatbot UI.
+    from rag_engine.llm.prompts import AI_DISCLAIMER
+
+    yield {
+        "role": "assistant",
+        "content": AI_DISCLAIMER,
+    }
 
     # Session management (reuse existing pattern)
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
@@ -530,7 +535,7 @@ def agent_chat_handler(
                             # Yield metadata message to Gradio
                             from rag_engine.api.stream_helpers import yield_search_started
 
-                            yield yield_search_started()
+                            yield yield_search_started(message)
                         # Skip displaying the tool call itself and any content
                         continue
 
@@ -649,11 +654,8 @@ def agent_chat_handler(
             logger.info("Agent completed with %d articles", len(articles))
 
         # Save conversation turn (reuse existing pattern)
-        # Strip disclaimer from memory - it's only for display in stream
         if session_id:
-            from rag_engine.llm.prompts import AI_DISCLAIMER
-            text_for_memory = final_text.removeprefix(AI_DISCLAIMER)
-            llm_manager.save_assistant_turn(session_id, text_for_memory)
+            llm_manager.save_assistant_turn(session_id, final_text)
 
         yield final_text
 
@@ -760,10 +762,7 @@ def agent_chat_handler(
                         final_text = format_with_citations(answer, articles)
 
                     if session_id:
-                        # Strip disclaimer from memory - it's only for display in stream
-                        from rag_engine.llm.prompts import AI_DISCLAIMER
-                        text_for_memory = final_text.removeprefix(AI_DISCLAIMER)
-                        llm_manager.save_assistant_turn(session_id, text_for_memory)
+                        llm_manager.save_assistant_turn(session_id, final_text)
                     yield final_text
                     return
             except Exception as retry_exc:  # If fallback retry fails, emit original-style error

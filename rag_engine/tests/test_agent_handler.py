@@ -419,13 +419,18 @@ class TestAgentChatHandler:
         tool_results_arg = mock_accumulate.call_args[0][0]
         assert len(tool_results_arg) == 1
 
-        # Verify citations were formatted (answer includes disclaimer from streaming)
-        from rag_engine.llm.prompts import AI_DISCLAIMER
-        expected_answer = AI_DISCLAIMER + "Based on the search results, here is the answer."
+        # Verify citations were formatted (answer excludes disclaimer, which is streamed separately)
+        expected_answer = "Based on the search results, here is the answer."
         mock_format.assert_called_once_with(
             expected_answer,
             [mock_article]
         )
+
+        # First streamed chunk should be the AI disclaimer message dict
+        from rag_engine.llm.prompts import AI_DISCLAIMER
+        assert isinstance(result[0], dict)
+        assert result[0]["role"] == "assistant"
+        assert result[0]["content"] == AI_DISCLAIMER
 
         # Verify conversation was saved (both user and assistant turns)
         # User message saved before agent execution
@@ -489,10 +494,13 @@ class TestAgentChatHandler:
 
         # Verify no citations added when no articles
         assert len(result) >= 1
-        # Last result should be the final answer with disclaimer (no citations)
+        # First chunk is disclaimer message dict
         from rag_engine.llm.prompts import AI_DISCLAIMER
-        expected_answer = AI_DISCLAIMER + "I couldn't find relevant information."
-        assert result[-1] == expected_answer
+        assert isinstance(result[0], dict)
+        assert result[0]["role"] == "assistant"
+        assert result[0]["content"] == AI_DISCLAIMER
+        # Final chunk is plain answer text
+        assert result[-1] == "I couldn't find relevant information."
 
     @patch("rag_engine.api.app._create_rag_agent")
     @patch("rag_engine.api.app.salt_session_id")
@@ -512,10 +520,17 @@ class TestAgentChatHandler:
         # Execute handler
         result = list(agent_chat_handler("test question", [], None))
 
-        # Verify error message is returned
-        assert len(result) == 1
-        assert "Извините" in result[0] or "Sorry" in result[0]
-        assert "error" in result[0].lower()
+        # Verify disclaimer and error message are returned
+        assert len(result) == 2
+        # First chunk is disclaimer message dict
+        from rag_engine.llm.prompts import AI_DISCLAIMER
+        assert isinstance(result[0], dict)
+        assert result[0]["role"] == "assistant"
+        assert result[0]["content"] == AI_DISCLAIMER
+        # Second chunk is the error message
+        error_msg = result[1]
+        assert "Извините" in error_msg or "Sorry" in error_msg
+        assert "error" in error_msg.lower()
 
     @patch("rag_engine.api.app._create_rag_agent")
     @patch("rag_engine.api.app.salt_session_id")
