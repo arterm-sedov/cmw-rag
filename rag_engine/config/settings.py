@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     # Embedded widget mode: if True, uses smaller heights suitable for embedded widget.
     # If False, uses larger heights suitable for standalone app.
     gradio_embedded_widget: bool = False
+    # Queue configuration: concurrency limit for all event listeners
+    # Per Gradio docs: https://www.gradio.app/guides/queuing
+    gradio_default_concurrency_limit: int = 3
 
     # Agent Mode
     # If True, uses LangChain agent-based handler with tool calling
