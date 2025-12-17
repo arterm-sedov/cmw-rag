@@ -74,9 +74,7 @@ def execute_fallback_invoke(
         Results are also stored in result_container if provided.
     """
     logger.info("Falling back to invoke() mode for tool execution")
-    from rag_engine.api.stream_helpers import yield_search_started
-
-    yield yield_search_started()
+    from rag_engine.api.stream_helpers import ToolCallAccumulator, yield_search_started
 
     # Invoke agent - this will execute tool calls and get final answer
     result = agent.invoke({"messages": messages}, context=agent_context)
@@ -86,6 +84,24 @@ def execute_fallback_invoke(
     tool_results = []
     final_answer = ""
     disclaimer_prepended = False
+
+    # Extract query from tool calls in result messages (LLM-generated query)
+    # Use accumulator helper for consistent extraction logic
+    tool_query = None
+    for msg in result_messages:
+        # Look for AI messages with tool_calls to extract the query
+        if hasattr(msg, "type") and msg.type == "ai":
+            tool_calls = getattr(msg, "tool_calls", None)
+            if tool_calls:
+                for tool_call in tool_calls:
+                    tool_query = ToolCallAccumulator.extract_query_from_complete_tool_call(tool_call)
+                    if tool_query:
+                        break
+                if tool_query:
+                    break
+
+    # Yield search started with tool query (LLM-generated)
+    yield yield_search_started(tool_query)
 
     for msg in result_messages:
         # Check for tool results
@@ -97,14 +113,29 @@ def execute_fallback_invoke(
             _, accumulated_tool_tokens = estimate_accumulated_tokens([], tool_results)
             agent_context.accumulated_tool_tokens = accumulated_tool_tokens
 
-            # Emit completion metadata
+            # Emit completion metadata with sources
             from rag_engine.api.stream_helpers import (
                 extract_article_count_from_tool_result,
                 yield_search_completed,
             )
+            from rag_engine.tools.utils import parse_tool_result_to_articles
 
-            articles_count = extract_article_count_from_tool_result(msg.content)
-            yield yield_search_completed(articles_count)
+            articles_list = parse_tool_result_to_articles(msg.content)
+            articles_count = len(articles_list) if articles_list else extract_article_count_from_tool_result(msg.content)
+
+            # Format articles for display (title and URL)
+            articles_for_display = []
+            if articles_list:
+                for article in articles_list:
+                    article_meta = article.metadata if hasattr(article, "metadata") else {}
+                    title = article_meta.get("title", "Untitled")
+                    url = article_meta.get("url", "")
+                    articles_for_display.append({"title": title, "url": url})
+
+            yield yield_search_completed(
+                count=articles_count,
+                articles=articles_for_display if articles_for_display else None,
+            )
 
         # Extract final answer from AI message (last AI message without tool_calls)
         elif hasattr(msg, "type") and msg.type == "ai":
