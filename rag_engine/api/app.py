@@ -236,6 +236,84 @@ def _create_rag_agent(override_model: str | None = None):
     )
 
 
+def _is_ui_only_message(msg: dict) -> bool:
+    """Check if a message is UI-only (should not be sent to agent).
+
+    UI-only messages include:
+    - Disclaimer messages
+    - Search started/completed metadata messages
+    - Model switch notices
+    - Any message with metadata field (UI metadata)
+
+    Args:
+        msg: Message dict to check
+
+    Returns:
+        True if message is UI-only, False otherwise
+    """
+    if not isinstance(msg, dict):
+        return False
+
+    # Check for metadata field (UI-only messages have this)
+    if "metadata" in msg:
+        return True
+
+    # Check for disclaimer content
+    from rag_engine.llm.prompts import AI_DISCLAIMER
+    content = msg.get("content", "")
+    if isinstance(content, str) and AI_DISCLAIMER.strip() in content:
+        return True
+
+    return False
+
+
+def _build_agent_messages_from_gradio_history(
+    gradio_history: list[dict],
+    current_message: str,
+    wrapped_message: str,
+) -> list[dict]:
+    """Build messages for agent from Gradio history, filtering out UI-only messages.
+
+    Filters gradio_history to exclude UI metadata messages (disclaimer, search_started, etc.)
+    and builds a clean message list for the agent. This ensures the agent only sees
+    actual conversation content, not UI elements.
+
+    Args:
+        gradio_history: Full Gradio history including UI messages
+        current_message: Current user message (unwrapped, for filtering)
+        wrapped_message: Current user message wrapped with template (for agent)
+
+    Returns:
+        List of message dicts in LangChain format for agent
+    """
+    messages = []
+
+    # Filter gradio_history to exclude UI-only messages
+    # We need to include previous conversation messages but exclude:
+    # - Disclaimer messages
+    # - Search started/completed metadata
+    # - Model switch notices
+    # - The current user message (we'll add it wrapped below)
+    for msg in gradio_history:
+        # Skip UI-only messages
+        if _is_ui_only_message(msg):
+            continue
+
+        # Skip the current user message (we'll add wrapped version below)
+        msg_role = msg.get("role")
+        msg_content = msg.get("content", "")
+        if msg_role == "user" and isinstance(msg_content, str) and msg_content.strip() == current_message.strip():
+            continue
+
+        # Include actual conversation messages
+        messages.append(msg)
+
+    # Add wrapped current message for agent
+    messages.append({"role": "user", "content": wrapped_message})
+
+    return messages
+
+
 def _process_text_chunk_for_streaming(
     text_chunk: str,
     answer: str,
@@ -353,13 +431,12 @@ def agent_chat_handler(
     if session_id:
         llm_manager._conversations.append(session_id, "user", message)
 
-    # Build messages from history for agent (LangChain format)
-    # Use normalized history we already built, but need to add wrapped message for agent
-    messages = []
-    for msg in gradio_history[:-1]:  # All except the last (disclaimer we just added)
-        messages.append(msg)
-    # Add wrapped user message for agent (different from what we show in UI)
-    messages.append({"role": "user", "content": wrapped_message})
+    # Build messages from gradio_history for agent (LangChain format)
+    # This filters out UI-only messages (disclaimer, search_started, etc.)
+    # and ensures the agent only sees actual conversation content
+    messages = _build_agent_messages_from_gradio_history(
+        gradio_history, message, wrapped_message
+    )
 
     # Note: pre-agent trimming removed by request; rely on existing middleware
 
