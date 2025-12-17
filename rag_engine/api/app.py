@@ -289,11 +289,11 @@ def _messages_are_equivalent(msg1: dict, msg2: dict) -> bool:
 
     content1 = msg1.get("content", "")
     content2 = msg2.get("content", "")
-    
+
     # Compare string content
     if isinstance(content1, str) and isinstance(content2, str):
         return content1.strip() == content2.strip()
-    
+
     # For structured content, compare as strings
     return str(content1) == str(content2)
 
@@ -756,7 +756,7 @@ def agent_chat_handler(
 
                             # Get tool name to determine which thinking block to show
                             tool_name = tool_call_accumulator.get_tool_name(token)
-                            
+
                             if tool_name == "retrieve_context":
                                 # Update existing "search started" message with LLM-generated query
                                 from rag_engine.api.stream_helpers import update_search_started_in_history
@@ -794,7 +794,7 @@ def agent_chat_handler(
 
                                     # Get tool name to determine which thinking block to show
                                     tool_name = tool_call_accumulator.get_tool_name(token)
-                                    
+
                                     if tool_name == "retrieve_context":
                                         # Update existing "search started" message with LLM-generated query
                                         from rag_engine.api.stream_helpers import update_search_started_in_history
@@ -845,7 +845,7 @@ def agent_chat_handler(
                             elif token_content != answer:
                                 # Incremental chunk - use as-is (typical case)
                                 new_chunk = token_content
-                            
+
                             if new_chunk:
                                 answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                     new_chunk, answer, disclaimer_prepended, has_seen_tool_results
@@ -1328,7 +1328,7 @@ with gr.Blocks(
     # Header (like reference agent)
     if chat_title:
         gr.Markdown(f"# {chat_title}", elem_classes=["hero-title"])
-    
+
     # Chatbot component (like reference agent - NOT ChatInterface)
     # In Gradio 6, Chatbot uses messages format by default (no type parameter needed)
     # Conditional sizing: embedded widget uses fixed height and follows container, standalone is resizable
@@ -1343,7 +1343,7 @@ with gr.Blocks(
         elem_classes=["chatbot-card"],
         resizable=not settings.gradio_embedded_widget,  # Resizable only in standalone mode, not embedded
     )
-    
+
     # Message input (regular Textbox, NOT MultimodalTextbox)
     # Small built-in submit and stop buttons (icons) in the Textbox
     msg = gr.Textbox(
@@ -1357,25 +1357,32 @@ with gr.Blocks(
         submit_btn=True,  # Small built-in submit icon button
         stop_btn=True,  # Small built-in stop icon button (cancels submit events)
     )
-    
+
     # Connect events (like reference agent)
     # Submit button (built into Textbox) - triggers on Enter key or submit button click
     # Configure concurrency limit per Gradio queuing best practices
     # https://www.gradio.app/guides/queuing
+    # Hide from MCP API using api_visibility="private" to prevent auto-exposure
     submit_event = msg.submit(
         fn=handler_fn,
         inputs=[msg, chatbot],
         outputs=[chatbot],
         concurrency_limit=settings.gradio_default_concurrency_limit,
+        api_visibility="private",  # Hide agent_chat_handler from MCP tools
     ).then(
         lambda: "",  # Clear message input
         outputs=[msg],
+        api_visibility="private",  # Hide lambda function from MCP tools
     )
-    
+
     # Stop button (built into Textbox with stop_btn=True) automatically cancels submit_event
     # When stop_btn=True is set, Gradio automatically wires it to cancel the submit event
     # This matches the reference agent pattern: cancels=[streaming_event, submit_event]
     # The stop button will cancel any running agent generation when clicked
+
+    # Explicitly expose MCP tools (public by default when using gr.api())
+    # All other functions (agent_chat_handler, lambda, etc.) are set to private above
+    # Functions exposed via gr.api() are automatically public and visible in MCP
     gr.api(
         fn=get_knowledge_base_articles,
         api_name="get_knowledge_base_articles",
