@@ -699,6 +699,7 @@ def agent_chat_handler(
                         continue
 
                     # Process content blocks for final answer text streaming
+                    text_chunk_found = False
                     if hasattr(token, "content_blocks") and token.content_blocks:
                         for block in token.content_blocks:
                             if block.get("type") == "tool_call_chunk":
@@ -735,6 +736,35 @@ def agent_chat_handler(
                                         # Create new answer message
                                         gradio_history.append({"role": "assistant", "content": answer})
                                     yield gradio_history.copy()
+                                    text_chunk_found = True
+
+                    # Fallback: If no text found in content_blocks, check token.content directly
+                    # This handles vLLM and other providers that provide text directly in token.content
+                    # LangChain streaming provides incremental chunks (tested and confirmed)
+                    if not text_chunk_found and is_ai_message and not tool_executing:
+                        token_content = str(getattr(token, "content", ""))
+                        if token_content:
+                            # LangChain streaming provides incremental chunks, but handle both cases for robustness
+                            new_chunk = None
+                            if answer and token_content.startswith(answer):
+                                # Cumulative content - extract only the new part
+                                new_chunk = token_content[len(answer):]
+                            elif token_content != answer:
+                                # Incremental chunk - use as-is (typical case)
+                                new_chunk = token_content
+                            
+                            if new_chunk:
+                                answer, disclaimer_prepended = _process_text_chunk_for_streaming(
+                                    new_chunk, answer, disclaimer_prepended, has_seen_tool_results
+                                )
+                                # Update last message (answer) in history and yield full history
+                                if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
+                                    # Update existing answer message
+                                    gradio_history[-1] = {"role": "assistant", "content": answer}
+                                else:
+                                    # Create new answer message
+                                    gradio_history.append({"role": "assistant", "content": answer})
+                                yield gradio_history.copy()
 
                 # Handle "updates" mode for agent state updates
                 elif stream_mode == "updates":
