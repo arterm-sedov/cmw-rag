@@ -4,26 +4,37 @@ from __future__ import annotations
 import json
 import logging
 
+from rag_engine.api.i18n import get_text
+
 logger = logging.getLogger(__name__)
 
 
-def yield_search_started() -> dict:
+def yield_search_started(query: str | None = None) -> dict:
     """Yield metadata message for search started.
 
+    Args:
+        query: Optional user query being searched, for display in the bubble.
+
     Returns:
-        Gradio message dict with metadata for search started
+        Gradio message dict with metadata for search started.
+        Content and title are resolved i18n strings (never i18n metadata objects).
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_search_started
         >>> msg = yield_search_started()
-        >>> "Searching" in msg["metadata"]["title"]
+        >>> "Searching" in msg["metadata"]["title"] or "Поиск" in msg["metadata"]["title"]
         True
     """
+    # Resolve i18n translations to plain strings before yielding
+    # This ensures Chatbot receives strings, not __i18n__ metadata objects
+    title = get_text("search_started_title")
+    content = get_text("search_started_content", query=(query or "").strip())
+
     return {
         "role": "assistant",
-        "content": "",
+        "content": content,
         "metadata": {
-            "title": "🔍 Поиск информации в базе знаний",
+            "title": title,
         },
     }
 
@@ -32,25 +43,28 @@ def yield_search_completed(count: int | None = None) -> dict:
     """Yield metadata message for search completed.
 
     Args:
-        count: Optional article count to include in message
+        count: Optional article count to include in message.
 
     Returns:
-        Gradio message dict with metadata for search completed
+        Gradio message dict with metadata for search completed.
+        Content and title are resolved i18n strings (never i18n metadata objects).
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_search_completed
         >>> msg = yield_search_completed(5)
-        >>> "Found 5" in msg["metadata"]["title"]
+        >>> "Found" in msg["metadata"]["title"] or "завершен" in msg["metadata"]["title"]
         True
     """
-    if count is not None:
-        title = f"✅ Найдено статей: {count}"
-    else:
-        title = "✅ Поиск завершен"
+    # Resolve i18n translations to plain strings
+    title = get_text("search_completed_title_with_count")
+    content = get_text(
+        "search_completed_content_with_count",
+        count=count if count is not None else 0,
+    )
 
     return {
         "role": "assistant",
-        "content": "",
+        "content": content,
         "metadata": {"title": title},
     }
 
