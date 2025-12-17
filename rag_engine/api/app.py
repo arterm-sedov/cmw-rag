@@ -269,7 +269,7 @@ def agent_chat_handler(
     message: str,
     history: list[dict],
     request: gr.Request | None = None,
-) -> Generator[str, None, None]:
+) -> Generator[str | dict | list[dict], None, None]:
     """Ask questions about Comindware Platform documentation and get intelligent answers with citations.
 
     The assistant automatically searches the knowledge base to find relevant articles
@@ -283,20 +283,51 @@ def agent_chat_handler(
         request: Gradio request object for session management
 
     Yields:
-        Streaming response with citations
+        Complete message history lists (for ChatInterface) to preserve all messages
+        including disclaimer, thinking blocks, and streaming answer.
     """
     if not message or not message.strip():
         yield "Пожалуйста, введите вопрос / Please enter a question."
         return
 
+    # Build full message history starting from provided history
+    # This ensures all messages (disclaimer, thinking blocks, answer) persist during streaming
+    from rag_engine.utils.message_utils import normalize_gradio_history_message
+
+    # Initialize variables that might be needed in error handling
+    current_model = settings.default_model
+    messages = []
+    tool_results = []
+
+    # Start with normalized history
+    gradio_history = []
+    for msg in history:
+        normalized_msg = normalize_gradio_history_message(msg)
+        gradio_history.append(normalized_msg)
+
+    # Add user message to history
+    gradio_history.append({"role": "user", "content": message})
+
     # Stream AI-generated content disclaimer as a persistent assistant message
     # so it stays above tool-call progress/thinking chunks in the Chatbot UI.
     from rag_engine.llm.prompts import AI_DISCLAIMER
 
-    yield {
+    # Add disclaimer to history and yield full history
+    gradio_history.append({
         "role": "assistant",
         "content": AI_DISCLAIMER,
-    }
+    })
+    yield gradio_history.copy()
+
+    # Show "search started" immediately with user's message (before LLM tool call)
+    # This provides instant feedback. We'll update it with LLM-generated query when available.
+    from rag_engine.api.stream_helpers import yield_search_started
+
+    # Use user's message as initial query (will be updated when tool call is detected)
+    initial_query = message.strip() if message else ""
+    search_started_msg = yield_search_started(initial_query)
+    gradio_history.append(search_started_msg)
+    yield gradio_history.copy()
 
     # Session management (reuse existing pattern)
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
@@ -321,14 +352,12 @@ def agent_chat_handler(
     if session_id:
         llm_manager._conversations.append(session_id, "user", message)
 
-    # Build messages from history for agent
-    # Normalize Gradio structured content format to LangChain-compatible format
-    from rag_engine.utils.message_utils import normalize_gradio_history_message
-
+    # Build messages from history for agent (LangChain format)
+    # Use normalized history we already built, but need to add wrapped message for agent
     messages = []
-    for msg in history:
-        normalized_msg = normalize_gradio_history_message(msg)
-        messages.append(normalized_msg)
+    for msg in gradio_history[:-1]:  # All except the last (disclaimer we just added)
+        messages.append(msg)
+    # Add wrapped user message for agent (different from what we show in UI)
     messages.append({"role": "user", "content": wrapped_message})
 
     # Note: pre-agent trimming removed by request; rely on existing middleware
@@ -350,6 +379,11 @@ def agent_chat_handler(
     # Track accumulated context for progressive budgeting
     # Agent is responsible for counting context, not the tool
     conversation_tokens, _ = estimate_accumulated_tokens(messages, [])
+
+    # Initialize tool call accumulator for streaming chunks
+    from rag_engine.api.stream_helpers import ToolCallAccumulator
+
+    tool_call_accumulator = ToolCallAccumulator()
 
     try:
         # Track tool execution state
@@ -398,6 +432,18 @@ def agent_chat_handler(
                     # Check for both "ai" type and AIMessageChunk class (LangChain uses different representations)
                     token_class = type(token).__name__
                     is_ai_message = token_type == "ai" or "AIMessage" in token_class or "AIMessage" in str(token_type)
+
+                    # Process all AI tokens through accumulator to accumulate tool_call chunks
+                    # This ensures we capture query even if chunks arrive before tool_call is detected
+                    if is_ai_message:
+                        tool_query_from_accumulator = tool_call_accumulator.process_token(token)
+                        # If accumulator found a complete query, update search_started message
+                        if tool_query_from_accumulator:
+                            from rag_engine.api.stream_helpers import update_search_started_in_history
+
+                            if update_search_started_in_history(gradio_history, tool_query_from_accumulator):
+                                yield gradio_history.copy()
+
                     if is_ai_message:
                         has_tool_calls = bool(getattr(token, "tool_calls", None))
                         content = str(getattr(token, "content", ""))
@@ -457,14 +503,34 @@ def agent_chat_handler(
                             conversation_tokens + accumulated_tool_tokens,
                         )
 
-                        # Parse result to get article count and emit completion metadata
+                        # Parse result to get articles and emit completion metadata with sources
                         from rag_engine.api.stream_helpers import (
                             extract_article_count_from_tool_result,
                             yield_search_completed,
                         )
 
-                        articles_count = extract_article_count_from_tool_result(token.content)
-                        yield yield_search_completed(articles_count)
+                        # Parse result to get articles and emit completion metadata with sources
+                        from rag_engine.tools.utils import parse_tool_result_to_articles
+
+                        articles_list = parse_tool_result_to_articles(token.content)
+                        articles_count = len(articles_list) if articles_list else extract_article_count_from_tool_result(token.content)
+
+                        # Format articles for display (title and URL)
+                        articles_for_display = []
+                        if articles_list:
+                            for article in articles_list:
+                                article_meta = article.metadata if hasattr(article, "metadata") else {}
+                                title = article_meta.get("title", "Untitled")
+                                url = article_meta.get("url", "")
+                                articles_for_display.append({"title": title, "url": url})
+
+                        search_completed_msg = yield_search_completed(
+                            count=articles_count,
+                            articles=articles_for_display if articles_for_display else None,
+                        )
+                        # Add search completed to history and yield full history
+                        gradio_history.append(search_completed_msg)
+                        yield gradio_history.copy()
 
                         # CRITICAL: Check if accumulated tool results exceed safe threshold
                         # This prevents overflow when agent makes multiple tool calls
@@ -482,7 +548,10 @@ def agent_chat_handler(
                             if fallback_model:
                                 from rag_engine.api.stream_helpers import yield_model_switch_notice
 
-                                yield yield_model_switch_notice(fallback_model)
+                                model_switch_msg = yield_model_switch_notice(fallback_model)
+                                # Add model switch notice to history and yield full history
+                                gradio_history.append(model_switch_msg)
+                                yield gradio_history.copy()
 
                                 # Recreate agent with larger model
                                 # Note: This is expensive but prevents catastrophic overflow
@@ -532,10 +601,16 @@ def agent_chat_handler(
                                     logger.info("Final tool_calls after finish_reason: %s call(s)",
                                                len(final_tool_calls) if isinstance(final_tool_calls, list) else "?")
 
-                            # Yield metadata message to Gradio
-                            from rag_engine.api.stream_helpers import yield_search_started
+                            # Update existing "search started" message with LLM-generated query
+                            # Use accumulator to handle streaming chunks properly
+                            from rag_engine.api.stream_helpers import update_search_started_in_history
 
-                            yield yield_search_started(message)
+                            tool_query = tool_call_accumulator.process_token(token)
+                            # If we got a query from tool call, update the existing search_started message
+                            if tool_query:
+                                if update_search_started_in_history(gradio_history, tool_query):
+                                    yield gradio_history.copy()
+                            # If no query extracted yet, keep the existing message with user's query
                         # Skip displaying the tool call itself and any content
                         continue
 
@@ -553,9 +628,16 @@ def agent_chat_handler(
                                 if not tool_executing:
                                     tool_executing = True
                                     logger.debug("Agent calling tool via chunk")
-                                    from rag_engine.api.stream_helpers import yield_search_started
 
-                                    yield yield_search_started()
+                                    # Update existing "search started" message with LLM-generated query
+                                    # Use accumulator to handle streaming chunks properly
+                                    from rag_engine.api.stream_helpers import update_search_started_in_history
+
+                                    tool_query = tool_call_accumulator.process_token(token)
+                                    if tool_query:
+                                        if update_search_started_in_history(gradio_history, tool_query):
+                                            yield gradio_history.copy()
+                                    # If no query extracted yet, keep the existing message with user's query
                                 # Never stream tool call chunks as text
                                 continue
 
@@ -567,7 +649,14 @@ def agent_chat_handler(
                                     answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                         text_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                     )
-                                    yield answer
+                                    # Update last message (answer) in history and yield full history
+                                    if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
+                                        # Update existing answer message
+                                        gradio_history[-1] = {"role": "assistant", "content": answer}
+                                    else:
+                                        # Create new answer message
+                                        gradio_history.append({"role": "assistant", "content": answer})
+                                    yield gradio_history.copy()
 
                 # Handle "updates" mode for agent state updates
                 elif stream_mode == "updates":
@@ -613,13 +702,20 @@ def agent_chat_handler(
                 has_seen_tool_results=has_seen_tool_results,
                 result_container=fallback_results,
             ):
-                # Yield metadata (dict) or text chunks (str)
+                # Handle metadata (dict) or text chunks (str) and add to history
                 if isinstance(chunk, dict):
                     # Metadata message (search_started, search_completed, etc.)
-                    yield chunk
+                    gradio_history.append(chunk)
+                    yield gradio_history.copy()
                 elif isinstance(chunk, str):
-                    # Text chunk - yield directly
-                    yield chunk
+                    # Text chunk - update last message or create new one
+                    if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
+                        # Update existing answer message
+                        gradio_history[-1] = {"role": "assistant", "content": chunk}
+                    else:
+                        # Create new answer message
+                        gradio_history.append({"role": "assistant", "content": chunk})
+                    yield gradio_history.copy()
 
             # Extract results from container
             if fallback_results:
@@ -653,14 +749,23 @@ def agent_chat_handler(
             final_text = format_with_citations(answer, articles)
             logger.info("Agent completed with %d articles", len(articles))
 
+        # Update last message (answer) with final formatted text and yield full history
+        if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
+            # Update existing answer message
+            gradio_history[-1] = {"role": "assistant", "content": final_text}
+        else:
+            # Create new answer message
+            gradio_history.append({"role": "assistant", "content": final_text})
+
         # Save conversation turn (reuse existing pattern)
         if session_id:
             llm_manager.save_assistant_turn(session_id, final_text)
 
-        yield final_text
+        yield gradio_history.copy()
 
     except Exception as e:
         logger.error("Error in agent_chat_handler: %s", e, exc_info=True)
+        # Variables are initialized at function start, so they should always exist
         # Handle context-length overflow gracefully by switching to a larger model (once)
         err_text = str(e).lower()
         is_context_overflow = (
@@ -670,7 +775,7 @@ def agent_chat_handler(
             or "too many tokens" in err_text
         )
 
-        if settings.llm_fallback_enabled and is_context_overflow:
+        if settings.llm_fallback_enabled and is_context_overflow and messages:
             try:  # Single-shot fallback retry
                 # Estimate required tokens and pick a capable fallback model
                 # Get current model context window for adaptive overhead calculation
@@ -704,7 +809,10 @@ def agent_chat_handler(
                     # Inform UI about the switch
                     from rag_engine.api.stream_helpers import yield_model_switch_notice
 
-                    yield yield_model_switch_notice(fallback_model)
+                    model_switch_msg = yield_model_switch_notice(fallback_model)
+                    # Add model switch notice to history and yield full history
+                    gradio_history.append(model_switch_msg)
+                    yield gradio_history.copy()
 
                     # Recreate agent and re-run the stream once
                     agent = _create_rag_agent(override_model=fallback_model)
@@ -748,7 +856,12 @@ def agent_chat_handler(
                                         answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                             text_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                         )
-                                        yield answer
+                                        # Update last message (answer) in history and yield full history
+                                        if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
+                                            gradio_history[-1] = {"role": "assistant", "content": answer}
+                                        else:
+                                            gradio_history.append({"role": "assistant", "content": answer})
+                                        yield gradio_history.copy()
                         elif stream_mode == "updates":
                             # No-op for UI
                             pass
@@ -761,16 +874,32 @@ def agent_chat_handler(
                     else:
                         final_text = format_with_citations(answer, articles)
 
+                    # Update last message with final formatted text
+                    if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
+                        gradio_history[-1] = {"role": "assistant", "content": final_text}
+                    else:
+                        gradio_history.append({"role": "assistant", "content": final_text})
+
                     if session_id:
                         llm_manager.save_assistant_turn(session_id, final_text)
-                    yield final_text
+                    yield gradio_history.copy()
                     return
             except Exception as retry_exc:  # If fallback retry fails, emit original-style error
                 logger.error("Fallback retry failed: %s", retry_exc, exc_info=True)
 
-        # Default error path
+        # Default error path - add error message to history
         error_msg = f"Извините, произошла ошибка / Sorry, an error occurred: {str(e)}"
-        yield error_msg
+        # gradio_history should always exist (initialized early), but ensure it's not empty
+        if not gradio_history:
+            # Add user message if we have it
+            if message:
+                gradio_history.append({"role": "user", "content": message})
+
+        if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
+            gradio_history[-1] = {"role": "assistant", "content": error_msg}
+        else:
+            gradio_history.append({"role": "assistant", "content": error_msg})
+        yield gradio_history.copy()
 
 
 
@@ -897,17 +1026,29 @@ def ask_comindware(message: str) -> str:
         generator = agent_chat_handler(message=message, history=[], request=None)
 
         # Consume the entire generator to collect all responses
-        # The generator yields: metadata dicts, incremental answer strings, and final formatted text
+        # The generator now yields: full message history lists (for ChatInterface)
+        # Extract the final answer from the last assistant message in the history
         for chunk in generator:
             if chunk is None:
                 continue
 
-            # Handle string responses (incremental answers and final formatted text)
-            if isinstance(chunk, str):
+            # Handle full history lists (new format - preserves all messages)
+            if isinstance(chunk, list):
+                # Extract final answer from last assistant message
+                for msg in reversed(chunk):
+                    if isinstance(msg, dict) and msg.get("role") == "assistant":
+                        content = msg.get("content", "")
+                        # Skip metadata-only messages (thinking blocks)
+                        if content and not msg.get("metadata"):
+                            if content.strip():
+                                last_text_response = content
+                                break
+            # Handle string responses (backward compatibility)
+            elif isinstance(chunk, str):
                 if chunk.strip():  # Only add non-empty strings
                     response_parts.append(chunk)
                     last_text_response = chunk
-            # Handle dict responses (metadata messages like search started/completed)
+            # Handle dict responses (backward compatibility)
             elif isinstance(chunk, dict):
                 # Only extract text content from dicts, skip pure metadata
                 content = chunk.get("content", "")
