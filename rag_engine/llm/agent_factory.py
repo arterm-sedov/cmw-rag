@@ -81,7 +81,10 @@ def create_rag_agent(
     # This ensures the agent always searches the knowledge base
     model_with_tools = base_model.bind_tools(
         [retrieve_context_tool],
-        tool_choice="retrieve_context",
+        tool_choice={
+            "type": "function",
+            "function": {"name": "retrieve_context"},
+        },
     )
 
     # Get messages_to_keep from settings (default 2, matching old handler)
