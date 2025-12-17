@@ -13,6 +13,7 @@ if str(_project_root) not in sys.path:
 import logging
 
 import gradio as gr
+from openai import APIError as OpenAIAPIError
 
 from rag_engine.config.settings import get_allowed_fallback_models, settings  # noqa: F401
 from rag_engine.llm.fallback import check_context_fallback
@@ -673,6 +674,29 @@ def agent_chat_handler(
                 stream_chunk_count=stream_chunk_count,
             )
 
+        except OpenAIAPIError as api_error:
+            # Handle OpenAI API errors (e.g., malformed streaming response)
+            error_msg = str(api_error).lower()
+            is_streaming_error = "list index out of range" in error_msg or "streaming" in error_msg
+
+            if is_streaming_error:
+                # If streaming fails, try falling back to invoke() mode
+                # This can happen with any OpenAI-compatible provider, not just vLLM
+                # Only fallback if we haven't seen tool results yet (first turn)
+                if not has_seen_tool_results:
+                    logger.warning(
+                        "OpenAI API streaming error, falling back to invoke() mode: %s", api_error
+                    )
+                    fallback_to_invoke = True
+                else:
+                    # If we've already seen tool results, streaming error might be in the answer phase
+                    # Re-raise to be handled by outer exception handler
+                    logger.error("OpenAI API error during streaming (after tool execution): %s", api_error, exc_info=True)
+                    raise
+            else:
+                # For other API errors, re-raise to be handled by outer exception handler
+                logger.error("OpenAI API error: %s", api_error, exc_info=True)
+                raise
         except Exception as stream_error:
             # If streaming fails and we expected tool calls, fall back to invoke()
             # Only if fallback is enabled
