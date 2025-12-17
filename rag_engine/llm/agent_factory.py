@@ -46,7 +46,17 @@ def create_rag_agent(
     """
     if retrieve_context_tool is None:
         # Import here to avoid circular dependencies
-        from rag_engine.tools import get_current_datetime, retrieve_context
+        from rag_engine.tools import (
+            add,
+            divide,
+            get_current_datetime,
+            modulus,
+            multiply,
+            power,
+            retrieve_context,
+            square_root,
+            subtract,
+        )
 
         retrieve_context_tool = retrieve_context
 
@@ -80,8 +90,19 @@ def create_rag_agent(
     # CRITICAL: Use tool_choice to force retrieval tool execution
     # This ensures the agent always searches the knowledge base
     # Note: tool_choice only forces retrieve_context, but other tools are available
+    all_tools = [
+        retrieve_context_tool,
+        get_current_datetime,
+        add,
+        subtract,
+        multiply,
+        divide,
+        power,
+        square_root,
+        modulus,
+    ]
     model_with_tools = base_model.bind_tools(
-        [retrieve_context_tool, get_current_datetime],
+        all_tools,
         tool_choice={
             "type": "function",
             "function": {"name": "retrieve_context"},
@@ -120,7 +141,7 @@ def create_rag_agent(
 
     agent = create_agent(
         model=model_with_tools,
-        tools=[retrieve_context_tool, get_current_datetime],
+        tools=all_tools,
         system_prompt=SYSTEM_PROMPT,
         context_schema=AgentContext,  # Typed context for tools
         middleware=middleware_list,
