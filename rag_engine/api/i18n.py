@@ -19,13 +19,17 @@ i18n = gr.I18n(
         "search_started_content": "Searching for: {query}",
         "search_completed_title_with_count": "✅ Search completed",
         "search_completed_content_with_count": "Found articles: {count}.",
+        "thinking_title": "🧠 Thinking",
+        "thinking_content": "Using tool: {tool_name}",
     },
     ru={
         "language": "ru",
         "search_started_title": "🧠 Поиск информации в базе знаний",
-        "search_started_content": "Ищем: {query}",
+        "search_started_content": "Ищу: {query}",
         "search_completed_title_with_count": "✅ Поиск завершен",
         "search_completed_content_with_count": "Найдено статей: {count}.",
+        "thinking_title": "🧠 Размышление",
+        "thinking_content": "Использую инструмент: {tool_name}",
     },
 )
 
