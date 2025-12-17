@@ -1,4 +1,4 @@
-"""Gradio UI with ChatInterface and REST API endpoint."""
+"""Gradio UI with Chatbot (reference agent pattern) and REST API endpoint."""
 from __future__ import annotations
 
 import sys
@@ -399,7 +399,7 @@ def agent_chat_handler(
     message: str,
     history: list[dict],
     request: gr.Request | None = None,
-) -> Generator[str | dict | list[dict], None, None]:
+) -> Generator[list[dict], None, None]:
     """Ask questions about Comindware Platform documentation and get intelligent answers with citations.
 
     The assistant automatically searches the knowledge base to find relevant articles
@@ -413,11 +413,12 @@ def agent_chat_handler(
         request: Gradio request object for session management
 
     Yields:
-        Complete message history lists (for ChatInterface) to preserve all messages
+        Complete message history lists (for Chatbot) to preserve all messages
         including disclaimer, thinking blocks, and streaming answer.
+        Uses reference agent pattern: always yields full working_history list.
     """
     if not message or not message.strip():
-        yield "Пожалуйста, введите вопрос / Please enter a question."
+        yield history if history else []
         return
 
     # Build full message history starting from provided history
@@ -429,18 +430,16 @@ def agent_chat_handler(
     messages = []
     tool_results = []
 
-    # Start with history as-is (ChatInterface manages it)
-    # Keep original format to avoid ChatInterface treating them as new messages
-    # We'll normalize only when needed for agent processing
-    # IMPORTANT: We yield the full history for streaming robustness (especially with vLLM)
-    # ChatInterface should replace its internal history when it receives a full list
+    # Build working history from provided history (like reference agent pattern)
+    # Reference agent pattern: working_history = history + [new messages]
+    # This ensures we start from ChatInterface's current state and build incrementally
+    # Then we always yield the full working_history list
     gradio_history = list(history) if history else []
 
-    # Add user message to history if not already present
-    # Use robust duplicate detection to avoid adding messages that already exist
+    # Add user message to history (reference agent pattern: always add, don't check)
+    # The reference agent doesn't check for duplicates - it trusts ChatInterface's history
     user_msg = {"role": "user", "content": message}
-    if not _message_exists_in_history(user_msg, gradio_history):
-        gradio_history.append(user_msg)
+    gradio_history.append(user_msg)
 
     # Stream AI-generated content disclaimer as a persistent assistant message
     # so it stays above tool-call progress/thinking chunks in the Chatbot UI.
@@ -466,30 +465,23 @@ def agent_chat_handler(
         if not _message_exists_in_history(disclaimer_msg, gradio_history):
             gradio_history.append(disclaimer_msg)
             # Yield full history - ChatInterface will replace its internal history
-            # This is necessary for streaming robustness, especially with vLLM
-            yield gradio_history.copy()
+            # According to Gradio docs, yielding a list should replace, not append
+            # Create a new list to avoid mutating ChatInterface's internal state
+            yield list(gradio_history)
 
     # Show "search started" immediately with user's message (before LLM tool call)
     # This provides instant feedback. We'll update it with LLM-generated query when available.
+    # Reference agent pattern: always append, don't check for duplicates
+    # Trust that ChatInterface's history parameter is correct
     from rag_engine.api.stream_helpers import yield_search_started
 
     # Use user's message as initial query (will be updated when tool call is detected)
     initial_query = message.strip() if message else ""
     search_started_msg = yield_search_started(initial_query)
-    # Add search_started message for this turn
-    # Note: LLM can call tools multiple times, so we may need multiple search_started messages
-    # The duplicate check only prevents adding the exact same search_started message (same query)
-    # multiple times in quick succession, not legitimate multiple search_started for different tool calls
-    # Check only the last few messages to avoid adding exact duplicate within same turn
-    recent_messages = gradio_history[-2:] if len(gradio_history) >= 2 else gradio_history
-    if not _message_exists_in_history(search_started_msg, recent_messages):
-        gradio_history.append(search_started_msg)
-        # Yield full history - ChatInterface will replace its internal history
-        # This is necessary for streaming robustness, especially with vLLM
-        # Full history ensures all messages (disclaimer, thinking blocks, answer) persist during streaming
-        # When we yield the full history, ChatInterface replaces its internal state,
-        # ensuring all previous messages and thinking blocks remain visible
-        yield gradio_history.copy()
+    # Add search_started message (reference agent pattern: always append)
+    gradio_history.append(search_started_msg)
+    # Yield full history - always yield full working_history like reference agent
+    yield list(gradio_history)
 
     # Session management (reuse existing pattern)
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
@@ -603,7 +595,7 @@ def agent_chat_handler(
                             from rag_engine.api.stream_helpers import update_search_started_in_history
 
                             if update_search_started_in_history(gradio_history, tool_query_from_accumulator):
-                                yield gradio_history.copy()
+                                yield list(gradio_history)
 
                     if is_ai_message:
                         has_tool_calls = bool(getattr(token, "tool_calls", None))
@@ -691,7 +683,7 @@ def agent_chat_handler(
                         )
                         # Add search completed to history and yield full history
                         gradio_history.append(search_completed_msg)
-                        yield gradio_history.copy()
+                        yield list(gradio_history)
 
                         # CRITICAL: Check if accumulated tool results exceed safe threshold
                         # This prevents overflow when agent makes multiple tool calls
@@ -712,7 +704,7 @@ def agent_chat_handler(
                                 model_switch_msg = yield_model_switch_notice(fallback_model)
                                 # Add model switch notice to history and yield full history
                                 gradio_history.append(model_switch_msg)
-                                yield gradio_history.copy()
+                                yield list(gradio_history)
 
                                 # Recreate agent with larger model
                                 # Note: This is expensive but prevents catastrophic overflow
@@ -772,17 +764,15 @@ def agent_chat_handler(
                                 # If we got a query from tool call, update the existing search_started message
                                 if tool_query:
                                     if update_search_started_in_history(gradio_history, tool_query):
-                                        yield gradio_history.copy()
+                                        yield list(gradio_history)
                                 # If no query extracted yet, keep the existing message with user's query
                             elif tool_name:
                                 # Show generic thinking block for non-search tools
+                                # Reference agent pattern: always append, don't check duplicates
                                 from rag_engine.api.stream_helpers import yield_thinking_block
                                 thinking_msg = yield_thinking_block(tool_name)
-                                # Check if we already added a thinking block for this tool in recent messages
-                                recent_messages = gradio_history[-3:] if len(gradio_history) >= 3 else gradio_history
-                                if not _message_exists_in_history(thinking_msg, recent_messages):
-                                    gradio_history.append(thinking_msg)
-                                    yield gradio_history.copy()
+                                gradio_history.append(thinking_msg)
+                                yield list(gradio_history)
                         # Skip displaying the tool call itself and any content
                         continue
 
@@ -811,17 +801,15 @@ def agent_chat_handler(
                                         tool_query = tool_call_accumulator.process_token(token)
                                         if tool_query:
                                             if update_search_started_in_history(gradio_history, tool_query):
-                                                yield gradio_history.copy()
+                                                yield list(gradio_history)
                                         # If no query extracted yet, keep the existing message with user's query
                                     elif tool_name:
                                         # Show generic thinking block for non-search tools
+                                        # Reference agent pattern: always append, don't check duplicates
                                         from rag_engine.api.stream_helpers import yield_thinking_block
                                         thinking_msg = yield_thinking_block(tool_name)
-                                        # Check if we already added a thinking block for this tool in recent messages
-                                        recent_messages = gradio_history[-3:] if len(gradio_history) >= 3 else gradio_history
-                                        if not _message_exists_in_history(thinking_msg, recent_messages):
-                                            gradio_history.append(thinking_msg)
-                                            yield gradio_history.copy()
+                                        gradio_history.append(thinking_msg)
+                                        yield list(gradio_history)
                                 # Never stream tool call chunks as text
                                 continue
 
@@ -840,7 +828,7 @@ def agent_chat_handler(
                                     else:
                                         # Create new answer message
                                         gradio_history.append({"role": "assistant", "content": answer})
-                                    yield gradio_history.copy()
+                                    yield list(gradio_history)
                                     text_chunk_found = True
 
                     # Fallback: If no text found in content_blocks, check token.content directly
@@ -869,7 +857,7 @@ def agent_chat_handler(
                                 else:
                                     # Create new answer message
                                     gradio_history.append({"role": "assistant", "content": answer})
-                                yield gradio_history.copy()
+                                yield list(gradio_history)
 
                 # Handle "updates" mode for agent state updates
                 elif stream_mode == "updates":
@@ -942,7 +930,7 @@ def agent_chat_handler(
                 if isinstance(chunk, dict):
                     # Metadata message (search_started, search_completed, etc.)
                     gradio_history.append(chunk)
-                    yield gradio_history.copy()
+                    yield list(gradio_history)
                 elif isinstance(chunk, str):
                     # Text chunk - update last message or create new one
                     if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
@@ -951,7 +939,7 @@ def agent_chat_handler(
                     else:
                         # Create new answer message
                         gradio_history.append({"role": "assistant", "content": chunk})
-                    yield gradio_history.copy()
+                    yield list(gradio_history)
 
             # Extract results from container
             if fallback_results:
@@ -997,7 +985,7 @@ def agent_chat_handler(
         if session_id:
             llm_manager.save_assistant_turn(session_id, final_text)
 
-        yield gradio_history.copy()
+        yield list(gradio_history)
 
     except Exception as e:
         logger.error("Error in agent_chat_handler: %s", e, exc_info=True)
@@ -1048,7 +1036,7 @@ def agent_chat_handler(
                     model_switch_msg = yield_model_switch_notice(fallback_model)
                     # Add model switch notice to history and yield full history
                     gradio_history.append(model_switch_msg)
-                    yield gradio_history.copy()
+                    yield list(gradio_history)
 
                     # Recreate agent and re-run the stream once
                     agent = _create_rag_agent(override_model=fallback_model)
@@ -1097,7 +1085,7 @@ def agent_chat_handler(
                                             gradio_history[-1] = {"role": "assistant", "content": answer}
                                         else:
                                             gradio_history.append({"role": "assistant", "content": answer})
-                                        yield gradio_history.copy()
+                                        yield list(gradio_history)
                         elif stream_mode == "updates":
                             # No-op for UI
                             pass
@@ -1118,7 +1106,7 @@ def agent_chat_handler(
 
                     if session_id:
                         llm_manager.save_assistant_turn(session_id, final_text)
-                    yield gradio_history.copy()
+                    yield list(gradio_history)
                     return
             except Exception as retry_exc:  # If fallback retry fails, emit original-style error
                 logger.error("Fallback retry failed: %s", retry_exc, exc_info=True)
@@ -1135,7 +1123,7 @@ def agent_chat_handler(
             gradio_history[-1] = {"role": "assistant", "content": error_msg}
         else:
             gradio_history.append({"role": "assistant", "content": error_msg})
-        yield gradio_history.copy()
+        yield list(gradio_history)
 
 
 
@@ -1178,19 +1166,12 @@ else:
     chat_title = "Ассистент базы знаний Comindware Platform"
     chat_description = None  # "RAG-агент базы знаний Comindware Platform"
 
-chatbot_config = gr.Chatbot(
-    min_height="30vh",
-    height=chatbot_height,
-    max_height=chatbot_max_height,
-    resizable=True,
-    elem_classes=["gradio-chatbot"],
-    label="Диалог с агентом",
-    buttons=["copy", "copy_all"],
-)
-
 # Force agent-based handler; legacy direct handler removed
 handler_fn = agent_chat_handler
 logger.info("Using agent-based (LangChain) handler for chat interface")
+
+# Load CSS theme from reference agent
+css_file_path = Path(__file__).parent.parent / "resources" / "css" / "cmw_copilot_theme.css"
 
 # Wrapper function to expose retrieve_context tool as API endpoint
 # The tool is a StructuredTool, so we need to extract the underlying function
@@ -1339,21 +1320,56 @@ def ask_comindware(message: str) -> str:
             return "\n".join(response_parts) + f"\n\n[Note: An error occurred: {str(e)}]"
         return f"Error: {str(e)}. Please try rephrasing your question or contact support."
 
-with gr.Blocks() as demo:
-    # ChatInterface for UI only
-    # Note: ChatInterface automatically exposes its function (agent_chat_handler generator),
-    # but we register ask_comindware separately for MCP access via filtered endpoint
-    gr.ChatInterface(
-        fn=handler_fn,
-        title=chat_title,
-        description=chat_description,
-        save_history=True,
-        #fill_width=True,
-        chatbot=chatbot_config,
-        # Attempt to hide auto-generated API endpoint from API docs and MCP
-        # Note: According to docs, this may not be effective for MCP, but worth trying
-        api_visibility="private",  # Completely disable the API endpoint
+with gr.Blocks(
+    css_paths=[css_file_path] if css_file_path.exists() else [],
+    title=chat_title or "Comindware Platform Documentation Assistant",
+    theme=gr.themes.Soft(),
+) as demo:
+    # Header (like reference agent)
+    if chat_title:
+        gr.Markdown(f"# {chat_title}", elem_classes=["hero-title"])
+    
+    # Chatbot component (like reference agent - NOT ChatInterface)
+    # In Gradio 6, Chatbot uses messages format by default (no type parameter needed)
+    chatbot = gr.Chatbot(
+        label="Диалог с агентом",
+        height=500 if settings.gradio_embedded_widget else None,
+        show_label=True,
+        container=True,
+        buttons=["copy", "copy_all"],
+        elem_id="chatbot-main",
+        elem_classes=["chatbot-card"],
     )
+    
+    # Message input (regular Textbox, NOT MultimodalTextbox)
+    # Small built-in submit and stop buttons (icons) in the Textbox
+    msg = gr.Textbox(
+        label="Сообщение",
+        placeholder="Введите ваш вопрос...",
+        lines=2,
+        max_lines=4,
+        show_label=False,  # Hide label for cleaner UI
+        elem_id="message-input",
+        elem_classes=["message-card"],
+        submit_btn=True,  # Small built-in submit icon button
+        stop_btn=True,  # Small built-in stop icon button (cancels submit events)
+    )
+    
+    # Connect events (like reference agent)
+    # Submit button (built into Textbox) - triggers on Enter key or submit button click
+    submit_event = msg.submit(
+        fn=handler_fn,
+        inputs=[msg, chatbot],
+        outputs=[chatbot],
+    ).then(
+        lambda: "",  # Clear message input
+        outputs=[msg],
+    )
+    
+    # Stop button (built into Textbox with stop_btn=True) automatically cancels submit_event
+    # When stop_btn=True is set, Gradio automatically wires it to cancel the submit event
+    # This matches the reference agent pattern: cancels=[streaming_event, submit_event]
+    # The stop button will cancel any running agent generation when clicked
     gr.api(
         fn=get_knowledge_base_articles,
         api_name="get_knowledge_base_articles",
