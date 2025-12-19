@@ -21,10 +21,11 @@ def create_rag_agent(
     update_context_budget_middleware=None,
     compress_tool_results_middleware=None,
     tool_budget_middleware=None,
+    force_tool_choice: bool = False,
 ) -> any:
-    """Create LangChain agent with forced retrieval tool execution and memory compression.
+    """Create LangChain agent with optional forced retrieval tool execution and memory compression.
 
-    Uses tool_choice parameter to enforce tool calling, the standard
+    Uses tool_choice parameter to optionally enforce tool calling, the standard
     Comindware Platform system prompt, and SummarizationMiddleware for
     automatic conversation history compression at configurable context threshold.
 
@@ -35,13 +36,16 @@ def create_rag_agent(
         update_context_budget_middleware: Optional middleware function
         compress_tool_results_middleware: Optional compression middleware function
         tool_budget_middleware: Optional ToolBudgetMiddleware instance
+        force_tool_choice: If True, forces retrieve_context tool execution.
+                          If False, allows model to choose tools freely (default: False)
 
     Returns:
         Configured LangChain agent with retrieve_context tool and middleware
 
     Example:
         >>> from rag_engine.llm.agent_factory import create_rag_agent
-        >>> agent = create_rag_agent()
+        >>> agent = create_rag_agent(force_tool_choice=True)  # Force on first call
+        >>> agent2 = create_rag_agent()  # Allow model choice (default)
         >>> # Use agent.stream() or agent.invoke()
     """
     if retrieve_context_tool is None:
@@ -87,9 +91,9 @@ def create_rag_agent(
         """
         return count_messages_tokens(messages)
 
-    # CRITICAL: Use tool_choice to force retrieval tool execution
-    # This ensures the agent always searches the knowledge base
-    # Note: tool_choice only forces retrieve_context, but other tools are available
+    # Conditionally use tool_choice to force retrieval tool execution
+    # On first call: force retrieve_context to ensure knowledge base search
+    # On subsequent calls: allow model to choose tools freely
     all_tools = [
         retrieve_context_tool,
         get_current_datetime,
@@ -101,12 +105,21 @@ def create_rag_agent(
         square_root,
         modulus,
     ]
-    model_with_tools = base_model.bind_tools(
-        all_tools,
-        tool_choice={
+
+    # Set tool_choice based on force_tool_choice parameter
+    # If True, force retrieve_context; if False, allow model to choose (None = auto)
+    tool_choice_value = (
+        {
             "type": "function",
             "function": {"name": "retrieve_context"},
-        },
+        }
+        if force_tool_choice
+        else None
+    )
+
+    model_with_tools = base_model.bind_tools(
+        all_tools,
+        tool_choice=tool_choice_value,
     )
 
     # Get messages_to_keep from settings (default 2, matching old handler)
@@ -147,11 +160,13 @@ def create_rag_agent(
         middleware=middleware_list,
     )
 
+    tool_choice_status = "forced" if force_tool_choice else "optional"
     if override_model:
         logger.info(
-            "RAG agent created with FALLBACK MODEL %s: forced tool execution, "
+            "RAG agent created with FALLBACK MODEL %s: tool choice=%s, "
             "memory compression (threshold: %d tokens at %d%%, keep: %d msgs, window: %d)",
             selected_model,
+            tool_choice_status,
             threshold_tokens,
             settings.memory_compression_threshold_pct,
             messages_to_keep,
@@ -159,8 +174,9 @@ def create_rag_agent(
         )
     else:
         logger.info(
-            "RAG agent created with forced tool execution and memory compression "
+            "RAG agent created with tool choice=%s and memory compression "
             "(threshold: %d tokens at %d%%, keep: %d msgs, window: %d)",
+            tool_choice_status,
             threshold_tokens,
             settings.memory_compression_threshold_pct,
             messages_to_keep,

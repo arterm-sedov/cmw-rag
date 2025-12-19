@@ -210,12 +210,12 @@ class ToolBudgetMiddleware(AgentMiddleware):
 
         return handler(request)
 
-def _create_rag_agent(override_model: str | None = None):
-    """Create LangChain agent with forced retrieval tool execution and memory compression.
+def _create_rag_agent(override_model: str | None = None, force_tool_choice: bool = False):
+    """Create LangChain agent with optional forced retrieval tool execution and memory compression.
 
-    Uses centralized factory with app-specific middleware. The factory enforces
-    tool execution via tool_choice="retrieve_context" to ensure the agent always
-    searches the knowledge base before answering.
+    Uses centralized factory with app-specific middleware. The factory can enforce
+    tool execution via tool_choice="retrieve_context" when needed, or allow model
+    to choose tools freely by default.
 
     This wrapper preserves test patch points while delegating to the centralized
     agent_factory for consistent agent creation.
@@ -223,6 +223,8 @@ def _create_rag_agent(override_model: str | None = None):
     Args:
         override_model: Optional model name to use instead of default
                        (for context window fallback)
+        force_tool_choice: If True, forces retrieve_context tool execution.
+                          If False, allows model to choose tools freely (default: False)
 
     Returns:
         Configured LangChain agent with retrieve_context tool and middleware
@@ -234,6 +236,7 @@ def _create_rag_agent(override_model: str | None = None):
         tool_budget_middleware=ToolBudgetMiddleware(),
         update_context_budget_middleware=update_context_budget,
         compress_tool_results_middleware=compress_tool_results,
+        force_tool_choice=force_tool_choice,
     )
 
 
@@ -523,7 +526,8 @@ def agent_chat_handler(
         selected_model = _check_context_fallback(messages)
 
     # Create agent (with fallback model if needed) and stream execution
-    agent = _create_rag_agent(override_model=selected_model)
+    # Force tool choice only on first message; allow model to choose on subsequent turns
+    agent = _create_rag_agent(override_model=selected_model, force_tool_choice=is_first_message)
     tool_results = []
     answer = ""
     current_model = selected_model or settings.default_model
