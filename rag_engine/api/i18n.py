@@ -23,6 +23,8 @@ i18n = gr.I18n(
         "thinking_title": "🧠 Thinking",
         "thinking_content": "Using tool: {tool_name}",
         "model_switch_title": "⚡ Switched to {model} (requires more context)",
+        "cancelled_title": "⏹️ Cancelled",
+        "cancelled_message": "⚠️ Response cancelled by user.",
     },
     ru={
         "language": "ru",
@@ -34,6 +36,8 @@ i18n = gr.I18n(
         "thinking_title": "🧠 Размышление",
         "thinking_content": "Использую инструмент: {tool_name}",
         "model_switch_title": "⚡ Переключение на {model} (требуется больше контекста)",
+        "cancelled_title": "⏹️ Отменено",
+        "cancelled_message": "⚠️ Ответ отменён пользователем.",
     },
 )
 
