@@ -276,7 +276,7 @@ def yield_search_completed(
                 sources_lines.append(f"{i}. {title_text}")
 
         if sources_lines:
-            content_parts.append("\n\n**Источники / Sources:**")
+            content_parts.append(f"\n\n{get_text('sources_header')}")
             content_parts.extend(sources_lines)
 
     content = "\n".join(content_parts)
