@@ -277,6 +277,7 @@ def _is_ui_only_message(msg: dict) -> bool:
             "search_started",
             "search_completed",
             "thinking",
+            "generating_answer",
             "model_switch",
             "cancelled",
         }:
@@ -801,6 +802,10 @@ async def agent_chat_handler(
                         logger.debug("Tool result received, %d total results", len(tool_results))
                         tool_executing = False
                         has_seen_tool_results = True
+                        
+                        # Stop any pending thinking spinners (for all tools, not just search)
+                        from rag_engine.api.stream_helpers import update_message_status_in_history
+                        update_message_status_in_history(gradio_history, "thinking", "done")
 
                         # Update accumulated context for next tool call
                         # Agent tracks context, not the tool!
@@ -839,8 +844,21 @@ async def agent_chat_handler(
                             count=articles_count,
                             articles=articles_for_display if articles_for_display else None,
                         )
+                        
+                        # Update previous pending messages to done (stop spinners)
+                        from rag_engine.api.stream_helpers import update_message_status_in_history
+                        update_message_status_in_history(gradio_history, "thinking", "done")
+                        update_message_status_in_history(gradio_history, "search_started", "done")
+                        
                         # Add search completed to history and yield full history
                         gradio_history.append(search_completed_msg)
+                        yield list(gradio_history)
+                        
+                        # Show "Generating answer" spinner while LLM processes the results
+                        # This is especially helpful for slow LLM responses or non-streaming fallback
+                        from rag_engine.api.stream_helpers import yield_generating_answer
+                        generating_msg = yield_generating_answer()
+                        gradio_history.append(generating_msg)
                         yield list(gradio_history)
 
                         # CRITICAL: Check if accumulated tool results exceed safe threshold
@@ -995,6 +1013,11 @@ async def agent_chat_handler(
                                 # This prevents streaming the agent's "reasoning" about tool calls
                                 if not tool_executing:
                                     text_chunk = block["text"]
+                                    
+                                    # Stop "generating answer" spinner on first text chunk
+                                    if not answer and has_seen_tool_results:
+                                        update_message_status_in_history(gradio_history, "generating_answer", "done")
+                                    
                                     answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                         text_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                     )
@@ -1019,6 +1042,10 @@ async def agent_chat_handler(
                                 new_chunk = token_content
 
                             if new_chunk:
+                                # Stop "generating answer" spinner on first text chunk
+                                if not answer and has_seen_tool_results:
+                                    update_message_status_in_history(gradio_history, "generating_answer", "done")
+                                
                                 answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                     new_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                 )
@@ -1083,28 +1110,39 @@ async def agent_chat_handler(
             else:
                 raise
 
-        # Fallback to invoke() only if we expected tool calls but didn't get them
-        # This ensures tool execution happens even if streaming detection fails
-        # Can be disabled via vllm_streaming_fallback_enabled setting for testing
-        if fallback_to_invoke or should_fallback:
-            # Execute fallback and process results
-            fallback_results = {}
-            for chunk in execute_fallback_invoke(
-                agent=agent,
-                messages=messages,
-                agent_context=agent_context,
-                has_seen_tool_results=has_seen_tool_results,
-                result_container=fallback_results,
-            ):
-                # Handle metadata (dict) or text chunks (str) and add to history
-                if isinstance(chunk, dict):
-                    # Metadata message (search_started, search_completed, etc.)
-                    gradio_history.append(chunk)
+            # Fallback to invoke() only if we expected tool calls but didn't get them
+            # This ensures tool execution happens even if streaming detection fails
+            # Can be disabled via vllm_streaming_fallback_enabled setting for testing
+            if fallback_to_invoke or should_fallback:
+                # Show "Generating answer" spinner for invoke() fallback (non-streaming)
+                # This is especially important since invoke() has no streaming feedback
+                if has_seen_tool_results and not answer:
+                    from rag_engine.api.stream_helpers import yield_generating_answer
+                    generating_msg = yield_generating_answer()
+                    gradio_history.append(generating_msg)
                     yield list(gradio_history)
-                elif isinstance(chunk, str):
-                    # Text chunk - update last message or create new one
-                    _update_or_append_assistant_message(gradio_history, chunk)
-                    yield list(gradio_history)
+                
+                # Execute fallback and process results
+                fallback_results = {}
+                for chunk in execute_fallback_invoke(
+                    agent=agent,
+                    messages=messages,
+                    agent_context=agent_context,
+                    has_seen_tool_results=has_seen_tool_results,
+                    result_container=fallback_results,
+                ):
+                    # Handle metadata (dict) or text chunks (str) and add to history
+                    if isinstance(chunk, dict):
+                        # Metadata message (search_started, search_completed, etc.)
+                        gradio_history.append(chunk)
+                        yield list(gradio_history)
+                    elif isinstance(chunk, str):
+                        # Text chunk - stop generating spinner on first chunk
+                        if not answer and has_seen_tool_results:
+                            update_message_status_in_history(gradio_history, "generating_answer", "done")
+                        # Update last message or create new one
+                        _update_or_append_assistant_message(gradio_history, chunk)
+                        yield list(gradio_history)
 
             # Extract results from container
             if fallback_results:
@@ -1266,6 +1304,13 @@ async def agent_chat_handler(
                                 # keep agent_context.accumulated_tool_tokens updated
                                 _, acc_tool_toks = estimate_accumulated_tokens([], tool_results)
                                 agent_context.accumulated_tool_tokens = acc_tool_toks
+                                
+                                # Show generating answer spinner after tool results in fallback retry
+                                if not answer:
+                                    from rag_engine.api.stream_helpers import yield_generating_answer
+                                    generating_msg = yield_generating_answer()
+                                    gradio_history.append(generating_msg)
+                                    yield list(gradio_history)
                                 continue
 
                             if hasattr(token, "tool_calls") and token.tool_calls:
@@ -1276,6 +1321,11 @@ async def agent_chat_handler(
                                 for block in token.content_blocks:
                                     if block.get("type") == "text" and block.get("text"):
                                         text_chunk = block["text"]
+                                        
+                                        # Stop generating spinner on first text chunk
+                                        if not answer and has_seen_tool_results:
+                                            update_message_status_in_history(gradio_history, "generating_answer", "done")
+                                        
                                         answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                             text_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                         )
