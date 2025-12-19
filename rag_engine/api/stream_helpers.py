@@ -367,12 +367,17 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
     if not query:
         return False
 
+    # Search backwards but stop before search_completed messages
+    # This ensures we only update search_started, not search_completed
     for i in range(len(gradio_history) - 1, -1, -1):
         msg = gradio_history[i]
         if isinstance(msg, dict) and msg.get("role") == "assistant":
             metadata = msg.get("metadata", {})
             # Check for ui_type marker first (preferred, language-agnostic)
             ui_type = metadata.get("ui_type")
+            # Stop if we hit search_completed - don't update anything after it
+            if ui_type == "search_completed":
+                return False
             if ui_type == "search_started":
                 updated_msg = yield_search_started(query)
                 gradio_history[i] = updated_msg

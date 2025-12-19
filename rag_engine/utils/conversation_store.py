@@ -26,6 +26,11 @@ class ConversationStore:
         history = self._sessions.setdefault(session_id, [])
         history.append((role, content))
 
+    def clear(self, session_id: str) -> None:
+        """Clear conversation history for a specific session."""
+        if session_id in self._sessions:
+            del self._sessions[session_id]
+
 
 def salt_session_id(
     base_session_id: str | None, history: list[dict], current_message: str = ""

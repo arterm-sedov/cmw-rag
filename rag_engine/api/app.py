@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 # Add project root to path if not already installed
@@ -10,6 +10,7 @@ _project_root = Path(__file__).parent.parent.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
+import json
 import logging
 import os
 
@@ -434,11 +435,72 @@ def _process_text_chunk_for_streaming(
     return answer, disclaimer_prepended
 
 
-def agent_chat_handler(
+def _extract_content_string(content: str | list | None) -> str:
+    """Extract plain text string from Gradio message content.
+
+    Handles both string format and structured format (list of content blocks).
+    Also handles double-encoded JSON strings that Gradio sometimes sends.
+
+    Args:
+        content: Message content (string, list of blocks, or None)
+
+    Returns:
+        Plain text string extracted from content
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        # Handle structured content format (Gradio 6): [{"type": "text", "text": "..."}]
+        text_parts = []
+        for block in content:
+            if isinstance(block, dict):
+                block_type = block.get("type", "")
+                if block_type == "text":
+                    text = block.get("text", "")
+                    if text:
+                        # Recursively handle nested structures (double-encoded JSON)
+                        # Handle case where text field contains a JSON string: "[{'text': '...', 'type': 'text'}]"
+                        if isinstance(text, str) and text.strip().startswith("[") and text.strip().endswith("]"):
+                            try:
+                                parsed = json.loads(text)
+                                if isinstance(parsed, list):
+                                    # Recursively extract from nested structure
+                                    extracted = _extract_content_string(parsed)
+                                    if extracted:
+                                        text_parts.append(extracted)
+                                        continue
+                            except (json.JSONDecodeError, ValueError):
+                                # Not valid JSON, treat as plain text
+                                pass
+                        text_parts.append(str(text))
+        return " ".join(text_parts) if text_parts else ""
+    # Fallback: convert to string
+    return str(content)
+
+
+def _update_or_append_assistant_message(gradio_history: list[dict], content: str) -> None:
+    """Update last assistant message or append new one if it has metadata.
+
+    Only updates non-metadata assistant messages to preserve meta blocks.
+    This ensures meta blocks (thinking, searching, etc.) are not overwritten.
+
+    Args:
+        gradio_history: List of Gradio message dictionaries
+        content: Content to set for the assistant message
+    """
+    if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
+        gradio_history[-1] = {"role": "assistant", "content": content}
+    else:
+        gradio_history.append({"role": "assistant", "content": content})
+
+
+async def agent_chat_handler(
     message: str,
     history: list[dict],
     request: gr.Request | None = None,
-) -> Generator[list[dict], None, None]:
+) -> AsyncGenerator[list[dict], None]:
     """Ask questions about Comindware Platform documentation and get intelligent answers with citations.
 
     The assistant automatically searches the knowledge base to find relevant articles
@@ -489,43 +551,55 @@ def agent_chat_handler(
             sum(1 for msg in gradio_history if isinstance(msg, dict) and msg.get("role") == "assistant"),
         )
 
-    # Add user message to history (reference agent pattern: always add, don't check)
-    # The reference agent doesn't check for duplicates - it trusts ChatInterface's history
-    user_msg = {"role": "user", "content": message}
-    gradio_history.append(user_msg)
+    # Don't add user message here - it's already in history from ChatInterface pattern
+    # The submit_event chain adds the user message to chatbot before calling agent_chat_handler
+    # (pattern from test script: line 128-129)
+
+    # Determine if this is the first message (for disclaimer and template)
+    is_first_message = not history
 
     # Stream AI-generated content disclaimer as a persistent assistant message
     # so it stays above tool-call progress/thinking chunks in the Chatbot UI.
-    # Only add it once per conversation (check if it already exists in history)
-    from rag_engine.llm.prompts import AI_DISCLAIMER
+    # Only add it ONCE after the first question (pattern from test script)
+    if is_first_message:
+        from rag_engine.llm.prompts import AI_DISCLAIMER
 
-    # Check if disclaimer already exists in history
-    disclaimer_exists = False
-    for msg in gradio_history:
-        if isinstance(msg, dict):
-            content = msg.get("content", "")
-            if isinstance(content, str) and AI_DISCLAIMER.strip() in content:
-                disclaimer_exists = True
-                break
+        # Check if disclaimer already exists in history (safety check)
+        disclaimer_exists = False
+        for msg in gradio_history:
+            if isinstance(msg, dict):
+                content = msg.get("content", "")
+                if isinstance(content, str) and AI_DISCLAIMER.strip() in content:
+                    disclaimer_exists = True
+                    break
 
-    # Add disclaimer to history only if it doesn't exist yet
-    if not disclaimer_exists:
-        disclaimer_msg = {
-            "role": "assistant",
-            "content": AI_DISCLAIMER,
-        }
-        # Double-check it doesn't exist (robust duplicate prevention)
-        if not _message_exists_in_history(disclaimer_msg, gradio_history):
-            gradio_history.append(disclaimer_msg)
-            # Yield full history - ChatInterface will replace its internal history
-            # According to Gradio docs, yielding a list should replace, not append
-            # Create a new list to avoid mutating ChatInterface's internal state
-            yield list(gradio_history)
+        # Add disclaimer to history only if it doesn't exist yet (first question only)
+        if not disclaimer_exists:
+            disclaimer_msg = {
+                "role": "assistant",
+                "content": AI_DISCLAIMER,
+            }
+            # Double-check it doesn't exist (robust duplicate prevention)
+            if not _message_exists_in_history(disclaimer_msg, gradio_history):
+                gradio_history.append(disclaimer_msg)
+                # Yield full history - ChatInterface will replace its internal history
+                # According to Gradio docs, yielding a list should replace, not append
+                # Create a new list to avoid mutating ChatInterface's internal state
+                yield list(gradio_history)
 
-    # Show "search started" immediately with user's message (before LLM tool call)
-    # This provides instant feedback. We'll update it with LLM-generated query when available.
-    # Reference agent pattern: always append, don't check for duplicates
-    # Trust that ChatInterface's history parameter is correct
+    # Three UI blocks pattern (from test script):
+    # 1. Thinking block
+    # 2. Search started block
+    # 3. Search completed block (added when tool results arrive)
+    # Then the actual answer is streamed
+
+    # 1. Add thinking block first (pattern from test script: line 136-142)
+    from rag_engine.api.stream_helpers import yield_thinking_block
+    thinking_msg = yield_thinking_block("retrieve_context")  # Use retrieve_context as tool name
+    gradio_history.append(thinking_msg)  # Append, don't replace
+    yield list(gradio_history)
+
+    # 2. Add search started block (pattern from test script: line 161-167)
     from rag_engine.api.stream_helpers import yield_search_started
 
     # Use user's message as initial query (will be updated when tool call is detected)
@@ -546,8 +620,7 @@ def agent_chat_handler(
         USER_QUESTION_TEMPLATE_SUBSEQUENT,
     )
 
-    # Apply template only if this is the first message (empty history)
-    is_first_message = not history
+    # is_first_message already determined above (for disclaimer)
     wrapped_message = (
         USER_QUESTION_TEMPLATE_FIRST.format(question=message)
         if is_first_message
@@ -589,12 +662,17 @@ def agent_chat_handler(
 
     # Create agent (with fallback model if needed) and stream execution
     # Force tool choice only on first message; allow model to choose on subsequent turns
-    agent = _create_rag_agent(override_model=selected_model, force_tool_choice=is_first_message)
+    # TEMPORARILY DISABLED FOR TESTING: force_tool_choice=False
+    agent = _create_rag_agent(override_model=selected_model, force_tool_choice=False)  # was: is_first_message
     tool_results = []
     answer = ""
     current_model = selected_model or settings.default_model
     has_seen_tool_results = False
     disclaimer_prepended = False  # Track if disclaimer has been prepended to stream
+
+    # Track incomplete response for memory saving if cancelled (pattern from test script)
+    incomplete_response = None
+    final_response = None
 
     # Track accumulated context for progressive budgeting
     # Agent is responsible for counting context, not the tool
@@ -628,12 +706,12 @@ def agent_chat_handler(
         # Use multiple stream modes for complete streaming experience
         # Per https://docs.langchain.com/oss/python/langchain/streaming#stream-multiple-modes
         # Always try streaming first - improved detection should catch tool calls via content_blocks/finish_reason
-        logger.info("Starting agent.stream() with %d messages", len(messages))
+        logger.info("Starting agent.astream() with %d messages", len(messages))
         stream_chunk_count = 0
         tool_calls_detected_in_stream = False
 
         try:
-            for stream_mode, chunk in agent.stream(
+            async for stream_mode, chunk in agent.astream(
                 {"messages": messages},
                 context=agent_context,
                 stream_mode=["updates", "messages"]
@@ -889,12 +967,7 @@ def agent_chat_handler(
                                         text_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                     )
                                     # Update last message (answer) in history and yield full history
-                                    if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
-                                        # Update existing answer message
-                                        gradio_history[-1] = {"role": "assistant", "content": answer}
-                                    else:
-                                        # Create new answer message
-                                        gradio_history.append({"role": "assistant", "content": answer})
+                                    _update_or_append_assistant_message(gradio_history, answer)
                                     yield list(gradio_history)
                                     text_chunk_found = True
 
@@ -918,12 +991,10 @@ def agent_chat_handler(
                                     new_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                 )
                                 # Update last message (answer) in history and yield full history
-                                if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
-                                    # Update existing answer message
-                                    gradio_history[-1] = {"role": "assistant", "content": answer}
-                                else:
-                                    # Create new answer message
-                                    gradio_history.append({"role": "assistant", "content": answer})
+                                _update_or_append_assistant_message(gradio_history, answer)
+                                # Track incomplete response for memory saving if cancelled (pattern from test script)
+                                incomplete_response = answer
+                                final_response = answer  # Update final response as we stream
                                 yield list(gradio_history)
 
                 # Handle "updates" mode for agent state updates
@@ -1000,12 +1071,7 @@ def agent_chat_handler(
                     yield list(gradio_history)
                 elif isinstance(chunk, str):
                     # Text chunk - update last message or create new one
-                    if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
-                        # Update existing answer message
-                        gradio_history[-1] = {"role": "assistant", "content": chunk}
-                    else:
-                        # Create new answer message
-                        gradio_history.append({"role": "assistant", "content": chunk})
+                    _update_or_append_assistant_message(gradio_history, chunk)
                     yield list(gradio_history)
 
             # Extract results from container
@@ -1040,17 +1106,23 @@ def agent_chat_handler(
             final_text = format_with_citations(answer, articles)
             logger.info("Agent completed with %d articles", len(articles))
 
-        # Update last message (answer) with final formatted text and yield full history
-        if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
-            # Update existing answer message
-            gradio_history[-1] = {"role": "assistant", "content": final_text}
-        else:
-            # Create new answer message
-            gradio_history.append({"role": "assistant", "content": final_text})
+        # Only update/append if we have actual content (don't overwrite with empty)
+        # If answer is empty, the agent didn't produce any text - don't create empty message
+        if final_text and final_text.strip():
+            # Update last message (answer) with final formatted text and yield full history
+            _update_or_append_assistant_message(gradio_history, final_text)
+        elif not final_text or not final_text.strip():
+            # Empty answer - log warning but don't create empty message
+            logger.warning("Agent completed with empty answer - no text content was produced")
+
+        # Update final response tracking
+        final_response = final_text
 
         # Save conversation turn (reuse existing pattern)
-        if session_id:
-            llm_manager.save_assistant_turn(session_id, final_text)
+        # Streaming completed successfully - save complete response to memory
+        if final_response and session_id:
+            llm_manager.save_assistant_turn(session_id, final_response)
+            logger.info(f"Saved complete response to memory ({len(final_response)} chars)")
 
         # Log final history state for debugging
         logger.info(
@@ -1062,6 +1134,16 @@ def agent_chat_handler(
         )
 
         yield list(gradio_history)
+
+    except GeneratorExit:
+        # Stream was cancelled - save incomplete response to memory if available (pattern from test script)
+        logger.info("Stream cancelled (GeneratorExit) - saving incomplete response")
+        if incomplete_response and session_id:
+            llm_manager.save_assistant_turn(session_id, incomplete_response)
+            logger.info(
+                f"Saved INCOMPLETE response to memory: {incomplete_response[:50]}... ({len(incomplete_response)} chars)"
+            )
+        raise  # Re-raise to allow Gradio to handle cancellation properly
 
     except Exception as e:
         logger.error("Error in agent_chat_handler: %s", e, exc_info=True)
@@ -1129,7 +1211,7 @@ def agent_chat_handler(
                     has_seen_tool_results = False
                     disclaimer_prepended = False  # Track if disclaimer has been prepended to stream
 
-                    for stream_mode, chunk in agent.stream(
+                    async for stream_mode, chunk in agent.astream(
                         {"messages": messages},
                         context=agent_context,
                         stream_mode=["updates", "messages"],
@@ -1157,10 +1239,10 @@ def agent_chat_handler(
                                             text_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                         )
                                         # Update last message (answer) in history and yield full history
-                                        if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
-                                            gradio_history[-1] = {"role": "assistant", "content": answer}
-                                        else:
-                                            gradio_history.append({"role": "assistant", "content": answer})
+                                        _update_or_append_assistant_message(gradio_history, answer)
+                                        # Track incomplete response for memory saving if cancelled (pattern from test script)
+                                        incomplete_response = answer
+                                        final_response = answer  # Update final response as we stream
                                         yield list(gradio_history)
                         elif stream_mode == "updates":
                             # No-op for UI
@@ -1174,14 +1256,21 @@ def agent_chat_handler(
                     else:
                         final_text = format_with_citations(answer, articles)
 
-                    # Update last message with final formatted text
-                    if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
-                        gradio_history[-1] = {"role": "assistant", "content": final_text}
-                    else:
-                        gradio_history.append({"role": "assistant", "content": final_text})
+                    # Only update/append if we have actual content (don't overwrite with empty)
+                    if final_text and final_text.strip():
+                        # Update last message with final formatted text
+                        _update_or_append_assistant_message(gradio_history, final_text)
+                    elif not final_text or not final_text.strip():
+                        # Empty answer - log warning but don't create empty message
+                        logger.warning("Fallback agent completed with empty answer - no text content was produced")
 
-                    if session_id:
-                        llm_manager.save_assistant_turn(session_id, final_text)
+                    # Update final response tracking
+                    final_response = final_text
+
+                    # Save conversation turn
+                    if final_response and session_id:
+                        llm_manager.save_assistant_turn(session_id, final_response)
+                        logger.info(f"Saved complete response to memory ({len(final_response)} chars)")
                     yield list(gradio_history)
                     return
             except Exception as retry_exc:  # If fallback retry fails, emit original-style error
@@ -1195,10 +1284,7 @@ def agent_chat_handler(
             if message:
                 gradio_history.append({"role": "user", "content": message})
 
-        if gradio_history and gradio_history[-1].get("role") == "assistant" and not gradio_history[-1].get("metadata"):
-            gradio_history[-1] = {"role": "assistant", "content": error_msg}
-        else:
-            gradio_history.append({"role": "assistant", "content": error_msg})
+        _update_or_append_assistant_message(gradio_history, error_msg)
         yield list(gradio_history)
 
 
@@ -1234,13 +1320,11 @@ if settings.gradio_embedded_widget:
     chatbot_height = "400px"
     chatbot_max_height = "65vh"
     chat_title = None
-    chat_description = None
 else:
     # For standalone app
     chatbot_height = "70vh"  # 70% of viewport height for standalone
     chatbot_max_height = "70vh"  # Same as height for consistency
     chat_title = "Ассистент базы знаний Comindware Platform"
-    chat_description = None  # "RAG-агент базы знаний Comindware Platform"
 
 # Force agent-based handler; legacy direct handler removed
 handler_fn = agent_chat_handler
@@ -1411,9 +1495,7 @@ def ask_comindware(message: str) -> str:
         return f"Error: {str(e)}. Please try rephrasing your question or contact support."
 
 with gr.Blocks(
-    css_paths=[css_file_path] if css_file_path.exists() else [],
     title=chat_title or "Comindware Platform Documentation Assistant",
-    theme=gr.themes.Soft(),
 ) as demo:
     # Header (like reference agent)
     if chat_title:
@@ -1436,6 +1518,7 @@ with gr.Blocks(
 
     # Message input (regular single-line Textbox, NOT MultimodalTextbox)
     # Small built-in submit and stop buttons (icons) in the Textbox
+    # Pattern from test script: dynamic stop button visibility
     msg = gr.Textbox(
         label="Сообщение",
         placeholder="Введите ваш вопрос...",
@@ -1448,32 +1531,139 @@ with gr.Blocks(
         elem_id="message-input",
         elem_classes=["message-card"],
         submit_btn=True,  # Small built-in submit icon button
-        stop_btn=True,  # Small built-in stop icon button (cancels submit events)
+        stop_btn=False,  # Start hidden, will be shown when streaming starts
     )
 
-    # Connect events (like reference agent)
-    # Submit button (built into Textbox) - triggers on Enter key or submit button click
-    # Configure concurrency limit per Gradio queuing best practices
-    # https://www.gradio.app/guides/queuing
-    # Hide from MCP API using api_visibility="private" to prevent auto-exposure
-    # Using .then() to run events consecutively: first handle the message, then clear the textbox
-    # See: https://www.gradio.app/guides/blocks-and-event-listeners#running-events-consecutively
-    submit_event = msg.submit(
+    # State to store saved message (pattern from ChatInterface/test script)
+    saved_input = gr.State()
+    # State to store current session_id for memory clearing
+    current_session_id = gr.State(None)
+
+    def handle_stop_click(history: list[dict]) -> list[dict]:
+        """Handle built-in stop button click - update history with cancellation message."""
+        logger.info("Stop button clicked - cancelling stream")
+        if history:
+            last_msg = history[-1]
+            if isinstance(last_msg, dict) and last_msg.get("role") == "assistant":
+                content_raw = last_msg.get("content", "")
+                content_str = _extract_content_string(content_raw)
+                # Only add cancellation notice if response was incomplete
+                # Handle both empty content and incomplete responses (pattern from test script)
+                if not content_str or not content_str.strip().endswith("."):
+                    from rag_engine.api.i18n import get_text
+
+                    cancelled_title = get_text("cancelled_title")
+                    cancelled_message = get_text("cancelled_message")
+                    cancellation_msg = {
+                        "role": "assistant",
+                        "content": content_str + f"\n\n{cancelled_message}",
+                        "metadata": {"title": cancelled_title, "ui_type": "cancelled"},
+                    }
+                    history[-1] = cancellation_msg
+        return history
+
+    def clear_and_save_textbox(message: str) -> tuple[gr.Textbox, str]:
+        """Clear textbox and save message to state (pattern from ChatInterface/test script)."""
+        return (
+            gr.Textbox(value="", interactive=False, placeholder=""),
+            message,
+        )
+
+    def handle_chatbot_clear(session_id: str | None) -> None:
+        """Handle chatbot clear event - also clear memory when chat is cleared."""
+        logger.info("Clear button clicked - clearing memory")
+        if session_id:
+            llm_manager._conversations.clear(session_id)
+            logger.info(f"Memory cleared for session {session_id[:8]}...")
+        return None  # Clear session_id state
+
+    # Store original stop_btn value (True, but we start with False)
+    original_stop_btn = True
+
+    # Submit event - main handler
+    # Pattern from ChatInterface/test script: show stop button after submit succeeds, hide when streaming completes
+    user_submit = msg.submit(
+        fn=clear_and_save_textbox,
+        inputs=[msg],
+        outputs=[msg, saved_input],  # Clear textbox and save message to state
+        queue=False,
+        api_visibility="private",
+    )
+
+    # Show stop button when submit succeeds (before streaming starts)
+    # Pattern from ChatInterface: after_success.success() shows stop button
+    user_submit.success(
+        lambda: gr.Textbox(submit_btn=False, stop_btn=original_stop_btn),
+        outputs=[msg],
+        queue=False,
+        api_visibility="private",
+    )
+
+    def save_session_id(message: str, history: list[dict], request: gr.Request | None) -> str | None:
+        """Save session_id to state for memory clearing."""
+        base_session_id = getattr(request, "session_hash", None) if request is not None else None
+        session_id = salt_session_id(base_session_id, history, message)
+        return session_id
+
+    # Main streaming handler - chained from user_submit
+    # Pattern from ChatInterface: append user message to chatbot first, then call handler
+    submit_event = user_submit.then(
+        lambda message, history: history + [{"role": "user", "content": message}],
+        inputs=[saved_input, chatbot],
+        outputs=[chatbot],
+        queue=False,
+        api_visibility="private",
+    ).then(
+        fn=save_session_id,
+        inputs=[saved_input, chatbot],  # Request is automatically passed to functions that accept it
+        outputs=[current_session_id],
+        queue=False,
+        api_visibility="private",
+    ).then(
         fn=handler_fn,
-        inputs=[msg, chatbot],
+        inputs=[saved_input, chatbot],  # Use saved message from state, chatbot now has user message; request is auto-passed
         outputs=[chatbot],
         concurrency_limit=settings.gradio_default_concurrency_limit,
         api_visibility="private",  # Hide agent_chat_handler from MCP tools
     ).then(
-        lambda: "",  # Clear message input after submission completes
+        lambda: gr.Textbox(value="", interactive=True),  # Clear and re-enable input after completion
         outputs=[msg],
-        api_visibility="private",  # Hide lambda function from MCP tools
+        api_visibility="private",
     )
 
-    # Stop button (built into Textbox with stop_btn=True) automatically cancels submit_event
-    # When stop_btn=True is set, Gradio automatically wires it to cancel the submit event
-    # This matches the reference agent pattern: cancels=[streaming_event, submit_event]
-    # The stop button will cancel any running agent generation when clicked
+    # Hide stop button when streaming completes
+    # Pattern from ChatInterface: events_to_cancel.then() hides stop button
+    submit_event.then(
+        lambda: gr.Textbox(submit_btn=True, stop_btn=False),
+        outputs=[msg],
+        queue=False,
+        api_visibility="private",
+    )
+
+    # Built-in stop button automatically cancels submit_event when stop_btn=True
+    # Wire up the stop event to handle cancellation and update history
+    # Also hide stop button when stop is clicked
+    msg.stop(
+        fn=handle_stop_click,
+        inputs=[chatbot],
+        outputs=[chatbot],
+        cancels=[submit_event],  # Explicitly cancel submit event (though it's automatic)
+        api_visibility="private",
+    ).then(
+        lambda: gr.Textbox(submit_btn=True, stop_btn=False),  # Hide stop button after cancellation
+        outputs=[msg],
+        queue=False,
+        api_visibility="private",
+    )
+
+    # Bind to the built-in clear button's clear event
+    # Also clear memory when chat is cleared
+    chatbot.clear(
+        fn=handle_chatbot_clear,
+        inputs=[current_session_id],  # Use stored session_id
+        outputs=[current_session_id],  # Clear session_id after clearing memory
+        api_visibility="private",
+    )
 
     # Explicitly expose MCP tools (public by default when using gr.api())
     # All other functions (agent_chat_handler, lambda, etc.) are set to private above
@@ -1521,6 +1711,8 @@ if __name__ == "__main__":
         share=settings.gradio_share,
         mcp_server=True,
         footer_links=["api"],
+        theme=gr.themes.Soft(),
+        css_paths=[css_file_path] if css_file_path.exists() else [],
     )
 
 
