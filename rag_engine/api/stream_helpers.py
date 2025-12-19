@@ -327,6 +327,35 @@ def yield_model_switch_notice(model: str) -> dict:
     }
 
 
+def yield_cancelled() -> dict:
+    """Yield metadata message for cancelled response.
+
+    Returns:
+        Gradio message dict with metadata for cancellation.
+        Content and title are resolved i18n strings (never i18n metadata objects).
+
+    Example:
+        >>> from rag_engine.api.stream_helpers import yield_cancelled
+        >>> msg = yield_cancelled()
+        >>> "Cancelled" in msg["metadata"]["title"] or "Отменено" in msg["metadata"]["title"]
+        True
+    """
+    # Resolve i18n translations to plain strings before yielding
+    # This ensures Chatbot receives strings, not __i18n__ metadata objects
+    title = get_text("cancelled_title")
+    content = get_text("cancelled_message")
+
+    return {
+        "role": "assistant",
+        "content": content,
+        "metadata": {
+            "title": title,
+            # Explicit UI-only marker (used by _is_ui_only_message)
+            "ui_type": "cancelled",
+        },
+    }
+
+
 def extract_article_count_from_tool_result(tool_result_content: str) -> int | None:
     """Extract article count from tool result JSON.
 
