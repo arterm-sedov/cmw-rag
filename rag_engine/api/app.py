@@ -249,6 +249,7 @@ def _is_ui_only_message(msg: dict) -> bool:
     - Search started/completed metadata messages
     - Thinking blocks (tool execution metadata)
     - Model switch notices
+    - Cancellation messages
 
     Regular assistant messages (actual answers) should NOT be filtered even if they
     have metadata, as they contain conversation content the agent needs to see.
@@ -277,6 +278,7 @@ def _is_ui_only_message(msg: dict) -> bool:
             "search_completed",
             "thinking",
             "model_switch",
+            "cancelled",
         }:
             return True
 
@@ -499,6 +501,7 @@ def _update_or_append_assistant_message(gradio_history: list[dict], content: str
 async def agent_chat_handler(
     message: str,
     history: list[dict],
+    cancel_state: dict | None = None,
     request: gr.Request | None = None,
 ) -> AsyncGenerator[list[dict], None]:
     """Ask questions about Comindware Platform documentation and get intelligent answers with citations.
@@ -511,6 +514,7 @@ async def agent_chat_handler(
     Args:
         message: User's current message or question
         history: Chat history from Gradio
+        cancel_state: Mutable dict with "cancelled" key for cooperative cancellation
         request: Gradio request object for session management
 
     Yields:
@@ -518,6 +522,10 @@ async def agent_chat_handler(
         including disclaimer, thinking blocks, and streaming answer.
         Uses reference agent pattern: always yields full working_history list.
     """
+    # Helper to check if cancellation was requested
+    def is_cancelled() -> bool:
+        return cancel_state is not None and cancel_state.get("cancelled", False)
+
     if not message or not message.strip():
         yield history if history else []
         return
@@ -716,6 +724,11 @@ async def agent_chat_handler(
                 context=agent_context,
                 stream_mode=["updates", "messages"]
             ):
+                # Check for cancellation at each iteration
+                if is_cancelled():
+                    logger.info("Cancellation detected in stream loop - stopping")
+                    break
+
                 stream_chunk_count += 1
                 logger.debug("Stream chunk #%d: mode=%s", stream_chunk_count, stream_mode)
 
@@ -903,14 +916,23 @@ async def agent_chat_handler(
                             tool_name = tool_call_accumulator.get_tool_name(token)
 
                             if tool_name == "retrieve_context":
-                                # Update existing "search started" message with LLM-generated query
-                                from rag_engine.api.stream_helpers import update_search_started_in_history
                                 tool_query = tool_call_accumulator.process_token(token)
-                                # If we got a query from tool call, update the existing search_started message
-                                if tool_query:
-                                    if update_search_started_in_history(gradio_history, tool_query):
-                                        yield list(gradio_history)
-                                # If no query extracted yet, keep the existing message with user's query
+                                # If we've already seen tool results, ADD a new search_started block
+                                # Otherwise, UPDATE the existing one (which was added at handler start)
+                                if has_seen_tool_results:
+                                    # Add NEW search_started block for subsequent tool calls
+                                    logger.info("Adding NEW search_started block (subsequent tool call): query=%s", tool_query[:50] if tool_query else "empty")
+                                    from rag_engine.api.stream_helpers import yield_search_started
+                                    search_started_msg = yield_search_started(tool_query or "")
+                                    gradio_history.append(search_started_msg)
+                                    yield list(gradio_history)
+                                else:
+                                    # Update existing search_started message with LLM-generated query
+                                    logger.info("Updating existing search_started block: query=%s", tool_query[:50] if tool_query else "empty")
+                                    from rag_engine.api.stream_helpers import update_search_started_in_history
+                                    if tool_query:
+                                        if update_search_started_in_history(gradio_history, tool_query):
+                                            yield list(gradio_history)
                             elif tool_name:
                                 # Show generic thinking block for non-search tools
                                 # Reference agent pattern: always append, don't check duplicates
@@ -941,13 +963,23 @@ async def agent_chat_handler(
                                     tool_name = tool_call_accumulator.get_tool_name(token)
 
                                     if tool_name == "retrieve_context":
-                                        # Update existing "search started" message with LLM-generated query
-                                        from rag_engine.api.stream_helpers import update_search_started_in_history
                                         tool_query = tool_call_accumulator.process_token(token)
-                                        if tool_query:
-                                            if update_search_started_in_history(gradio_history, tool_query):
-                                                yield list(gradio_history)
-                                        # If no query extracted yet, keep the existing message with user's query
+                                        # If we've already seen tool results, ADD a new search_started block
+                                        # Otherwise, UPDATE the existing one (which was added at handler start)
+                                        if has_seen_tool_results:
+                                            # Add NEW search_started block for subsequent tool calls
+                                            logger.info("Adding NEW search_started block via chunk (subsequent): query=%s", tool_query[:50] if tool_query else "empty")
+                                            from rag_engine.api.stream_helpers import yield_search_started
+                                            search_started_msg = yield_search_started(tool_query or "")
+                                            gradio_history.append(search_started_msg)
+                                            yield list(gradio_history)
+                                        else:
+                                            # Update existing search_started message with LLM-generated query
+                                            logger.info("Updating existing search_started block via chunk: query=%s", tool_query[:50] if tool_query else "empty")
+                                            from rag_engine.api.stream_helpers import update_search_started_in_history
+                                            if tool_query:
+                                                if update_search_started_in_history(gradio_history, tool_query):
+                                                    yield list(gradio_history)
                                     elif tool_name:
                                         # Show generic thinking block for non-search tools
                                         # Reference agent pattern: always append, don't check duplicates
@@ -1092,6 +1124,15 @@ async def agent_chat_handler(
                 if fallback_answer:
                     answer = fallback_answer
                     disclaimer_prepended = fallback_disclaimer or disclaimer_prepended
+
+        # Check if we were cancelled during streaming
+        if is_cancelled():
+            logger.info("Stream cancelled by user - saving incomplete response and returning")
+            if incomplete_response and session_id:
+                llm_manager.save_assistant_turn(session_id, incomplete_response)
+                logger.info(f"Saved INCOMPLETE response to memory ({len(incomplete_response)} chars)")
+            yield list(gradio_history)
+            return
 
         # Accumulate articles from tool results and add citations
         logger.info("Stream completed: %d chunks processed, %d tool results", stream_chunk_count, len(tool_results))
@@ -1538,29 +1579,28 @@ with gr.Blocks(
     saved_input = gr.State()
     # State to store current session_id for memory clearing
     current_session_id = gr.State(None)
+    # Cancellation state - mutable dict so changes propagate to running generator
+    # Note: Using direct dict value (not lambda) for Gradio 6 compatibility
+    cancellation_state = gr.State(value={"cancelled": False})
 
-    def handle_stop_click(history: list[dict]) -> list[dict]:
-        """Handle built-in stop button click - update history with cancellation message."""
-        logger.info("Stop button clicked - cancelling stream")
-        if history:
-            last_msg = history[-1]
-            if isinstance(last_msg, dict) and last_msg.get("role") == "assistant":
-                content_raw = last_msg.get("content", "")
-                content_str = _extract_content_string(content_raw)
-                # Only add cancellation notice if response was incomplete
-                # Handle both empty content and incomplete responses (pattern from test script)
-                if not content_str or not content_str.strip().endswith("."):
-                    from rag_engine.api.i18n import get_text
+    def handle_stop_click(history: list[dict], cancel_state: dict | None) -> tuple[list[dict], dict]:
+        """Handle built-in stop button click - set cancellation flag and add UI block.
 
-                    cancelled_title = get_text("cancelled_title")
-                    cancelled_message = get_text("cancelled_message")
-                    cancellation_msg = {
-                        "role": "assistant",
-                        "content": content_str + f"\n\n{cancelled_message}",
-                        "metadata": {"title": cancelled_title, "ui_type": "cancelled"},
-                    }
-                    history[-1] = cancellation_msg
-        return history
+        Sets cancellation flag in shared state so the running generator can check it,
+        and adds a cancellation message as a separate UI block.
+        """
+        logger.info("Stop button clicked - setting cancellation flag")
+        # Ensure cancel_state is a valid dict
+        if cancel_state is None or not isinstance(cancel_state, dict):
+            cancel_state = {"cancelled": True}
+        else:
+            cancel_state["cancelled"] = True
+        # Add cancellation UI block as separate message (like other UI blocks)
+        from rag_engine.api.stream_helpers import yield_cancelled
+
+        cancellation_msg = yield_cancelled()
+        history.append(cancellation_msg)
+        return history, cancel_state
 
     def clear_and_save_textbox(message: str) -> tuple[gr.Textbox, str]:
         """Clear textbox and save message to state (pattern from ChatInterface/test script)."""
@@ -1605,9 +1645,23 @@ with gr.Blocks(
         session_id = salt_session_id(base_session_id, history, message)
         return session_id
 
+    def reset_cancellation_state(cancel_state: dict | None) -> dict:
+        """Reset cancellation state at start of new submission."""
+        if cancel_state is None or not isinstance(cancel_state, dict):
+            cancel_state = {"cancelled": False}
+        else:
+            cancel_state["cancelled"] = False
+        return cancel_state
+
     # Main streaming handler - chained from user_submit
     # Pattern from ChatInterface: append user message to chatbot first, then call handler
     submit_event = user_submit.then(
+        fn=reset_cancellation_state,
+        inputs=[cancellation_state],
+        outputs=[cancellation_state],
+        queue=False,
+        api_visibility="private",
+    ).then(
         lambda message, history: history + [{"role": "user", "content": message}],
         inputs=[saved_input, chatbot],
         outputs=[chatbot],
@@ -1621,7 +1675,7 @@ with gr.Blocks(
         api_visibility="private",
     ).then(
         fn=handler_fn,
-        inputs=[saved_input, chatbot],  # Use saved message from state, chatbot now has user message; request is auto-passed
+        inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
         outputs=[chatbot],
         concurrency_limit=settings.gradio_default_concurrency_limit,
         api_visibility="private",  # Hide agent_chat_handler from MCP tools
@@ -1645,8 +1699,8 @@ with gr.Blocks(
     # Also hide stop button when stop is clicked
     msg.stop(
         fn=handle_stop_click,
-        inputs=[chatbot],
-        outputs=[chatbot],
+        inputs=[chatbot, cancellation_state],
+        outputs=[chatbot, cancellation_state],
         cancels=[submit_event],  # Explicitly cancel submit event (though it's automatic)
         api_visibility="private",
     ).then(
