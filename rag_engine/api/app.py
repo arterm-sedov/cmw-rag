@@ -1385,6 +1385,8 @@ with gr.Blocks(
     # Configure concurrency limit per Gradio queuing best practices
     # https://www.gradio.app/guides/queuing
     # Hide from MCP API using api_visibility="private" to prevent auto-exposure
+    # Using .then() to run events consecutively: first handle the message, then clear the textbox
+    # See: https://www.gradio.app/guides/blocks-and-event-listeners#running-events-consecutively
     submit_event = msg.submit(
         fn=handler_fn,
         inputs=[msg, chatbot],
@@ -1392,7 +1394,7 @@ with gr.Blocks(
         concurrency_limit=settings.gradio_default_concurrency_limit,
         api_visibility="private",  # Hide agent_chat_handler from MCP tools
     ).then(
-        lambda: "",  # Clear message input
+        lambda: "",  # Clear message input after submission completes
         outputs=[msg],
         api_visibility="private",  # Hide lambda function from MCP tools
     )
