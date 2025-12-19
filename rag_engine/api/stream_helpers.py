@@ -202,6 +202,8 @@ def yield_search_started(query: str | None = None) -> dict:
         "content": content,
         "metadata": {
             "title": title,
+            # Explicit UI-only marker (used by _is_ui_only_message)
+            "ui_type": "search_started",
         },
     }
 
@@ -232,6 +234,8 @@ def yield_thinking_block(tool_name: str) -> dict:
         "content": content,
         "metadata": {
             "title": title,
+            # Explicit UI-only marker (used by _is_ui_only_message)
+            "ui_type": "thinking",
         },
     }
 
@@ -284,7 +288,11 @@ def yield_search_completed(
     return {
         "role": "assistant",
         "content": content,
-        "metadata": {"title": title},
+        "metadata": {
+            "title": title,
+            # Explicit UI-only marker (used by _is_ui_only_message)
+            "ui_type": "search_completed",
+        },
     }
 
 
@@ -295,7 +303,8 @@ def yield_model_switch_notice(model: str) -> dict:
         model: Model name that was switched to
 
     Returns:
-        Gradio message dict with metadata for model switch
+        Gradio message dict with metadata for model switch.
+        Content and title are resolved i18n strings.
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_model_switch_notice
@@ -303,10 +312,18 @@ def yield_model_switch_notice(model: str) -> dict:
         >>> model in msg["metadata"]["title"]
         True
     """
+    # Resolve i18n translations to plain strings before yielding
+    # This ensures Chatbot receives strings, not __i18n__ metadata objects
+    title = get_text("model_switch_title", model=model)
+
     return {
         "role": "assistant",
         "content": "",
-        "metadata": {"title": f"⚡ Переключение на {model} (требуется больше контекста)"},
+        "metadata": {
+            "title": title,
+            # Explicit UI-only marker (used by _is_ui_only_message)
+            "ui_type": "model_switch",
+        },
     }
 
 
@@ -354,8 +371,9 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
         msg = gradio_history[i]
         if isinstance(msg, dict) and msg.get("role") == "assistant":
             metadata = msg.get("metadata", {})
-            title = metadata.get("title", "")
-            if "Поиск" in title or "Searching" in title:
+            # Check for ui_type marker first (preferred, language-agnostic)
+            ui_type = metadata.get("ui_type")
+            if ui_type == "search_started":
                 updated_msg = yield_search_started(query)
                 gradio_history[i] = updated_msg
                 return True

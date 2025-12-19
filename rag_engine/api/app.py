@@ -246,8 +246,11 @@ def _is_ui_only_message(msg: dict) -> bool:
     UI-only messages include:
     - Disclaimer messages
     - Search started/completed metadata messages
+    - Thinking blocks (tool execution metadata)
     - Model switch notices
-    - Any message with metadata field (UI metadata)
+
+    Regular assistant messages (actual answers) should NOT be filtered even if they
+    have metadata, as they contain conversation content the agent needs to see.
 
     Args:
         msg: Message dict to check
@@ -258,15 +261,23 @@ def _is_ui_only_message(msg: dict) -> bool:
     if not isinstance(msg, dict):
         return False
 
-    # Check for metadata field (UI-only messages have this)
-    if "metadata" in msg:
-        return True
-
-    # Check for disclaimer content
+    # Check for disclaimer content (disclaimer messages don't have metadata)
     from rag_engine.llm.prompts import AI_DISCLAIMER
     content = msg.get("content", "")
     if isinstance(content, str) and AI_DISCLAIMER.strip() in content:
         return True
+
+    # Check for explicit UI-only metadata marker first (preferred, language-agnostic)
+    metadata = msg.get("metadata", {})
+    if isinstance(metadata, dict):
+        ui_type = metadata.get("ui_type")
+        if isinstance(ui_type, str) and ui_type in {
+            "search_started",
+            "search_completed",
+            "thinking",
+            "model_switch",
+        }:
+            return True
 
     return False
 
@@ -347,21 +358,45 @@ def _build_agent_messages_from_gradio_history(
     # - The current user message (we'll add it wrapped below)
     from rag_engine.utils.message_utils import normalize_gradio_history_message
 
-    for msg in gradio_history:
+    # Log all messages in gradio_history before filtering for debugging
+    logger.info("gradio_history contents before filtering (%d messages):", len(gradio_history))
+    for idx, msg in enumerate(gradio_history):
+        msg_role = msg.get("role", "unknown")
+        msg_content = msg.get("content", "")
+        has_metadata = "metadata" in msg
+        metadata_keys = list(msg.get("metadata", {}).keys()) if isinstance(msg.get("metadata"), dict) else []
+        content_preview = str(msg_content)[:100] if isinstance(msg_content, str) else f"<{type(msg_content).__name__}>"
+        logger.info(
+            "  [%d] role=%s, has_metadata=%s, metadata_keys=%s, content_preview=%s",
+            idx, msg_role, has_metadata, metadata_keys, content_preview
+        )
+
+    for idx, msg in enumerate(gradio_history):
+        msg_role = msg.get("role")
+        msg_content = msg.get("content", "")
+        has_metadata = "metadata" in msg
+
         # Skip UI-only messages
         if _is_ui_only_message(msg):
+            logger.debug(
+                "Filtered out UI-only message [%d]: role=%s, has_metadata=%s, content_preview=%s",
+                idx, msg_role, has_metadata, str(msg_content)[:100] if isinstance(msg_content, str) else "non-string"
+            )
             continue
 
         # Skip the current user message (we'll add wrapped version below)
-        msg_role = msg.get("role")
-        msg_content = msg.get("content", "")
         if msg_role == "user" and isinstance(msg_content, str) and msg_content.strip() == current_message.strip():
+            logger.debug("Skipping current user message [%d] (will add wrapped version)", idx)
             continue
 
         # Normalize message for LangChain (convert structured content to string)
         normalized_msg = normalize_gradio_history_message(msg)
         # Include actual conversation messages
         messages.append(normalized_msg)
+        logger.info(
+            "Included message [%d] in agent context: role=%s, content_preview=%s",
+            idx, msg_role, str(msg_content)[:100] if isinstance(msg_content, str) else "non-string"
+        )
 
     # Add wrapped current message for agent
     messages.append({"role": "user", "content": wrapped_message})
@@ -440,6 +475,20 @@ def agent_chat_handler(
     # Then we always yield the full working_history list
     gradio_history = list(history) if history else []
 
+    # Log history state for debugging memory issues
+    logger.info(
+        "agent_chat_handler called: message='%s', history_length=%d, gradio_history_length=%d",
+        message[:50] if message else "",
+        len(history) if history else 0,
+        len(gradio_history),
+    )
+    if gradio_history:
+        logger.debug(
+            "Previous conversation messages in history: %d user, %d assistant",
+            sum(1 for msg in gradio_history if isinstance(msg, dict) and msg.get("role") == "user"),
+            sum(1 for msg in gradio_history if isinstance(msg, dict) and msg.get("role") == "assistant"),
+        )
+
     # Add user message to history (reference agent pattern: always add, don't check)
     # The reference agent doesn't check for duplicates - it trusts ChatInterface's history
     user_msg = {"role": "user", "content": message}
@@ -516,6 +565,19 @@ def agent_chat_handler(
     messages = _build_agent_messages_from_gradio_history(
         gradio_history, message, wrapped_message
     )
+
+    # Log messages being sent to agent for debugging memory issues
+    logger.info(
+        "Building agent messages: gradio_history_length=%d -> agent_messages_length=%d",
+        len(gradio_history),
+        len(messages),
+    )
+    if messages:
+        logger.debug(
+            "Agent messages breakdown: %d user, %d assistant",
+            sum(1 for msg in messages if isinstance(msg, dict) and msg.get("role") == "user"),
+            sum(1 for msg in messages if isinstance(msg, dict) and msg.get("role") == "assistant"),
+        )
 
     # Note: pre-agent trimming removed by request; rely on existing middleware
 
@@ -989,6 +1051,15 @@ def agent_chat_handler(
         # Save conversation turn (reuse existing pattern)
         if session_id:
             llm_manager.save_assistant_turn(session_id, final_text)
+
+        # Log final history state for debugging
+        logger.info(
+            "Final history yield: total_messages=%d (user=%d, assistant=%d, ui_metadata=%d)",
+            len(gradio_history),
+            sum(1 for msg in gradio_history if isinstance(msg, dict) and msg.get("role") == "user"),
+            sum(1 for msg in gradio_history if isinstance(msg, dict) and msg.get("role") == "assistant" and not msg.get("metadata")),
+            sum(1 for msg in gradio_history if isinstance(msg, dict) and msg.get("metadata")),
+        )
 
         yield list(gradio_history)
 

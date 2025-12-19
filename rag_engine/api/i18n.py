@@ -22,6 +22,7 @@ i18n = gr.I18n(
         "sources_header": "**Sources:**",
         "thinking_title": "🧠 Thinking",
         "thinking_content": "Using tool: {tool_name}",
+        "model_switch_title": "⚡ Switched to {model} (requires more context)",
     },
     ru={
         "language": "ru",
@@ -32,6 +33,7 @@ i18n = gr.I18n(
         "sources_header": "**Источники:**",
         "thinking_title": "🧠 Размышление",
         "thinking_content": "Использую инструмент: {tool_name}",
+        "model_switch_title": "⚡ Переключение на {model} (требуется больше контекста)",
     },
 )
 
