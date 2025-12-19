@@ -177,7 +177,7 @@ class ToolCallAccumulator:
 
 
 def yield_search_started(query: str | None = None) -> dict:
-    """Yield metadata message for search started.
+    """Yield metadata message for search started with pending spinner.
 
     Args:
         query: Optional user query being searched, for display in the bubble.
@@ -185,12 +185,15 @@ def yield_search_started(query: str | None = None) -> dict:
     Returns:
         Gradio message dict with metadata for search started.
         Content and title are resolved i18n strings (never i18n metadata objects).
+        Includes status="pending" to show native Gradio spinner.
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_search_started
         >>> msg = yield_search_started()
         >>> "Searching" in msg["metadata"]["title"] or "Поиск" in msg["metadata"]["title"]
         True
+        >>> msg["metadata"]["status"]
+        'pending'
     """
     # Resolve i18n translations to plain strings before yielding
     # This ensures Chatbot receives strings, not __i18n__ metadata objects
@@ -204,12 +207,14 @@ def yield_search_started(query: str | None = None) -> dict:
             "title": title,
             # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "search_started",
+            # Native Gradio spinner: "pending" shows spinner, "done" hides it
+            "status": "pending",
         },
     }
 
 
 def yield_thinking_block(tool_name: str) -> dict:
-    """Yield metadata message for generic thinking block (non-search tools).
+    """Yield metadata message for generic thinking block with pending spinner.
 
     Args:
         tool_name: Name of the tool being used (e.g., "add", "get_current_datetime")
@@ -217,12 +222,15 @@ def yield_thinking_block(tool_name: str) -> dict:
     Returns:
         Gradio message dict with metadata for thinking block.
         Content and title are resolved i18n strings (never i18n metadata objects).
+        Includes status="pending" to show native Gradio spinner.
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_thinking_block
         >>> msg = yield_thinking_block("add")
         >>> "Thinking" in msg["metadata"]["title"] or "Размышление" in msg["metadata"]["title"]
         True
+        >>> msg["metadata"]["status"]
+        'pending'
     """
     # Resolve i18n translations to plain strings before yielding
     # This ensures Chatbot receives strings, not __i18n__ metadata objects
@@ -236,6 +244,8 @@ def yield_thinking_block(tool_name: str) -> dict:
             "title": title,
             # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "thinking",
+            # Native Gradio spinner: "pending" shows spinner, "done" hides it
+            "status": "pending",
         },
     }
 
@@ -244,7 +254,7 @@ def yield_search_completed(
     count: int | None = None,
     articles: list[dict] | None = None,
 ) -> dict:
-    """Yield metadata message for search completed.
+    """Yield metadata message for search completed (no spinner, stays open).
 
     Args:
         count: Optional article count to include in message.
@@ -253,6 +263,7 @@ def yield_search_completed(
     Returns:
         Gradio message dict with metadata for search completed.
         Content and title are resolved i18n strings (never i18n metadata objects).
+        No status field - accordion stays open to show clickable article links.
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_search_completed
@@ -292,12 +303,14 @@ def yield_search_completed(
             "title": title,
             # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "search_completed",
+            # NO status field - accordion stays open to show clickable article links
+            # Previous "search_started" spinner is stopped via update_message_status_in_history()
         },
     }
 
 
 def yield_model_switch_notice(model: str) -> dict:
-    """Yield metadata message for model switch.
+    """Yield metadata message for model switch (stays open for visibility).
 
     Args:
         model: Model name that was switched to
@@ -305,6 +318,7 @@ def yield_model_switch_notice(model: str) -> dict:
     Returns:
         Gradio message dict with metadata for model switch.
         Content and title are resolved i18n strings.
+        No status field - accordion stays open so users see which model is being used.
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_model_switch_notice
@@ -323,16 +337,51 @@ def yield_model_switch_notice(model: str) -> dict:
             "title": title,
             # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "model_switch",
+            # NO status - accordion stays open for visibility (important info)
+        },
+    }
+
+
+def yield_generating_answer() -> dict:
+    """Yield metadata message for answer generation phase with spinner.
+
+    Returns:
+        Gradio message dict with metadata for answer generation.
+        Content and title are resolved i18n strings (never i18n metadata objects).
+        Includes status="pending" to show native Gradio spinner.
+
+    Example:
+        >>> from rag_engine.api.stream_helpers import yield_generating_answer
+        >>> msg = yield_generating_answer()
+        >>> "Generating" in msg["metadata"]["title"] or "Генерация" in msg["metadata"]["title"]
+        True
+        >>> msg["metadata"]["status"]
+        'pending'
+    """
+    # Resolve i18n translations to plain strings before yielding
+    title = get_text("generating_answer_title")
+    content = get_text("generating_answer_content")
+
+    return {
+        "role": "assistant",
+        "content": content,
+        "metadata": {
+            "title": title,
+            # Explicit UI-only marker (used by _is_ui_only_message)
+            "ui_type": "generating_answer",
+            # Native Gradio spinner: "pending" shows spinner during answer generation
+            "status": "pending",
         },
     }
 
 
 def yield_cancelled() -> dict:
-    """Yield metadata message for cancelled response.
+    """Yield metadata message for cancelled response (stays open for visibility).
 
     Returns:
         Gradio message dict with metadata for cancellation.
         Content and title are resolved i18n strings (never i18n metadata objects).
+        No status field - accordion stays open so users see the cancellation notice.
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_cancelled
@@ -352,6 +401,7 @@ def yield_cancelled() -> dict:
             "title": title,
             # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "cancelled",
+            # NO status - accordion stays open for visibility (important notice)
         },
     }
 
@@ -410,6 +460,48 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
             if ui_type == "search_started":
                 updated_msg = yield_search_started(query)
                 gradio_history[i] = updated_msg
+                return True
+
+    return False
+
+
+def update_message_status_in_history(
+    gradio_history: list[dict],
+    ui_type: str,
+    new_status: str,
+) -> bool:
+    """Update the status of the last message with given ui_type in Gradio history.
+
+    This is useful for transitioning messages from "pending" to "done" state,
+    which removes the spinner in Gradio's native UI.
+
+    Args:
+        gradio_history: List of Gradio message dictionaries
+        ui_type: The ui_type to search for ("thinking", "search_started", etc.)
+        new_status: New status value ("pending" or "done")
+
+    Returns:
+        True if message was updated, False otherwise
+
+    Example:
+        >>> history = [{
+        ...     "role": "assistant",
+        ...     "content": "Searching...",
+        ...     "metadata": {"ui_type": "search_started", "status": "pending"}
+        ... }]
+        >>> update_message_status_in_history(history, "search_started", "done")
+        True
+        >>> history[0]["metadata"]["status"]
+        'done'
+    """
+    # Search backwards to find the most recent message with matching ui_type
+    for i in range(len(gradio_history) - 1, -1, -1):
+        msg = gradio_history[i]
+        if isinstance(msg, dict) and msg.get("role") == "assistant":
+            metadata = msg.get("metadata", {})
+            if metadata.get("ui_type") == ui_type:
+                # Update status in place
+                metadata["status"] = new_status
                 return True
 
     return False
