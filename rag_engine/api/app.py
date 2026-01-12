@@ -1484,7 +1484,7 @@ def get_knowledge_base_articles(query: str, top_k: int | str | None = None) -> s
 
 # MCP-compatible wrapper for agent_chat_handler
 # Collects streaming response into a single string for MCP tools
-def ask_comindware(message: str) -> str:
+async def ask_comindware(message: str) -> str:
     """Ask questions about Comindware Platform documentation and get intelligent answers with citations.
 
     The assistant automatically searches the knowledge base to find relevant articles
@@ -1504,13 +1504,13 @@ def ask_comindware(message: str) -> str:
     generator = None
     try:
         # Call the handler with empty history and None request (MCP context)
-        # Note: agent_chat_handler is the generator function used by ChatInterface
+        # Note: agent_chat_handler is an async generator function used by ChatInterface
         generator = agent_chat_handler(message=message, history=[], request=None)
 
-        # Consume the entire generator to collect all responses
+        # Consume the entire async generator to collect all responses
         # The generator now yields: full message history lists (for ChatInterface)
         # Extract the final answer from the last assistant message in the history
-        for chunk in generator:
+        async for chunk in generator:
             if chunk is None:
                 continue
 
@@ -1541,8 +1541,8 @@ def ask_comindware(message: str) -> str:
         # Ensure generator is fully consumed
         if generator:
             try:
-                # Try to close the generator if it's still open
-                generator.close()
+                # Try to close the async generator if it's still open
+                await generator.aclose()
             except Exception:
                 pass
 
