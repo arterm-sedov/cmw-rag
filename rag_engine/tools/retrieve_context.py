@@ -89,10 +89,7 @@ class RetrieveContextSchema(BaseModel):
     query: str = Field(
         ...,
         description="The search query or question to find relevant documents from the knowledge base. "
-        "This should be a clear, specific question or search phrase. "
-        "Examples: 'How to configure authentication?', 'What is RAG?', 'user permissions setup'. "
-        "RU: Поисковый запрос или вопрос для поиска релевантных документов из базы знаний. "
-        "Должен быть четким и конкретным.",
+        "This should be a clear, specific question or search phrase. ",
         min_length=1,
     )
     top_k: int | None = Field(
@@ -101,8 +98,6 @@ class RetrieveContextSchema(BaseModel):
         "default top_k_rerank setting (typically 5-10 articles). "
         "Use a smaller value (e.g., 3) for focused retrieval, or larger (e.g., 10) "
         "for comprehensive coverage. "
-        "RU: Максимальное количество статей для получения. Если не указано, используется "
-        "настроенное значение top_k_rerank (обычно 5-10 статей).",
     )
 
     @field_validator("query", mode="before")
@@ -165,33 +160,69 @@ async def retrieve_context(
 ) -> str:
     """Retrieve relevant context articles from the knowledge base using semantic search.
 
-    This tool searches the knowledge base for articles relevant to your query using.
+    This tool searches the Comindware knowledge base for articles relevant to your query using.
+
     It returns formatted context with article titles, URLs, and content ready for consumption.
 
     **Use this tool:**
     - When you need information from the knowledge base to answer a user's question
-    - When the user's request is vague or ambiguous - you can call this tool multiple times
-      with different query variations to find comprehensive information
+    - When the user's request is vague or ambiguous call this tool multiple times
+      with unique queries to find comprehensive information
     - When you need to explore different aspects of a topic
     - When initial results are insufficient and you want to refine your search
 
     **Iterative search strategy for vague requests:**
-    - For vague or complex user requests, call this tool multiple times with different query angles
-    - Example: If user asks "how do I set things up?", try queries like:
-     * "initial setup configuration"
-     * "getting started guide"
-     * "installation requirements"
-    - Combine results from multiple queries to build a comprehensive understanding
-    - If no results found, try broader or alternative phrasings
 
     **Query best practices:**
-    - Use specific, focused queries for better results (e.g., "authentication setup" vs "setup")
-    - Break down complex questions into multiple focused queries
-    - Use synonyms or related terms if initial query returns no results
-    - Consider different aspects of the topic (e.g., "configuration", "troubleshooting", "examples")
+    - Always query the knowledge base in Russian, even if the question is in English
+    - Use specific, focused queries for better results (e.g., "настройка аутентификации" vs "аутентификация")
+    - Combine results from multiple queries to build a comprehensive understanding
+    - Usually 1-3 quality search queries (with reasonable top_k) are enough to answer the question
+    - If no results found, try broader, alternative phrasings, synonyms or related terms
+    - Break down vague or complex questions into multiple focused queries with different query angles
+    - The knowledge base is focused to the Comindware Platform and its use cases, hence:
+      - Avoid including the term "Comindware Platform" in search queries unless really needed.
+      - For general, business or industry-specific questions extract technical and platform-relevant search queries (excluding industry/business keywords).
+
+    **Query decomposition examples:**
+    For better search results, paraphrase and split the user question into several unique queries, using different phrases and keywords.
+    Call retrieve_context multiple times with unique queries. Do not search for similar queries more than once.
+
+    Examples:
+    - User question: Как всё настроить?
+      - Unique search queries:
+        * настройка и запуск ПО
+        * подготовка к установке
+        * системные требования
+    - User question: Как настроить взаимодействие между подразделениями
+      - Unique search queries:
+        * настройка почты
+        * получение и отправка почты
+        * подключения и пути передачи данных
+        * SMTP/IMAP/Exchange
+        * межпроцессное взаимодействие
+        * сообщения
+        * HTTP/HTTPS
+        * REST API
+    - User question: "Как писать тройки"
+      - Unique search queries:
+        * тройки
+        * написание троек
+        * написание выражений на N3
+        * синтаксис N3
+        * примеры N3
+        * справочник по N3
+        * язык N3
+    - User question: "Как провести отпуск"
+      - Unique search queries:
+        * бизнес-приложения
+        * шаблоны
+        * атрибуты
+        * записи
+        * формы
 
     Args:
-        query: Search query or question to find relevant articles. Be specific and focused.
+        query: Search query to find relevant articles. Be specific and focused.
         top_k: Optional limit on number of articles (default uses system setting, typically 5-10)
 
     Returns:
