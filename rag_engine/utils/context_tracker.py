@@ -253,12 +253,12 @@ def compute_overhead_tokens(
     """Compute overhead tokens from actual system prompt and tool schemas.
 
     Counts actual tokens in:
-    - System prompt (if provided, otherwise uses SYSTEM_PROMPT)
+    - System prompt (if provided, otherwise uses get_system_prompt())
     - Tool schemas (if provided, otherwise uses retrieve_context tool)
     - Safety margin for formatting overhead (if provided, otherwise uses settings)
 
     Args:
-        system_prompt: System prompt string (if None, uses SYSTEM_PROMPT)
+        system_prompt: System prompt string (if None, uses get_system_prompt())
         tools: List of LangChain tools (if None, uses retrieve_context tool)
         safety_margin: Additional safety margin for formatting overhead (if None, uses settings)
 
@@ -274,7 +274,7 @@ def compute_overhead_tokens(
     import json
 
     from rag_engine.config.settings import settings
-    from rag_engine.llm.prompts import SYSTEM_PROMPT
+    from rag_engine.llm.prompts import get_system_prompt
     from rag_engine.llm.token_utils import count_tokens
     from rag_engine.tools.retrieve_context import retrieve_context
 
@@ -282,7 +282,7 @@ def compute_overhead_tokens(
 
     # Count system prompt tokens
     if system_prompt is None:
-        system_prompt = SYSTEM_PROMPT
+        system_prompt = get_system_prompt()  # Use function for consistency, no guidance needed for token counting
     total_overhead += count_tokens(system_prompt)
 
     # Count tool schema tokens
@@ -333,7 +333,7 @@ def estimate_accumulated_context(
     Args:
         messages: Conversation messages (dict or LangChain messages)
         tool_results: List of tool result JSON strings
-        system_prompt: System prompt string (if None, uses SYSTEM_PROMPT)
+        system_prompt: System prompt string (if None, uses get_system_prompt())
         tools: List of LangChain tools (if None, uses retrieve_context tool)
 
     Returns:

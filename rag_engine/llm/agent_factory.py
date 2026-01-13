@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
+from typing import Any
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import SummarizationMiddleware, before_model
 
 from rag_engine.config.settings import settings
 from rag_engine.llm.llm_manager import LLMManager, get_context_window
-from rag_engine.llm.prompts import SUMMARIZATION_PROMPT, SYSTEM_PROMPT
+from rag_engine.llm.prompts import SUMMARIZATION_PROMPT, get_system_prompt
 from rag_engine.llm.token_utils import count_messages_tokens
 from rag_engine.utils.context_tracker import AgentContext
 
@@ -79,17 +81,20 @@ def create_rag_agent(
     # Get model configuration for context window
     context_window = get_context_window(selected_model)
 
+    # Get mild_limit for system prompt guidance (soft limit, separate from hard max_tokens cutoff)
+    mild_limit = settings.llm_mild_limit
+
     # Calculate threshold (configurable, default 70%)
     threshold_tokens = int(context_window * (settings.memory_compression_threshold_pct / 100))
 
     # Use centralized token counter from token_utils
-    def tiktoken_counter(messages: list) -> int:
+    def tiktoken_counter(messages: Iterable[Any]) -> int:
         """Count tokens using centralized utility.
 
         Uses count_messages_tokens which handles both dict and LangChain
         message objects with exact tiktoken encoding.
         """
-        return count_messages_tokens(messages)
+        return count_messages_tokens(list(messages))
 
     # Conditionally use tool_choice to force retrieval tool execution
     # On first call: force retrieve_context to ensure knowledge base search
@@ -144,7 +149,7 @@ def create_rag_agent(
     middleware_list.append(
         SummarizationMiddleware(
             model=base_model,  # Use same model for summarization
-            token_counter=tiktoken_counter,  # Use our centralized counter
+            token_counter=tiktoken_counter,  # type: ignore[arg-type]  # Use our centralized counter
             max_tokens_before_summary=threshold_tokens,  # Configurable threshold
             messages_to_keep=messages_to_keep,  # Configurable, default 2
             summary_prompt=SUMMARIZATION_PROMPT,  # Use existing prompt
@@ -155,7 +160,7 @@ def create_rag_agent(
     agent = create_agent(
         model=model_with_tools,
         tools=all_tools,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=get_system_prompt(mild_limit=mild_limit),
         context_schema=AgentContext,  # Typed context for tools
         middleware=middleware_list,
     )

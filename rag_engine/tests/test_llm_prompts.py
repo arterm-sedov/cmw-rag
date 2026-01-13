@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from rag_engine.llm.prompts import SYSTEM_PROMPT
+from rag_engine.llm.prompts import get_system_prompt
 
 
 def test_system_prompt_contains_required_instructions():
     # Ensure key constraints and language policy are present in the system prompt
-    assert "article.php?id=" in SYSTEM_PROMPT
-    assert "kb.comindware.ru" in SYSTEM_PROMPT
-    assert "Answer always in Russian" in SYSTEM_PROMPT
-    assert "Context" not in SYSTEM_PROMPT  # placeholder added at runtime
+    prompt = get_system_prompt()  # Get base prompt without guidance
+    assert "article.php?id=" in prompt
+    assert "kb.comindware.ru" in prompt
+    assert "Answer always in Russian" in prompt
+    assert "Context" not in prompt  # placeholder added at runtime
 
