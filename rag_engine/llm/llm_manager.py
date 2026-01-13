@@ -7,7 +7,7 @@ from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 
-from rag_engine.llm.prompts import SYSTEM_PROMPT
+from rag_engine.llm.prompts import get_system_prompt
 from rag_engine.llm.token_utils import estimate_tokens_for_request
 from rag_engine.config.settings import settings
 from rag_engine.utils.conversation_store import ConversationStore
@@ -192,7 +192,8 @@ class LLMManager:
 
     def get_system_prompt(self) -> str:
         """Expose system prompt for other components (no import cycles)."""
-        return SYSTEM_PROMPT
+        mild_limit = settings.llm_mild_limit
+        return get_system_prompt(mild_limit=mild_limit)
 
     def _format_article_header(self, doc: Any) -> str:
         """Format Article URLs header from document metadata.
@@ -225,7 +226,7 @@ class LLMManager:
 
     def _estimate_request_tokens(self, question: str, context: str) -> dict:
         return estimate_tokens_for_request(
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=get_system_prompt(),  # Use function for consistency, no guidance needed for token counting
             question=question,
             context=context,
             max_output_tokens=self._model_config["max_tokens"],
@@ -240,7 +241,9 @@ class LLMManager:
         System prompt is injected at call time and never stored in memory.
         """
         messages: List[Tuple[str, str]] = []
-        messages.append(("system", SYSTEM_PROMPT + "\n\nContext:\n" + context))
+        mild_limit = settings.llm_mild_limit
+        system_prompt_text = get_system_prompt(mild_limit=mild_limit)
+        messages.append(("system", system_prompt_text + "\n\nContext:\n" + context))
         if session_id:
             history = self._conversations.get(session_id)
             # Replay prior turns

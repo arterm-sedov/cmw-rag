@@ -121,7 +121,7 @@ class TestCreateRagAgent:
         system_prompt = call_args[1]["system_prompt"]
         assert "Comindware Platform" in system_prompt
         assert "technical documentation assistant" in system_prompt
-        assert "<role>" in system_prompt  # Characteristic of SYSTEM_PROMPT
+        assert "<role>" in system_prompt  # Characteristic of system prompt
 
     @patch("rag_engine.llm.agent_factory.settings")
     @patch("rag_engine.llm.agent_factory.create_agent")

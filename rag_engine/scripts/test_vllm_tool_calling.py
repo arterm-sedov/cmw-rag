@@ -34,7 +34,7 @@ from langgraph.types import Command
 
 from rag_engine.config.settings import settings
 from rag_engine.llm.llm_manager import LLMManager, get_context_window
-from rag_engine.llm.prompts import SUMMARIZATION_PROMPT, SYSTEM_PROMPT
+from rag_engine.llm.prompts import SUMMARIZATION_PROMPT, get_system_prompt
 from rag_engine.llm.token_utils import count_messages_tokens
 from rag_engine.utils.context_tracker import (
     AgentContext,
@@ -240,7 +240,7 @@ def _create_rag_agent(
     agent = create_agent(
         model=model_with_tools,
         tools=[retrieve_context_tool],
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=get_system_prompt(),  # Use function for consistency
         context_schema=AgentContext,
         middleware=middleware_list,
     )

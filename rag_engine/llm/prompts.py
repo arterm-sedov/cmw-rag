@@ -1,4 +1,4 @@
-SYSTEM_PROMPT = """<role>
+_SYSTEM_PROMPT_BASE = """<role>
 You are a technical documentation assistant for Comindware Platform.
 You answer questions based strictly on provided context from the knowledge base articles.
 </role>
@@ -93,6 +93,31 @@ For internal reasoning use English.
 - Never duplicate sections in the output.
 </answer_structure>
 </output>"""
+
+
+def get_system_prompt(mild_limit: int | None = None) -> str:
+    """Get system prompt with optional mild_limit guidance.
+
+    Args:
+        mild_limit: Optional soft guidance limit for response length. If provided, adds
+                   guidance to the prompt to help the model stay within this limit.
+                   This is a soft guideline; the hard max_tokens cutoff is separate.
+
+    Returns:
+        System prompt string with mild_limit guidance if provided.
+    """
+    prompt = _SYSTEM_PROMPT_BASE
+
+    if mild_limit is not None:
+        length_guidance = f"""
+<response_length>
+- Aim to keep your response under approximately {mild_limit} tokens.
+- Prioritize completeness and clarity - finish your thoughts rather than cutting off mid-sentence.
+- If the answer requires more detail, structure it clearly with sections and subsections.
+</response_length>"""
+        prompt = prompt.replace("</output>", length_guidance + "\n</output>")
+
+    return prompt
 
 
 # Question-guided summarization prompt for RAG compression
