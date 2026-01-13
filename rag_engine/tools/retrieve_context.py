@@ -2,6 +2,9 @@
 
 This tool is self-sufficient and handles all retrieval mechanics internally.
 The agent only needs to import and use the tool - no setup required.
+
+Now supports async execution to prevent blocking the event loop during
+concurrent requests.
 """
 from __future__ import annotations
 
@@ -14,6 +17,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from rag_engine.retrieval.retriever import Article, RAGRetriever
 from rag_engine.utils.context_tracker import AgentContext
+from rag_engine.utils.thread_pool import run_in_thread_pool
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +158,7 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
 
 
 @tool("retrieve_context", args_schema=RetrieveContextSchema)
-def retrieve_context(
+async def retrieve_context(
     query: str,
     top_k: int | None = None,
     runtime: ToolRuntime[AgentContext, None] | None = None,
@@ -218,11 +222,14 @@ def retrieve_context(
     information from different angles or aspects of a topic. Each call is independent.
     """
     try:
-        retriever = _get_or_create_retriever()
+        # Get retriever (initialization is fast, but wrap in thread pool for safety)
+        retriever = await run_in_thread_pool(_get_or_create_retriever)
 
-        # NO token counting - just retrieve uncompressed articles with ranks
-        docs = retriever.retrieve(query, top_k=top_k)
+        # Run blocking retrieval in thread pool to avoid blocking event loop
+        docs = await run_in_thread_pool(retriever.retrieve, query, top_k=top_k)
         logger.info("Retrieved %d articles for query: %s", len(docs), query)
+
+        # Formatting is fast and CPU-bound, can stay in event loop
         return _format_articles_to_json(docs, query, top_k)
     except Exception as exc:  # noqa: BLE001
         logger.error("Error during retrieval: %s", exc, exc_info=True)
