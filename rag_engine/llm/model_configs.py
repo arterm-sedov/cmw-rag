@@ -5,9 +5,7 @@ for supported models. Kept separate for clarity and easier maintenance.
 """
 from __future__ import annotations
 
-from typing import Dict
-
-MODEL_CONFIGS: Dict[str, Dict] = {
+MODEL_CONFIGS: dict[str, dict] = {
     # Gemini models (matching cmw-platform-agent)
     "gemini-2.5-flash": {
         "token_limit": 1_048_576,  # 1M context
@@ -158,6 +156,12 @@ MODEL_CONFIGS: Dict[str, Dict] = {
     "mistralai/codestral-2508": {
         "token_limit": 256_000,
         "max_tokens": 4_096,
+        "temperature": 0,
+    },
+    # Z.AI Models
+    "z-ai/glm-4.7": {
+        "token_limit": 202_752,  # 202,752 context window as per OpenRouter API
+        "max_tokens": 32_768,  # Reasonable max output for large context model
         "temperature": 0,
     },
     # OpenAI specialized models
