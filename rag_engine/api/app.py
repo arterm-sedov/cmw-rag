@@ -751,7 +751,9 @@ async def agent_chat_handler(
                     if is_ai_message:
                         tool_query_from_accumulator = tool_call_accumulator.process_token(token)
                         # If accumulator found a complete query, update search_started message
-                        if tool_query_from_accumulator:
+                        # BUT only for the first tool call - subsequent calls create their own blocks
+                        # This prevents query rotation in the same block when multiple tool calls occur
+                        if tool_query_from_accumulator and not has_seen_tool_results:
                             from rag_engine.api.stream_helpers import update_search_started_in_history
 
                             if update_search_started_in_history(gradio_history, tool_query_from_accumulator):
