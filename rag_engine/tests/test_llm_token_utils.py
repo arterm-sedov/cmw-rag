@@ -10,7 +10,7 @@ def test_estimate_tokens_for_request_counts_components():
         system_prompt="sys",
         question="q",
         context="abc",
-        max_output_tokens=50,
+        reserved_output_tokens=50,
         overhead=10,
     )
     assert out["output_tokens"] == 50
@@ -28,7 +28,7 @@ def test_estimate_tokens_for_request_counts_large_strings():
         system_prompt="",
         question="",
         context=large_string,
-        max_output_tokens=0,
+        reserved_output_tokens=0,
         overhead=0,
     )
     # Exact count: should match tiktoken encoding

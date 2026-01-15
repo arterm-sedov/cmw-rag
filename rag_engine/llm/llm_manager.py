@@ -229,7 +229,7 @@ class LLMManager:
             system_prompt=get_system_prompt(),  # Use function for consistency, no guidance needed for token counting
             question=question,
             context=context,
-            max_output_tokens=self._model_config["max_tokens"],
+            reserved_output_tokens=None,  # Will derive from mild_limit * 3 or safety margin
             overhead=100,
         )
 
