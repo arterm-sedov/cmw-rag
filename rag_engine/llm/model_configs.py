@@ -24,6 +24,11 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 65_536,
         "temperature": 0,
     },
+    "deepseek/deepseek-v3.1-terminus:exacto": {
+        "token_limit": 163_840,
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
     "deepseek/deepseek-chat-v3.1:free": {
         "token_limit": 163_840,
         "max_tokens": 4_096,
@@ -139,6 +144,11 @@ MODEL_CONFIGS: dict[str, dict] = {
         "temperature": 0,
     },
     "openai/gpt-oss-120b": {
+        "token_limit": 131_072,
+        "max_tokens": 32_768,
+        "temperature": 0,
+    },
+        "openai/gpt-oss-120b:exacto": {
         "token_limit": 131_072,
         "max_tokens": 32_768,
         "temperature": 0,
