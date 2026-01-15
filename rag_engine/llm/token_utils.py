@@ -76,12 +76,22 @@ def estimate_tokens_for_request(
     system_prompt: str,
     question: str,
     context: str,
-    max_output_tokens: int,
+    reserved_output_tokens: int | None = None,
     overhead: int = 100,
 ) -> dict[str, int]:
     """Estimate token usage for a chat request.
 
-    Returns a dict with input_tokens, output_tokens, and total_tokens.
+    Args:
+        system_prompt: System prompt text
+        question: User question text
+        context: Context/documentation text
+        reserved_output_tokens: Tokens to reserve for output. If None, derives from
+            settings: uses mild_limit * 3 (for Russian language) or falls back to
+            llm_context_overhead_safety_margin.
+        overhead: Additional overhead tokens for message formatting
+
+    Returns:
+        Dict with input_tokens, output_tokens, and total_tokens.
     """
     # Coerce to strings defensively to avoid tests passing mocks/objects
     system_s = str(system_prompt or "")
@@ -93,7 +103,19 @@ def estimate_tokens_for_request(
     question_tokens = count_tokens(question_s)
     context_tokens = count_tokens(context_s)
     input_tokens = system_tokens + question_tokens + context_tokens + int(overhead)
-    output_tokens = int(max_output_tokens)
+
+    # Derive output reservation from settings if not provided
+    if reserved_output_tokens is None:
+        from rag_engine.config.settings import settings
+
+        if settings.llm_mild_limit:
+            # Convert words to tokens: Russian uses ~3 tokens per word
+            reserved_output_tokens = int(settings.llm_mild_limit * 3)
+        else:
+            # Fallback to safety margin (which already includes output buffer)
+            reserved_output_tokens = settings.llm_context_overhead_safety_margin
+
+    output_tokens = int(reserved_output_tokens)
     return {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,

@@ -38,7 +38,7 @@ def summarize_to_tokens(
             system_prompt=system_prompt,
             question=question,
             context=tentative_context,
-            max_output_tokens=target_tokens,
+            reserved_output_tokens=target_tokens,  # Use target_tokens as explicit output reservation
             overhead=100,
         )
         # Include full body only if the summarization request itself fits
@@ -65,11 +65,12 @@ def summarize_to_tokens(
             continue
 
         # Estimate output tokens; accept if within target
+        # Use reserved_output_tokens=0 to just count the output (not reserve space)
         est_out = estimate_tokens_for_request(
             system_prompt="",
             question="",
             context=output,
-            max_output_tokens=0,
+            reserved_output_tokens=0,  # Just counting, not reserving
             overhead=0,
         )
         if est_out["input_tokens"] <= current_target:
