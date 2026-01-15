@@ -27,6 +27,7 @@ class AgentContext(BaseModel):
     Attributes:
         conversation_tokens: Tokens used by conversation history
         accumulated_tool_tokens: Tokens from previous tool calls (deduplicated)
+        fetched_kb_ids: Set of kb_ids already fetched in this turn (prevents duplicate retrieval)
     """
 
     conversation_tokens: int = Field(
@@ -37,6 +38,12 @@ class AgentContext(BaseModel):
     accumulated_tool_tokens: int = Field(
         default=0,
         description="Tokens accumulated from previous tool calls in this turn (deduplicated)",
+    )
+
+    fetched_kb_ids: set[str] = Field(
+        default_factory=set,
+        description="Set of kb_ids already fetched in this turn (prevents duplicate retrieval). "
+        "Optional - defaults to empty set if not provided (e.g., for MCP calls).",
     )
 
 

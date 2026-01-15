@@ -13,7 +13,7 @@ def summarize_to_tokens(
     matched_chunks: List[str],
     full_body: Optional[str],
     target_tokens: int,
-    guidance: str,
+    guidance: Optional[str],
     llm,
     max_retries: int = 2,
 ) -> str:
