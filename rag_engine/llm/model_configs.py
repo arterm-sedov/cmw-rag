@@ -20,12 +20,12 @@ MODEL_CONFIGS: dict[str, dict] = {
     # OpenRouter models (matching cmw-platform-agent)
     # DeepSeek Models
     "deepseek/deepseek-v3.1-terminus": {
-        "token_limit": 163_840,
+        "token_limit": 131000,
         "max_tokens": 65_536,
         "temperature": 0,
     },
     "deepseek/deepseek-v3.1-terminus:exacto": {
-        "token_limit": 163_840,
+        "token_limit": 131000,
         "max_tokens": 65_536,
         "temperature": 0,
     },
