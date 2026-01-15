@@ -15,6 +15,7 @@ import threading
 from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, Field, field_validator
 
+from rag_engine.config.settings import settings
 from rag_engine.retrieval.retriever import Article, RAGRetriever
 from rag_engine.utils.context_tracker import AgentContext
 from rag_engine.utils.thread_pool import run_in_thread_pool
@@ -41,7 +42,6 @@ def _get_or_create_retriever() -> RAGRetriever:
         with _retriever_init_lock:
             if _retriever is not None:
                 return _retriever
-        from rag_engine.config.settings import settings
         from rag_engine.llm.llm_manager import LLMManager
         from rag_engine.retrieval.embedder import FRIDAEmbedder
         from rag_engine.storage.vector_store import ChromaStore
@@ -88,16 +88,16 @@ class RetrieveContextSchema(BaseModel):
 
     query: str = Field(
         ...,
-        description="The search query or question to find relevant documents from the knowledge base. "
-        "This should be a clear, specific question or search phrase. ",
+        description="Ыearch query to find relevant articles from the knowledge base. "
+        "This should be unique, clear, specific, focused. ",
         min_length=1,
     )
     top_k: int | None = Field(
         default=None,
-        description="Maximum number of articles to retrieve. If not specified, uses the system's "
-        "default top_k_rerank setting (typically 5-10 articles). "
-        "Use a smaller value (e.g., 3) for focused retrieval, or larger (e.g., 10) "
-        "for comprehensive coverage. "
+        description="Maximum number of articles to retrieve. "
+        f"Default: {settings.top_k_rerank} articles. "
+        "Use a smaller value (e.g., 3) for focused retrieval. "
+        "Use larger value (e.g., 10) for comprehensive coverage. "
     )
 
     @field_validator("query", mode="before")
@@ -160,7 +160,7 @@ async def retrieve_context(
 ) -> str:
     """Retrieve relevant context articles from the knowledge base using semantic search.
 
-    This tool searches the Comindware knowledge base for articles relevant to your query using.
+    This tool searches the Comindware knowledge base for articles relevant to your query.
 
     It returns formatted context with article titles, URLs, and content ready for consumption.
 
@@ -171,24 +171,22 @@ async def retrieve_context(
     - When you need to explore different aspects of a topic
     - When initial results are insufficient and you want to refine your search
 
-    **Iterative search strategy for vague requests:**
-
     **Query best practices:**
-    - Always query the knowledge base in Russian, even if the question is in English
-    - Use specific, focused queries for better results (e.g., "настройка аутентификации" vs "аутентификация")
-    - Combine results from multiple queries to build a comprehensive understanding
-    - Usually 1-3 quality search queries (with reasonable top_k) are enough to answer the question
-    - If no results found, try broader, alternative phrasings, synonyms or related terms
-    - Break down vague or complex questions into multiple focused queries with different query angles
+    - Always query the knowledge base in Russian, even if the question is in English.
+    - Use specific, focused queries for better results (e.g., "настройка аутентификации" not "аутентификация").
+    - Combine results from multiple queries to build a comprehensive understanding.
+    - Usually 1-3 quality search queries (with reasonable top_k) are enough to answer the question.
+    - If no results found, try broader, alternative phrasings, synonyms or related terms.
+    - Break down vague or complex questions into multiple focused queries with different query angles.
     - The knowledge base is focused to the Comindware Platform and its use cases, hence:
-      - Avoid including the term "Comindware Platform" in search queries unless really needed.
+      - DO NOT include the "Comindware Platform" term in search queries unless really needed.
       - For general, business or industry-specific questions extract technical and platform-relevant search queries (excluding industry/business keywords).
 
-    **Query decomposition examples:**
-    For better search results, paraphrase and split the user question into several unique queries, using different phrases and keywords.
-    Call retrieve_context multiple times with unique queries. Do not search for similar queries more than once.
+    **Query decomposition:**
+    - For better search results, paraphrase and split the user question into several unique queries, using different phrases and keywords.
+    - Call retrieve_context multiple times with unique queries. Do not search for semantically similar queries more than once.
 
-    Examples:
+    **Examples:**
     - User question: Как всё настроить?
       - Unique search queries:
         * настройка и запуск ПО
@@ -206,8 +204,6 @@ async def retrieve_context(
         * REST API
     - User question: "Как писать тройки"
       - Unique search queries:
-        * тройки
-        * написание троек
         * написание выражений на N3
         * синтаксис N3
         * примеры N3
@@ -220,10 +216,6 @@ async def retrieve_context(
         * атрибуты
         * записи
         * формы
-
-    Args:
-        query: Search query to find relevant articles. Be specific and focused.
-        top_k: Optional limit on number of articles (default uses system setting, typically 5-10)
 
     Returns:
         JSON string containing structured article data. Format:

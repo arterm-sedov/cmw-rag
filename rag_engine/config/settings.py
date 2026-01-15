@@ -118,6 +118,10 @@ class Settings(BaseSettings):
     # Minimum tokens to preserve per article during compression
     llm_compression_min_tokens: int = 300
 
+    # Timezone configuration
+    # Default timezone for datetime operations (IANA timezone name, e.g., 'Europe/Moscow', 'UTC')
+    default_timezone: str = "Europe/Moscow"
+
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
         env_file=".env",
