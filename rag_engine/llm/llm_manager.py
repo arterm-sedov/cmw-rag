@@ -27,7 +27,7 @@ def get_model_config(model_name: str) -> dict:
 
     Applies .env overrides if set:
     - LLM_TOKEN_LIMIT overrides token_limit
-    - LLM_MAX_TOKENS overrides max_tokens
+    - LLM_MAX_TOKENS overrides max_tokens (used only for estimation, not passed to model)
 
     Args:
         model_name: Model identifier to look up
@@ -125,13 +125,16 @@ class LLMManager:
         return self._model_config["max_tokens"]
 
     def _chat_model(self, provider: str | None = None):
-        """Create chat model instance."""
+        """Create chat model instance.
+
+        Note: max_tokens is not passed to the model as providers have their own limits.
+        It's only used for context size estimation.
+        """
         p = (provider or self.provider).lower()
         if p == "gemini":
             return ChatGoogleGenerativeAI(
                 model=self.model_name,
                 temperature=self.temperature,
-                max_tokens=self._model_config["max_tokens"],
             )
         if p == "openrouter":
             # OpenRouter via OpenAI-compatible client
@@ -141,7 +144,7 @@ class LLMManager:
                     "OPENROUTER_API_KEY is not set or empty. "
                     "Please set it in your .env file."
                 )
-            
+
             base_url = settings.openrouter_base_url
             logger.info(
                 f"Initializing OpenRouter client: model={self.model_name}, "
@@ -153,7 +156,6 @@ class LLMManager:
                 api_key=api_key,
                 base_url=base_url,
                 temperature=self.temperature,
-                max_tokens=self._model_config["max_tokens"],
                 # Note: streaming is controlled at call site (.stream() vs .invoke()),
                 # not at model construction time, to avoid issues with LangChain agents
                 default_headers={
@@ -178,7 +180,6 @@ class LLMManager:
                 api_key=api_key,
                 base_url=base_url,
                 temperature=self.temperature,
-                max_tokens=self._model_config["max_tokens"],
                 # Note: streaming is controlled at call site (.stream() vs .invoke()),
                 # not at model construction time, to avoid issues with LangChain agents
             )
@@ -187,7 +188,6 @@ class LLMManager:
         return ChatGoogleGenerativeAI(
             model=self.model_name,
             temperature=self.temperature,
-            max_tokens=self._model_config["max_tokens"],
         )
 
     def get_system_prompt(self) -> str:
