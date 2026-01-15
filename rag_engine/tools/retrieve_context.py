@@ -99,6 +99,11 @@ class RetrieveContextSchema(BaseModel):
         "Use a smaller value (e.g., 3) for focused retrieval. "
         "Use larger value (e.g., 10) for comprehensive coverage. "
     )
+    exclude_kb_ids: list[str] | None = Field(
+        default=None,
+        description="Optional list of article kb_ids to exclude from results (for deduplication). "
+        "Use this to prevent retrieving articles you've already fetched in previous tool calls. ",
+    )
 
     @field_validator("query", mode="before")
     @classmethod
@@ -156,6 +161,7 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
 async def retrieve_context(
     query: str,
     top_k: int | None = None,
+    exclude_kb_ids: list[str] | None = None,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     """Retrieve relevant context articles from the knowledge base using semantic search.
@@ -250,6 +256,27 @@ async def retrieve_context(
 
         # Run blocking retrieval in thread pool to avoid blocking event loop
         docs = await run_in_thread_pool(retriever.retrieve, query, top_k=top_k)
+
+        # Determine which kb_ids to exclude (explicit argument takes precedence, then context)
+        excluded_set: set[str] = set()
+        if exclude_kb_ids:
+            excluded_set = set(exclude_kb_ids)
+        elif runtime and hasattr(runtime, "context") and runtime.context:
+            excluded_set = getattr(runtime.context, "fetched_kb_ids", set())
+
+        # Filter out excluded articles
+        if excluded_set:
+            original_count = len(docs)
+            docs = [doc for doc in docs if doc.kb_id not in excluded_set]
+            filtered_count = original_count - len(docs)
+            if filtered_count > 0:
+                logger.info(
+                    "Filtered out %d already-fetched articles, returning %d new articles for query: %s",
+                    filtered_count,
+                    len(docs),
+                    query,
+                )
+
         logger.info("Retrieved %d articles for query: %s", len(docs), query)
 
         # Formatting is fast and CPU-bound, can stay in event loop

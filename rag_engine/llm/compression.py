@@ -342,10 +342,44 @@ def compress_tool_messages(
 
     # Log current article sizes before compression
     current_article_tokens = sum(count_tokens(a.get("content", "")) for a in all_articles)
+
+    # Calculate tool message tokens (includes JSON structure, metadata, etc.)
+    tool_message_tokens = total_tokens - non_tool_tokens
+
+    # Count raw article content from ALL tool messages to detect any remaining duplicates
+    # (Tool-level filtering should prevent duplicates, but this serves as a safety net check)
+    all_raw_article_tokens = 0
+    total_articles_in_tool_messages = 0
+    for idx in tool_message_indices:
+        msg = messages[idx]
+        content = get_message_content(msg)
+        if not content:
+            continue
+        try:
+            result = json.loads(content)
+            articles = result.get("articles", [])
+            total_articles_in_tool_messages += len(articles)
+            for article in articles:
+                all_raw_article_tokens += count_tokens(article.get("content", ""))
+        except (json.JSONDecodeError, Exception):
+            continue
+
+    # Calculate overhead breakdown
+    # duplicate_tokens should be 0 with tool-level filtering, but useful as diagnostic
+    duplicate_tokens = max(0, all_raw_article_tokens - current_article_tokens)
+    json_structure_overhead = max(0, tool_message_tokens - all_raw_article_tokens)
+
     logger.info(
-        "Articles before compression: %d articles, %d total tokens, target=%d tokens",
+        "Articles before compression: %d unique articles (%d total in %d tool messages), "
+        "%d raw content tokens (after deduplication), tool messages=%d tokens "
+        "(%d remaining duplicate tokens + %d JSON/metadata overhead), target=%d tokens",
         len(all_articles),
+        total_articles_in_tool_messages,
+        len(tool_message_indices),
         current_article_tokens,
+        tool_message_tokens,
+        duplicate_tokens,
+        json_structure_overhead,
         available_for_articles,
     )
 
@@ -359,12 +393,16 @@ def compress_tool_messages(
 
     # Log compression results
     if tokens_saved > 0:
-        compressed_total = sum(count_tokens(a.get("content", "")) for a in compressed_articles)
+        compressed_article_tokens = sum(count_tokens(a.get("content", "")) for a in compressed_articles)
+        # Calculate full context after compression (articles + non-tool messages + overhead)
+        full_context_after = total_tokens - tokens_saved
         logger.info(
-            "Compression result: saved %d tokens, compressed_total=%d tokens (target was %d)",
+            "Compression result: saved %d tokens, compressed_articles=%d tokens (target was %d), "
+            "full context after compression ~%d tokens",
             tokens_saved,
-            compressed_total,
+            compressed_article_tokens,
             available_for_articles,
+            full_context_after,
         )
     else:
         logger.warning(
@@ -395,7 +433,10 @@ def compress_tool_messages(
     # Create mapping: kb_id -> compressed article
     compressed_by_kb_id = {a["kb_id"]: a for a in compressed_articles}
 
-    # Update tool messages with compressed articles
+    # Track which articles we've already included to avoid duplicates across tool messages
+    seen_kb_ids_in_output = set()
+
+    # Update tool messages with compressed articles (deduplicated across all messages)
     updated_messages = list(messages)
     for idx in tool_message_indices:
         msg = updated_messages[idx]
@@ -407,10 +448,21 @@ def compress_tool_messages(
             result = json.loads(content)
             original_articles = result.get("articles", [])
 
-            # Replace with compressed versions if available
+            # Replace with compressed versions if available, but skip duplicates
             compressed_result_articles = []
             for orig_article in original_articles:
                 kb_id = orig_article.get("kb_id")
+                if not kb_id:
+                    # Keep articles without kb_id (shouldn't happen, but be safe)
+                    compressed_result_articles.append(orig_article)
+                    continue
+
+                # Skip if we've already included this article in a previous tool message
+                if kb_id in seen_kb_ids_in_output:
+                    continue  # Skip duplicate
+
+                # Add to seen set and include compressed version
+                seen_kb_ids_in_output.add(kb_id)
                 if kb_id in compressed_by_kb_id:
                     compressed_result_articles.append(compressed_by_kb_id[kb_id])
                 else:
@@ -423,6 +475,7 @@ def compress_tool_messages(
                 1 for a in compressed_result_articles if a.get("metadata", {}).get("compressed")
             )
             result["metadata"]["tokens_saved_by_compression"] = tokens_saved
+            result["metadata"]["deduplicated"] = len(original_articles) != len(compressed_result_articles)
 
             # Create new compact JSON
             new_content = json.dumps(result, ensure_ascii=False, separators=(",", ":"))

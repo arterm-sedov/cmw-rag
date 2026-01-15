@@ -702,6 +702,7 @@ async def agent_chat_handler(
         agent_context = AgentContext(
             conversation_tokens=conversation_tokens,
             accumulated_tool_tokens=0,  # Updated as we go
+            fetched_kb_ids=set(),  # Reset for new turn - tracks articles fetched in this turn
         )
 
         # vLLM streaming limitation: tool_choice doesn't work in streaming mode
@@ -811,6 +812,23 @@ async def agent_chat_handler(
                         # Agent tracks context, not the tool!
                         _, accumulated_tool_tokens = estimate_accumulated_tokens([], tool_results)
                         agent_context.accumulated_tool_tokens = accumulated_tool_tokens
+
+                        # Update fetched_kb_ids in context (if context exists)
+                        if agent_context:
+                            try:
+                                from rag_engine.tools.utils import parse_tool_result_to_articles
+                                articles_list = parse_tool_result_to_articles(token.content)
+                                if articles_list:
+                                    for article in articles_list:
+                                        if article.kb_id:
+                                            agent_context.fetched_kb_ids.add(article.kb_id)
+
+                                    logger.debug(
+                                        "Updated fetched_kb_ids: %d total articles fetched in this turn",
+                                        len(agent_context.fetched_kb_ids),
+                                    )
+                            except Exception as exc:
+                                logger.warning("Failed to update fetched_kb_ids: %s", exc)
 
                         logger.debug(
                             "Updated accumulated context: conversation=%d, tools=%d (total: %d)",
@@ -1440,7 +1458,9 @@ except Exception as e:
 
 # Wrapper function to expose retrieve_context tool as API endpoint
 # The tool is a StructuredTool, so we need to extract the underlying function
-def get_knowledge_base_articles(query: str, top_k: int | str | None = None) -> str:
+def get_knowledge_base_articles(
+    query: str, top_k: int | str | None = None, exclude_kb_ids: list[str] | None = None
+) -> str:
     """Search and retrieve documentation articles from the Comindware Platform knowledge base.
 
     Use this tool when you need raw search results with article metadata. For intelligent
@@ -1452,6 +1472,9 @@ def get_knowledge_base_articles(query: str, top_k: int | str | None = None) -> s
         top_k: Optional limit on number of articles to return. If not specified,
                returns the default number of most relevant articles (typically 10-20).
                Can be provided as int or string (will be converted).
+        exclude_kb_ids: Optional list of article kb_ids to exclude from results (for deduplication).
+                       Use this to prevent retrieving articles you've already fetched in previous calls.
+                       Example: exclude_kb_ids=['12345', '67890'].
 
     Returns:
         JSON string containing an array of articles, each with:
@@ -1479,7 +1502,7 @@ def get_knowledge_base_articles(query: str, top_k: int | str | None = None) -> s
             raise ValueError(f"top_k must be a positive integer, got: {converted_top_k}")
 
     # Access the underlying function from the StructuredTool
-    return retrieve_context.func(query=query, top_k=converted_top_k)
+    return retrieve_context.func(query=query, top_k=converted_top_k, exclude_kb_ids=exclude_kb_ids)
 
 
 # MCP-compatible wrapper for agent_chat_handler
