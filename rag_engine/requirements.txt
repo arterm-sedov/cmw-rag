@@ -31,6 +31,9 @@ pyyaml>=6.0
 
 # Data Processing
 numpy>=1.24.0
+pandas
+openpyxl
+markdownify
 tqdm>=4.66.0
 
 # Testing & Linting

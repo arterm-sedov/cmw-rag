@@ -6,6 +6,7 @@ from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
 
 from rag_engine.llm.prompts import get_system_prompt
 from rag_engine.llm.token_utils import estimate_tokens_for_request
@@ -124,18 +125,46 @@ class LLMManager:
         """
         return self._model_config["max_tokens"]
 
-    def _chat_model(self, provider: str | None = None):
+    def _apply_structured_output(
+        self, model: Any, schema: type[BaseModel] | dict[str, Any]
+    ) -> Any:
+        """Apply structured output schema to a LangChain chat model if supported."""
+        with_structured_output = getattr(model, "with_structured_output", None)
+        if with_structured_output is None:
+            logger.warning(
+                "Model %s does not support with_structured_output(); ignoring schema.",
+                type(model).__name__,
+            )
+            return model
+
+        try:
+            return with_structured_output(schema, method="json_schema", strict=True)
+        except Exception as exc:
+            logger.warning("Failed to apply structured output: %s. Using regular model.", exc)
+            return model
+
+    def _chat_model(
+        self,
+        provider: str | None = None,
+        structured_output_schema: type[BaseModel] | dict[str, Any] | None = None,
+    ):
         """Create chat model instance.
+
+        Args:
+            provider: Optional provider override (openrouter, gemini, vllm)
+            structured_output_schema: Optional Pydantic model or JSON schema dict to enforce
+                structured output. Only supported for ChatOpenAI models (OpenRouter/vLLM).
 
         Note: max_tokens is not passed to the model as providers have their own limits.
         It's only used for context size estimation.
         """
         p = (provider or self.provider).lower()
         if p == "gemini":
-            return ChatGoogleGenerativeAI(
+            model = ChatGoogleGenerativeAI(
                 model=self.model_name,
                 temperature=self.temperature,
             )
+            return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "openrouter":
             # OpenRouter via OpenAI-compatible client
             api_key = settings.openrouter_api_key
@@ -151,7 +180,7 @@ class LLMManager:
                 f"base_url={base_url}, api_key={api_key[:10]}..."
             )
 
-            return ChatOpenAI(
+            model = ChatOpenAI(
                 model=self.model_name,
                 api_key=api_key,
                 base_url=base_url,
@@ -164,6 +193,7 @@ class LLMManager:
                     "X-Title": "CMW RAG Engine",
                 },
             )
+            return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "vllm":
             # vLLM via OpenAI-compatible API
             # OpenAI client requires api_key to be set, use "EMPTY" as default if not provided
@@ -175,7 +205,7 @@ class LLMManager:
                 f"base_url={base_url}, api_key={api_key if api_key == 'EMPTY' else api_key[:10] + '...'}"
             )
 
-            return ChatOpenAI(
+            model = ChatOpenAI(
                 model=self.model_name,
                 api_key=api_key,
                 base_url=base_url,
@@ -183,12 +213,14 @@ class LLMManager:
                 # Note: streaming is controlled at call site (.stream() vs .invoke()),
                 # not at model construction time, to avoid issues with LangChain agents
             )
+            return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         # default fallback to Gemini
         logger.warning(f"Unknown provider {p}, falling back to Gemini")
-        return ChatGoogleGenerativeAI(
+        model = ChatGoogleGenerativeAI(
             model=self.model_name,
             temperature=self.temperature,
         )
+        return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
 
     def get_system_prompt(self) -> str:
         """Expose system prompt for other components (no import cycles)."""
