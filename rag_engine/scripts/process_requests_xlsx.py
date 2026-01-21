@@ -28,6 +28,7 @@ class RowResult:
     spam_score: float
     confidence_score: float | None
     num_requests: int
+    user_intent: str
 
 
 def build_markdown_request(subject: str, html_description: str) -> str:
@@ -102,21 +103,16 @@ async def process_one(*, subject: str, html_description: str, top_k: int) -> Row
     answer_text = build_answer_column_from_result(structured, top_k=top_k)
     score = structured.plan.spam_score
 
-    # Calculate confidence score (average top_score from all query traces)
-    confidence_score: float | None = None
-    if structured.per_query_results:
-        scores = []
-        for trace in structured.per_query_results:
-            conf = trace.get("confidence") if isinstance(trace, dict) else None
-            if isinstance(conf, dict):
-                top_score = conf.get("top_score")
-                if isinstance(top_score, (int, float)):
-                    scores.append(float(top_score))
-        if scores:
-            confidence_score = sum(scores) / len(scores)
+    # Calculate confidence score using shared normalization function
+    from rag_engine.retrieval.confidence import compute_normalized_confidence_from_traces
+
+    confidence_score = compute_normalized_confidence_from_traces(structured.per_query_results)
 
     # Number of requests = number of tool calls (query traces)
     num_requests = len(structured.per_query_results)
+
+    # Extract user intent from SGR plan
+    user_intent = structured.plan.user_intent if structured.plan.user_intent else ""
 
     return RowResult(
         articles_text=articles_text,
@@ -125,6 +121,7 @@ async def process_one(*, subject: str, html_description: str, top_k: int) -> Row
         spam_score=score,
         confidence_score=confidence_score,
         num_requests=num_requests,
+        user_intent=user_intent,
     )
 
 
@@ -138,6 +135,7 @@ def _write_output_file(
     out_spam: list[float | None],
     out_confidence: list[float | None],
     out_num_requests: list[int | None],
+    out_user_intent: list[str],
 ) -> None:
     """Write current state to output file."""
     df_output = df.copy()
@@ -147,6 +145,7 @@ def _write_output_file(
     df_output["Оценка спама"] = out_spam
     df_output["Уверенность"] = out_confidence
     df_output["Количество запросов"] = out_num_requests
+    df_output["Намерение пользователя"] = out_user_intent
 
     if output_path.suffix.lower() in {".xlsx", ".xlsm", ".xltx", ".xltm"}:
         df_output.to_excel(output_path, engine="openpyxl", index=False)
@@ -193,6 +192,7 @@ async def process_file(
     out_spam: list[float | None] = [None] * original_total_rows  # Empty for unprocessed rows
     out_confidence: list[float | None] = [None] * original_total_rows  # Empty for unprocessed rows
     out_num_requests: list[int | None] = [None] * original_total_rows  # Empty for unprocessed rows
+    out_user_intent: list[str] = [""] * original_total_rows  # Empty for unprocessed rows
 
     # Write initial empty file (use full dataframe to preserve all original rows)
     _write_output_file(
@@ -204,6 +204,7 @@ async def process_file(
         out_spam=out_spam,
         out_confidence=out_confidence,
         out_num_requests=out_num_requests,
+        out_user_intent=out_user_intent,
     )
     logger.info("Initialized output file: %s", output_path)
 
@@ -223,6 +224,7 @@ async def process_file(
             out_spam[idx] = res.spam_score
             out_confidence[idx] = res.confidence_score
             out_num_requests[idx] = res.num_requests
+            out_user_intent[idx] = res.user_intent
         except Exception as exc:  # noqa: BLE001
             logger.exception("Row failed (idx=%s, %s=%s): %s", idx, id_col, req_id, exc)
             # Keep default values (already set to empty/None during initialization)
@@ -237,6 +239,7 @@ async def process_file(
             out_spam=out_spam,
             out_confidence=out_confidence,
             out_num_requests=out_num_requests,
+            out_user_intent=out_user_intent,
         )
         logger.info("Processed row %d/%d (ID=%s, Excel row %d), output file updated", row_idx, rows_to_process, req_id, idx + 1)
 

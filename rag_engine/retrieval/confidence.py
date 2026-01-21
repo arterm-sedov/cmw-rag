@@ -63,3 +63,55 @@ def compute_retrieval_confidence(
         "likely_relevant": likely,
     }
 
+
+def compute_normalized_confidence_from_traces(query_traces: list[dict]) -> float | None:
+    """Compute normalized average confidence from query traces.
+
+    Extracts top_score from each query trace's confidence dict, normalizes
+    them to 0.0-1.0 range (preserving relative differences), and returns
+    the average. This handles reranker scores that can exceed 1.0 due to
+    metadata boosts.
+
+    Args:
+        query_traces: List of query trace dicts with 'confidence' key containing
+                     dict with 'top_score' value.
+
+    Returns:
+        Normalized average confidence (0.0-1.0) or None if no valid scores found.
+
+    Example:
+        >>> traces = [
+        ...     {"confidence": {"top_score": 0.8}},
+        ...     {"confidence": {"top_score": 1.0}},
+        ...     {"confidence": {"top_score": 1.2}},
+        ... ]
+        >>> compute_normalized_confidence_from_traces(traces)
+        0.5  # Normalized: [0.0, 0.5, 1.0] -> avg = 0.5
+    """
+    if not query_traces:
+        return None
+
+    raw_scores = []
+    for trace in query_traces:
+        conf = trace.get("confidence") if isinstance(trace, dict) else None
+        if isinstance(conf, dict):
+            top_score = conf.get("top_score")
+            if isinstance(top_score, (int, float)):
+                raw_scores.append(float(top_score))
+
+    if not raw_scores:
+        return None
+
+    # Normalize scores to 0.0-1.0 range while preserving relative differences
+    min_score = min(raw_scores)
+    max_score = max(raw_scores)
+
+    if max_score > min_score:
+        # Normalize: (score - min) / (max - min)
+        normalized_scores = [(s - min_score) / (max_score - min_score) for s in raw_scores]
+    else:
+        # All scores are the same, use 0.5 as neutral value
+        normalized_scores = [0.5] * len(raw_scores)
+
+    return sum(normalized_scores) / len(normalized_scores)
+
