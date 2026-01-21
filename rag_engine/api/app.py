@@ -59,7 +59,6 @@ def _article_to_dict(article) -> dict:
         "kb_id": getattr(article, "kb_id", ""),
         "title": title,
         "url": url,
-        "content": getattr(article, "content", ""),
         "metadata": dict(meta),
     }
 
@@ -762,6 +761,12 @@ async def agent_chat_handler(
     # then inject the resulting tool-call transcript into the agent messages.
     sgr_plan_dict: dict | None = None
     try:
+        from rag_engine.api.stream_helpers import yield_sgr_planning_started
+
+        # Show dedicated SGR bubble (like other tool bubbles)
+        gradio_history.append(yield_sgr_planning_started())
+        yield list(gradio_history)
+
         from rag_engine.llm.llm_manager import LLMManager
         from rag_engine.llm.schemas import SGRPlanResult
         from rag_engine.tools import sgr_plan as sgr_plan_tool
@@ -777,7 +782,7 @@ async def agent_chat_handler(
             tool_choice={"type": "function", "function": {"name": "sgr_plan"}},
         )
 
-        sgr_msg = sgr_model.invoke(messages)
+        sgr_msg = await sgr_model.ainvoke(messages)
         tool_calls = getattr(sgr_msg, "tool_calls", None) or []
         tool_call = tool_calls[0] if isinstance(tool_calls, list) and tool_calls else None
 
@@ -818,8 +823,16 @@ async def agent_chat_handler(
                         "tool_call_id": call_id,
                     },
                 ]
+        from rag_engine.api.stream_helpers import update_message_status_in_history
+
+        update_message_status_in_history(gradio_history, "sgr_planning", "done")
+        yield list(gradio_history)
     except Exception as exc:  # noqa: BLE001
         logger.warning("SGR forced tool call failed; continuing without plan: %s", exc)
+        from rag_engine.api.stream_helpers import update_message_status_in_history
+
+        update_message_status_in_history(gradio_history, "sgr_planning", "done")
+        yield list(gradio_history)
 
     # Create agent (with fallback model if needed) and stream execution
     # Force tool choice only on first message; allow model to choose on subsequent turns
@@ -1424,6 +1437,7 @@ async def agent_chat_handler(
             logger.warning("Failed to populate AgentContext final fields: %s", exc)
 
         yield agent_context
+        return
 
     except GeneratorExit:
         # Stream was cancelled - save incomplete response to memory if available (pattern from test script)
@@ -1576,6 +1590,20 @@ async def agent_chat_handler(
                         llm_manager.save_assistant_turn(session_id, final_response)
                         logger.info(f"Saved complete response to memory ({len(final_response)} chars)")
                     yield list(gradio_history)
+                    # Yield AgentContext so metadata UI can update after fallback retry.
+                    try:
+                        agent_context.final_answer = final_text or ""
+                        agent_context.final_articles = [_article_to_dict(a) for a in articles] if articles else []
+                        agent_context.diagnostics = {
+                            "model": current_model,
+                            "fallback_retry": True,
+                            "tool_results_count": len(tool_results),
+                        }
+                        if sgr_plan_dict and not getattr(agent_context, "sgr_plan", None):
+                            agent_context.sgr_plan = sgr_plan_dict
+                    except Exception:
+                        pass
+                    yield agent_context
                     return
             except Exception as retry_exc:  # If fallback retry fails, emit original-style error
                 logger.error("Fallback retry failed: %s", retry_exc, exc_info=True)
