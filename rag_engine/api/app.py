@@ -2,7 +2,6 @@
 """Gradio UI with Chatbot (reference agent pattern) and REST API endpoint."""
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import os
@@ -697,16 +696,8 @@ async def agent_chat_handler(
     gradio_history.append(thinking_msg)  # Append, don't replace
     yield list(gradio_history)
 
-    # 2. Add search started block (pattern from test script: line 161-167)
-    from rag_engine.api.stream_helpers import yield_search_started
-
-    # Use user's message as initial query (will be updated when tool call is detected)
-    initial_query = message.strip() if message else ""
-    search_started_msg = yield_search_started(initial_query)
-    # Add search_started message (reference agent pattern: always append)
-    gradio_history.append(search_started_msg)
-    # Yield full history - always yield full working_history like reference agent
-    yield list(gradio_history)
+    # Note: search_started message will be added when retrieve_context tool is actually called
+    # (not here, to maintain correct order: SGR planning -> retrieve_context -> answer generation)
 
     # Session management (reuse existing pattern)
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
@@ -945,16 +936,15 @@ async def agent_chat_handler(
                     # This ensures we capture query even if chunks arrive before tool_call is detected
                     if is_ai_message:
                         tool_query_from_accumulator = tool_call_accumulator.process_token(token)
-                        # If accumulator found a complete query, update search_started message
-                        # BUT only for the first tool call - subsequent calls create their own blocks
-                        # This prevents query rotation in the same block when multiple tool calls occur
-                        if tool_query_from_accumulator and not has_seen_tool_results:
-                            from rag_engine.api.stream_helpers import (
-                                update_search_started_in_history,
-                            )
-
-                            if update_search_started_in_history(gradio_history, tool_query_from_accumulator):
-                                yield list(gradio_history)
+                        # If accumulator found a complete query for retrieve_context, add search_started message
+                        # (search_started is now added when retrieve_context is called, not early)
+                        # This ensures correct order: SGR planning -> retrieve_context -> answer generation
+                        if tool_query_from_accumulator and tool_call_accumulator.get_tool_name(token) == "retrieve_context" and not has_seen_tool_results:
+                            logger.info("Adding search_started block from accumulator for retrieve_context: query=%s", tool_query_from_accumulator[:50])
+                            from rag_engine.api.stream_helpers import yield_search_started
+                            search_started_msg = yield_search_started(tool_query_from_accumulator)
+                            gradio_history.append(search_started_msg)
+                            yield list(gradio_history)
 
                     if is_ai_message:
                         has_tool_calls = bool(getattr(token, "tool_calls", None))
@@ -1154,22 +1144,13 @@ async def agent_chat_handler(
                                 tool_query = tool_call_accumulator.process_token(token)
                                 # If we've already seen tool results, ADD a new search_started block
                                 # Otherwise, UPDATE the existing one (which was added at handler start)
-                                if has_seen_tool_results:
-                                    # Add NEW search_started block for subsequent tool calls
-                                    logger.info("Adding NEW search_started block (subsequent tool call): query=%s", tool_query[:50] if tool_query else "empty")
-                                    from rag_engine.api.stream_helpers import yield_search_started
-                                    search_started_msg = yield_search_started(tool_query or "")
-                                    gradio_history.append(search_started_msg)
-                                    yield list(gradio_history)
-                                else:
-                                    # Update existing search_started message with LLM-generated query
-                                    logger.info("Updating existing search_started block: query=%s", tool_query[:50] if tool_query else "empty")
-                                    from rag_engine.api.stream_helpers import (
-                                        update_search_started_in_history,
-                                    )
-                                    if tool_query:
-                                        if update_search_started_in_history(gradio_history, tool_query):
-                                            yield list(gradio_history)
+                                # Always add search_started block when retrieve_context is called
+                                # This ensures correct order: SGR planning -> retrieve_context -> answer generation
+                                logger.info("Adding search_started block for retrieve_context: query=%s", tool_query[:50] if tool_query else "empty")
+                                from rag_engine.api.stream_helpers import yield_search_started
+                                search_started_msg = yield_search_started(tool_query or "")
+                                gradio_history.append(search_started_msg)
+                                yield list(gradio_history)
                             elif tool_name:
                                 # Show generic thinking block for non-search tools
                                 # Reference agent pattern: always append, don't check duplicates
@@ -1213,14 +1194,15 @@ async def agent_chat_handler(
                                             gradio_history.append(search_started_msg)
                                             yield list(gradio_history)
                                         else:
-                                            # Update existing search_started message with LLM-generated query
-                                            logger.info("Updating existing search_started block via chunk: query=%s", tool_query[:50] if tool_query else "empty")
+                                            # Add search_started block when retrieve_context is called
+                                            # This ensures correct order: SGR planning -> retrieve_context -> answer generation
+                                            logger.info("Adding search_started block via chunk for retrieve_context: query=%s", tool_query[:50] if tool_query else "empty")
                                             from rag_engine.api.stream_helpers import (
-                                                update_search_started_in_history,
+                                                yield_search_started,
                                             )
-                                            if tool_query:
-                                                if update_search_started_in_history(gradio_history, tool_query):
-                                                    yield list(gradio_history)
+                                            search_started_msg = yield_search_started(tool_query or "")
+                                            gradio_history.append(search_started_msg)
+                                            yield list(gradio_history)
                                     elif tool_name:
                                         # Show generic thinking block for non-search tools
                                         # Reference agent pattern: always append, don't check duplicates
@@ -1954,6 +1936,7 @@ async def chat_with_metadata(
         list | gr.JSON,
         list | gr.JSON,
         list | gr.Dataframe,
+        dict | None,  # metadata_state
     ],
     None,
 ]:
@@ -1984,6 +1967,7 @@ async def chat_with_metadata(
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
+                None,  # metadata_state - not updated during streaming
             )
         elif isinstance(chunk, AgentContext):
             ctx = chunk
@@ -2002,6 +1986,7 @@ async def chat_with_metadata(
             gr.update(visible=False, value=[]),
             gr.update(visible=False, value=[]),
             gr.update(visible=False, value=[]),
+            None,  # metadata_state - no metadata to store
         )
         return
 
@@ -2081,55 +2066,59 @@ async def chat_with_metadata(
         final_elapsed = (time.perf_counter() - final_start) * 1000
         logger.info(f"chat_with_metadata: final formatting took {final_elapsed:.2f}ms")
 
-        # Incremental yields to avoid Gradio hang - yield in 2 batches with small delay
-        # Batch 1: Badges only (lightweight, fast to process)
-        logger.info("chat_with_metadata: yielding badges (batch 1)")
+        # Yield badges immediately, store metadata in state for later UI update
+        logger.info("chat_with_metadata: yielding badges and storing metadata in state")
         yield_start = time.perf_counter()
-        try:
-            yield (
-                last_history,
-                gr.update(visible=True, value=spam_badge_html),
-                gr.update(visible=True, value=confidence_badge_html),
-                gr.update(visible=True, value=queries_badge_text),
-                gr.update(visible=False, value=""),  # intent_text - hide for now
-                gr.update(visible=False, value=[]),  # subqueries_json - hide for now
-                gr.update(visible=False, value=[]),  # action_plan_json - hide for now
-                gr.update(visible=False, value=[]),  # articles_df - hide for now
-            )
-            yield_elapsed = (time.perf_counter() - yield_start) * 1000
-            logger.info(f"chat_with_metadata: badges yield completed, took {yield_elapsed:.2f}ms")
-        except Exception as yield_exc:
-            logger.error(f"chat_with_metadata: badges yield failed: {yield_exc}", exc_info=True)
-            raise
 
-        # Small delay to let Gradio process batch 1 before batch 2
-        await asyncio.sleep(0.1)  # 100ms delay
+        # Prepare metadata for state storage
+        # Ensure we always show SGR metadata when plan exists
+        has_user_intent = bool(user_intent and isinstance(user_intent, str) and user_intent.strip())
+        has_subqueries = bool(isinstance(subqueries, list) and len(subqueries) > 0)
+        has_action_plan = bool(isinstance(action_plan, list) and len(action_plan) > 0)
+        has_articles = bool(isinstance(articles_df_data, list) and len(articles_df_data) > 0)
 
-        # Batch 2: Accordion content (heavier components)
+        # If SGR plan exists, ensure at least user_intent is shown (even if empty, use fallback)
+        if ctx.sgr_plan and not has_user_intent and user_message:
+            has_user_intent = True
+            user_intent = user_intent or user_message[:200]  # Use fallback if empty
+            logger.info("chat_with_metadata: using fallback user_intent from message for display")
+
+        # Store metadata in state for later UI update (after input is unlocked)
+        metadata_dict = {
+            "user_intent": user_intent if has_user_intent else "",
+            "has_user_intent": has_user_intent,
+            "subqueries": subqueries if isinstance(subqueries, list) else [],
+            "has_subqueries": has_subqueries,
+            "action_plan": action_plan if isinstance(action_plan, list) else [],
+            "has_action_plan": has_action_plan,
+            "articles_df_data": articles_df_data,
+            "has_articles": has_articles,
+        }
+
         logger.info(
-            "chat_with_metadata: yielding accordion content (batch 2) - "
+            "chat_with_metadata: storing metadata in state - "
             f"user_intent={user_intent[:50] if user_intent else 'empty'}, "
             f"subqueries_count={len(subqueries) if isinstance(subqueries, list) else 0}, "
             f"action_plan_count={len(action_plan) if isinstance(action_plan, list) else 0}, "
             f"articles_df_rows={len(articles_df_data) if isinstance(articles_df_data, list) else 0}"
         )
-        yield_start = time.perf_counter()
+
         try:
             yield (
                 last_history,
                 gr.update(visible=True, value=spam_badge_html),
                 gr.update(visible=True, value=confidence_badge_html),
                 gr.update(visible=True, value=queries_badge_text),
-                gr.update(visible=True, value=user_intent),
-                gr.update(visible=True, value=subqueries if isinstance(subqueries, list) else []),
-                gr.update(visible=True, value=action_plan if isinstance(action_plan, list) else []),
-                gr.update(visible=True, value=articles_df_data),
+                gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
+                gr.update(visible=False, value=[]),  # subqueries_json - hide for now, will update later
+                gr.update(visible=False, value=[]),  # action_plan_json - hide for now, will update later
+                gr.update(visible=False, value=[]),  # articles_df - hide for now, will update later
+                metadata_dict,  # Store metadata in state
             )
             yield_elapsed = (time.perf_counter() - yield_start) * 1000
-            logger.info(f"chat_with_metadata: accordion content yield completed, took {yield_elapsed:.2f}ms")
+            logger.info(f"chat_with_metadata: badges yield and metadata storage completed, took {yield_elapsed:.2f}ms")
         except Exception as yield_exc:
-            yield_elapsed = (time.perf_counter() - yield_start) * 1000
-            logger.error(f"chat_with_metadata: accordion content yield failed after {yield_elapsed:.2f}ms: {yield_exc}", exc_info=True)
+            logger.error(f"chat_with_metadata: badges yield failed: {yield_exc}", exc_info=True)
             raise
 
         if metadata_start_time:
@@ -2150,6 +2139,7 @@ async def chat_with_metadata(
             gr.update(visible=False, value=[]),
             gr.update(visible=False, value=[]),
             gr.update(visible=False, value=[]),
+            None,  # metadata_state - no metadata to store on error
         )
 
 
@@ -2204,6 +2194,8 @@ with gr.Blocks(
     # Cancellation state - mutable dict so changes propagate to running generator
     # Note: Using direct dict value (not lambda) for Gradio 6 compatibility
     cancellation_state = gr.State(value={"cancelled": False})
+    # State to store metadata for UI update after streaming completes
+    metadata_state = gr.State(value=None)
 
     # --- Metadata badges (populated after streaming completes, shown below chat) ---
     with gr.Row():
@@ -2212,6 +2204,7 @@ with gr.Blocks(
         queries_badge = gr.HTML(visible=False)
 
     # Metadata panels (populated after streaming completes) - displayed directly, no accordions
+    # Markdown headers are always visible (static text)
     gr.Markdown(f"### {i18n_resolve('analysis_summary_title')}")
     intent_text = gr.Textbox(label=i18n_resolve("user_intent_label"), interactive=False, visible=False)
     subqueries_json = gr.JSON(label=i18n_resolve("subqueries_label"), visible=False)
@@ -2326,6 +2319,35 @@ with gr.Blocks(
         logger.info("Re-enabling textbox and hiding stop button after handler completion")
         return gr.Textbox(value="", interactive=True, submit_btn=True, stop_btn=False)
 
+    def update_metadata_ui(metadata: dict | None) -> tuple:
+        """Update metadata UI components from stored metadata state.
+
+        Called after input is unlocked to populate SGR metadata.
+        """
+        if not metadata:
+            logger.info("update_metadata_ui: no metadata to display")
+            return (
+                gr.update(visible=False, value=""),
+                gr.update(visible=False, value=[]),
+                gr.update(visible=False, value=[]),
+                gr.update(visible=False, value=[]),
+            )
+
+        logger.info(
+            f"update_metadata_ui: updating UI with metadata - "
+            f"has_user_intent={metadata.get('has_user_intent', False)}, "
+            f"has_subqueries={metadata.get('has_subqueries', False)}, "
+            f"has_action_plan={metadata.get('has_action_plan', False)}, "
+            f"has_articles={metadata.get('has_articles', False)}"
+        )
+
+        return (
+            gr.update(visible=metadata.get("has_user_intent", False), value=metadata.get("user_intent", "")),
+            gr.update(visible=metadata.get("has_subqueries", False), value=metadata.get("subqueries", [])),
+            gr.update(visible=metadata.get("has_action_plan", False), value=metadata.get("action_plan", [])),
+            gr.update(visible=metadata.get("has_articles", False), value=metadata.get("articles_df_data", [])),
+        )
+
     submit_event = submit_event.then(
         fn=handler_fn,
         inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
@@ -2338,16 +2360,21 @@ with gr.Blocks(
             subqueries_json,
             action_plan_json,
             articles_df,
+            metadata_state,  # Store metadata for later UI update
         ],
         concurrency_limit=settings.gradio_default_concurrency_limit,
         api_visibility="private",  # Hide agent_chat_handler from MCP tools
-    )
-
-    # Use .success() to ensure this fires after the async generator completes
-    # .success() is specifically designed to fire after streaming completes
-    submit_event.success(
+    ).then(
+        # Chain re-enable directly from handler completion
+        # .then() fires after generator completes and all yields are processed
         fn=re_enable_textbox_and_hide_stop,
         outputs=[msg],
+        api_visibility="private",
+    ).then(
+        # Update metadata UI after input is unlocked
+        fn=update_metadata_ui,
+        inputs=[metadata_state],
+        outputs=[intent_text, subqueries_json, action_plan_json, articles_df],
         api_visibility="private",
     )
 
