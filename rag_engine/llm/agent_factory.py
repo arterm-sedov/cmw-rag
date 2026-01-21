@@ -62,6 +62,7 @@ def create_rag_agent(
             multiply,
             power,
             retrieve_context,
+            sgr_plan,
             square_root,
             subtract,
         )
@@ -102,6 +103,9 @@ def create_rag_agent(
     # On first call: force retrieve_context to ensure knowledge base search
     # On subsequent calls: allow model to choose tools freely
     all_tools = [
+        # SGR planning tool (forced externally per turn; included for availability)
+        # If enable_sgr_planning is False, we won't register it at all.
+        *( [sgr_plan] if enable_sgr_planning else [] ),
         retrieve_context_tool,
         get_current_datetime,
         add,
@@ -135,105 +139,9 @@ def create_rag_agent(
     # Build middleware list
     middleware_list = []
 
-    def _sgr_planning_middleware(state: dict, runtime) -> dict | None:
-        """Run SGR planning once and inject it into the LLM context.
-
-        - Stores plan in runtime.context.sgr_plan (so UI/batch can read it later)
-        - Injects a compact system message with the plan JSON (so LLM can use it)
-        """
-        if not enable_sgr_planning:
-            return None
-        if not state:
-            return None
-        messages = state.get("messages", [])
-        if not messages:
-            return None
-        if not hasattr(runtime, "context") or runtime.context is None:
-            return None
-
-        ctx = runtime.context
-        if getattr(ctx, "sgr_plan", None):
-            return None
-
-        # Find last user message content
-        user_text: str | None = None
-        for msg in reversed(messages):
-            if isinstance(msg, dict):
-                if msg.get("role") == "user" and isinstance(msg.get("content"), str):
-                    user_text = msg["content"]
-                    break
-            else:
-                msg_type = getattr(msg, "type", None)
-                if msg_type in {"human", "user"} and isinstance(getattr(msg, "content", None), str):
-                    user_text = msg.content
-                    break
-        if not user_text or not user_text.strip():
-            return None
-
-        from rag_engine.llm.prompts import (
-            SGR_CLARIFICATION_PREFIX,
-            SGR_PLAN_SYSTEM_MESSAGE_TEMPLATE,
-        )
-        from rag_engine.llm.sgr_planning import run_sgr_planning
-
-        try:
-            plan = run_sgr_planning(user_text, temp_llm_manager)
-            plan_dict = plan.model_dump()
-        except Exception as exc:  # noqa: BLE001
-            # SGR planning is a best-effort enhancement; do not crash the entire agent if it fails.
-            import logging
-
-            logging.getLogger(__name__).warning("SGR planning failed; continuing without it: %s", exc)
-            return None
-
-        # Store in context for structured output + UI
-        ctx.sgr_plan = plan_dict
-
-        # Build compact system message for the agent
-        try:
-            import json
-
-            plan_json = json.dumps(plan_dict, ensure_ascii=False, separators=(",", ":"))
-        except Exception:
-            plan_json = str(plan_dict)
-
-        injected_system = SGR_PLAN_SYSTEM_MESSAGE_TEMPLATE.format(plan_json=plan_json)
-
-        # Soft decline: if spam is very high, suggest clarification (do not refuse)
-        spam_score = float(plan_dict.get("spam_score", 0.0) or 0.0)
-        clarification = plan_dict.get("clarification_suggestion")
-        soft_decline_msg = None
-        if spam_score >= float(sgr_spam_threshold) and isinstance(clarification, str) and clarification.strip():
-            soft_decline_msg = f"{SGR_CLARIFICATION_PREFIX} {clarification.strip()}"
-
-        from langchain_core.messages import SystemMessage
-
-        updated = list(messages)
-        # Insert right before the last user message if possible
-        insert_idx = len(updated)
-        for i in range(len(updated) - 1, -1, -1):
-            msg = updated[i]
-            if isinstance(msg, dict):
-                if msg.get("role") == "user":
-                    insert_idx = i
-                    break
-            else:
-                if getattr(msg, "type", None) in {"human", "user"}:
-                    insert_idx = i
-                    break
-
-        updated.insert(insert_idx, SystemMessage(content=injected_system))
-        if soft_decline_msg:
-            updated.insert(insert_idx + 1, SystemMessage(content=soft_decline_msg))
-
-        return {"messages": updated}
-
     # Add tool budget middleware if provided
     if tool_budget_middleware:
         middleware_list.append(tool_budget_middleware)
-
-    # Add SGR planning middleware first (runs once before the first model call)
-    middleware_list.append(before_model(_sgr_planning_middleware))
 
     # Add context budget update middleware if provided
     if update_context_budget_middleware:
