@@ -345,6 +345,7 @@ async def retrieve_context(
         context_to_use = None
         if runtime and hasattr(runtime, "context") and runtime.context:
             context_to_use = runtime.context
+            logger.debug("Using runtime.context for query trace storage")
         else:
             # Fallback: get context from thread-local storage (workaround for streaming bug)
             from rag_engine.utils.context_tracker import get_current_context
@@ -357,19 +358,25 @@ async def retrieve_context(
                     getattr(runtime, "context", None) if runtime else None,
                     context_to_use is not None,
                 )
+            else:
+                logger.debug("Using thread-local context for query trace storage")
         
         if context_to_use:
             try:
                 trace_entry = _build_query_trace_entry(query, docs)
                 context_to_use.query_traces.append(trace_entry)
-                logger.debug(
-                    "Stored query trace: query=%r, articles=%d, chunks_total=%d",
+                has_confidence = trace_entry.get("confidence") is not None
+                logger.info(
+                    "Stored query trace: query=%r, articles=%d, has_confidence=%s, chunks_total=%d",
                     query,
                     len(trace_entry.get("articles", [])),
+                    has_confidence,
                     sum(len(a.get("chunks", [])) for a in trace_entry.get("articles", [])),
                 )
             except Exception as exc:  # noqa: BLE001
                 logger.warning("Failed to build/store query trace: %s", exc, exc_info=True)
+        else:
+            logger.warning("No context available to store query trace for query: %r", query)
 
         # Formatting is fast and CPU-bound, can stay in event loop
         return _format_articles_to_json(docs, query, top_k)
