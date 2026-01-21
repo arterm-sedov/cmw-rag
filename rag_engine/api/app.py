@@ -1,6 +1,10 @@
+# ruff: noqa: E402
 """Gradio UI with Chatbot (reference agent pattern) and REST API endpoint."""
 from __future__ import annotations
 
+import json
+import logging
+import os
 import sys
 from collections.abc import AsyncGenerator
 from pathlib import Path
@@ -10,16 +14,14 @@ _project_root = Path(__file__).parent.parent.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
-import json
-import logging
-import os
-
 import gradio as gr
 from openai import APIError as OpenAIAPIError
 
+from rag_engine.api.i18n import get_text, i18n_resolve
 from rag_engine.config.settings import get_allowed_fallback_models, settings  # noqa: F401
 from rag_engine.llm.fallback import check_context_fallback
 from rag_engine.llm.llm_manager import LLMManager
+from rag_engine.llm.schemas import StructuredAgentResult
 from rag_engine.retrieval.embedder import FRIDAEmbedder
 from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
@@ -43,6 +45,84 @@ from rag_engine.utils.vllm_fallback import (
 setup_logging()
 
 logger = logging.getLogger(__name__)
+
+
+def _article_to_dict(article) -> dict:
+    meta = getattr(article, "metadata", None) or {}
+    title = meta.get("title", getattr(article, "kb_id", ""))
+    url = (
+        meta.get("article_url")
+        or meta.get("url")
+        or f"https://kb.comindware.ru/article.php?id={getattr(article, 'kb_id', '')}"
+    )
+    return {
+        "kb_id": getattr(article, "kb_id", ""),
+        "title": title,
+        "url": url,
+        "content": getattr(article, "content", ""),
+        "metadata": dict(meta),
+    }
+
+
+def _badge_html(*, label: str, value: str, color: str) -> str:
+    return (
+        f'<span style="background:{color};padding:2px 8px;border-radius:4px;">'
+        f"{label}: {value}"
+        "</span>"
+    )
+
+
+def format_spam_badge(score: float) -> str:
+    """Format spam score as colored HTML badge (localized)."""
+    label = i18n_resolve("spam_badge_label")
+    if score < 0.3:
+        color, level = "green", i18n_resolve("spam_level_low")
+    elif score < 0.6:
+        color, level = "orange", i18n_resolve("spam_level_medium")
+    else:
+        color, level = "red", i18n_resolve("spam_level_high")
+    return _badge_html(label=label, value=f"{score:.2f} {level}", color=color)
+
+
+def format_confidence_badge(query_traces: list[dict]) -> str:
+    """Format overall retrieval confidence as colored HTML badge (localized)."""
+    label = i18n_resolve("confidence_badge_label")
+    if not query_traces:
+        return _badge_html(label=label, value=i18n_resolve("confidence_level_na"), color="gray")
+
+    scores = []
+    for t in query_traces:
+        conf = t.get("confidence") if isinstance(t, dict) else None
+        if isinstance(conf, dict):
+            val = conf.get("top_score")
+            if isinstance(val, (int, float)):
+                scores.append(float(val))
+    avg = sum(scores) / len(scores) if scores else 0.0
+
+    if avg > 0.7:
+        color, level = "green", i18n_resolve("confidence_level_high")
+    elif avg > 0.4:
+        color, level = "orange", i18n_resolve("confidence_level_medium")
+    else:
+        color, level = "red", i18n_resolve("confidence_level_low")
+
+    return _badge_html(label=label, value=level, color=color)
+
+
+def format_articles_dataframe(articles: list[dict]) -> list[list]:
+    """Format final articles list for gr.Dataframe."""
+    rows: list[list] = []
+    for idx, article in enumerate(articles or [], start=1):
+        meta = article.get("metadata", {}) if isinstance(article, dict) else {}
+        rows.append(
+            [
+                idx,
+                meta.get("title", article.get("title", "Untitled") if isinstance(article, dict) else "Untitled"),
+                f"{meta.get('rerank_score', 0):.2f}" if isinstance(meta.get("rerank_score"), (int, float)) else "",
+                meta.get("article_url") or meta.get("url") or article.get("url", "") if isinstance(article, dict) else "",
+            ]
+        )
+    return rows
 
 
 # Initialize singletons (order matters: llm_manager before retriever)
@@ -211,7 +291,13 @@ class ToolBudgetMiddleware(AgentMiddleware):
 
         return handler(request)
 
-def _create_rag_agent(override_model: str | None = None, force_tool_choice: bool = False):
+def _create_rag_agent(
+    override_model: str | None = None,
+    *,
+    force_tool_choice: bool = False,
+    enable_sgr_planning: bool = True,
+    sgr_spam_threshold: float = 0.8,
+):
     """Create LangChain agent with optional forced retrieval tool execution and memory compression.
 
     Uses centralized factory with app-specific middleware. The factory can enforce
@@ -238,6 +324,8 @@ def _create_rag_agent(override_model: str | None = None, force_tool_choice: bool
         update_context_budget_middleware=update_context_budget,
         compress_tool_results_middleware=compress_tool_results,
         force_tool_choice=force_tool_choice,
+        enable_sgr_planning=enable_sgr_planning,
+        sgr_spam_threshold=sgr_spam_threshold,
     )
 
 
@@ -754,7 +842,9 @@ async def agent_chat_handler(
                         # BUT only for the first tool call - subsequent calls create their own blocks
                         # This prevents query rotation in the same block when multiple tool calls occur
                         if tool_query_from_accumulator and not has_seen_tool_results:
-                            from rag_engine.api.stream_helpers import update_search_started_in_history
+                            from rag_engine.api.stream_helpers import (
+                                update_search_started_in_history,
+                            )
 
                             if update_search_started_in_history(gradio_history, tool_query_from_accumulator):
                                 yield list(gradio_history)
@@ -805,7 +895,7 @@ async def agent_chat_handler(
                         logger.debug("Tool result received, %d total results", len(tool_results))
                         tool_executing = False
                         has_seen_tool_results = True
-                        
+
                         # Stop any pending thinking spinners (for all tools, not just search)
                         from rag_engine.api.stream_helpers import update_message_status_in_history
                         update_message_status_in_history(gradio_history, "thinking", "done")
@@ -864,16 +954,16 @@ async def agent_chat_handler(
                             count=articles_count,
                             articles=articles_for_display if articles_for_display else None,
                         )
-                        
+
                         # Update previous pending messages to done (stop spinners)
                         from rag_engine.api.stream_helpers import update_message_status_in_history
                         update_message_status_in_history(gradio_history, "thinking", "done")
                         update_message_status_in_history(gradio_history, "search_started", "done")
-                        
+
                         # Add search completed to history and yield full history
                         gradio_history.append(search_completed_msg)
                         yield list(gradio_history)
-                        
+
                         # Show "Generating answer" spinner while LLM processes the results
                         # This is especially helpful for slow LLM responses or non-streaming fallback
                         from rag_engine.api.stream_helpers import yield_generating_answer
@@ -967,7 +1057,9 @@ async def agent_chat_handler(
                                 else:
                                     # Update existing search_started message with LLM-generated query
                                     logger.info("Updating existing search_started block: query=%s", tool_query[:50] if tool_query else "empty")
-                                    from rag_engine.api.stream_helpers import update_search_started_in_history
+                                    from rag_engine.api.stream_helpers import (
+                                        update_search_started_in_history,
+                                    )
                                     if tool_query:
                                         if update_search_started_in_history(gradio_history, tool_query):
                                             yield list(gradio_history)
@@ -1007,21 +1099,27 @@ async def agent_chat_handler(
                                         if has_seen_tool_results:
                                             # Add NEW search_started block for subsequent tool calls
                                             logger.info("Adding NEW search_started block via chunk (subsequent): query=%s", tool_query[:50] if tool_query else "empty")
-                                            from rag_engine.api.stream_helpers import yield_search_started
+                                            from rag_engine.api.stream_helpers import (
+                                                yield_search_started,
+                                            )
                                             search_started_msg = yield_search_started(tool_query or "")
                                             gradio_history.append(search_started_msg)
                                             yield list(gradio_history)
                                         else:
                                             # Update existing search_started message with LLM-generated query
                                             logger.info("Updating existing search_started block via chunk: query=%s", tool_query[:50] if tool_query else "empty")
-                                            from rag_engine.api.stream_helpers import update_search_started_in_history
+                                            from rag_engine.api.stream_helpers import (
+                                                update_search_started_in_history,
+                                            )
                                             if tool_query:
                                                 if update_search_started_in_history(gradio_history, tool_query):
                                                     yield list(gradio_history)
                                     elif tool_name:
                                         # Show generic thinking block for non-search tools
                                         # Reference agent pattern: always append, don't check duplicates
-                                        from rag_engine.api.stream_helpers import yield_thinking_block
+                                        from rag_engine.api.stream_helpers import (
+                                            yield_thinking_block,
+                                        )
                                         thinking_msg = yield_thinking_block(tool_name)
                                         gradio_history.append(thinking_msg)
                                         yield list(gradio_history)
@@ -1033,11 +1131,11 @@ async def agent_chat_handler(
                                 # This prevents streaming the agent's "reasoning" about tool calls
                                 if not tool_executing:
                                     text_chunk = block["text"]
-                                    
+
                                     # Stop "generating answer" spinner on first text chunk
                                     if not answer and has_seen_tool_results:
                                         update_message_status_in_history(gradio_history, "generating_answer", "done")
-                                    
+
                                     answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                         text_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                     )
@@ -1065,7 +1163,7 @@ async def agent_chat_handler(
                                 # Stop "generating answer" spinner on first text chunk
                                 if not answer and has_seen_tool_results:
                                     update_message_status_in_history(gradio_history, "generating_answer", "done")
-                                
+
                                 answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                     new_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                 )
@@ -1141,7 +1239,7 @@ async def agent_chat_handler(
                     generating_msg = yield_generating_answer()
                     gradio_history.append(generating_msg)
                     yield list(gradio_history)
-                
+
                 # Execute fallback and process results
                 fallback_results = {}
                 for chunk in execute_fallback_invoke(
@@ -1190,6 +1288,16 @@ async def agent_chat_handler(
                 llm_manager.save_assistant_turn(session_id, incomplete_response)
                 logger.info(f"Saved INCOMPLETE response to memory ({len(incomplete_response)} chars)")
             yield list(gradio_history)
+            try:
+                agent_context.final_answer = incomplete_response or ""
+                agent_context.diagnostics = {
+                    "model": current_model,
+                    "cancelled": True,
+                    "tool_results_count": len(tool_results),
+                }
+            except Exception:
+                pass
+            yield agent_context
             return
 
         # Accumulate articles from tool results and add citations
@@ -1233,6 +1341,22 @@ async def agent_chat_handler(
         )
 
         yield list(gradio_history)
+
+        # Populate AgentContext for structured output / UI metadata, then yield it.
+        try:
+            agent_context.final_answer = final_text or ""
+            agent_context.final_articles = [_article_to_dict(a) for a in articles] if articles else []
+            agent_context.diagnostics = {
+                "model": current_model,
+                "stream_chunks": stream_chunk_count,
+                "tool_results_count": len(tool_results),
+                "conversation_tokens": agent_context.conversation_tokens,
+                "accumulated_tool_tokens": agent_context.accumulated_tool_tokens,
+            }
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Failed to populate AgentContext final fields: %s", exc)
+
+        yield agent_context
 
     except GeneratorExit:
         # Stream was cancelled - save incomplete response to memory if available (pattern from test script)
@@ -1324,10 +1448,12 @@ async def agent_chat_handler(
                                 # keep agent_context.accumulated_tool_tokens updated
                                 _, acc_tool_toks = estimate_accumulated_tokens([], tool_results)
                                 agent_context.accumulated_tool_tokens = acc_tool_toks
-                                
+
                                 # Show generating answer spinner after tool results in fallback retry
                                 if not answer:
-                                    from rag_engine.api.stream_helpers import yield_generating_answer
+                                    from rag_engine.api.stream_helpers import (
+                                        yield_generating_answer,
+                                    )
                                     generating_msg = yield_generating_answer()
                                     gradio_history.append(generating_msg)
                                     yield list(gradio_history)
@@ -1341,11 +1467,11 @@ async def agent_chat_handler(
                                 for block in token.content_blocks:
                                     if block.get("type") == "text" and block.get("text"):
                                         text_chunk = block["text"]
-                                        
+
                                         # Stop generating spinner on first text chunk
                                         if not answer and has_seen_tool_results:
                                             update_message_status_in_history(gradio_history, "generating_answer", "done")
-                                        
+
                                         answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                             text_chunk, answer, disclaimer_prepended, has_seen_tool_results
                                         )
@@ -1437,9 +1563,8 @@ else:
     chatbot_max_height = "70vh"  # Same as height for consistency
     chat_title = "Ассистент базы знаний Comindware Platform"
 
-# Force agent-based handler; legacy direct handler removed
-handler_fn = agent_chat_handler
-logger.info("Using agent-based (LangChain) handler for chat interface")
+# Force agent-based handler; legacy direct handler removed.
+# handler_fn is assigned after chat_with_metadata is defined (below).
 
 # Load CSS theme from reference agent
 css_file_path = Path(__file__).parent.parent / "resources" / "css" / "cmw_copilot_theme.css"
@@ -1524,8 +1649,9 @@ async def ask_comindware(message: str) -> str:
         Complete response text with citations
     """
     # Collect all chunks from the generator into a single response
-    response_parts = []
-    last_text_response = None
+    response_parts: list[str] = []
+    last_text_response: str | None = None
+    final_context: AgentContext | None = None
     generator = None
     try:
         # Call the handler with empty history and None request (MCP context)
@@ -1537,6 +1663,11 @@ async def ask_comindware(message: str) -> str:
         # Extract the final answer from the last assistant message in the history
         async for chunk in generator:
             if chunk is None:
+                continue
+
+            # New: final AgentContext yield (preferred for exact final answer)
+            if isinstance(chunk, AgentContext):
+                final_context = chunk
                 continue
 
             # Handle full history lists (new format - preserves all messages)
@@ -1570,6 +1701,10 @@ async def ask_comindware(message: str) -> str:
                 await generator.aclose()
             except Exception:
                 pass
+
+        # Prefer context-captured final answer if available
+        if final_context and isinstance(final_context.final_answer, str) and final_context.final_answer.strip():
+            return final_context.final_answer
 
         # Return the final accumulated response (last chunk contains the full formatted text)
         if last_text_response:
@@ -1610,12 +1745,141 @@ async def ask_comindware(message: str) -> str:
             return "\n".join(response_parts) + f"\n\n[Note: An error occurred: {str(e)}]"
         return f"Error: {str(e)}. Please try rephrasing your question or contact support."
 
+
+async def ask_comindware_structured(
+    message: str,
+    *,
+    include_per_query_trace: bool = True,
+) -> StructuredAgentResult:
+    """Non-streaming structured callable for batch processing / datasets.
+
+    Runs the same streaming handler, but captures the final AgentContext object
+    yielded at the end of the generator.
+    """
+    context: AgentContext | None = None
+    generator = agent_chat_handler(message=message, history=[], request=None)
+    async for chunk in generator:
+        if isinstance(chunk, AgentContext):
+            context = chunk
+
+    if context is None:
+        # Defensive fallback: keep shape stable
+        from rag_engine.llm.schemas import SGRPlanResult
+
+        empty_plan = SGRPlanResult(
+            spam_score=0.0,
+            spam_reason="",
+            user_intent="",
+            subqueries=[""],
+        )
+        return StructuredAgentResult(plan=empty_plan, answer_text="")
+
+    from pydantic import ValidationError
+
+    from rag_engine.llm.schemas import SGRPlanResult
+
+    plan_dict = context.sgr_plan or {}
+    try:
+        plan = SGRPlanResult.model_validate(plan_dict)
+    except ValidationError:
+        plan = SGRPlanResult(
+            spam_score=0.0,
+            spam_reason="",
+            user_intent="",
+            subqueries=[""],
+        )
+
+    return StructuredAgentResult(
+        plan=plan,
+        per_query_results=context.query_traces if include_per_query_trace else [],
+        final_articles=context.final_articles,
+        answer_text=context.final_answer,
+        diagnostics=context.diagnostics,
+    )
+
+
+async def chat_with_metadata(
+    message: str,
+    history: list[dict],
+    cancel_state: dict | None = None,
+    request: gr.Request | None = None,
+) -> AsyncGenerator[
+    tuple[
+        list[dict],
+        str | gr.HTML,
+        str | gr.HTML,
+        str | gr.HTML,
+        str | gr.Textbox,
+        list | gr.JSON,
+        list | gr.JSON,
+        list | gr.Dataframe,
+    ],
+    None,
+]:
+    """Streaming UI handler that also populates metadata after completion."""
+    last_history: list[dict] = history if history else []
+    ctx: AgentContext | None = None
+
+    async for chunk in agent_chat_handler(
+        message=message,
+        history=history,
+        cancel_state=cancel_state,
+        request=request,
+    ):
+        if isinstance(chunk, list):
+            last_history = chunk
+            # Hide metadata during streaming
+            yield (
+                chunk,
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False, value=""),
+                gr.update(visible=False, value=[]),
+                gr.update(visible=False, value=[]),
+                gr.update(visible=False, value=[]),
+            )
+        elif isinstance(chunk, AgentContext):
+            ctx = chunk
+
+    # After streaming completes, populate metadata components
+    if ctx is None:
+        return
+
+    plan = ctx.sgr_plan or {}
+    spam_score = float(plan.get("spam_score", 0.0) or 0.0)
+    user_intent = plan.get("user_intent", "") if isinstance(plan.get("user_intent"), str) else ""
+    subqueries = plan.get("subqueries", [])
+    action_plan = plan.get("action_plan", [])
+
+    yield (
+        last_history,
+        gr.update(visible=True, value=format_spam_badge(spam_score)),
+        gr.update(visible=True, value=format_confidence_badge(ctx.query_traces)),
+        gr.update(visible=True, value=f"{get_text('queries_badge_label')}: {len(ctx.query_traces)}"),
+        gr.update(visible=True, value=user_intent),
+        gr.update(visible=True, value=subqueries if isinstance(subqueries, list) else []),
+        gr.update(visible=True, value=action_plan if isinstance(action_plan, list) else []),
+        gr.update(visible=True, value=format_articles_dataframe(ctx.final_articles)),
+    )
+
+
+# Use metadata-enabled wrapper to populate debug UI panels after streaming.
+handler_fn = chat_with_metadata
+logger.info("Using agent-based (LangChain) handler for chat interface")
+
 with gr.Blocks(
     title=chat_title or "Comindware Platform Documentation Assistant",
 ) as demo:
     # Header (like reference agent)
     if chat_title:
         gr.Markdown(f"# {chat_title}", elem_classes=["hero-title"])
+
+    # --- Metadata UI (populated after streaming completes) ---
+    with gr.Row():
+        spam_badge = gr.HTML(visible=False)
+        confidence_badge = gr.HTML(visible=False)
+        queries_badge = gr.HTML(visible=False)
 
     # Chatbot component (like reference agent - NOT ChatInterface)
     # In Gradio 6, Chatbot uses messages format by default (no type parameter needed)
@@ -1657,6 +1921,24 @@ with gr.Blocks(
     # Cancellation state - mutable dict so changes propagate to running generator
     # Note: Using direct dict value (not lambda) for Gradio 6 compatibility
     cancellation_state = gr.State(value={"cancelled": False})
+
+    # Analysis + sources panels (populated after streaming completes)
+    with gr.Accordion(i18n_resolve("analysis_summary_title"), open=False):
+        intent_text = gr.Textbox(label=i18n_resolve("user_intent_label"), interactive=False, visible=False)
+        subqueries_json = gr.JSON(label=i18n_resolve("subqueries_label"), visible=False)
+        action_plan_json = gr.JSON(label=i18n_resolve("action_plan_label"), visible=False)
+
+    with gr.Accordion(i18n_resolve("retrieved_articles_title"), open=False):
+        articles_df = gr.Dataframe(
+            headers=[
+                i18n_resolve("articles_rank_header"),
+                i18n_resolve("articles_title_header"),
+                i18n_resolve("articles_confidence_header"),
+                i18n_resolve("articles_url_header"),
+            ],
+            interactive=False,
+            visible=False,
+        )
 
     def handle_stop_click(history: list[dict], cancel_state: dict | None) -> tuple[list[dict], dict]:
         """Handle built-in stop button click - set cancellation flag and add UI block.
@@ -1751,7 +2033,16 @@ with gr.Blocks(
     ).then(
         fn=handler_fn,
         inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
-        outputs=[chatbot],
+        outputs=[
+            chatbot,
+            spam_badge,
+            confidence_badge,
+            queries_badge,
+            intent_text,
+            subqueries_json,
+            action_plan_json,
+            articles_df,
+        ],
         concurrency_limit=settings.gradio_default_concurrency_limit,
         api_visibility="private",  # Hide agent_chat_handler from MCP tools
     ).then(

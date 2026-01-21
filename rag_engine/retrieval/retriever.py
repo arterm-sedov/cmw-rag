@@ -119,7 +119,13 @@ class RAGRetriever:
         except Exception:
             return []
 
-    def retrieve(self, query: str, top_k: int | None = None) -> list[Article]:
+    def retrieve(
+        self,
+        query: str,
+        top_k: int | None = None,
+        *,
+        include_confidence: bool = True,
+    ) -> list[Article]:
         """Retrieve complete articles for query using hybrid approach.
 
         Hybrid approach:
@@ -218,11 +224,20 @@ class RAGRetriever:
             scored_candidates = scored_candidates[:qk]
             logger.info("No reranking, using top-%d chunks", len(scored_candidates))
 
+        retrieval_confidence: dict[str, Any] | None = None
+        if include_confidence:
+            from rag_engine.retrieval.confidence import compute_retrieval_confidence
+
+            retrieval_confidence = compute_retrieval_confidence(scored_candidates)
+
         # 3. Group chunks by kb_id and preserve MAX reranker score as article rank
         articles_map: dict[str, tuple[list[Any], float]] = defaultdict(lambda: ([], -float('inf')))
         for doc, score in scored_candidates:
             # Handle None metadata gracefully
             metadata = getattr(doc, "metadata", None) or {}
+            # Preserve raw rerank score for trace/debugging
+            if isinstance(metadata, dict):
+                metadata["rerank_score_raw"] = score
             raw_kb_id = metadata.get("kbId", "")
             if raw_kb_id:
                 # Normalize kbId for consistent grouping (handles suffixed kbIds)
@@ -268,6 +283,8 @@ class RAGRetriever:
                 article.matched_chunks = chunks
                 # Store reranker score in metadata for proportional compression
                 article.metadata["rerank_score"] = max_score
+                if retrieval_confidence is not None:
+                    article.metadata["retrieval_confidence"] = retrieval_confidence
                 articles.append(article)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Failed to read article %s: %s", source_file, exc)

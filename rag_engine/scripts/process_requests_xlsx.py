@@ -357,14 +357,22 @@ async def process_one(*, subject: str, html_description: str, top_k: int) -> Row
     api_app = _get_api_app()
     md_request = build_markdown_request(subject, html_description)
 
-    # Deterministic retrieval for columns
-    retrieved_articles = list(api_app.retriever.retrieve(md_request, top_k=top_k))
-    articles_text = format_articles_column(articles=retrieved_articles, top_k=top_k)
-    chunks_text = format_chunks_column(articles=retrieved_articles, max_chars=100)
-    answer_text = _build_answer_column(question_md=md_request, articles=retrieved_articles, top_k=top_k)
+    # Structured agent call (same behavior as interactive agent, but returns trace + spam score)
+    structured = await api_app.ask_comindware_structured(
+        md_request,
+        include_per_query_trace=True,
+    )
 
-    # Spam score (LLM-only, no retrieval)
-    score = spam_score(md_request)
+    from rag_engine.utils.trace_formatters import (
+        build_answer_column_from_result,
+        format_articles_column_from_trace,
+        format_chunks_column_from_trace,
+    )
+
+    articles_text = format_articles_column_from_trace(structured.per_query_results, top_k=top_k)
+    chunks_text = format_chunks_column_from_trace(structured.per_query_results, max_chars=100)
+    answer_text = build_answer_column_from_result(structured, top_k=top_k)
+    score = structured.plan.spam_score
 
     return RowResult(
         articles_text=articles_text,

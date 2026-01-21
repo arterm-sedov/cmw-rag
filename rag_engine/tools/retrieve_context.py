@@ -40,39 +40,38 @@ def _get_or_create_retriever() -> RAGRetriever:
     if _retriever is None:
         # Serialize first-time initialization across threads
         with _retriever_init_lock:
-            if _retriever is not None:
-                return _retriever
-        from rag_engine.llm.llm_manager import LLMManager
-        from rag_engine.retrieval.embedder import FRIDAEmbedder
-        from rag_engine.storage.vector_store import ChromaStore
+            if _retriever is None:
+                from rag_engine.llm.llm_manager import LLMManager
+                from rag_engine.retrieval.embedder import FRIDAEmbedder
+                from rag_engine.storage.vector_store import ChromaStore
 
-        logger.info("Initializing retriever for retrieve_context tool (first use)")
+                logger.info("Initializing retriever for retrieve_context tool (first use)")
 
-        # Initialize infrastructure
-        embedder = FRIDAEmbedder(
-            model_name=settings.embedding_model,
-            device=settings.embedding_device,
-        )
-        vector_store = ChromaStore(
-            persist_dir=settings.chromadb_persist_dir,
-            collection_name=settings.chromadb_collection,
-        )
-        llm_manager = LLMManager(
-            provider=settings.default_llm_provider,
-            model=settings.default_model,
-            temperature=settings.llm_temperature,
-        )
+                # Initialize infrastructure
+                embedder = FRIDAEmbedder(
+                    model_name=settings.embedding_model,
+                    device=settings.embedding_device,
+                )
+                vector_store = ChromaStore(
+                    persist_dir=settings.chromadb_persist_dir,
+                    collection_name=settings.chromadb_collection,
+                )
+                llm_manager = LLMManager(
+                    provider=settings.default_llm_provider,
+                    model=settings.default_model,
+                    temperature=settings.llm_temperature,
+                )
 
-        # Create retriever
-        _retriever = RAGRetriever(
-            embedder=embedder,
-            vector_store=vector_store,
-            llm_manager=llm_manager,
-            top_k_retrieve=settings.top_k_retrieve,
-            top_k_rerank=settings.top_k_rerank,
-            rerank_enabled=settings.rerank_enabled,
-        )
-        logger.info("Retriever initialized successfully")
+                # Create retriever
+                _retriever = RAGRetriever(
+                    embedder=embedder,
+                    vector_store=vector_store,
+                    llm_manager=llm_manager,
+                    top_k_retrieve=settings.top_k_retrieve,
+                    top_k_rerank=settings.top_k_rerank,
+                    rerank_enabled=settings.rerank_enabled,
+                )
+                logger.info("Retriever initialized successfully")
 
     return _retriever
 
@@ -155,6 +154,64 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
         },
     }
     return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
+
+
+def _build_query_trace_entry(query: str, articles: list[Article]) -> dict:
+    """Build per-query trace data from retrieved Article objects.
+
+    This is stored in AgentContext.query_traces (excluded from LLM context) to avoid
+    bloating the tool JSON payload while still allowing batch/UI inspection.
+    """
+    per_article: list[dict] = []
+    confidence = None
+    if articles:
+        confidence = (articles[0].metadata or {}).get("retrieval_confidence")
+
+    for article in articles:
+        meta = article.metadata or {}
+        title = meta.get("title", article.kb_id)
+        url = (
+            meta.get("article_url")
+            or meta.get("url")
+            or f"https://kb.comindware.ru/article.php?id={article.kb_id}"
+        )
+
+        chunks = []
+        matched = getattr(article, "matched_chunks", []) or []
+        # Prefer chunks sorted by preserved rerank_score_raw (desc)
+        def _chunk_score(doc: object) -> float:
+            md = getattr(doc, "metadata", None) or {}
+            try:
+                return float(md.get("rerank_score_raw", 0.0) or 0.0)
+            except Exception:
+                return 0.0
+
+        matched_sorted = sorted(matched, key=_chunk_score, reverse=True)
+        for idx, doc in enumerate(matched_sorted, start=1):
+            md = getattr(doc, "metadata", None) or {}
+            text = getattr(doc, "page_content", "") or ""
+            snippet = (text[:200] + "…") if isinstance(text, str) and len(text) > 200 else str(text)
+            chunks.append(
+                {
+                    "snippet": snippet,
+                    "rerank_score_raw": md.get("rerank_score_raw"),
+                    "rerank_rank": idx,
+                }
+            )
+
+        per_article.append(
+            {
+                "kb_id": article.kb_id,
+                "title": title,
+                "url": url,
+                "article_rank": meta.get("article_rank"),
+                "normalized_rank": meta.get("normalized_rank"),
+                "rerank_score": meta.get("rerank_score"),
+                "chunks": chunks,
+            }
+        )
+
+    return {"query": query, "confidence": confidence, "articles": per_article}
 
 
 @tool("retrieve_context", args_schema=RetrieveContextSchema)
@@ -255,7 +312,10 @@ async def retrieve_context(
         retriever = await run_in_thread_pool(_get_or_create_retriever)
 
         # Run blocking retrieval in thread pool to avoid blocking event loop
-        docs = await run_in_thread_pool(retriever.retrieve, query, top_k=top_k)
+        # Always compute confidence for trace/debug; this is a small dict payload.
+        docs = await run_in_thread_pool(
+            lambda: retriever.retrieve(query, top_k=top_k, include_confidence=True)
+        )
 
         # Determine which kb_ids to exclude (explicit argument takes precedence, then context)
         excluded_set: set[str] = set()
@@ -278,6 +338,14 @@ async def retrieve_context(
                 )
 
         logger.info("Retrieved %d articles for query: %s", len(docs), query)
+
+        # Store per-query trace in AgentContext (excluded from LLM context)
+        if runtime and hasattr(runtime, "context") and runtime.context:
+            try:
+                trace_entry = _build_query_trace_entry(query, docs)
+                runtime.context.query_traces.append(trace_entry)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Failed to build/store query trace: %s", exc)
 
         # Formatting is fast and CPU-bound, can stay in event loop
         return _format_articles_to_json(docs, query, top_k)

@@ -46,6 +46,37 @@ class AgentContext(BaseModel):
         "Optional - defaults to empty set if not provided (e.g., for MCP calls).",
     )
 
+    # --- SGR planning + structured trace ---
+    # NOTE: sgr_plan is intentionally NOT excluded: it is injected into the LLM context
+    # to guide retrieval decisions (subqueries as suggestions, action_plan as guidance).
+    sgr_plan: dict[str, Any] | None = Field(
+        default=None,
+        description="SGR plan (spam score, subqueries, action plan) injected into LLM context.",
+    )
+
+    # Execution trace + final results are excluded from serialization to the LLM.
+    # They are used for batch output and UI debug panels.
+    query_traces: list[dict[str, Any]] = Field(
+        default_factory=list,
+        exclude=True,
+        description="Actual executed retrieval calls trace (excluded from LLM context).",
+    )
+    final_answer: str = Field(
+        default="",
+        exclude=True,
+        description="Final answer text with citations (excluded from LLM context).",
+    )
+    final_articles: list[dict[str, Any]] = Field(
+        default_factory=list,
+        exclude=True,
+        description="Final deduplicated articles serialized to dicts (excluded from LLM context).",
+    )
+    diagnostics: dict[str, Any] = Field(
+        default_factory=dict,
+        exclude=True,
+        description="Run diagnostics (tokens, compression flags) excluded from LLM context.",
+    )
+
 
 def compute_context_tokens(
     messages: list[dict | Any],
