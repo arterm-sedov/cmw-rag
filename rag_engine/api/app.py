@@ -761,45 +761,64 @@ async def agent_chat_handler(
     # --- Forced SGR planning as tool call (per-turn) ---
     # We force a "sgr_plan" tool call once per user turn, capture the plan, and
     # then inject the resulting tool-call transcript into the agent messages.
+    # SGR planning is enabled by default (can be disabled via _create_rag_agent parameter)
     sgr_plan_dict: dict | None = None
-    try:
-        from rag_engine.api.stream_helpers import yield_sgr_planning_started
+    enable_sgr_planning_flag = True  # Always enabled for now (matches _create_rag_agent default)
+    if enable_sgr_planning_flag:
+        logger.info("SGR planning enabled, executing forced sgr_plan tool call")
+        try:
+            from rag_engine.api.stream_helpers import yield_sgr_planning_started
 
-        # Show dedicated SGR bubble (like other tool bubbles)
-        gradio_history.append(yield_sgr_planning_started())
-        yield list(gradio_history)
+            # Show dedicated SGR bubble (like other tool bubbles)
+            gradio_history.append(yield_sgr_planning_started())
+            yield list(gradio_history)
+            logger.info("SGR planning UI bubble added to history")
 
-        from rag_engine.llm.llm_manager import LLMManager
-        from rag_engine.llm.schemas import SGRPlanResult
-        from rag_engine.tools import sgr_plan as sgr_plan_tool
+            from rag_engine.llm.llm_manager import LLMManager
+            from rag_engine.llm.schemas import SGRPlanResult
+            from rag_engine.tools import sgr_plan as sgr_plan_tool
 
-        sgr_llm = LLMManager(
-            provider=settings.default_llm_provider,
-            model=selected_model or settings.default_model,
-            temperature=settings.llm_temperature,
-        )._chat_model()
+            sgr_llm = LLMManager(
+                provider=settings.default_llm_provider,
+                model=selected_model or settings.default_model,
+                temperature=settings.llm_temperature,
+            )._chat_model()
 
-        sgr_model = sgr_llm.bind_tools(
-            [sgr_plan_tool],
-            tool_choice={"type": "function", "function": {"name": "sgr_plan"}},
-        )
+            sgr_model = sgr_llm.bind_tools(
+                [sgr_plan_tool],
+                tool_choice={"type": "function", "function": {"name": "sgr_plan"}},
+            )
 
-        sgr_msg = await sgr_model.ainvoke(messages)
-        tool_calls = getattr(sgr_msg, "tool_calls", None) or []
-        tool_call = tool_calls[0] if isinstance(tool_calls, list) and tool_calls else None
+            logger.info("Calling SGR planning LLM with %d messages", len(messages))
+            sgr_msg = await sgr_model.ainvoke(messages)
+            tool_calls = getattr(sgr_msg, "tool_calls", None) or []
+            tool_call = tool_calls[0] if isinstance(tool_calls, list) and tool_calls else None
+            logger.info("SGR planning LLM returned %d tool calls", len(tool_calls))
 
-        if isinstance(tool_call, dict):
-            call_id = tool_call.get("id") or "sgr_plan_call"
-            args = tool_call.get("args")
-            if isinstance(args, dict):
-                plan = SGRPlanResult.model_validate(args)
-                sgr_plan_dict = plan.model_dump()
-            else:
-                fn = tool_call.get("function") if isinstance(tool_call.get("function"), dict) else {}
-                arg_str = fn.get("arguments") if isinstance(fn, dict) else None
-                if isinstance(arg_str, str) and arg_str.strip():
-                    plan = SGRPlanResult.model_validate_json(arg_str)
+            if isinstance(tool_call, dict):
+                call_id = tool_call.get("id") or "sgr_plan_call"
+                args = tool_call.get("args")
+                if isinstance(args, dict):
+                    plan = SGRPlanResult.model_validate(args)
                     sgr_plan_dict = plan.model_dump()
+                    logger.info("SGR plan extracted from tool_call.args: spam_score=%.2f, user_intent_len=%d, subqueries_count=%d",
+                               sgr_plan_dict.get("spam_score", 0.0),
+                               len(sgr_plan_dict.get("user_intent", "")),
+                               len(sgr_plan_dict.get("subqueries", [])))
+                else:
+                    fn = tool_call.get("function") if isinstance(tool_call.get("function"), dict) else {}
+                    arg_str = fn.get("arguments") if isinstance(fn, dict) else None
+                    if isinstance(arg_str, str) and arg_str.strip():
+                        plan = SGRPlanResult.model_validate_json(arg_str)
+                        sgr_plan_dict = plan.model_dump()
+                        logger.info("SGR plan extracted from tool_call.function.arguments: spam_score=%.2f, user_intent_len=%d, subqueries_count=%d",
+                                   sgr_plan_dict.get("spam_score", 0.0),
+                                   len(sgr_plan_dict.get("user_intent", "")),
+                                   len(sgr_plan_dict.get("subqueries", [])))
+                    else:
+                        logger.warning("SGR planning tool_call missing arguments: tool_call=%s", tool_call)
+            else:
+                logger.warning("SGR planning did not return valid tool_call: tool_calls=%s", tool_calls)
 
             if sgr_plan_dict:
                 import json
@@ -825,16 +844,22 @@ async def agent_chat_handler(
                         "tool_call_id": call_id,
                     },
                 ]
-        from rag_engine.api.stream_helpers import update_message_status_in_history
+                logger.info("SGR plan injected into agent messages (total messages: %d)", len(messages))
+            else:
+                logger.warning("SGR plan dict is None or empty, not injecting into messages")
 
-        update_message_status_in_history(gradio_history, "sgr_planning", "done")
-        yield list(gradio_history)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("SGR forced tool call failed; continuing without plan: %s", exc)
-        from rag_engine.api.stream_helpers import update_message_status_in_history
+            from rag_engine.api.stream_helpers import update_message_status_in_history
 
-        update_message_status_in_history(gradio_history, "sgr_planning", "done")
-        yield list(gradio_history)
+            update_message_status_in_history(gradio_history, "sgr_planning", "done")
+            yield list(gradio_history)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("SGR forced tool call failed; continuing without plan: %s", exc, exc_info=True)
+            from rag_engine.api.stream_helpers import update_message_status_in_history
+
+            update_message_status_in_history(gradio_history, "sgr_planning", "done")
+            yield list(gradio_history)
+    else:
+        logger.info("SGR planning disabled (enable_sgr_planning=False), skipping")
 
     # Create agent (with fallback model if needed) and stream execution
     # Force tool choice only on first message; allow model to choose on subsequent turns
@@ -1435,6 +1460,12 @@ async def agent_chat_handler(
                 "conversation_tokens": agent_context.conversation_tokens,
                 "accumulated_tool_tokens": agent_context.accumulated_tool_tokens,
             }
+            logger.info(
+                f"agent_chat_handler: yielding AgentContext - "
+                f"sgr_plan_present={agent_context.sgr_plan is not None}, "
+                f"query_traces_count={len(agent_context.query_traces)}, "
+                f"final_articles_count={len(agent_context.final_articles)}"
+            )
         except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to populate AgentContext final fields: %s", exc)
 
@@ -1933,6 +1964,7 @@ async def chat_with_metadata(
     last_history: list[dict] = history if history else []
     ctx: AgentContext | None = None
     metadata_start_time = None
+    user_message = message  # Store original message for fallback metadata
 
     async for chunk in agent_chat_handler(
         message=message,
@@ -1977,12 +2009,39 @@ async def chat_with_metadata(
         # Extract plan data with timing
         plan_start = time.perf_counter()
         plan = ctx.sgr_plan or {}
+        logger.info(
+            f"chat_with_metadata: sgr_plan present={ctx.sgr_plan is not None}, "
+            f"plan_keys={list(plan.keys()) if plan else []}, "
+            f"user_intent_present={'user_intent' in plan}, "
+            f"subqueries_present={'subqueries' in plan}, "
+            f"action_plan_present={'action_plan' in plan}"
+        )
         spam_score = float(plan.get("spam_score", 0.0) or 0.0)
         user_intent = plan.get("user_intent", "") if isinstance(plan.get("user_intent"), str) else ""
         subqueries = plan.get("subqueries", [])
         action_plan = plan.get("action_plan", [])
+
+        # Fallback: if user_intent is empty but we have a plan, try to derive it from the message
+        # This handles cases where SGR planning returned empty values for math/time questions
+        if not user_intent and plan and user_message:
+            # Use the original user message as a fallback intent
+            user_intent = user_message[:200]  # Truncate to reasonable length
+            logger.info(f"chat_with_metadata: using fallback user_intent from message (len={len(user_intent)})")
+
+        # Ensure subqueries is a list (even if empty)
+        if not isinstance(subqueries, list):
+            subqueries = []
+
+        # Ensure action_plan is a list (even if empty)
+        if not isinstance(action_plan, list):
+            action_plan = []
         plan_elapsed = (time.perf_counter() - plan_start) * 1000
-        logger.info(f"chat_with_metadata: plan extraction took {plan_elapsed:.2f}ms")
+        logger.info(
+            f"chat_with_metadata: plan extraction took {plan_elapsed:.2f}ms - "
+            f"spam_score={spam_score}, user_intent_len={len(user_intent)}, "
+            f"subqueries_count={len(subqueries) if isinstance(subqueries, list) else 0}, "
+            f"action_plan_count={len(action_plan) if isinstance(action_plan, list) else 0}"
+        )
 
         # Format badges with timing
         spam_start = time.perf_counter()
@@ -2282,7 +2341,11 @@ with gr.Blocks(
         ],
         concurrency_limit=settings.gradio_default_concurrency_limit,
         api_visibility="private",  # Hide agent_chat_handler from MCP tools
-    ).then(
+    )
+
+    # Use .success() to ensure this fires after the async generator completes
+    # .success() is specifically designed to fire after streaming completes
+    submit_event.success(
         fn=re_enable_textbox_and_hide_stop,
         outputs=[msg],
         api_visibility="private",
