@@ -250,6 +250,21 @@ def yield_thinking_block(tool_name: str) -> dict:
     }
 
 
+def yield_sgr_planning_started() -> dict:
+    """Yield metadata message for SGR planning started with pending spinner."""
+    title = get_text("sgr_planning_title")
+    content = get_text("sgr_planning_content")
+    return {
+        "role": "assistant",
+        "content": content,
+        "metadata": {
+            "title": title,
+            "ui_type": "sgr_planning",
+            "status": "pending",
+        },
+    }
+
+
 def yield_search_completed(
     count: int | None = None,
     articles: list[dict] | None = None,
