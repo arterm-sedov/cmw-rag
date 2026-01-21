@@ -2211,23 +2211,23 @@ with gr.Blocks(
         confidence_badge = gr.HTML(visible=False)
         queries_badge = gr.HTML(visible=False)
 
-    # Analysis + sources panels (populated after streaming completes)
-    with gr.Accordion(i18n_resolve("analysis_summary_title"), open=False):
-        intent_text = gr.Textbox(label=i18n_resolve("user_intent_label"), interactive=False, visible=False)
-        subqueries_json = gr.JSON(label=i18n_resolve("subqueries_label"), visible=False)
-        action_plan_json = gr.JSON(label=i18n_resolve("action_plan_label"), visible=False)
+    # Metadata panels (populated after streaming completes) - displayed directly, no accordions
+    gr.Markdown(f"### {i18n_resolve('analysis_summary_title')}")
+    intent_text = gr.Textbox(label=i18n_resolve("user_intent_label"), interactive=False, visible=False)
+    subqueries_json = gr.JSON(label=i18n_resolve("subqueries_label"), visible=False)
+    action_plan_json = gr.JSON(label=i18n_resolve("action_plan_label"), visible=False)
 
-    with gr.Accordion(i18n_resolve("retrieved_articles_title"), open=False):
-        articles_df = gr.Dataframe(
-            headers=[
-                i18n_resolve("articles_rank_header"),
-                i18n_resolve("articles_title_header"),
-                i18n_resolve("articles_confidence_header"),
-                i18n_resolve("articles_url_header"),
-            ],
-            interactive=False,
-            visible=False,
-        )
+    gr.Markdown(f"### {i18n_resolve('retrieved_articles_title')}")
+    articles_df = gr.Dataframe(
+        headers=[
+            i18n_resolve("articles_rank_header"),
+            i18n_resolve("articles_title_header"),
+            i18n_resolve("articles_confidence_header"),
+            i18n_resolve("articles_url_header"),
+        ],
+        interactive=False,
+        visible=False,
+    )
 
     def handle_stop_click(history: list[dict], cancel_state: dict | None) -> tuple[list[dict], dict]:
         """Handle built-in stop button click - set cancellation flag and add UI block.
