@@ -2,10 +2,12 @@
 """Gradio UI with Chatbot (reference agent pattern) and REST API endpoint."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
 import sys
+import time
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -1924,12 +1926,13 @@ async def chat_with_metadata(
     ],
     None,
 ]:
-    """Streaming UI handler - metadata disabled for testing.
+    """Streaming UI handler with metadata enabled and 1s delays around culprits for debugging.
 
-    Consumes AgentContext but doesn't populate metadata UI to avoid hangs.
-    Agent memory and context tracking remain intact.
+    Adds 1 second delays around formatting operations to identify which causes frontend hang.
     """
     last_history: list[dict] = history if history else []
+    ctx: AgentContext | None = None
+    metadata_start_time = None
 
     async for chunk in agent_chat_handler(
         message=message,
@@ -1939,7 +1942,7 @@ async def chat_with_metadata(
     ):
         if isinstance(chunk, list):
             last_history = chunk
-            # Yield history with hidden metadata (metadata disabled for testing)
+            # Yield history with hidden metadata during streaming
             yield (
                 chunk,
                 gr.update(visible=False),
@@ -1951,22 +1954,144 @@ async def chat_with_metadata(
                 gr.update(visible=False, value=[]),
             )
         elif isinstance(chunk, AgentContext):
-            # Consume AgentContext but don't process metadata
-            # This ensures agent_chat_handler completes properly
-            # Agent memory and context tracking remain intact
-            logger.debug("chat_with_metadata: consumed AgentContext (metadata disabled)")
+            ctx = chunk
+            metadata_start_time = time.perf_counter()
+            logger.info("chat_with_metadata: received AgentContext, starting metadata processing")
 
-    # Always yield final update with hidden metadata to prevent UI hang
-    yield (
-        last_history,
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False, value=""),
-        gr.update(visible=False, value=[]),
-        gr.update(visible=False, value=[]),
-        gr.update(visible=False, value=[]),
-    )
+    # After streaming completes, populate metadata components with delays
+    if ctx is None:
+        logger.warning("chat_with_metadata: no AgentContext received, yielding hidden metadata")
+        yield (
+            last_history,
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False, value=""),
+            gr.update(visible=False, value=[]),
+            gr.update(visible=False, value=[]),
+            gr.update(visible=False, value=[]),
+        )
+        return
+
+    try:
+        # Extract plan data with timing
+        plan_start = time.perf_counter()
+        plan = ctx.sgr_plan or {}
+        spam_score = float(plan.get("spam_score", 0.0) or 0.0)
+        user_intent = plan.get("user_intent", "") if isinstance(plan.get("user_intent"), str) else ""
+        subqueries = plan.get("subqueries", [])
+        action_plan = plan.get("action_plan", [])
+        plan_elapsed = (time.perf_counter() - plan_start) * 1000
+        logger.info(f"chat_with_metadata: plan extraction took {plan_elapsed:.2f}ms")
+
+        # Format badges with timing
+        spam_start = time.perf_counter()
+        try:
+            spam_badge_html = format_spam_badge(spam_score)
+        except Exception as exc:
+            logger.error("Failed to format spam badge: %s", exc, exc_info=True)
+            spam_badge_html = ""
+        spam_elapsed = (time.perf_counter() - spam_start) * 1000
+        logger.info(f"chat_with_metadata: spam badge formatting took {spam_elapsed:.2f}ms")
+
+        conf_start = time.perf_counter()
+        try:
+            confidence_badge_html = format_confidence_badge(ctx.query_traces or [])
+        except Exception as exc:
+            logger.error("Failed to format confidence badge: %s", exc, exc_info=True)
+            confidence_badge_html = ""
+        conf_elapsed = (time.perf_counter() - conf_start) * 1000
+        logger.info(f"chat_with_metadata: confidence badge formatting took {conf_elapsed:.2f}ms")
+
+        queries_start = time.perf_counter()
+        try:
+            queries_badge_text = f"{i18n_resolve('queries_badge_label')}: {len(ctx.query_traces or [])}"
+        except Exception as exc:
+            logger.error("Failed to format queries badge: %s", exc, exc_info=True)
+            queries_badge_text = ""
+        queries_elapsed = (time.perf_counter() - queries_start) * 1000
+        logger.info(f"chat_with_metadata: queries badge formatting took {queries_elapsed:.2f}ms")
+
+        final_start = time.perf_counter()
+        try:
+            # format_articles_dataframe is disabled, returns empty list
+            articles_df_data = format_articles_dataframe(ctx.final_articles or [])
+        except Exception as exc:
+            logger.error("Failed to format articles dataframe: %s", exc, exc_info=True)
+            articles_df_data = []
+        final_elapsed = (time.perf_counter() - final_start) * 1000
+        logger.info(f"chat_with_metadata: final formatting took {final_elapsed:.2f}ms")
+
+        # Incremental yields to avoid Gradio hang - yield in 2 batches with small delay
+        # Batch 1: Badges only (lightweight, fast to process)
+        logger.info("chat_with_metadata: yielding badges (batch 1)")
+        yield_start = time.perf_counter()
+        try:
+            yield (
+                last_history,
+                gr.update(visible=True, value=spam_badge_html),
+                gr.update(visible=True, value=confidence_badge_html),
+                gr.update(visible=True, value=queries_badge_text),
+                gr.update(visible=False, value=""),  # intent_text - hide for now
+                gr.update(visible=False, value=[]),  # subqueries_json - hide for now
+                gr.update(visible=False, value=[]),  # action_plan_json - hide for now
+                gr.update(visible=False, value=[]),  # articles_df - hide for now
+            )
+            yield_elapsed = (time.perf_counter() - yield_start) * 1000
+            logger.info(f"chat_with_metadata: badges yield completed, took {yield_elapsed:.2f}ms")
+        except Exception as yield_exc:
+            logger.error(f"chat_with_metadata: badges yield failed: {yield_exc}", exc_info=True)
+            raise
+
+        # Small delay to let Gradio process batch 1 before batch 2
+        await asyncio.sleep(0.1)  # 100ms delay
+
+        # Batch 2: Accordion content (heavier components)
+        logger.info(
+            "chat_with_metadata: yielding accordion content (batch 2) - "
+            f"user_intent={user_intent[:50] if user_intent else 'empty'}, "
+            f"subqueries_count={len(subqueries) if isinstance(subqueries, list) else 0}, "
+            f"action_plan_count={len(action_plan) if isinstance(action_plan, list) else 0}, "
+            f"articles_df_rows={len(articles_df_data) if isinstance(articles_df_data, list) else 0}"
+        )
+        yield_start = time.perf_counter()
+        try:
+            yield (
+                last_history,
+                gr.update(visible=True, value=spam_badge_html),
+                gr.update(visible=True, value=confidence_badge_html),
+                gr.update(visible=True, value=queries_badge_text),
+                gr.update(visible=True, value=user_intent),
+                gr.update(visible=True, value=subqueries if isinstance(subqueries, list) else []),
+                gr.update(visible=True, value=action_plan if isinstance(action_plan, list) else []),
+                gr.update(visible=True, value=articles_df_data),
+            )
+            yield_elapsed = (time.perf_counter() - yield_start) * 1000
+            logger.info(f"chat_with_metadata: accordion content yield completed, took {yield_elapsed:.2f}ms")
+        except Exception as yield_exc:
+            yield_elapsed = (time.perf_counter() - yield_start) * 1000
+            logger.error(f"chat_with_metadata: accordion content yield failed after {yield_elapsed:.2f}ms: {yield_exc}", exc_info=True)
+            raise
+
+        if metadata_start_time:
+            total_elapsed = (time.perf_counter() - metadata_start_time) * 1000
+            logger.info(f"chat_with_metadata: total metadata processing took {total_elapsed:.2f}ms")
+
+        logger.info("chat_with_metadata: generator completing normally")
+
+    except Exception as exc:
+        logger.error("Error in chat_with_metadata metadata processing: %s", exc, exc_info=True)
+        # Yield safe fallback
+        yield (
+            last_history,
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False, value=""),
+            gr.update(visible=False, value=[]),
+            gr.update(visible=False, value=[]),
+            gr.update(visible=False, value=[]),
+        )
 
 
 # Use metadata-enabled wrapper to populate debug UI panels after streaming.
@@ -1979,12 +2104,6 @@ with gr.Blocks(
     # Header (like reference agent)
     if chat_title:
         gr.Markdown(f"# {chat_title}", elem_classes=["hero-title"])
-
-    # --- Metadata UI (populated after streaming completes) ---
-    with gr.Row():
-        spam_badge = gr.HTML(visible=False)
-        confidence_badge = gr.HTML(visible=False)
-        queries_badge = gr.HTML(visible=False)
 
     # Chatbot component (like reference agent - NOT ChatInterface)
     # In Gradio 6, Chatbot uses messages format by default (no type parameter needed)
@@ -2026,6 +2145,12 @@ with gr.Blocks(
     # Cancellation state - mutable dict so changes propagate to running generator
     # Note: Using direct dict value (not lambda) for Gradio 6 compatibility
     cancellation_state = gr.State(value={"cancelled": False})
+
+    # --- Metadata badges (populated after streaming completes, shown below chat) ---
+    with gr.Row():
+        spam_badge = gr.HTML(visible=False)
+        confidence_badge = gr.HTML(visible=False)
+        queries_badge = gr.HTML(visible=False)
 
     # Analysis + sources panels (populated after streaming completes)
     with gr.Accordion(i18n_resolve("analysis_summary_title"), open=False):
@@ -2135,7 +2260,14 @@ with gr.Blocks(
         outputs=[current_session_id],
         queue=False,
         api_visibility="private",
-    ).then(
+    )
+
+    def re_enable_textbox_and_hide_stop():
+        """Re-enable textbox and hide stop button after handler completion."""
+        logger.info("Re-enabling textbox and hiding stop button after handler completion")
+        return gr.Textbox(value="", interactive=True, submit_btn=True, stop_btn=False)
+
+    submit_event = submit_event.then(
         fn=handler_fn,
         inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
         outputs=[
@@ -2151,17 +2283,8 @@ with gr.Blocks(
         concurrency_limit=settings.gradio_default_concurrency_limit,
         api_visibility="private",  # Hide agent_chat_handler from MCP tools
     ).then(
-        lambda: gr.Textbox(value="", interactive=True),  # Clear and re-enable input after completion
+        fn=re_enable_textbox_and_hide_stop,
         outputs=[msg],
-        api_visibility="private",
-    )
-
-    # Hide stop button when streaming completes
-    # Pattern from ChatInterface: events_to_cancel.then() hides stop button
-    submit_event.then(
-        lambda: gr.Textbox(submit_btn=True, stop_btn=False),
-        outputs=[msg],
-        queue=False,
         api_visibility="private",
     )
 
