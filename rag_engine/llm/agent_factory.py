@@ -176,8 +176,15 @@ def create_rag_agent(
         )
         from rag_engine.llm.sgr_planning import run_sgr_planning
 
-        plan = run_sgr_planning(user_text, temp_llm_manager)
-        plan_dict = plan.model_dump()
+        try:
+            plan = run_sgr_planning(user_text, temp_llm_manager)
+            plan_dict = plan.model_dump()
+        except Exception as exc:  # noqa: BLE001
+            # SGR planning is a best-effort enhancement; do not crash the entire agent if it fails.
+            import logging
+
+            logging.getLogger(__name__).warning("SGR planning failed; continuing without it: %s", exc)
+            return None
 
         # Store in context for structured output + UI
         ctx.sgr_plan = plan_dict
