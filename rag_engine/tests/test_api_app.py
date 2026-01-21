@@ -1,7 +1,16 @@
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import importlib
 from types import SimpleNamespace
+
+
+async def _collect_async(gen):
+    out = []
+    async for item in gen:
+        out.append(item)
+    return out
 
 
 def test_chat_interface_initialization(monkeypatch):
@@ -116,6 +125,13 @@ def test_api_and_handler_empty_cases(monkeypatch):
 
     app = importlib.reload(importlib.import_module("rag_engine.api.app"))
 
+    class NoopAgent:
+        async def astream(self, *a, **k):  # noqa: ANN001, ANN003
+            if False:
+                yield None
+
+    app._create_rag_agent = lambda *a, **k: NoopAgent()  # type: ignore
+
     # query_rag with empty question returns error string
     assert app.query_rag(" ") == "Error: Empty question"
 
@@ -123,19 +139,13 @@ def test_api_and_handler_empty_cases(monkeypatch):
     result = app.query_rag("test question")
     assert "Sorry" in result or "found" in result.lower() or "information" in result.lower()
 
-    # agent_chat_handler yields validation message on empty input
-    gen = app.agent_chat_handler("", [])
-    first = next(gen)
-    if isinstance(first, dict):
-        content = first.get("content", "")
-    else:
-        content = first
-    assert "Please enter a question" in content or "Введите вопрос" in content
+    # agent_chat_handler yields history list on empty input
+    out = asyncio.run(_collect_async(app.agent_chat_handler("", [])))
+    assert out == [[]]
 
-    # agent_chat_handler with empty docs should still stream a response (not block)
-    gen = app.agent_chat_handler("test question", [])
-    result = list(gen)
-    assert any(isinstance(x, str) and x for x in result)
+    # agent_chat_handler with empty docs should still stream (at least one list yield)
+    out2 = asyncio.run(_collect_async(app.agent_chat_handler("test question", [])))
+    assert any(isinstance(x, list) for x in out2)
 
 
 def test_chat_handler_appends_footer_and_saves_to_memory(monkeypatch):
@@ -223,27 +233,29 @@ def test_chat_handler_appends_footer_and_saves_to_memory(monkeypatch):
         yield ("messages", (AiMsg(), {}))
 
     class FakeAgent:
-        def stream(self, *a, **k):  # noqa: ANN001, ANN003
-            return fake_agent_stream()
+        async def astream(self, *a, **k):  # noqa: ANN001, ANN003
+            for item in fake_agent_stream():
+                yield item
 
-    app._create_rag_agent = lambda override_model=None: FakeAgent()  # type: ignore
+    app._create_rag_agent = lambda *a, **k: FakeAgent()  # type: ignore
 
     # Build a fake request with session_hash
     class R:
         session_hash = "sess-1"
 
-    gen = app.agent_chat_handler("Question?", [], R())
-    outs = list(gen)
-    final_text = "".join([x for x in outs if isinstance(x, str)])
+    outs = asyncio.run(_collect_async(app.agent_chat_handler("Question?", [], request=R())))
+    final_hist = next((x for x in reversed(outs) if isinstance(x, list)), [])
+    final_text = ""
+    for msg in reversed(final_hist):
+        if isinstance(msg, dict) and msg.get("role") == "assistant" and not msg.get("metadata"):
+            final_text = msg.get("content", "") or ""
+            break
     # With a synthesized tool result, footer must be present
     assert any(h in final_text for h in ("## Источники:", "## Sources:"))
 
 
 def test_session_salting_new_chat(monkeypatch):
     """Test session salting for new chats uses current message."""
-    import importlib
-    import hashlib
-
     received_session_ids = []
 
     class FakeLLMManager:
@@ -285,12 +297,18 @@ def test_session_salting_new_chat(monkeypatch):
 
     app = importlib.reload(importlib.import_module("rag_engine.api.app"))
 
+    class NoopAgent:
+        async def astream(self, *a, **k):  # noqa: ANN001, ANN003
+            if False:
+                yield None
+
+    app._create_rag_agent = lambda *a, **k: NoopAgent()  # type: ignore
+
     class Request:
         session_hash = "base-session-123"
 
     # New chat - empty history
-    gen = app.agent_chat_handler("First message", [], Request())
-    list(gen)  # Consume generator
+    asyncio.run(_collect_async(app.agent_chat_handler("First message", [], request=Request())))
 
     # Verify session_id was generated from first message
     assert len(received_session_ids) == 1
@@ -301,9 +319,6 @@ def test_session_salting_new_chat(monkeypatch):
 
 def test_session_salting_loaded_chat(monkeypatch):
     """Test session salting for loaded chats uses first message from history."""
-    import importlib
-    import hashlib
-
     received_session_ids = []
 
     class FakeLLMManager:
@@ -345,6 +360,13 @@ def test_session_salting_loaded_chat(monkeypatch):
 
     app = importlib.reload(importlib.import_module("rag_engine.api.app"))
 
+    class NoopAgent:
+        async def astream(self, *a, **k):  # noqa: ANN001, ANN003
+            if False:
+                yield None
+
+    app._create_rag_agent = lambda *a, **k: NoopAgent()  # type: ignore
+
     class Request:
         session_hash = "base-session-456"
 
@@ -354,8 +376,7 @@ def test_session_salting_loaded_chat(monkeypatch):
         {"role": "assistant", "content": "Previous response"},
     ]
 
-    gen = app.agent_chat_handler("Follow up", history, Request())
-    list(gen)  # Consume generator
+    asyncio.run(_collect_async(app.agent_chat_handler("Follow up", history, request=Request())))
 
     # Verify session_id was generated from first message in history (not current)
     assert len(received_session_ids) == 1
@@ -368,9 +389,6 @@ def test_session_salting_loaded_chat(monkeypatch):
 
 def test_session_salting_same_chat_preserves_session(monkeypatch):
     """Test same chat generates same session_id (memory continuity)."""
-    import importlib
-    import hashlib
-
     received_session_ids = []
 
     class FakeLLMManager:
@@ -412,6 +430,13 @@ def test_session_salting_same_chat_preserves_session(monkeypatch):
 
     app = importlib.reload(importlib.import_module("rag_engine.api.app"))
 
+    class NoopAgent:
+        async def astream(self, *a, **k):  # noqa: ANN001, ANN003
+            if False:
+                yield None
+
+    app._create_rag_agent = lambda *a, **k: NoopAgent()  # type: ignore
+
     class Request:
         session_hash = "base-session-789"
 
@@ -421,14 +446,12 @@ def test_session_salting_same_chat_preserves_session(monkeypatch):
     ]
 
     # First call
-    gen1 = app.agent_chat_handler("Second question", history, Request())
-    list(gen1)
+    asyncio.run(_collect_async(app.agent_chat_handler("Second question", history, request=Request())))
     session_id1 = received_session_ids[0]
 
     # Second call with same history
     received_session_ids.clear()
-    gen2 = app.agent_chat_handler("Third question", history, Request())
-    list(gen2)
+    asyncio.run(_collect_async(app.agent_chat_handler("Third question", history, request=Request())))
     session_id2 = received_session_ids[0]
 
     # Same session_id for same first message
@@ -439,9 +462,6 @@ def test_session_salting_same_chat_preserves_session(monkeypatch):
 
 def test_session_salting_different_chats_isolated(monkeypatch):
     """Test different chats generate different session_ids."""
-    import importlib
-    import hashlib
-
     received_session_ids = []
 
     class FakeLLMManager:
@@ -483,20 +503,25 @@ def test_session_salting_different_chats_isolated(monkeypatch):
 
     app = importlib.reload(importlib.import_module("rag_engine.api.app"))
 
+    class NoopAgent:
+        async def astream(self, *a, **k):  # noqa: ANN001, ANN003
+            if False:
+                yield None
+
+    app._create_rag_agent = lambda *a, **k: NoopAgent()  # type: ignore
+
     class Request:
         session_hash = "base-session-abc"
 
     # Chat 1: first message "Hello"
     history1 = [{"role": "user", "content": "Hello"}]
-    gen1 = app.agent_chat_handler("Follow up 1", history1, Request())
-    list(gen1)
+    asyncio.run(_collect_async(app.agent_chat_handler("Follow up 1", history1, request=Request())))
     session_id1 = received_session_ids[0]
 
     # Chat 2: first message "Hi" (different)
     received_session_ids.clear()
     history2 = [{"role": "user", "content": "Hi"}]
-    gen2 = app.agent_chat_handler("Follow up 2", history2, Request())
-    list(gen2)
+    asyncio.run(_collect_async(app.agent_chat_handler("Follow up 2", history2, request=Request())))
     session_id2 = received_session_ids[0]
 
     # Different session_ids for different first messages

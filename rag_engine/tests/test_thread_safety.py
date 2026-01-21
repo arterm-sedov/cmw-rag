@@ -24,7 +24,8 @@ def test_retriever_singleton_serialized(monkeypatch):
             construct_count["n"] += 1
 
     # Minimal fakes for dependencies used by _get_or_create_retriever
-    monkeypatch.setattr("rag_engine.retrieval.retriever.RAGRetriever", FakeRetriever)
+    # Patch the symbol imported into the tool module (not the source module)
+    monkeypatch.setattr(tool_mod, "RAGRetriever", FakeRetriever)
     monkeypatch.setattr("rag_engine.retrieval.embedder.FRIDAEmbedder", lambda *a, **k: object())
     monkeypatch.setattr("rag_engine.storage.vector_store.ChromaStore", lambda *a, **k: object())
     monkeypatch.setattr("rag_engine.llm.llm_manager.LLMManager", lambda *a, **k: object())

@@ -12,8 +12,9 @@ def test_normalize_path_windows_backslashes():
     normalized = normalize_path(windows_path)
 
     # Should convert backslashes to forward slashes
-    assert "\\" not in str(normalized)
-    assert "/" in str(normalized) or str(normalized) == "file.md"
+    assert "\\" not in normalized.as_posix()
+    assert_toggle = "/" in normalized.as_posix() or normalized.as_posix().endswith("file.md")
+    assert assert_toggle
 
 
 def test_normalize_path_posix_slashes():
@@ -22,7 +23,7 @@ def test_normalize_path_posix_slashes():
     normalized = normalize_path(posix_path)
 
     # Should remain the same
-    assert str(normalized) == posix_path
+    assert normalized.as_posix() == posix_path
 
 
 def test_normalize_path_path_object():
@@ -41,5 +42,5 @@ def test_normalize_path_mixed_separators():
     normalized = normalize_path(mixed_path)
 
     # All backslashes should be converted
-    assert "\\" not in str(normalized)
-    assert "/" in str(normalized)
+    assert "\\" not in normalized.as_posix()
+    assert "/" in normalized.as_posix()

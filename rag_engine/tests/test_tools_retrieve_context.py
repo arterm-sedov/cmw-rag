@@ -1,6 +1,7 @@
 """Tests for RAG context retrieval LangChain tool."""
 from __future__ import annotations
 
+import asyncio
 import json
 from unittest.mock import Mock, patch
 
@@ -10,7 +11,6 @@ from rag_engine.retrieval.retriever import Article, RAGRetriever
 from rag_engine.tools.retrieve_context import (
     RetrieveContextSchema,
     _format_articles_to_json,
-    _get_or_create_retriever,
     retrieve_context,
 )
 
@@ -141,11 +141,11 @@ class TestRetrieveContextTool:
         mock_get_retriever.return_value = mock_ret
 
         # Invoke tool
-        result_str = retrieve_context.invoke({"query": "test query", "top_k": 5})
+        result_str = asyncio.run(retrieve_context.ainvoke({"query": "test query", "top_k": 5}))
         result = json.loads(result_str)
 
         # Verify retriever was called correctly (no reserved_tokens parameter)
-        mock_ret.retrieve.assert_called_once_with("test query", top_k=5)
+        mock_ret.retrieve.assert_called_once_with("test query", top_k=5, include_confidence=True)
 
         # Verify result structure
         assert len(result["articles"]) == 1
@@ -162,7 +162,7 @@ class TestRetrieveContextTool:
         mock_ret.retrieve.return_value = []
         mock_get_retriever.return_value = mock_ret
 
-        result_str = retrieve_context.invoke({"query": "no results query"})
+        result_str = asyncio.run(retrieve_context.ainvoke({"query": "no results query"}))
         result = json.loads(result_str)
 
         assert result["articles"] == []
@@ -176,7 +176,7 @@ class TestRetrieveContextTool:
         mock_ret.retrieve.side_effect = Exception("Database connection failed")
         mock_get_retriever.return_value = mock_ret
 
-        result_str = retrieve_context.invoke({"query": "error query"})
+        result_str = asyncio.run(retrieve_context.ainvoke({"query": "error query"}))
         result = json.loads(result_str)
 
         assert "error" in result
@@ -205,10 +205,10 @@ class TestRetrieveContextTool:
         mock_get_retriever.return_value = mock_ret
 
         # Direct call
-        direct_results = mock_ret.retrieve("test query", top_k=5)
+        direct_results = mock_ret.retrieve("test query", top_k=5, include_confidence=True)
 
         # Tool call
-        tool_result_str = retrieve_context.invoke({"query": "test query", "top_k": 5})
+        tool_result_str = asyncio.run(retrieve_context.ainvoke({"query": "test query", "top_k": 5}))
         tool_result = json.loads(tool_result_str)
 
         # Verify same articles are returned (same count and kb_ids)
