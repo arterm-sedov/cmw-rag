@@ -32,6 +32,7 @@ async def sgr_plan(
     """Analyze the user request and produce the user question resolution plan.
 
     IMPORTANT:
+    - Fill all the args in Russian
     - Do NOT echo the plan to the user.
     """
     plan = {
