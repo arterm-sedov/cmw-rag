@@ -17,7 +17,7 @@ if str(_project_root) not in sys.path:
 import gradio as gr
 from openai import APIError as OpenAIAPIError
 
-from rag_engine.api.i18n import get_text, i18n_resolve
+from rag_engine.api.i18n import i18n_resolve
 from rag_engine.config.settings import get_allowed_fallback_models, settings  # noqa: F401
 from rag_engine.llm.fallback import check_context_fallback
 from rag_engine.llm.llm_manager import LLMManager
@@ -1924,9 +1924,12 @@ async def chat_with_metadata(
     ],
     None,
 ]:
-    """Streaming UI handler that also populates metadata after completion."""
+    """Streaming UI handler - metadata disabled for testing.
+
+    Consumes AgentContext but doesn't populate metadata UI to avoid hangs.
+    Agent memory and context tracking remain intact.
+    """
     last_history: list[dict] = history if history else []
-    ctx: AgentContext | None = None
 
     async for chunk in agent_chat_handler(
         message=message,
@@ -1936,7 +1939,7 @@ async def chat_with_metadata(
     ):
         if isinstance(chunk, list):
             last_history = chunk
-            # Hide metadata during streaming
+            # Yield history with hidden metadata (metadata disabled for testing)
             yield (
                 chunk,
                 gr.update(visible=False),
@@ -1948,27 +1951,21 @@ async def chat_with_metadata(
                 gr.update(visible=False, value=[]),
             )
         elif isinstance(chunk, AgentContext):
-            ctx = chunk
+            # Consume AgentContext but don't process metadata
+            # This ensures agent_chat_handler completes properly
+            # Agent memory and context tracking remain intact
+            logger.debug("chat_with_metadata: consumed AgentContext (metadata disabled)")
 
-    # After streaming completes, populate metadata components
-    if ctx is None:
-        return
-
-    plan = ctx.sgr_plan or {}
-    spam_score = float(plan.get("spam_score", 0.0) or 0.0)
-    user_intent = plan.get("user_intent", "") if isinstance(plan.get("user_intent"), str) else ""
-    subqueries = plan.get("subqueries", [])
-    action_plan = plan.get("action_plan", [])
-
+    # Always yield final update with hidden metadata to prevent UI hang
     yield (
         last_history,
-        gr.update(visible=True, value=format_spam_badge(spam_score)),
-        gr.update(visible=True, value=format_confidence_badge(ctx.query_traces)),
-        gr.update(visible=True, value=f"{get_text('queries_badge_label')}: {len(ctx.query_traces)}"),
-        gr.update(visible=True, value=user_intent),
-        gr.update(visible=True, value=subqueries if isinstance(subqueries, list) else []),
-        gr.update(visible=True, value=action_plan if isinstance(action_plan, list) else []),
-        gr.update(visible=True, value=format_articles_dataframe(ctx.final_articles)),
+        gr.update(visible=False),
+        gr.update(visible=False),
+        gr.update(visible=False),
+        gr.update(visible=False, value=""),
+        gr.update(visible=False, value=[]),
+        gr.update(visible=False, value=[]),
+        gr.update(visible=False, value=[]),
     )
 
 
