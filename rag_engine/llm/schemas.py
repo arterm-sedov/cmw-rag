@@ -38,12 +38,12 @@ class SGRPlanResult(BaseModel):
     spam_reason: str = Field(
         ...,
         max_length=150,
-        description="Brief explanation of spam classification (10-20 words).",
+        description="Brief explanation of spam classification (10-20 words, in Russian).",
     )
     user_intent: str = Field(
         ...,
         max_length=300,
-        description="Short summary of what the user wants (1-2 sentences).",
+        description="Short summary of what the user wants (1-2 sentences, in Russian).",
     )
     subqueries: list[str] = Field(
         ...,
@@ -57,7 +57,7 @@ class SGRPlanResult(BaseModel):
     action_plan: list[str] = Field(
         default_factory=list,
         max_length=10,
-        description="Concrete steps to resolve the request (up to 10 steps).",
+        description="Concrete steps to resolve the request (up to 10 steps, in Russian).",
     )
     ask_for_clarification: bool = Field(
         default=False,
