@@ -463,6 +463,7 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
         True
     """
     if not query:
+        logger.debug("update_search_started_in_history: query is empty, skipping update")
         return False
 
     # Find the last search_started message that is still pending
@@ -471,30 +472,37 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
 
     for i in range(len(gradio_history) - 1, -1, -1):
         msg = gradio_history[i]
-        if isinstance(msg, dict) and msg.get("role") == "assistant":
-            metadata = msg.get("metadata", {})
-            ui_type = metadata.get("ui_type")
+        if not isinstance(msg, dict) or msg.get("role") != "assistant":
+            continue
+        metadata = msg.get("metadata")
+        if not metadata or not isinstance(metadata, dict):
+            continue
+        ui_type = metadata.get("ui_type")
 
-            # If we find a search_completed, stop searching backwards
-            # Any search_started before this point is already completed
-            if ui_type == "search_completed":
+        # If we find a search_completed, stop searching backwards
+        # Any search_started before this point is already completed
+        if ui_type == "search_completed":
+            logger.debug("update_search_started_in_history: found search_completed at index %d, stopping search", i)
+            break
+
+        # Track the most recent pending search_started
+        if ui_type == "search_started":
+            status = metadata.get("status", "pending")
+            # Only update if still pending (not "done")
+            if status == "pending":
+                last_pending_search_started_idx = i
+                logger.debug("update_search_started_in_history: found pending search_started at index %d", i)
+                # Use the first pending one we find (most recent)
                 break
-
-            # Track the most recent pending search_started
-            if ui_type == "search_started":
-                status = metadata.get("status", "pending")
-                # Only update if still pending (not "done")
-                if status == "pending":
-                    last_pending_search_started_idx = i
-                    # Use the first pending one we find (most recent)
-                    break
 
     # Update the found pending search_started message
     if last_pending_search_started_idx is not None:
         updated_msg = yield_search_started(query)
         gradio_history[last_pending_search_started_idx] = updated_msg
+        logger.info("update_search_started_in_history: updated search_started block at index %d with query='%s'", last_pending_search_started_idx, query[:50])
         return True
 
+    logger.debug("update_search_started_in_history: no pending search_started block found to update")
     return False
 
 
