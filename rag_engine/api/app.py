@@ -739,14 +739,14 @@ async def agent_chat_handler(
     if settings.llm_fallback_enabled:
         selected_model = _check_context_fallback(messages)
 
-    # --- Forced SGR planning as tool call (per-turn) ---
-    # We force a "sgr_plan" tool call once per user turn, capture the plan, and
+    # --- Forced user request analysis as tool call (per-turn) ---
+    # We force an "analyse_user_request" tool call once per user turn, capture the plan, and
     # then inject the resulting tool-call transcript into the agent messages.
     # SGR planning is enabled by default (can be disabled via _create_rag_agent parameter)
     sgr_plan_dict: dict | None = None
     enable_sgr_planning_flag = True  # Always enabled for now (matches _create_rag_agent default)
     if enable_sgr_planning_flag:
-        logger.info("SGR planning enabled, executing forced sgr_plan tool call")
+        logger.info("SGR planning enabled, executing forced analyse_user_request tool call")
         try:
             from rag_engine.api.stream_helpers import yield_sgr_planning_started
 
@@ -757,7 +757,7 @@ async def agent_chat_handler(
 
             from rag_engine.llm.llm_manager import LLMManager
             from rag_engine.llm.schemas import SGRPlanResult
-            from rag_engine.tools import sgr_plan as sgr_plan_tool
+            from rag_engine.tools import analyse_user_request as analyse_user_request_tool
 
             sgr_llm = LLMManager(
                 provider=settings.default_llm_provider,
@@ -766,8 +766,8 @@ async def agent_chat_handler(
             )._chat_model()
 
             sgr_model = sgr_llm.bind_tools(
-                [sgr_plan_tool],
-                tool_choice={"type": "function", "function": {"name": "sgr_plan"}},
+                [analyse_user_request_tool],
+                tool_choice={"type": "function", "function": {"name": "analyse_user_request"}},
             )
 
             logger.info("Calling SGR planning LLM with %d messages", len(messages))
@@ -804,6 +804,8 @@ async def agent_chat_handler(
             if sgr_plan_dict:
                 import json
 
+                plan_json = json.dumps(sgr_plan_dict, ensure_ascii=False, separators=(",", ":"))
+
                 messages = list(messages) + [
                     {
                         "role": "assistant",
@@ -813,15 +815,15 @@ async def agent_chat_handler(
                                 "id": call_id,
                                 "type": "function",
                                 "function": {
-                                    "name": "sgr_plan",
-                                    "arguments": json.dumps(sgr_plan_dict, ensure_ascii=False),
+                                    "name": "analyse_user_request",
+                                    "arguments": plan_json,
                                 },
                             }
                         ],
                     },
                     {
                         "role": "tool",
-                        "content": json.dumps(sgr_plan_dict, ensure_ascii=False),
+                        "content": plan_json,
                         "tool_call_id": call_id,
                     },
                 ]
