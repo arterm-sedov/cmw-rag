@@ -18,7 +18,7 @@ if str(_project_root) not in sys.path:
 import gradio as gr
 from openai import APIError as OpenAIAPIError
 
-from rag_engine.api.i18n import i18n_resolve
+from rag_engine.api.i18n import get_text, i18n_resolve
 from rag_engine.config.settings import get_allowed_fallback_models, settings  # noqa: F401
 from rag_engine.llm.fallback import check_context_fallback
 from rag_engine.llm.llm_manager import LLMManager
@@ -685,19 +685,9 @@ async def agent_chat_handler(
                 yield list(gradio_history)
 
     # Three UI blocks pattern (from test script):
-    # 1. Thinking block
-    # 2. Search started block
-    # 3. Search completed block (added when tool results arrive)
-    # Then the actual answer is streamed
-
-    # 1. Add thinking block first (pattern from test script: line 136-142)
-    from rag_engine.api.stream_helpers import yield_thinking_block
-    thinking_msg = yield_thinking_block("retrieve_context")  # Use retrieve_context as tool name
-    gradio_history.append(thinking_msg)  # Append, don't replace
-    yield list(gradio_history)
-
-    # Note: search_started message will be added when retrieve_context tool is actually called
-    # (not here, to maintain correct order: SGR planning -> retrieve_context -> answer generation)
+    # Thinking/search blocks are added dynamically when tools are actually called
+    # (not here, to maintain correct order: SGR planning -> tool calls -> answer generation)
+    # This prevents showing spinners for tools that aren't actually called
 
     # Session management (reuse existing pattern)
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
@@ -936,15 +926,39 @@ async def agent_chat_handler(
                     # This ensures we capture query even if chunks arrive before tool_call is detected
                     if is_ai_message:
                         tool_query_from_accumulator = tool_call_accumulator.process_token(token)
-                        # If accumulator found a complete query for retrieve_context, add search_started message
+                        tool_name_from_accumulator = tool_call_accumulator.get_tool_name(token)
+                        # If accumulator found a complete query for retrieve_context, add or update search_started message
                         # (search_started is now added when retrieve_context is called, not early)
                         # This ensures correct order: SGR planning -> retrieve_context -> answer generation
-                        if tool_query_from_accumulator and tool_call_accumulator.get_tool_name(token) == "retrieve_context" and not has_seen_tool_results:
-                            logger.info("Adding search_started block from accumulator for retrieve_context: query=%s", tool_query_from_accumulator[:50])
-                            from rag_engine.api.stream_helpers import yield_search_started
-                            search_started_msg = yield_search_started(tool_query_from_accumulator)
-                            gradio_history.append(search_started_msg)
-                            yield list(gradio_history)
+                        if tool_name_from_accumulator == "retrieve_context" and not has_seen_tool_results:
+                            if tool_query_from_accumulator:
+                                # Query is complete - add or update search_started block
+                                logger.info("Adding/updating search_started block from accumulator for retrieve_context: query=%s", tool_query_from_accumulator[:50])
+                                from rag_engine.api.stream_helpers import (
+                                    update_search_started_in_history,
+                                    yield_search_started,
+                                )
+                                # Try to update existing block, otherwise add new one
+                                if not update_search_started_in_history(gradio_history, tool_query_from_accumulator):
+                                    search_started_msg = yield_search_started(tool_query_from_accumulator)
+                                    gradio_history.append(search_started_msg)
+                                yield list(gradio_history)
+                            else:
+                                # Query not ready yet - create block with empty query, will be updated later
+                                from rag_engine.api.stream_helpers import yield_search_started
+                                # Check if we already added an empty search_started block
+                                has_empty_search_started = any(
+                                    isinstance(msg, dict)
+                                    and msg.get("role") == "assistant"
+                                    and msg.get("metadata", {}).get("ui_type") == "search_started"
+                                    and msg.get("content", "").strip() == get_text("search_started_content", query="").strip()
+                                    for msg in gradio_history
+                                )
+                                if not has_empty_search_started:
+                                    logger.info("Creating search_started block with empty query (will update when query is ready)")
+                                    search_started_msg = yield_search_started("")
+                                    gradio_history.append(search_started_msg)
+                                    yield list(gradio_history)
 
                     if is_ai_message:
                         has_tool_calls = bool(getattr(token, "tool_calls", None))
@@ -1142,15 +1156,42 @@ async def agent_chat_handler(
 
                             if tool_name == "retrieve_context":
                                 tool_query = tool_call_accumulator.process_token(token)
-                                # If we've already seen tool results, ADD a new search_started block
-                                # Otherwise, UPDATE the existing one (which was added at handler start)
-                                # Always add search_started block when retrieve_context is called
-                                # This ensures correct order: SGR planning -> retrieve_context -> answer generation
-                                logger.info("Adding search_started block for retrieve_context: query=%s", tool_query[:50] if tool_query else "empty")
-                                from rag_engine.api.stream_helpers import yield_search_started
-                                search_started_msg = yield_search_started(tool_query or "")
-                                gradio_history.append(search_started_msg)
-                                yield list(gradio_history)
+                                # Update existing search_started block with query if available, or create new one
+                                from rag_engine.api.stream_helpers import (
+                                    update_search_started_in_history,
+                                    yield_search_started,
+                                )
+                                if tool_query:
+                                    # Query is complete - update existing block or add new one
+                                    if has_seen_tool_results:
+                                        # Add NEW search_started block for subsequent tool calls
+                                        logger.info("Adding NEW search_started block via tool_calls (subsequent): query=%s", tool_query[:50])
+                                        search_started_msg = yield_search_started(tool_query)
+                                        gradio_history.append(search_started_msg)
+                                        yield list(gradio_history)
+                                    else:
+                                        # Update existing block or create new one if not exists
+                                        logger.info("Updating search_started block via tool_calls for retrieve_context: query=%s", tool_query[:50])
+                                        if not update_search_started_in_history(gradio_history, tool_query):
+                                            # No existing block found, create new one
+                                            search_started_msg = yield_search_started(tool_query)
+                                            gradio_history.append(search_started_msg)
+                                        yield list(gradio_history)
+                                else:
+                                    # Query not ready yet - create block with empty query if not exists
+                                    if not has_seen_tool_results:
+                                        # Check if we already have a search_started block
+                                        has_search_started = any(
+                                            isinstance(msg, dict)
+                                            and msg.get("role") == "assistant"
+                                            and msg.get("metadata", {}).get("ui_type") == "search_started"
+                                            for msg in gradio_history
+                                        )
+                                        if not has_search_started:
+                                            logger.info("Creating search_started block with empty query (will update when query is ready)")
+                                            search_started_msg = yield_search_started("")
+                                            gradio_history.append(search_started_msg)
+                                            yield list(gradio_history)
                             elif tool_name:
                                 # Show generic thinking block for non-search tools
                                 # Reference agent pattern: always append, don't check duplicates
@@ -1182,27 +1223,42 @@ async def agent_chat_handler(
 
                                     if tool_name == "retrieve_context":
                                         tool_query = tool_call_accumulator.process_token(token)
-                                        # If we've already seen tool results, ADD a new search_started block
-                                        # Otherwise, UPDATE the existing one (which was added at handler start)
-                                        if has_seen_tool_results:
-                                            # Add NEW search_started block for subsequent tool calls
-                                            logger.info("Adding NEW search_started block via chunk (subsequent): query=%s", tool_query[:50] if tool_query else "empty")
-                                            from rag_engine.api.stream_helpers import (
-                                                yield_search_started,
-                                            )
-                                            search_started_msg = yield_search_started(tool_query or "")
-                                            gradio_history.append(search_started_msg)
-                                            yield list(gradio_history)
+                                        # Update existing search_started block with query if available, or create new one
+                                        from rag_engine.api.stream_helpers import (
+                                            update_search_started_in_history,
+                                            yield_search_started,
+                                        )
+                                        if tool_query:
+                                            # Query is complete - update existing block or add new one
+                                            if has_seen_tool_results:
+                                                # Add NEW search_started block for subsequent tool calls
+                                                logger.info("Adding NEW search_started block via chunk (subsequent): query=%s", tool_query[:50])
+                                                search_started_msg = yield_search_started(tool_query)
+                                                gradio_history.append(search_started_msg)
+                                                yield list(gradio_history)
+                                            else:
+                                                # Update existing block or create new one if not exists
+                                                logger.info("Updating search_started block via chunk for retrieve_context: query=%s", tool_query[:50])
+                                                if not update_search_started_in_history(gradio_history, tool_query):
+                                                    # No existing block found, create new one
+                                                    search_started_msg = yield_search_started(tool_query)
+                                                    gradio_history.append(search_started_msg)
+                                                yield list(gradio_history)
                                         else:
-                                            # Add search_started block when retrieve_context is called
-                                            # This ensures correct order: SGR planning -> retrieve_context -> answer generation
-                                            logger.info("Adding search_started block via chunk for retrieve_context: query=%s", tool_query[:50] if tool_query else "empty")
-                                            from rag_engine.api.stream_helpers import (
-                                                yield_search_started,
-                                            )
-                                            search_started_msg = yield_search_started(tool_query or "")
-                                            gradio_history.append(search_started_msg)
-                                            yield list(gradio_history)
+                                            # Query not ready yet - create block with empty query if not exists
+                                            if not has_seen_tool_results:
+                                                # Check if we already have a search_started block
+                                                has_search_started = any(
+                                                    isinstance(msg, dict)
+                                                    and msg.get("role") == "assistant"
+                                                    and msg.get("metadata", {}).get("ui_type") == "search_started"
+                                                    for msg in gradio_history
+                                                )
+                                                if not has_search_started:
+                                                    logger.info("Creating search_started block with empty query (will update when query is ready)")
+                                                    search_started_msg = yield_search_started("")
+                                                    gradio_history.append(search_started_msg)
+                                                    yield list(gradio_history)
                                     elif tool_name:
                                         # Show generic thinking block for non-search tools
                                         # Reference agent pattern: always append, don't check duplicates
@@ -1221,9 +1277,13 @@ async def agent_chat_handler(
                                 if not tool_executing:
                                     text_chunk = block["text"]
 
-                                    # Stop "generating answer" spinner on first text chunk
-                                    if not answer and has_seen_tool_results:
-                                        update_message_status_in_history(gradio_history, "generating_answer", "done")
+                                    # Stop all pending spinners on first text chunk (answer is starting)
+                                    if not answer:
+                                        update_message_status_in_history(gradio_history, "thinking", "done")
+                                        update_message_status_in_history(gradio_history, "search_started", "done")
+                                        update_message_status_in_history(gradio_history, "sgr_planning", "done")
+                                        if has_seen_tool_results:
+                                            update_message_status_in_history(gradio_history, "generating_answer", "done")
 
                                     answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                         text_chunk, answer, disclaimer_prepended, has_seen_tool_results
@@ -1419,6 +1479,14 @@ async def agent_chat_handler(
         if final_response and session_id:
             llm_manager.save_assistant_turn(session_id, final_response)
             logger.info(f"Saved complete response to memory ({len(final_response)} chars)")
+
+        # Mark all pending spinners as done before final yield (prevents persistent spinners)
+        from rag_engine.api.stream_helpers import update_message_status_in_history
+        update_message_status_in_history(gradio_history, "thinking", "done")
+        update_message_status_in_history(gradio_history, "search_started", "done")
+        update_message_status_in_history(gradio_history, "sgr_planning", "done")
+        update_message_status_in_history(gradio_history, "generating_answer", "done")
+        logger.info("Marked all pending UI spinners as done before final yield")
 
         # Log final history state for debugging
         logger.info(
@@ -1637,6 +1705,14 @@ async def agent_chat_handler(
                 gradio_history.append({"role": "user", "content": message})
 
         _update_or_append_assistant_message(gradio_history, error_msg)
+
+        # Mark all pending spinners as done before yielding error (prevents persistent spinners)
+        from rag_engine.api.stream_helpers import update_message_status_in_history
+        update_message_status_in_history(gradio_history, "thinking", "done")
+        update_message_status_in_history(gradio_history, "search_started", "done")
+        update_message_status_in_history(gradio_history, "sgr_planning", "done")
+        update_message_status_in_history(gradio_history, "generating_answer", "done")
+
         yield list(gradio_history)
 
         # Always yield a final AgentContext so `chat_with_metadata` can update UI panels.
