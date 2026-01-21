@@ -86,23 +86,13 @@ def format_spam_badge(score: float) -> str:
 
 def format_confidence_badge(query_traces: list[dict]) -> str:
     """Format overall retrieval confidence as colored HTML badge (localized)."""
+    from rag_engine.retrieval.confidence import compute_normalized_confidence_from_traces
+
     label = i18n_resolve("confidence_badge_label")
-    if not query_traces:
+    avg = compute_normalized_confidence_from_traces(query_traces)
+
+    if avg is None:
         return _badge_html(label=label, value=i18n_resolve("confidence_level_na"), color="gray")
-
-    scores = []
-    for t in query_traces:
-        conf = t.get("confidence") if isinstance(t, dict) else None
-        if isinstance(conf, dict):
-            val = conf.get("top_score")
-            if isinstance(val, (int, float)):
-                scores.append(float(val))
-
-    # If no valid scores found, show N/A
-    if not scores:
-        return _badge_html(label=label, value=i18n_resolve("confidence_level_na"), color="gray")
-
-    avg = sum(scores) / len(scores)
 
     if avg > 0.7:
         color, level = "green", i18n_resolve("confidence_level_high")
