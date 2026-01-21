@@ -1432,6 +1432,10 @@ async def agent_chat_handler(
         yield list(gradio_history)
 
         # Populate AgentContext for structured output / UI metadata, then yield it.
+        # Ensure sgr_plan is set if it was created during SGR planning
+        if sgr_plan_dict and not getattr(agent_context, "sgr_plan", None):
+            agent_context.sgr_plan = sgr_plan_dict
+            logger.info("agent_chat_handler: restored sgr_plan_dict to agent_context before yielding")
         try:
             agent_context.final_answer = final_text or ""
             agent_context.final_articles = [_article_to_dict(a) for a in articles] if articles else []
@@ -1445,6 +1449,7 @@ async def agent_chat_handler(
             logger.info(
                 f"agent_chat_handler: yielding AgentContext - "
                 f"sgr_plan_present={agent_context.sgr_plan is not None}, "
+                f"sgr_plan_dict_present={sgr_plan_dict is not None}, "
                 f"query_traces_count={len(agent_context.query_traces)}, "
                 f"final_articles_count={len(agent_context.final_articles)}"
             )
@@ -1999,12 +2004,20 @@ async def chat_with_metadata(
             f"plan_keys={list(plan.keys()) if plan else []}, "
             f"user_intent_present={'user_intent' in plan}, "
             f"subqueries_present={'subqueries' in plan}, "
-            f"action_plan_present={'action_plan' in plan}"
+            f"action_plan_present={'action_plan' in plan}, "
+            f"user_message='{user_message[:50] if user_message else 'None'}...'"
         )
         spam_score = float(plan.get("spam_score", 0.0) or 0.0)
         user_intent = plan.get("user_intent", "") if isinstance(plan.get("user_intent"), str) else ""
         subqueries = plan.get("subqueries", [])
         action_plan = plan.get("action_plan", [])
+
+        # Log if sgr_plan is missing (shouldn't happen if SGR planning executed)
+        if not ctx.sgr_plan:
+            logger.warning(
+                "chat_with_metadata: sgr_plan is None - SGR planning may not have executed. "
+                "Will use fallback user_intent from message if available."
+            )
 
         # Fallback: if user_intent is empty but we have a plan, try to derive it from the message
         # This handles cases where SGR planning returned empty values for math/time questions
@@ -2077,11 +2090,15 @@ async def chat_with_metadata(
         has_action_plan = bool(isinstance(action_plan, list) and len(action_plan) > 0)
         has_articles = bool(isinstance(articles_df_data, list) and len(articles_df_data) > 0)
 
-        # If SGR plan exists, ensure at least user_intent is shown (even if empty, use fallback)
-        if ctx.sgr_plan and not has_user_intent and user_message:
+        # Always show user_intent if we have a user message (even if SGR plan is missing/empty)
+        # This ensures metadata appears for math/date questions that don't call retrieve_context
+        if not has_user_intent and user_message:
             has_user_intent = True
             user_intent = user_intent or user_message[:200]  # Use fallback if empty
-            logger.info("chat_with_metadata: using fallback user_intent from message for display")
+            logger.info(
+                f"chat_with_metadata: using fallback user_intent from message - "
+                f"sgr_plan_present={ctx.sgr_plan is not None}, user_intent_len={len(user_intent)}"
+            )
 
         # Store metadata in state for later UI update (after input is unlocked)
         metadata_dict = {
