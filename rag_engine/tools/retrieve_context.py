@@ -341,12 +341,35 @@ async def retrieve_context(
         logger.info("Retrieved %d articles for query: %s", len(docs), query)
 
         # Store per-query trace in AgentContext (excluded from LLM context)
+        # Workaround for LangChain streaming bug: try runtime.context first, fallback to thread-local
+        context_to_use = None
         if runtime and hasattr(runtime, "context") and runtime.context:
+            context_to_use = runtime.context
+        else:
+            # Fallback: get context from thread-local storage (workaround for streaming bug)
+            from rag_engine.utils.context_tracker import get_current_context
+            context_to_use = get_current_context()
+            if context_to_use is None:
+                logger.warning(
+                    "Cannot store query trace: runtime=%s, has_context=%s, context=%s, thread_local=%s",
+                    runtime is not None,
+                    hasattr(runtime, "context") if runtime else False,
+                    getattr(runtime, "context", None) if runtime else None,
+                    context_to_use is not None,
+                )
+        
+        if context_to_use:
             try:
                 trace_entry = _build_query_trace_entry(query, docs)
-                runtime.context.query_traces.append(trace_entry)
+                context_to_use.query_traces.append(trace_entry)
+                logger.debug(
+                    "Stored query trace: query=%r, articles=%d, chunks_total=%d",
+                    query,
+                    len(trace_entry.get("articles", [])),
+                    sum(len(a.get("chunks", [])) for a in trace_entry.get("articles", [])),
+                )
             except Exception as exc:  # noqa: BLE001
-                logger.warning("Failed to build/store query trace: %s", exc)
+                logger.warning("Failed to build/store query trace: %s", exc, exc_info=True)
 
         # Formatting is fast and CPU-bound, can stay in event loop
         return _format_articles_to_json(docs, query, top_k)
