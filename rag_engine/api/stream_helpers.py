@@ -531,7 +531,12 @@ def update_message_status_in_history(
     for i in range(len(gradio_history) - 1, -1, -1):
         msg = gradio_history[i]
         if isinstance(msg, dict) and msg.get("role") == "assistant":
-            metadata = msg.get("metadata", {})
+            metadata = msg.get("metadata")
+            # Handle None metadata (some messages may not have metadata)
+            if metadata is None:
+                continue
+            if not isinstance(metadata, dict):
+                continue
             if metadata.get("ui_type") == ui_type:
                 # Update status in place
                 metadata["status"] = new_status
