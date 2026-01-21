@@ -58,7 +58,7 @@ class SGRPlanResult(BaseModel):
     action_plan: list[str] = Field(
         default_factory=list,
         max_length=10,
-        description="Plan concrete steps to resolve the request (up to 10 steps, in Russian).",
+        description="Plan concrete steps to find the relevant information in the knowledge base and based on the search results resolve the request (up to 10 steps, in Russian).",
     )
     ask_for_clarification: bool = Field(
         default=False,
