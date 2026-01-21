@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from rag_engine.llm.prompts import AI_DISCLAIMER
+
+logger = logging.getLogger(__name__)
 
 
 def _md_link(label: str, url: str | None) -> str:
@@ -34,7 +37,8 @@ def format_articles_column_from_trace(
             url = a.get("url", "")
             # Extract relevancy score (rerank_score) from article metadata
             rerank_score = a.get("rerank_score")
-            relevancy_str = f" (релевантность: {rerank_score:.2f})" if rerank_score is not None and isinstance(rerank_score, (int, float)) else ""
+            # Use 4 decimal places to show small reranker scores (typically 0.001-0.01 range)
+            relevancy_str = f" (релевантность: {rerank_score:.4f})" if rerank_score is not None and isinstance(rerank_score, (int, float)) else ""
             label = f"{kb_id} - {title}{relevancy_str}".strip(" -")
             lines.append(f"- {_md_link(label, url)}")
         lines.append("")
@@ -46,10 +50,33 @@ def format_articles_column_from_trace(
             kb_id = a.get("kb_id", "")
             title = a.get("title", kb_id) or kb_id or "Untitled"
             url = a.get("url") or (a.get("metadata", {}) or {}).get("article_url") or (a.get("metadata", {}) or {}).get("url")
-            # Extract relevancy score from metadata
+            # Extract relevancy score from metadata - check both direct access and nested metadata
             metadata = a.get("metadata", {}) or {}
-            rerank_score = metadata.get("rerank_score")
-            relevancy_str = f" (релевантность: {rerank_score:.2f})" if rerank_score is not None and isinstance(rerank_score, (int, float)) else ""
+            # Try multiple ways to get rerank_score (it might be in different places)
+            rerank_score = (
+                metadata.get("rerank_score")
+                or a.get("rerank_score")  # Direct access (for query_traces format)
+                or None
+            )
+            # Log for debugging if score is missing or zero
+            if rerank_score is None:
+                logger.debug(
+                    "format_articles_column_from_trace: kb_id=%s, rerank_score missing in metadata keys: %s",
+                    kb_id,
+                    list(metadata.keys()) if isinstance(metadata, dict) else "not a dict",
+                )
+            elif rerank_score == 0.0:
+                logger.debug(
+                    "format_articles_column_from_trace: kb_id=%s, rerank_score is 0.0 (metadata keys: %s)",
+                    kb_id,
+                    list(metadata.keys()) if isinstance(metadata, dict) else "not a dict",
+                )
+            # Show relevancy score if available (even if 0.0, to help debug)
+            # Use 4 decimal places to show small reranker scores (typically 0.001-0.01 range)
+            if rerank_score is not None and isinstance(rerank_score, (int, float)):
+                relevancy_str = f" (релевантность: {rerank_score:.4f})"
+            else:
+                relevancy_str = ""
             label = f"{kb_id} - {title}{relevancy_str}".strip(" -")
             lines.append(f"- {_md_link(label, url)}")
     return "\n".join(lines).strip() + "\n"

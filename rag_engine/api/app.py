@@ -1566,6 +1566,12 @@ async def agent_chat_handler(
         try:
             agent_context.final_answer = final_text or ""
             agent_context.final_articles = [_article_to_dict(a) for a in articles] if articles else []
+            # Log rerank_score presence for debugging
+            if articles:
+                scores = [(a.kb_id, (a.metadata or {}).get("rerank_score")) for a in articles[:5]]
+                logger.debug(
+                    f"agent_chat_handler: sample rerank_scores from final_articles: {scores}"
+                )
             agent_context.diagnostics = {
                 "model": current_model,
                 "stream_chunks": stream_chunk_count,
