@@ -62,7 +62,7 @@ def create_rag_agent(
             multiply,
             power,
             retrieve_context,
-            sgr_plan,
+            analyse_user_request,
             square_root,
             subtract,
         )
@@ -103,9 +103,9 @@ def create_rag_agent(
     # On first call: force retrieve_context to ensure knowledge base search
     # On subsequent calls: allow model to choose tools freely
     all_tools = [
-        # SGR planning tool (forced externally per turn; included for availability)
+        # User request analysis tool (forced externally per turn)
         # If enable_sgr_planning is False, we won't register it at all.
-        *( [sgr_plan] if enable_sgr_planning else [] ),
+        *( [analyse_user_request] if enable_sgr_planning else [] ),
         retrieve_context_tool,
         get_current_datetime,
         add,

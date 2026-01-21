@@ -16,12 +16,12 @@ class SGRPlanResult(BaseModel):
     """Request analyzer for Comindware Platform support.
 
     Produces:
-    - spam score (LLM-only, no keyword fallback)
-    - short explanation
+    - spam score
+    - spam score explanation
     - user intent
     - suggested subqueries (1-10)
     - optional action plan (0-10 steps)
-    - optional clarification suggestion for vague/off-topic inputs
+    - optional clarification question for vague/off-topic inputs
     """
 
     spam_score: float = Field(
@@ -29,44 +29,45 @@ class SGRPlanResult(BaseModel):
         ge=0.0,
         le=1.0,
         description=(
-            "Classify if request is spam (unrelated to Comindware Platform support). "
-            "0.0-0.2: clearly related. 0.3-0.5: ambiguous but allow. "
-            "0.6-0.8: likely unrelated, suggest clarification. 0.9-1.0: obviously unrelated. "
-            "We prefer to allow ~2% spam rather than block a single valid request."
+            "Classify if the user request is spam (unrelated to Comindware Platform support or infrastructure). "
+            "0.0-0.2: clearly relevant. "
+            "0.3-0.5: ambiguous. "
+            "0.6-0.8: likely irrelevant "
+            "0.9-1.0: obviously spam. "
         ),
     )
     spam_reason: str = Field(
         ...,
         max_length=150,
-        description="Brief explanation of spam classification (10-20 words, in Russian).",
+        description="Briefly explain your spam classification (10-20 words, in Russian).",
     )
     user_intent: str = Field(
         ...,
         max_length=300,
-        description="Short summary of what the user wants (1-2 sentences, in Russian).",
+        description="Compile short summary of what the user wants (1-2 sentences, in Russian).",
     )
     subqueries: list[str] = Field(
         ...,
         min_length=1,
         max_length=10,
         description=(
-            "Focused knowledge base search queries (1-10). "
-            "In Russian, specific, no semantic duplicates."
+            "Generate focused knowledge base search queries (1-10). "
+            "In Russian, unique, specific, no semantic duplicates."
         ),
     )
     action_plan: list[str] = Field(
         default_factory=list,
         max_length=10,
-        description="Concrete steps to resolve the request (up to 10 steps, in Russian).",
+        description="Plan concrete steps to resolve the request (up to 10 steps, in Russian).",
     )
     ask_for_clarification: bool = Field(
         default=False,
-        description="True if spam_score >= 0.6 or request is vague/harmful/off-topic.",
+        description="Set True if spam_score >= 0.6 or request is vague/harmful/off-topic.",
     )
-    clarification_suggestion: str | None = Field(
+    clarification_question: str | None = Field(
         default=None,
         max_length=200,
-        description="If ask_for_clarification is True, provide a helpful suggestion in Russian.",
+        description="If ask_for_clarification is True, provide a helpful question in Russian.",
     )
 
 

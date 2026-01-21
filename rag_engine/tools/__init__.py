@@ -11,7 +11,7 @@ from rag_engine.tools.math_tools import (
     subtract,
 )
 from rag_engine.tools.retrieve_context import retrieve_context
-from rag_engine.tools.sgr_plan import sgr_plan
+from rag_engine.tools.analyse_user_request import analyse_user_request
 from rag_engine.tools.utils import (
     accumulate_articles_from_tool_results,
     extract_metadata_from_tool_result,
@@ -20,7 +20,7 @@ from rag_engine.tools.utils import (
 
 __all__ = [
     "retrieve_context",
-    "sgr_plan",
+    "analyse_user_request",
     "get_current_datetime",
     "add",
     "subtract",

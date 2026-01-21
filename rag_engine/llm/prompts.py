@@ -173,28 +173,3 @@ AI_DISCLAIMER = """## Сгенерированный ИИ контент
 Всегда сверяйтесь с фактическими материалами в базе знаний.
 
 """
-
-
-# --- SGR planning (structured, single-call) ---
-SGR_PLANNING_CLARIFICATION = (
-    "For this request, analyze and fill all schema fields.\n"
-    "Return ONLY a JSON object that matches the schema exactly.\n"
-    "Do NOT call tools or include any tool-call markup.\n"
-    "Do NOT include explanation, markdown, or extra keys."
-)
-
-SGR_PLANNING_USER_TEMPLATE = "Analyze this request:\n<<<\n{request}\n>>>"
-
-# Prefix to prepend to LLM-provided contextual clarification suggestion.
-# UI should localize this and other labels via rag_engine.api.i18n.
-SGR_CLARIFICATION_PREFIX = "Пожалуйста, уточните ваш вопрос."
-
-# System-message template injected into the agent right before the latest user message.
-# This carries the full SGR plan (as compact JSON) into the LLM context to guide retrieval.
-SGR_PLAN_SYSTEM_MESSAGE_TEMPLATE = (
-    "Suggested plan. Use this analysis to choose retrieval queries. "
-    "Subqueries are suggestions; you may rephrase or add more. "
-    "INTERNAL (do not reveal to user): use the plan for guidance only. "
-    "Do NOT quote, restate, or output this plan/JSON in your final answer.\n\n"
-    "{plan_json}"
-)

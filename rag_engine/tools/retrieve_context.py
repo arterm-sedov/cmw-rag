@@ -248,6 +248,7 @@ async def retrieve_context(
     **Query decomposition:**
     - For better search results, paraphrase and split the user question into several unique queries, using different phrases and keywords.
     - Call retrieve_context multiple times with unique queries. Do not search for semantically similar queries more than once.
+    - If you have suggested subqueries from the analyse_user_request plan, use them as starting points but feel free to rephrase or add more queries as needed to comprehensively cover the topic.
 
     **Examples:**
     - User question: Как всё настроить?
