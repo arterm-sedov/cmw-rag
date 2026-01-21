@@ -143,10 +143,19 @@ class LLMManager:
             return model
 
         try:
+            # Prefer strict json_schema first: it enforces the schema (not just “some JSON”).
             return with_structured_output(schema, method="json_schema", strict=True)
-        except Exception as exc:
-            logger.warning("Failed to apply structured output: %s. Using regular model.", exc)
-            return model
+        except Exception as exc_json_schema:
+            try:
+                # Fallback for providers/models that don't support json_schema well.
+                return with_structured_output(schema, method="json_mode")
+            except Exception as exc_json_mode:
+                logger.warning(
+                    "Failed to apply structured output (json_schema=%s, json_mode=%s). Using regular model.",
+                    exc_json_schema,
+                    exc_json_mode,
+                )
+                return model
 
     def _chat_model(
         self,
