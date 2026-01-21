@@ -97,7 +97,12 @@ def format_confidence_badge(query_traces: list[dict]) -> str:
             val = conf.get("top_score")
             if isinstance(val, (int, float)):
                 scores.append(float(val))
-    avg = sum(scores) / len(scores) if scores else 0.0
+
+    # If no valid scores found, show N/A
+    if not scores:
+        return _badge_html(label=label, value=i18n_resolve("confidence_level_na"), color="gray")
+
+    avg = sum(scores) / len(scores)
 
     if avg > 0.7:
         color, level = "green", i18n_resolve("confidence_level_high")
@@ -107,6 +112,15 @@ def format_confidence_badge(query_traces: list[dict]) -> str:
         color, level = "red", i18n_resolve("confidence_level_low")
 
     return _badge_html(label=label, value=level, color=color)
+
+
+def format_queries_badge(query_traces: list[dict]) -> str:
+    """Format queries count as colored HTML badge (localized)."""
+    label = i18n_resolve("queries_badge_label")
+    count = len(query_traces) if query_traces else 0
+    # Use blue color for queries badge to distinguish from confidence/spam
+    color = "#87CEEB"  # skyblue - valid CSS color
+    return _badge_html(label=label, value=str(count), color=color)
 
 
 def format_articles_dataframe(articles: list[dict]) -> list[list]:
@@ -2186,8 +2200,21 @@ async def chat_with_metadata(
         logger.info(f"chat_with_metadata: spam badge formatting took {spam_elapsed:.2f}ms")
 
         conf_start = time.perf_counter()
+        query_traces = ctx.query_traces or []
+        logger.info(
+            f"chat_with_metadata: formatting confidence badge - query_traces_count={len(query_traces)}, "
+            f"has_traces={bool(query_traces)}"
+        )
+        if query_traces:
+            for idx, trace in enumerate(query_traces):
+                has_conf = trace.get("confidence") is not None if isinstance(trace, dict) else False
+                conf_type = type(trace.get("confidence")).__name__ if isinstance(trace, dict) else "N/A"
+                logger.debug(
+                    f"chat_with_metadata: trace[{idx}] - has_confidence={has_conf}, "
+                    f"confidence_type={conf_type}, articles_count={len(trace.get('articles', [])) if isinstance(trace, dict) else 0}"
+                )
         try:
-            confidence_badge_html = format_confidence_badge(ctx.query_traces or [])
+            confidence_badge_html = format_confidence_badge(query_traces)
         except Exception as exc:
             logger.error("Failed to format confidence badge: %s", exc, exc_info=True)
             confidence_badge_html = ""
@@ -2196,12 +2223,15 @@ async def chat_with_metadata(
 
         queries_start = time.perf_counter()
         try:
-            queries_badge_text = f"{i18n_resolve('queries_badge_label')}: {len(ctx.query_traces or [])}"
+            queries_badge_html = format_queries_badge(query_traces)
         except Exception as exc:
             logger.error("Failed to format queries badge: %s", exc, exc_info=True)
-            queries_badge_text = ""
+            queries_badge_html = ""
         queries_elapsed = (time.perf_counter() - queries_start) * 1000
-        logger.info(f"chat_with_metadata: queries badge formatting took {queries_elapsed:.2f}ms")
+        logger.info(
+            f"chat_with_metadata: queries badge formatting took {queries_elapsed:.2f}ms - "
+            f"queries_count={len(query_traces)}"
+        )
 
         final_start = time.perf_counter()
         try:
@@ -2259,7 +2289,7 @@ async def chat_with_metadata(
                 last_history,
                 gr.update(visible=True, value=spam_badge_html),
                 gr.update(visible=True, value=confidence_badge_html),
-                gr.update(visible=True, value=queries_badge_text),
+                gr.update(visible=True, value=queries_badge_html),
                 gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
                 gr.update(visible=False, value=[]),  # subqueries_json - hide for now, will update later
                 gr.update(visible=False, value=[]),  # action_plan_json - hide for now, will update later
