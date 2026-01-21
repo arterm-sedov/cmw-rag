@@ -757,6 +757,70 @@ async def agent_chat_handler(
     if settings.llm_fallback_enabled:
         selected_model = _check_context_fallback(messages)
 
+    # --- Forced SGR planning as tool call (per-turn) ---
+    # We force a "sgr_plan" tool call once per user turn, capture the plan, and
+    # then inject the resulting tool-call transcript into the agent messages.
+    sgr_plan_dict: dict | None = None
+    try:
+        from rag_engine.llm.llm_manager import LLMManager
+        from rag_engine.llm.schemas import SGRPlanResult
+        from rag_engine.tools import sgr_plan as sgr_plan_tool
+
+        sgr_llm = LLMManager(
+            provider=settings.default_llm_provider,
+            model=selected_model or settings.default_model,
+            temperature=settings.llm_temperature,
+        )._chat_model()
+
+        sgr_model = sgr_llm.bind_tools(
+            [sgr_plan_tool],
+            tool_choice={"type": "function", "function": {"name": "sgr_plan"}},
+        )
+
+        sgr_msg = sgr_model.invoke(messages)
+        tool_calls = getattr(sgr_msg, "tool_calls", None) or []
+        tool_call = tool_calls[0] if isinstance(tool_calls, list) and tool_calls else None
+
+        if isinstance(tool_call, dict):
+            call_id = tool_call.get("id") or "sgr_plan_call"
+            args = tool_call.get("args")
+            if isinstance(args, dict):
+                plan = SGRPlanResult.model_validate(args)
+                sgr_plan_dict = plan.model_dump()
+            else:
+                fn = tool_call.get("function") if isinstance(tool_call.get("function"), dict) else {}
+                arg_str = fn.get("arguments") if isinstance(fn, dict) else None
+                if isinstance(arg_str, str) and arg_str.strip():
+                    plan = SGRPlanResult.model_validate_json(arg_str)
+                    sgr_plan_dict = plan.model_dump()
+
+            if sgr_plan_dict:
+                import json
+
+                messages = list(messages) + [
+                    {
+                        "role": "assistant",
+                        "content": "",
+                        "tool_calls": [
+                            {
+                                "id": call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": "sgr_plan",
+                                    "arguments": json.dumps(sgr_plan_dict, ensure_ascii=False),
+                                },
+                            }
+                        ],
+                    },
+                    {
+                        "role": "tool",
+                        "content": json.dumps(sgr_plan_dict, ensure_ascii=False),
+                        "tool_call_id": call_id,
+                    },
+                ]
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("SGR forced tool call failed; continuing without plan: %s", exc)
+
     # Create agent (with fallback model if needed) and stream execution
     # Force tool choice only on first message; allow model to choose on subsequent turns
     # TEMPORARILY DISABLED FOR TESTING: force_tool_choice=False
@@ -780,6 +844,7 @@ async def agent_chat_handler(
 
     tool_call_accumulator = ToolCallAccumulator()
 
+    agent_context: AgentContext | None = None
     try:
         # Track tool execution state
         # Only stream text content when NOT executing tools
@@ -792,6 +857,8 @@ async def agent_chat_handler(
             accumulated_tool_tokens=0,  # Updated as we go
             fetched_kb_ids=set(),  # Reset for new turn - tracks articles fetched in this turn
         )
+        if sgr_plan_dict:
+            agent_context.sgr_plan = sgr_plan_dict
 
         # vLLM streaming limitation: tool_choice doesn't work in streaming mode
         # vLLM ignores tool_choice="retrieve_context" in streaming and returns finish_reason=stop
@@ -1523,6 +1590,19 @@ async def agent_chat_handler(
 
         _update_or_append_assistant_message(gradio_history, error_msg)
         yield list(gradio_history)
+
+        # Always yield a final AgentContext so `chat_with_metadata` can update UI panels.
+        if agent_context is None:
+            agent_context = AgentContext(conversation_tokens=0, accumulated_tool_tokens=0)
+        if sgr_plan_dict and not getattr(agent_context, "sgr_plan", None):
+            agent_context.sgr_plan = sgr_plan_dict
+        try:
+            agent_context.final_answer = error_msg
+            agent_context.final_articles = []
+            agent_context.diagnostics = {"model": current_model, "error": str(e)}
+        except Exception:
+            pass
+        yield agent_context
 
 
 
