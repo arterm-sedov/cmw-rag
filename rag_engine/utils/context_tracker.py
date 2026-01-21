@@ -7,6 +7,7 @@ enabling progressive budgeting and preventing context overflow.
 from __future__ import annotations
 
 import logging
+import threading
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
@@ -15,6 +16,9 @@ if TYPE_CHECKING:
     from rag_engine.retrieval.retriever import Article
 
 logger = logging.getLogger(__name__)
+
+# Thread-local storage for AgentContext (workaround for LangChain streaming bug where runtime.context is None)
+_thread_local_context = threading.local()
 
 
 class AgentContext(BaseModel):
@@ -76,6 +80,22 @@ class AgentContext(BaseModel):
         exclude=True,
         description="Run diagnostics (tokens, compression flags) excluded from LLM context.",
     )
+
+
+def set_current_context(context: AgentContext) -> None:
+    """Set the current AgentContext for this thread (workaround for LangChain streaming bug).
+    
+    This allows tools to access the context even when runtime.context is None during streaming.
+    """
+    _thread_local_context.agent_context = context
+
+
+def get_current_context() -> AgentContext | None:
+    """Get the current AgentContext for this thread (workaround for LangChain streaming bug).
+    
+    Returns None if no context has been set for this thread.
+    """
+    return getattr(_thread_local_context, "agent_context", None)
 
 
 def compute_context_tokens(

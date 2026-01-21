@@ -277,17 +277,33 @@ class ToolBudgetMiddleware(AgentMiddleware):
         try:
             state = getattr(request, "state", {}) or {}
             runtime = getattr(request, "runtime", None)
-            if state and runtime is not None and hasattr(runtime, "context") and runtime.context:
-                conv_toks, tool_toks = _compute_context_tokens_from_state(state.get("messages", []))
-                runtime.context.conversation_tokens = conv_toks
-                runtime.context.accumulated_tool_tokens = tool_toks
-                logger.debug(
-                    "[ToolBudget] runtime.context updated before tool: conv=%d, tools=%d",
-                    conv_toks,
-                    tool_toks,
-                )
+
+            # Initialize runtime.context if it doesn't exist (LangChain should set this, but ensure it's there)
+            if state and runtime is not None:
+                if not hasattr(runtime, "context") or runtime.context is None:
+                    # Try to get context from request.config if available
+                    config = getattr(request, "config", None) or {}
+                    context_from_config = config.get("context") if config else None
+                    if context_from_config is None:
+                        # Fallback: create a new AgentContext if none exists
+                        from rag_engine.utils.context_tracker import AgentContext
+                        context_from_config = AgentContext()
+
+                    # Set runtime.context so tools can access it
+                    runtime.context = context_from_config
+                    logger.debug("[ToolBudget] Initialized runtime.context (was missing)")
+
+                if hasattr(runtime, "context") and runtime.context:
+                    conv_toks, tool_toks = _compute_context_tokens_from_state(state.get("messages", []))
+                    runtime.context.conversation_tokens = conv_toks
+                    runtime.context.accumulated_tool_tokens = tool_toks
+                    logger.debug(
+                        "[ToolBudget] runtime.context updated before tool: conv=%d, tools=%d",
+                        conv_toks,
+                        tool_toks,
+                    )
         except Exception as exc:  # noqa: BLE001
-            logger.warning("[ToolBudget] Failed to update context before tool: %s", exc)
+            logger.warning("[ToolBudget] Failed to update context before tool: %s", exc, exc_info=True)
 
         return handler(request)
 
@@ -882,6 +898,11 @@ async def agent_chat_handler(
         )
         if sgr_plan_dict:
             agent_context.sgr_plan = sgr_plan_dict
+
+        # Workaround for LangChain streaming bug: store context in thread-local storage
+        # so tools can access it even when runtime.context is None during astream()
+        from rag_engine.utils.context_tracker import set_current_context
+        set_current_context(agent_context)
 
         # vLLM streaming limitation: tool_choice doesn't work in streaming mode
         # vLLM ignores tool_choice="retrieve_context" in streaming and returns finish_reason=stop

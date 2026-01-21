@@ -67,8 +67,36 @@ async def process_one(*, subject: str, html_description: str, top_k: int) -> Row
         format_chunks_column_from_trace,
     )
 
-    articles_text = format_articles_column_from_trace(structured.per_query_results, top_k=top_k)
-    chunks_text = format_chunks_column_from_trace(structured.per_query_results, max_chars=100)
+    # Debug: log what we received
+    logger.debug(
+        "Structured result: per_query_results=%d items, final_articles=%d items",
+        len(structured.per_query_results),
+        len(structured.final_articles),
+    )
+    if structured.per_query_results:
+        first_trace = structured.per_query_results[0]
+        logger.debug(
+            "First query trace: query=%r, articles=%d, has_chunks=%s",
+            first_trace.get("query", ""),
+            len(first_trace.get("articles", [])),
+            any(len(a.get("chunks", [])) > 0 for a in first_trace.get("articles", [])),
+        )
+
+    articles_text = format_articles_column_from_trace(
+        structured.per_query_results, top_k=top_k, final_articles=structured.final_articles
+    )
+    chunks_text = format_chunks_column_from_trace(
+        structured.per_query_results, max_chars=100, final_articles=structured.final_articles
+    )
+    
+    # If chunks_text is empty but we have final_articles, log a warning
+    if not chunks_text.strip() and structured.final_articles:
+        logger.warning(
+            "Chunks column is empty but final_articles has %d items. "
+            "This suggests query_traces were not captured during retrieval.",
+            len(structured.final_articles),
+        )
+    
     answer_text = build_answer_column_from_result(structured, top_k=top_k)
     score = structured.plan.spam_score
 
@@ -80,6 +108,28 @@ async def process_one(*, subject: str, html_description: str, top_k: int) -> Row
     )
 
 
+def _write_output_file(
+    *,
+    df: pd.DataFrame,
+    output_path: Path,
+    out_articles: list[str],
+    out_chunks: list[str],
+    out_answers: list[str],
+    out_spam: list[float | None],
+) -> None:
+    """Write current state to output file."""
+    df_output = df.copy()
+    df_output["Статьи"] = out_articles
+    df_output["Найденные чанки"] = out_chunks
+    df_output["Ответ на обращение"] = out_answers
+    df_output["Оценка спама"] = out_spam
+
+    if output_path.suffix.lower() in {".xlsx", ".xlsm", ".xltx", ".xltm"}:
+        df_output.to_excel(output_path, engine="openpyxl", index=False)
+    else:
+        df_output.to_csv(output_path, index=False, encoding="utf-8-sig")
+
+
 async def process_file(
     *,
     input_path: Path,
@@ -89,52 +139,79 @@ async def process_file(
     html_col: str,
     top_k: int,
     max_rows: int | None = None,
+    start_row: int | None = None,
 ) -> None:
-    df = pd.read_excel(input_path, engine="openpyxl")
+    df_full = pd.read_excel(input_path, engine="openpyxl")
+    
+    # Store original length for output initialization
+    original_total_rows = len(df_full)
 
+    # Apply start_row offset if specified (1-indexed, so row 5 means skip rows 1-4)
+    df = df_full
+    if start_row is not None and start_row > 1:
+        df = df.iloc[start_row - 1 :]
+        logger.info("Starting processing from row %d", start_row)
+
+    # Apply max_rows limit if specified (after start_row offset)
     if max_rows is not None and max_rows > 0:
         df = df.head(max_rows)
-        logger.info("Limited processing to first %d rows", max_rows)
+        logger.info("Limited processing to %d rows", max_rows)
 
     for col in (id_col, subject_col, html_col):
-        if col not in df.columns:
-            raise ValueError(f"Missing required column: {col!r}. Available: {list(df.columns)}")
+        if col not in df_full.columns:
+            raise ValueError(f"Missing required column: {col!r}. Available: {list(df_full.columns)}")
 
-    out_articles: list[str] = []
-    out_chunks: list[str] = []
-    out_answers: list[str] = []
-    out_spam: list[float] = []
+    # Initialize output file with empty results (pad to match original dataframe length)
+    # This ensures output indices match the original Excel row positions
+    out_articles: list[str] = [""] * original_total_rows
+    out_chunks: list[str] = [""] * original_total_rows
+    out_answers: list[str] = [""] * original_total_rows
+    out_spam: list[float | None] = [None] * original_total_rows  # Empty for unprocessed rows
 
-    for idx, row in df.iterrows():
+    # Write initial empty file (use full dataframe to preserve all original rows)
+    _write_output_file(
+        df=df_full,
+        output_path=output_path,
+        out_articles=out_articles,
+        out_chunks=out_chunks,
+        out_answers=out_answers,
+        out_spam=out_spam,
+    )
+    logger.info("Initialized output file: %s", output_path)
+
+    rows_to_process = len(df)
+    for row_idx, (idx, row) in enumerate(df.iterrows(), start=1):
         req_id = row.get(id_col, "")
         try:
             subject = str(row.get(subject_col, "") or "")
             html_desc = str(row.get(html_col, "") or "")
 
             res = await process_one(subject=subject, html_description=html_desc, top_k=top_k)
-            out_articles.append(res.articles_text)
-            out_chunks.append(res.chunks_text)
-            out_answers.append(res.answer_text)
-            out_spam.append(res.spam_score)
+            # Use original dataframe index (idx) to write to correct position in output
+            # idx is the original row index from the Excel file (0-indexed)
+            out_articles[idx] = res.articles_text
+            out_chunks[idx] = res.chunks_text
+            out_answers[idx] = res.answer_text
+            out_spam[idx] = res.spam_score
         except Exception as exc:  # noqa: BLE001
             logger.exception("Row failed (idx=%s, %s=%s): %s", idx, id_col, req_id, exc)
-            out_articles.append("")
-            out_chunks.append("")
-            out_answers.append("")
-            out_spam.append(1.0)
+            # Keep default values (already set to empty/None during initialization)
 
-        if (idx + 1) % 25 == 0:
-            logger.info("Processed %d rows", idx + 1)
+        # Write output file after each row (use full dataframe to preserve all original rows)
+        _write_output_file(
+            df=df_full,
+            output_path=output_path,
+            out_articles=out_articles,
+            out_chunks=out_chunks,
+            out_answers=out_answers,
+            out_spam=out_spam,
+        )
+        logger.info("Processed row %d/%d (ID=%s, Excel row %d), output file updated", row_idx, rows_to_process, req_id, idx + 1)
 
-    df["Статьи"] = out_articles
-    df["Столбец1"] = out_chunks
-    df["Ответ на обращение"] = out_answers
-    df["SpamScore"] = out_spam
+        if row_idx % 25 == 0:
+            logger.info("Progress: %d/%d rows processed", row_idx, rows_to_process)
 
-    if output_path.suffix.lower() in {".xlsx", ".xlsm", ".xltx", ".xltm"}:
-        df.to_excel(output_path, engine="openpyxl", index=False)
-    else:
-        df.to_csv(output_path, index=False, encoding="utf-8-sig")
+    logger.info("Completed processing %d rows. Final output: %s", rows_to_process, output_path)
 
 
 def main() -> None:
@@ -158,10 +235,16 @@ def main() -> None:
     )
     parser.add_argument("--top-k", type=int, default=5, help="Top-K articles to retrieve (default: 5)")
     parser.add_argument(
+        "--start",
+        type=int,
+        default=None,
+        help="Starting row number (1-indexed, default: 1). Rows before this will be skipped.",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=None,
-        help="Maximum number of rows to process (default: process all rows)",
+        help="Maximum number of rows to process (default: process all rows from start)",
     )
     args = parser.parse_args()
 
@@ -188,6 +271,7 @@ def main() -> None:
             html_col=str(args.html_col),
             top_k=int(args.top_k),
             max_rows=args.limit,
+            start_row=args.start,
         )
     )
 
