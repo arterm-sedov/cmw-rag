@@ -56,8 +56,8 @@ def accumulate_articles_from_tool_results(tool_results: list[str]) -> list[Artic
 
     Deduplication strategy:
     - Primary key: kb_id (unique article identifier)
-    - Preserves first occurrence of each article
-    - Maintains original ordering from tool calls
+    - When duplicate found, keeps article with highest rerank_score
+    - Maintains ordering by best score first
 
     Args:
         tool_results: List of JSON strings from retrieve_context tool calls
@@ -68,35 +68,58 @@ def accumulate_articles_from_tool_results(tool_results: list[str]) -> list[Artic
     Example:
         >>> # LLM makes multiple tool calls with overlapping results
         >>> result1 = retrieve_context.invoke({"query": "authentication"})
-        >>> # Returns: Article A, B, C
+        >>> # Returns: Article A (score: 0.8), B, C
         >>> result2 = retrieve_context.invoke({"query": "user authentication"})
-        >>> # Returns: Article A, D, E (A is duplicate!)
+        >>> # Returns: Article A (score: 0.9), D, E (A is duplicate with better score!)
         >>>
         >>> # Accumulate and deduplicate
         >>> all_articles = accumulate_articles_from_tool_results([result1, result2])
-        >>> # Returns: Article A, B, C, D, E (A only once!)
+        >>> # Returns: Article A (score: 0.9), B, C, D, E (A with best score kept!)
         >>>
         >>> # Use with LLM - no duplicate content in context
         >>> answer = llm_manager.generate(question, all_articles)
         >>> final = format_with_citations(answer, all_articles)
     """
-    accumulated = []
-    seen_kb_ids = set()
+    # Use dict to track best article per kb_id (by rerank_score)
+    articles_dict: dict[str, Article] = {}
 
     for tool_result in tool_results:
         articles = parse_tool_result_to_articles(tool_result)
 
         for article in articles:
-            # Deduplicate by kb_id (unique article identifier)
-            if article.kb_id and article.kb_id not in seen_kb_ids:
-                accumulated.append(article)
-                seen_kb_ids.add(article.kb_id)
-            elif not article.kb_id:
+            if not article.kb_id:
                 # If no kb_id, preserve the article (rare edge case)
-                accumulated.append(article)
+                # Use a unique key to avoid collisions
+                unique_key = f"_no_kbid_{len(articles_dict)}"
+                articles_dict[unique_key] = article
+                continue
+
+            existing = articles_dict.get(article.kb_id)
+            if existing is None:
+                # First occurrence - keep it
+                articles_dict[article.kb_id] = article
+            else:
+                # Duplicate found - keep article with higher rerank_score
+                existing_score = (existing.metadata or {}).get("rerank_score", -float("inf"))
+                new_score = (article.metadata or {}).get("rerank_score", -float("inf"))
+                logger.debug(
+                    "Deduplication: kb_id=%s, existing_score=%.4f, new_score=%.4f",
+                    article.kb_id,
+                    existing_score,
+                    new_score,
+                )
+                if new_score > existing_score:
+                    articles_dict[article.kb_id] = article
 
     total_articles = sum(len(parse_tool_result_to_articles(r)) for r in tool_results)
-    duplicates_removed = total_articles - len(accumulated)
+    duplicates_removed = total_articles - len(articles_dict)
+
+    # Sort by rerank_score (best first) to maintain quality ordering
+    accumulated = list(articles_dict.values())
+    accumulated.sort(
+        key=lambda a: (a.metadata or {}).get("rerank_score", -float("inf")),
+        reverse=True,
+    )
 
     logger.info(
         "Accumulated %d unique articles from %d tool call(s) (removed %d duplicates)",

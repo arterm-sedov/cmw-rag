@@ -58,6 +58,15 @@ class RAGRetriever:
             if rerank_enabled
             else None
         )
+        # Log reranker type for debugging
+        if self.reranker is not None:
+            reranker_type = type(self.reranker).__name__
+            logger.info("Reranker type: %s", reranker_type)
+            if reranker_type == "IdentityReranker":
+                logger.warning(
+                    "IdentityReranker is being used (all reranker models failed to load). "
+                    "Scores will be based on vector similarity only."
+                )
         self.metadata_boost_weights = metadata_boost_weights or {
             "tag_match": 1.2,
             "code_presence": 1.15,
@@ -211,16 +220,27 @@ class RAGRetriever:
         logger.info("Retrieved %d chunks from vector store", len(candidates))
 
         # 2. Rerank chunks (more efficient than reranking complete articles)
+        # Prepare candidates with placeholder scores (reranker will replace them)
         scored_candidates: list[tuple[Any, float]] = [(doc, 0.0) for doc in candidates]
+        
         if self.reranker is not None and candidates:
+            # Reranker computes new scores (replaces placeholder 0.0 scores)
             scored_candidates = self.reranker.rerank(
                 query,
                 scored_candidates,
                 top_k=qk,
                 metadata_boost_weights=self.metadata_boost_weights,
             )
-            logger.info("Reranked to top-%d chunks", len(scored_candidates))
+            # Log sample scores to verify reranker is producing non-zero values
+            if scored_candidates:
+                sample_scores = [s for _, s in scored_candidates[:3]]
+                logger.info(
+                    "Reranked to top-%d chunks (sample scores: %s)",
+                    len(scored_candidates),
+                    sample_scores,
+                )
         else:
+            # No reranker: just take top-k (scores remain 0.0)
             scored_candidates = scored_candidates[:qk]
             logger.info("No reranking, using top-%d chunks", len(scored_candidates))
 
@@ -285,6 +305,13 @@ class RAGRetriever:
                 article.metadata["rerank_score"] = max_score
                 if retrieval_confidence is not None:
                     article.metadata["retrieval_confidence"] = retrieval_confidence
+                logger.debug(
+                    "Article %s: rerank_score=%.4f (from %d chunks, max_score=%.4f)",
+                    kb_id,
+                    max_score,
+                    len(chunks),
+                    max_score,
+                )
                 articles.append(article)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Failed to read article %s: %s", source_file, exc)
