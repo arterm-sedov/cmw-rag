@@ -26,6 +26,8 @@ class RowResult:
     chunks_text: str
     answer_text: str
     spam_score: float
+    confidence_score: float | None
+    num_requests: int
 
 
 def build_markdown_request(subject: str, html_description: str) -> str:
@@ -88,7 +90,7 @@ async def process_one(*, subject: str, html_description: str, top_k: int) -> Row
     chunks_text = format_chunks_column_from_trace(
         structured.per_query_results, max_chars=100, final_articles=structured.final_articles
     )
-    
+
     # If chunks_text is empty but we have final_articles, log a warning
     if not chunks_text.strip() and structured.final_articles:
         logger.warning(
@@ -96,15 +98,33 @@ async def process_one(*, subject: str, html_description: str, top_k: int) -> Row
             "This suggests query_traces were not captured during retrieval.",
             len(structured.final_articles),
         )
-    
+
     answer_text = build_answer_column_from_result(structured, top_k=top_k)
     score = structured.plan.spam_score
+
+    # Calculate confidence score (average top_score from all query traces)
+    confidence_score: float | None = None
+    if structured.per_query_results:
+        scores = []
+        for trace in structured.per_query_results:
+            conf = trace.get("confidence") if isinstance(trace, dict) else None
+            if isinstance(conf, dict):
+                top_score = conf.get("top_score")
+                if isinstance(top_score, (int, float)):
+                    scores.append(float(top_score))
+        if scores:
+            confidence_score = sum(scores) / len(scores)
+
+    # Number of requests = number of tool calls (query traces)
+    num_requests = len(structured.per_query_results)
 
     return RowResult(
         articles_text=articles_text,
         chunks_text=chunks_text,
         answer_text=answer_text,
         spam_score=score,
+        confidence_score=confidence_score,
+        num_requests=num_requests,
     )
 
 
@@ -116,6 +136,8 @@ def _write_output_file(
     out_chunks: list[str],
     out_answers: list[str],
     out_spam: list[float | None],
+    out_confidence: list[float | None],
+    out_num_requests: list[int | None],
 ) -> None:
     """Write current state to output file."""
     df_output = df.copy()
@@ -123,6 +145,8 @@ def _write_output_file(
     df_output["Найденные чанки"] = out_chunks
     df_output["Ответ на обращение"] = out_answers
     df_output["Оценка спама"] = out_spam
+    df_output["Уверенность"] = out_confidence
+    df_output["Количество запросов"] = out_num_requests
 
     if output_path.suffix.lower() in {".xlsx", ".xlsm", ".xltx", ".xltm"}:
         df_output.to_excel(output_path, engine="openpyxl", index=False)
@@ -142,7 +166,7 @@ async def process_file(
     start_row: int | None = None,
 ) -> None:
     df_full = pd.read_excel(input_path, engine="openpyxl")
-    
+
     # Store original length for output initialization
     original_total_rows = len(df_full)
 
@@ -167,6 +191,8 @@ async def process_file(
     out_chunks: list[str] = [""] * original_total_rows
     out_answers: list[str] = [""] * original_total_rows
     out_spam: list[float | None] = [None] * original_total_rows  # Empty for unprocessed rows
+    out_confidence: list[float | None] = [None] * original_total_rows  # Empty for unprocessed rows
+    out_num_requests: list[int | None] = [None] * original_total_rows  # Empty for unprocessed rows
 
     # Write initial empty file (use full dataframe to preserve all original rows)
     _write_output_file(
@@ -176,6 +202,8 @@ async def process_file(
         out_chunks=out_chunks,
         out_answers=out_answers,
         out_spam=out_spam,
+        out_confidence=out_confidence,
+        out_num_requests=out_num_requests,
     )
     logger.info("Initialized output file: %s", output_path)
 
@@ -193,6 +221,8 @@ async def process_file(
             out_chunks[idx] = res.chunks_text
             out_answers[idx] = res.answer_text
             out_spam[idx] = res.spam_score
+            out_confidence[idx] = res.confidence_score
+            out_num_requests[idx] = res.num_requests
         except Exception as exc:  # noqa: BLE001
             logger.exception("Row failed (idx=%s, %s=%s): %s", idx, id_col, req_id, exc)
             # Keep default values (already set to empty/None during initialization)
@@ -205,6 +235,8 @@ async def process_file(
             out_chunks=out_chunks,
             out_answers=out_answers,
             out_spam=out_spam,
+            out_confidence=out_confidence,
+            out_num_requests=out_num_requests,
         )
         logger.info("Processed row %d/%d (ID=%s, Excel row %d), output file updated", row_idx, rows_to_process, req_id, idx + 1)
 

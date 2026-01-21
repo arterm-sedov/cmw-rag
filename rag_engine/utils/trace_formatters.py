@@ -32,7 +32,10 @@ def format_articles_column_from_trace(
             kb_id = a.get("kb_id", "")
             title = a.get("title", kb_id) or kb_id or "Untitled"
             url = a.get("url", "")
-            label = f"{kb_id} - {title}".strip(" -")
+            # Extract relevancy score (rerank_score) from article metadata
+            rerank_score = a.get("rerank_score")
+            relevancy_str = f" (релевантность: {rerank_score:.2f})" if rerank_score is not None and isinstance(rerank_score, (int, float)) else ""
+            label = f"{kb_id} - {title}{relevancy_str}".strip(" -")
             lines.append(f"- {_md_link(label, url)}")
         lines.append("")
 
@@ -43,7 +46,11 @@ def format_articles_column_from_trace(
             kb_id = a.get("kb_id", "")
             title = a.get("title", kb_id) or kb_id or "Untitled"
             url = a.get("url") or (a.get("metadata", {}) or {}).get("article_url") or (a.get("metadata", {}) or {}).get("url")
-            label = f"{kb_id} - {title}".strip(" -")
+            # Extract relevancy score from metadata
+            metadata = a.get("metadata", {}) or {}
+            rerank_score = metadata.get("rerank_score")
+            relevancy_str = f" (релевантность: {rerank_score:.2f})" if rerank_score is not None and isinstance(rerank_score, (int, float)) else ""
+            label = f"{kb_id} - {title}{relevancy_str}".strip(" -")
             lines.append(f"- {_md_link(label, url)}")
     return "\n".join(lines).strip() + "\n"
 
@@ -60,7 +67,7 @@ def format_chunks_column_from_trace(
     """
     #lines: list[str] = ["Найденные чанки:", ""]
     lines: list[str] = []
-    
+
     if not query_results:
         # Fallback: if no query traces, show a diagnostic message
         if final_articles:
@@ -74,7 +81,7 @@ def format_chunks_column_from_trace(
         else:
             lines.append("Данные о чанках недоступны (query_traces пуст, final_articles пуст).")
         return "\n".join(lines).strip() + "\n"
-    
+
     for qi, qr in enumerate(query_results or [], start=1):
         q = qr.get("query", "")
         lines.append(f"Запрос {qi}: {q}".rstrip())
