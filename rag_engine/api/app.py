@@ -525,6 +525,7 @@ def _process_text_chunk_for_streaming(
     """Process a text chunk for streaming with disclaimer and formatting.
 
     Handles optional newline after tool results and accumulates the answer.
+    Prepends AI disclaimer to the first chunk of any answer (all LLM responses are AI-generated).
 
     Args:
         text_chunk: Raw text chunk from agent
@@ -535,10 +536,13 @@ def _process_text_chunk_for_streaming(
     Returns:
         Tuple of (updated_answer, updated_disclaimer_prepended)
     """
-    # Mark that we started streaming answer text
-    if not disclaimer_prepended:
+    # Prepend disclaimer to first chunk of any answer (all LLM responses are AI-generated)
+    # Only prepend once per answer, tracked by disclaimer_prepended flag
+    if not disclaimer_prepended and not answer:
+        from rag_engine.llm.prompts import AI_DISCLAIMER
+        answer = AI_DISCLAIMER
         disclaimer_prepended = True
-    # Prepend newline before first text chunk after tool results
+    # Prepend newline before first text chunk after tool results (if disclaimer already exists separately)
     elif has_seen_tool_results and not answer:
         text_chunk = "\n" + text_chunk
 
@@ -975,7 +979,7 @@ async def agent_chat_handler(
                                     has_search_started = any(
                                         isinstance(msg, dict)
                                         and msg.get("role") == "assistant"
-                                        and msg.get("metadata", {}).get("ui_type") == "search_started"
+                                        and (msg.get("metadata") or {}).get("ui_type") == "search_started"
                                         for msg in gradio_history
                                     )
                                     if not has_search_started:
@@ -991,7 +995,7 @@ async def agent_chat_handler(
                                 has_search_started = any(
                                     isinstance(msg, dict)
                                     and msg.get("role") == "assistant"
-                                    and msg.get("metadata", {}).get("ui_type") == "search_started"
+                                    and (msg.get("metadata") or {}).get("ui_type") == "search_started"
                                     for msg in gradio_history
                                 )
                                 if not has_search_started:
@@ -1232,7 +1236,7 @@ async def agent_chat_handler(
                                         has_search_started = any(
                                             isinstance(msg, dict)
                                             and msg.get("role") == "assistant"
-                                            and msg.get("metadata", {}).get("ui_type") == "search_started"
+                                            and (msg.get("metadata") or {}).get("ui_type") == "search_started"
                                             for msg in gradio_history
                                         )
                                         if not has_search_started:
@@ -1305,7 +1309,7 @@ async def agent_chat_handler(
                                                 has_search_started = any(
                                                     isinstance(msg, dict)
                                                     and msg.get("role") == "assistant"
-                                                    and msg.get("metadata", {}).get("ui_type") == "search_started"
+                                                    and (msg.get("metadata") or {}).get("ui_type") == "search_started"
                                                     for msg in gradio_history
                                                 )
                                                 if not has_search_started:
@@ -1512,6 +1516,15 @@ async def agent_chat_handler(
         logger.info("Stream completed: %d chunks processed, %d tool results", stream_chunk_count, len(tool_results))
         from rag_engine.tools import accumulate_articles_from_tool_results
         articles = accumulate_articles_from_tool_results(tool_results)
+
+        # Ensure disclaimer is prepended if it wasn't added during streaming
+        # (e.g., in fallback scenarios or if streaming didn't work correctly)
+        # All LLM responses are AI-generated, so disclaimer should always be present
+        if not disclaimer_prepended and answer:
+            from rag_engine.llm.prompts import AI_DISCLAIMER
+            answer = AI_DISCLAIMER + answer
+            disclaimer_prepended = True
+            logger.info("Prepended disclaimer to final answer (was missing from stream)")
 
         # Handle no results case
         if not articles:
@@ -1721,6 +1734,14 @@ async def agent_chat_handler(
                         elif stream_mode == "updates":
                             # No-op for UI
                             pass
+
+                    # Ensure disclaimer is prepended if it wasn't added during streaming
+                    # All LLM responses are AI-generated, so disclaimer should always be present
+                    if not disclaimer_prepended and answer:
+                        from rag_engine.llm.prompts import AI_DISCLAIMER
+                        answer = AI_DISCLAIMER + answer
+                        disclaimer_prepended = True
+                        logger.info("Prepended disclaimer to fallback retry answer (was missing from stream)")
 
                     from rag_engine.tools import accumulate_articles_from_tool_results
 
