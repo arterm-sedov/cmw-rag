@@ -147,7 +147,15 @@ def execute_fallback_invoke(
                     logger.debug("Final answer extracted from invoke() result: %d chars", len(content))
 
     # Process answer with disclaimer if needed
+    # All LLM responses are AI-generated, so disclaimer should always be present
     if final_answer:
+        # Prepend disclaimer if it wasn't prepended yet (all answers are AI-generated)
+        if not disclaimer_prepended:
+            from rag_engine.llm.prompts import AI_DISCLAIMER
+            final_answer = AI_DISCLAIMER + final_answer
+            disclaimer_prepended = True
+            logger.info("Prepended disclaimer to fallback answer")
+
         # Yield answer (simulate streaming by yielding in chunks for UX)
         chunk_size = 50  # Characters per chunk for simulated streaming
         for i in range(0, len(final_answer), chunk_size):
