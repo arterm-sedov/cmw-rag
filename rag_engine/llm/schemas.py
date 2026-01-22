@@ -58,7 +58,9 @@ class SGRPlanResult(BaseModel):
     action_plan: list[str] = Field(
         default_factory=list,
         max_length=10,
-        description="Plan concrete steps to find the relevant information in the knowledge base and based on the search results resolve the request (up to 10 steps, in Russian).",
+        description="Plan concrete steps to find the relevant information in the knowledge base. "
+                    "Sample plan: Understand user intent → Find information → Evaluate results relevance and your confidence → Repeat search OR Ask for clarification → Format the answer. "
+                    "Up to 10 steps, in Russian. ",
     )
     ask_for_clarification: bool = Field(
         default=False,
