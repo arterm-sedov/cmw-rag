@@ -107,6 +107,7 @@ The project uses `ruff` for linting and import sorting. Configuration is in `pyp
     - Reanalyze changes twice for introduced issues.
 - **Secrets:** NEVER hardcode secrets. Use environment variables.
 - **No Breakage:** Never break existing code.
+- **Git Commits:** Do NOT create or push commits unless explicitly asked by the user.
 
 ### Project Specifics
 - **Docs:** Put reports in `docs/progress_reports/`.
