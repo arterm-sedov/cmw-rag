@@ -1226,18 +1226,29 @@ async def agent_chat_handler(
                                     yield_search_started,
                                 )
 
-                                # Try to update existing empty search_started block with the query
-                                updated = update_search_started_in_history(
+                                # Check if there's already a pending search_started block with this query
+                                # (created during streaming) - if so, don't create a duplicate
+                                has_matching_block = last_pending_search_started_has_query(
                                     gradio_history, result_query
                                 )
-                                if not updated:
-                                    # No empty block to update - create a new one with the query
-                                    # This handles cases where streaming didn't create a block
-                                    search_started_msg = yield_search_started(result_query)
-                                    gradio_history.append(search_started_msg)
-                                    yield list(gradio_history)
+                                if has_matching_block:
+                                    logger.debug(
+                                        "search_started block already exists with query='%s', skipping",
+                                        result_query[:50],
+                                    )
                                 else:
-                                    yield list(gradio_history)
+                                    # Try to update existing empty search_started block with the query
+                                    updated = update_search_started_in_history(
+                                        gradio_history, result_query
+                                    )
+                                    if not updated:
+                                        # No empty block to update - create a new one with the query
+                                        # This handles cases where streaming didn't create a block
+                                        search_started_msg = yield_search_started(result_query)
+                                        gradio_history.append(search_started_msg)
+                                        yield list(gradio_history)
+                                    else:
+                                        yield list(gradio_history)
 
                             # Format articles for display (title and URL)
                             articles_for_display = []
