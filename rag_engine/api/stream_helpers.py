@@ -490,6 +490,16 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
             status = metadata.get("status", "pending")
             # Only update if still pending (not "done")
             if status == "pending":
+                # Only update in place if this bubble has no query yet (empty placeholder).
+                # If it already has a query, it belongs to a previous tool call; do not overwrite.
+                existing_content = (msg.get("content") or "").strip()
+                empty_query_content = get_text("search_started_content", query="").strip()
+                if existing_content != empty_query_content:
+                    logger.debug(
+                        "update_search_started_in_history: pending search_started at index %d already has query, skip update (append new bubble)",
+                        i,
+                    )
+                    return False
                 last_pending_search_started_idx = i
                 logger.debug("update_search_started_in_history: found pending search_started at index %d", i)
                 # Use the first pending one we find (most recent)
@@ -503,6 +513,36 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
         return True
 
     logger.debug("update_search_started_in_history: no pending search_started block found to update")
+    return False
+
+
+def last_pending_search_started_has_query(gradio_history: list[dict], query: str) -> bool:
+    """Return True if the most recent pending search_started message already displays this query.
+
+    Used to avoid appending a duplicate bubble when the same tool call is handled
+    by multiple code paths (e.g. accumulator and content_blocks).
+
+    Args:
+        gradio_history: List of Gradio message dictionaries
+        query: Query string to check
+
+    Returns:
+        True if the last pending search_started has the same query content, False otherwise
+    """
+    if not query:
+        return False
+    expected_content = get_text("search_started_content", query=query).strip()
+    for i in range(len(gradio_history) - 1, -1, -1):
+        msg = gradio_history[i]
+        if not isinstance(msg, dict) or msg.get("role") != "assistant":
+            continue
+        metadata = msg.get("metadata") or {}
+        if metadata.get("ui_type") != "search_started":
+            continue
+        if metadata.get("status") == "pending":
+            content = (msg.get("content") or "").strip()
+            return content == expected_content
+        break
     return False
 
 
