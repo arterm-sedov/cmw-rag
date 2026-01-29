@@ -114,9 +114,18 @@ class RetrieveContextSchema(BaseModel):
 
     @field_validator("top_k", mode="before")
     @classmethod
-    def validate_top_k(cls, v: int | None) -> int | None:
-        """Validate that top_k is positive if provided."""
-        if v is not None and v <= 0:
+    def validate_top_k(cls, v: int | str | None) -> int | None:
+        """Validate that top_k is positive if provided. Coerce string to int (e.g. from JSON/LLM)."""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            try:
+                v = int(v)
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"top_k must be a valid integer, got: {v!r}") from e
+        if not isinstance(v, int):
+            raise ValueError(f"top_k must be an integer or None, got: {type(v).__name__}")
+        if v <= 0:
             raise ValueError("top_k must be a positive integer")
         return v
 
@@ -360,7 +369,7 @@ async def retrieve_context(
                 )
             else:
                 logger.debug("Using thread-local context for query trace storage")
-        
+
         if context_to_use:
             try:
                 trace_entry = _build_query_trace_entry(query, docs)
