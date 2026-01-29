@@ -887,7 +887,10 @@ async def agent_chat_handler(
     conversation_tokens, _ = estimate_accumulated_tokens(messages, [])
 
     # Initialize tool call accumulator for streaming chunks
-    from rag_engine.api.stream_helpers import ToolCallAccumulator
+    from rag_engine.api.stream_helpers import (
+        ToolCallAccumulator,
+        last_pending_search_started_has_query,
+    )
 
     tool_call_accumulator = ToolCallAccumulator()
 
@@ -975,7 +978,7 @@ async def agent_chat_handler(
                                     logger.info("Successfully updated existing search_started block with query='%s'", tool_query_from_accumulator[:50])
                                     yield list(gradio_history)
                                 else:
-                                    # No existing block found, check if we need to create one
+                                    # No block to update: either none exists or existing already has a query (different tool call)
                                     has_search_started = any(
                                         isinstance(msg, dict)
                                         and msg.get("role") == "assistant"
@@ -988,7 +991,12 @@ async def agent_chat_handler(
                                         gradio_history.append(search_started_msg)
                                         yield list(gradio_history)
                                     else:
-                                        logger.warning("Search_started block exists but update failed - block might be marked as done")
+                                        # Existing bubble already has a query - add new bubble only if different query (avoid duplicate from other path)
+                                        if not last_pending_search_started_has_query(gradio_history, tool_query_from_accumulator):
+                                            logger.info("Adding new search_started block for subsequent tool call (accumulator): query='%s'", tool_query_from_accumulator[:50])
+                                            search_started_msg = yield_search_started(tool_query_from_accumulator)
+                                            gradio_history.append(search_started_msg)
+                                            yield list(gradio_history)
                             elif not tool_query_from_accumulator:
                                 # Tool detected but query not ready yet - create block with empty query if not exists
                                 from rag_engine.api.stream_helpers import yield_search_started
@@ -1224,10 +1232,22 @@ async def agent_chat_handler(
                                         logger.info("Updating search_started block via tool_calls for retrieve_context: query=%s", tool_query[:50])
                                         updated = update_search_started_in_history(gradio_history, tool_query)
                                         if not updated:
-                                            # No existing block found, create new one
-                                            logger.info("No existing block found, creating new one with query")
-                                            search_started_msg = yield_search_started(tool_query)
-                                            gradio_history.append(search_started_msg)
+                                            # No block to update: create new one (first call) or append (existing has another query)
+                                            has_search_started = any(
+                                                isinstance(msg, dict)
+                                                and msg.get("role") == "assistant"
+                                                and (msg.get("metadata") or {}).get("ui_type") == "search_started"
+                                                for msg in gradio_history
+                                            )
+                                            # Skip append if same query already shown (duplicate from accumulator path)
+                                            if not has_search_started or not last_pending_search_started_has_query(gradio_history, tool_query):
+                                                logger.info(
+                                                    "Adding search_started block via tool_calls (%s): query=%s",
+                                                    "subsequent" if has_search_started else "new",
+                                                    tool_query[:50],
+                                                )
+                                                search_started_msg = yield_search_started(tool_query)
+                                                gradio_history.append(search_started_msg)
                                         yield list(gradio_history)
                                 else:
                                     # Query not ready yet - create block with empty query if not exists
@@ -1297,10 +1317,22 @@ async def agent_chat_handler(
                                                 logger.info("Updating search_started block via chunk for retrieve_context: query=%s", tool_query[:50])
                                                 updated = update_search_started_in_history(gradio_history, tool_query)
                                                 if not updated:
-                                                    # No existing block found, create new one
-                                                    logger.info("No existing block found, creating new one with query")
-                                                    search_started_msg = yield_search_started(tool_query)
-                                                    gradio_history.append(search_started_msg)
+                                                    # No block to update: create new one (first call) or append (existing has another query)
+                                                    has_search_started = any(
+                                                        isinstance(msg, dict)
+                                                        and msg.get("role") == "assistant"
+                                                        and (msg.get("metadata") or {}).get("ui_type") == "search_started"
+                                                        for msg in gradio_history
+                                                    )
+                                                    # Skip append if same query already shown (duplicate from accumulator path)
+                                                    if not has_search_started or not last_pending_search_started_has_query(gradio_history, tool_query):
+                                                        logger.info(
+                                                            "Adding search_started block via chunk (%s): query=%s",
+                                                            "subsequent" if has_search_started else "new",
+                                                            tool_query[:50],
+                                                        )
+                                                        search_started_msg = yield_search_started(tool_query)
+                                                        gradio_history.append(search_started_msg)
                                                 yield list(gradio_history)
                                         else:
                                             # Query not ready yet - create block with empty query if not exists
