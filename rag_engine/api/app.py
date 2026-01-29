@@ -1092,49 +1092,72 @@ async def agent_chat_handler(
                             conversation_tokens + accumulated_tool_tokens,
                         )
 
-                        # Parse result to get articles and emit completion metadata with sources
+                        # Parse result to check if it's from retrieve_context tool (has articles)
                         from rag_engine.api.stream_helpers import (
                             extract_article_count_from_tool_result,
+                            update_message_status_in_history,
                             yield_search_completed,
                         )
-
-                        # Parse result to get articles and emit completion metadata with sources
                         from rag_engine.tools.utils import parse_tool_result_to_articles
 
-                        articles_list = parse_tool_result_to_articles(token.content)
-                        articles_count = len(articles_list) if articles_list else extract_article_count_from_tool_result(token.content)
+                        # Check if this is a retrieve_context result (has "articles" key)
+                        is_search_result = False
+                        try:
+                            result_json = json.loads(token.content) if isinstance(token.content, str) else {}
+                            is_search_result = "articles" in result_json
+                        except (json.JSONDecodeError, TypeError):
+                            pass
 
-                        # Format articles for display (title and URL)
-                        articles_for_display = []
-                        if articles_list:
-                            for article in articles_list:
-                                article_meta = article.metadata if hasattr(article, "metadata") else {}
-                                title = article_meta.get("title", "Untitled")
-                                url = article_meta.get("url", "")
-                                articles_for_display.append({"title": title, "url": url})
+                        if is_search_result:
+                            # This is a retrieve_context result - show search completed with sources
+                            articles_list = parse_tool_result_to_articles(token.content)
+                            articles_count = len(articles_list) if articles_list else extract_article_count_from_tool_result(token.content)
 
-                        search_completed_msg = yield_search_completed(
-                            count=articles_count,
-                            articles=articles_for_display if articles_for_display else None,
-                        )
+                            # Extract query from result metadata to update empty search_started blocks
+                            result_query = result_json.get("metadata", {}).get("query", "")
+                            if result_query:
+                                from rag_engine.api.stream_helpers import (
+                                    update_search_started_in_history,
+                                    yield_search_started,
+                                )
+                                # Try to update existing empty search_started block with the query
+                                updated = update_search_started_in_history(gradio_history, result_query)
+                                if not updated:
+                                    # No empty block to update - create a new one with the query
+                                    # This handles cases where streaming didn't create a block
+                                    search_started_msg = yield_search_started(result_query)
+                                    gradio_history.append(search_started_msg)
+                                    yield list(gradio_history)
+                                else:
+                                    yield list(gradio_history)
 
-                        # Update previous pending messages to done (stop spinners)
-                        from rag_engine.api.stream_helpers import update_message_status_in_history
-                        update_message_status_in_history(gradio_history, "thinking", "done")
-                        update_message_status_in_history(gradio_history, "search_started", "done")
-                        # Stop SGR planning spinner when we start generating answer after tool results
+                            # Format articles for display (title and URL)
+                            articles_for_display = []
+                            if articles_list:
+                                for article in articles_list:
+                                    article_meta = article.metadata if hasattr(article, "metadata") else {}
+                                    title = article_meta.get("title", "Untitled")
+                                    url = article_meta.get("url", "")
+                                    articles_for_display.append({"title": title, "url": url})
+
+                            search_completed_msg = yield_search_completed(
+                                count=articles_count,
+                                articles=articles_for_display if articles_for_display else None,
+                            )
+
+                            # Update previous pending messages to done (stop spinners)
+                            update_message_status_in_history(gradio_history, "search_started", "done")
+
+                            # Add search completed to history and yield full history
+                            gradio_history.append(search_completed_msg)
+                            yield list(gradio_history)
+                        else:
+                            # Non-search tool result (e.g., get_current_datetime)
+                            # Just stop the thinking spinner, don't show search completed
+                            logger.debug("Non-search tool result received, stopping thinking spinner only")
+
+                        # Stop SGR planning spinner after any tool result
                         update_message_status_in_history(gradio_history, "sgr_planning", "done")
-
-                        # Add search completed to history and yield full history
-                        gradio_history.append(search_completed_msg)
-                        yield list(gradio_history)
-
-                        # Show "Generating answer" spinner while LLM processes the results
-                        # This is especially helpful for slow LLM responses or non-streaming fallback
-                        from rag_engine.api.stream_helpers import yield_generating_answer
-                        generating_msg = yield_generating_answer()
-                        gradio_history.append(generating_msg)
-                        yield list(gradio_history)
 
                         # CRITICAL: Check if accumulated tool results exceed safe threshold
                         # This prevents overflow when agent makes multiple tool calls
@@ -1367,12 +1390,21 @@ async def agent_chat_handler(
                                 if not tool_executing:
                                     text_chunk = block["text"]
 
-                                    # Stop all pending spinners on first text chunk (answer is starting)
+                                    # On first text chunk after tool results, show and immediately stop
+                                    # "Generating Answer" spinner (visual feedback that answer is coming)
                                     if not answer:
                                         update_message_status_in_history(gradio_history, "thinking", "done")
                                         update_message_status_in_history(gradio_history, "search_started", "done")
                                         update_message_status_in_history(gradio_history, "sgr_planning", "done")
+                                        # Show "Generating Answer" briefly before actual answer starts
                                         if has_seen_tool_results:
+                                            from rag_engine.api.stream_helpers import (
+                                                yield_generating_answer,
+                                            )
+                                            generating_msg = yield_generating_answer()
+                                            gradio_history.append(generating_msg)
+                                            yield list(gradio_history)
+                                            # Immediately mark as done since answer is about to stream
                                             update_message_status_in_history(gradio_history, "generating_answer", "done")
 
                                     answer, disclaimer_prepended = _process_text_chunk_for_streaming(
@@ -1399,8 +1431,15 @@ async def agent_chat_handler(
                                 new_chunk = token_content
 
                             if new_chunk:
-                                # Stop "generating answer" spinner on first text chunk
+                                # On first text chunk after tool results, show and immediately stop
+                                # "Generating Answer" spinner (visual feedback that answer is coming)
                                 if not answer and has_seen_tool_results:
+                                    from rag_engine.api.stream_helpers import (
+                                        yield_generating_answer,
+                                    )
+                                    generating_msg = yield_generating_answer()
+                                    gradio_history.append(generating_msg)
+                                    yield list(gradio_history)
                                     update_message_status_in_history(gradio_history, "generating_answer", "done")
 
                                 answer, disclaimer_prepended = _process_text_chunk_for_streaming(
