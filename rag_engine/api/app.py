@@ -1156,10 +1156,11 @@ async def agent_chat_handler(
                         tool_executing = False
                         has_seen_tool_results = True
 
-                        # Stop any pending thinking spinners (for all tools, not just search)
+                        # Stop any pending thinking and search spinners when tool result arrives
                         from rag_engine.api.stream_helpers import update_message_status_in_history
 
                         update_message_status_in_history(gradio_history, "thinking", "done")
+                        update_message_status_in_history(gradio_history, "search_started", "done")
 
                         # Update accumulated context for next tool call
                         # Agent tracks context, not the tool!
@@ -1217,38 +1218,6 @@ async def agent_chat_handler(
                                 if articles_list
                                 else extract_article_count_from_tool_result(token.content)
                             )
-
-                            # Extract query from result metadata to update empty search_started blocks
-                            result_query = result_json.get("metadata", {}).get("query", "")
-                            if result_query:
-                                from rag_engine.api.stream_helpers import (
-                                    update_search_started_in_history,
-                                    yield_search_started,
-                                )
-
-                                # Check if there's already a pending search_started block with this query
-                                # (created during streaming) - if so, don't create a duplicate
-                                has_matching_block = last_pending_search_started_has_query(
-                                    gradio_history, result_query
-                                )
-                                if has_matching_block:
-                                    logger.debug(
-                                        "search_started block already exists with query='%s', skipping",
-                                        result_query[:50],
-                                    )
-                                else:
-                                    # Try to update existing empty search_started block with the query
-                                    updated = update_search_started_in_history(
-                                        gradio_history, result_query
-                                    )
-                                    if not updated:
-                                        # No empty block to update - create a new one with the query
-                                        # This handles cases where streaming didn't create a block
-                                        search_started_msg = yield_search_started(result_query)
-                                        gradio_history.append(search_started_msg)
-                                        yield list(gradio_history)
-                                    else:
-                                        yield list(gradio_history)
 
                             # Format articles for display (title and URL)
                             articles_for_display = []
@@ -1576,7 +1545,8 @@ async def agent_chat_handler(
                                         update_message_status_in_history(
                                             gradio_history, "sgr_planning", "done"
                                         )
-                                        # Show "Generating Answer" briefly before actual answer starts
+                                        # Show "Generating Answer" spinner while answer is being generated
+                                        # It will spin until answer finishes OR a new tool call is detected
                                         if has_seen_tool_results:
                                             from rag_engine.api.stream_helpers import (
                                                 yield_generating_answer,
@@ -1585,10 +1555,7 @@ async def agent_chat_handler(
                                             generating_msg = yield_generating_answer()
                                             gradio_history.append(generating_msg)
                                             yield list(gradio_history)
-                                            # Immediately mark as done since answer is about to stream
-                                            update_message_status_in_history(
-                                                gradio_history, "generating_answer", "done"
-                                            )
+                                            # Keep spinner spinning - will stop when answer finishes or new tool call
 
                                     answer, disclaimer_prepended = (
                                         _process_text_chunk_for_streaming(
@@ -1619,8 +1586,8 @@ async def agent_chat_handler(
                                 new_chunk = token_content
 
                             if new_chunk:
-                                # On first text chunk after tool results, show and immediately stop
-                                # "Generating Answer" spinner (visual feedback that answer is coming)
+                                # On first text chunk after tool results, show "Generating Answer" spinner
+                                # It will spin until answer finishes OR a new tool call is detected
                                 if not answer and has_seen_tool_results:
                                     from rag_engine.api.stream_helpers import (
                                         yield_generating_answer,
@@ -1629,9 +1596,7 @@ async def agent_chat_handler(
                                     generating_msg = yield_generating_answer()
                                     gradio_history.append(generating_msg)
                                     yield list(gradio_history)
-                                    update_message_status_in_history(
-                                        gradio_history, "generating_answer", "done"
-                                    )
+                                    # Keep spinner spinning - will stop when answer finishes or new tool call
 
                                 answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                     new_chunk, answer, disclaimer_prepended, has_seen_tool_results
