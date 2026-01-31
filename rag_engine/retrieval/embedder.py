@@ -240,7 +240,7 @@ class InfinityEmbedder(HTTPClientMixin):
             formatted = f"{self.query_prefix}{query}"
 
         response = self._post(
-            "/v1/embeddings",
+            "/embeddings",
             {"input": [formatted], "model": "auto"},  # Infinity ignores model, uses loaded model
         )
         return response["data"][0]["embedding"]
@@ -256,7 +256,7 @@ class InfinityEmbedder(HTTPClientMixin):
             formatted = [f"{self.doc_prefix}{t}" for t in texts]
 
         response = self._post(
-            "/v1/embeddings",
+            "/embeddings",
             {"input": formatted, "model": "auto"},
         )
         return [d["embedding"] for d in response["data"]]
@@ -336,10 +336,8 @@ def create_embedder(settings) -> Embedder:
         )
 
     elif provider == "infinity":
-        # Infinity HTTP server - use endpoint from settings or default
+        # Infinity HTTP server - use endpoint from settings
         endpoint = settings.infinity_embedding_endpoint
-        if not endpoint.endswith("/v1"):
-            endpoint = f"{endpoint}/v1"
 
         config = ServerEmbeddingConfig(
             type="server",

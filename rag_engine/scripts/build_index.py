@@ -13,7 +13,7 @@ if str(_project_root) not in sys.path:
 from rag_engine.config.settings import settings
 from rag_engine.core.document_processor import DocumentProcessor
 from rag_engine.core.indexer import RAGIndexer
-from rag_engine.retrieval.embedder import FRIDAEmbedder
+from rag_engine.retrieval.embedder import create_embedder
 from hashlib import sha1
 
 from rag_engine.storage.vector_store import ChromaStore
@@ -105,9 +105,9 @@ def main() -> None:
         print("Dry-run complete. No files were indexed.")
         return
 
-    embedder = FRIDAEmbedder(model_name=settings.embedding_model, device=settings.embedding_device)
+    embedder = create_embedder(settings)
     store = ChromaStore(persist_dir=settings.chromadb_persist_dir, collection_name=settings.chromadb_collection)
-    
+
     indexer = RAGIndexer(embedder=embedder, vector_store=store)
     summary = indexer.index_documents(
         docs,
