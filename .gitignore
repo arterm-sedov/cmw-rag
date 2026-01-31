@@ -1,6 +1,9 @@
 # ChromaDB local data (generated, environment-specific)
 data/chromadb_data/**
 
+# Application logs (generated, environment-specific)
+logs/**
+
 .reference-repos/**
 .venv/**
 .venv-wsl/**
