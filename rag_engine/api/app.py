@@ -959,9 +959,9 @@ async def agent_chat_handler(
     else:
         logger.info("SGR planning disabled (enable_sgr_planning=False), skipping")
 
-    # Add thinking spinner to show progress while LLM generates tool calls
+    # Add thinking spinner to show progress while LLM generates tool calls (same id used for removal in stream)
     from rag_engine.api.stream_helpers import short_uid, yield_thinking_block
-    thinking_id = short_uid()
+    thinking_id = short_uid()  # single id for initial block; stream loop reuses it for remove_message_by_id
     thinking_msg = yield_thinking_block("agent", block_id=thinking_id)
     gradio_history.append(thinking_msg)
     yield list(gradio_history)
@@ -1002,8 +1002,7 @@ async def agent_chat_handler(
     search_id_by_query: dict[str, str] = {}
     # Track which search bubbles have been marked as completed to prevent duplicates
     completed_search_ids: set[str] = set()
-    # Track thinking block ID for removal when first search bubble appears
-    thinking_id = short_uid()
+    # Reuse thinking_id from initial block above for removal when first search bubble or text arrives
     # Track generating answer block ID for removal when done
     generating_answer_id = short_uid()
 
@@ -1348,10 +1347,13 @@ async def agent_chat_handler(
                             gradio_history.append(search_completed_msg)
                             yield list(gradio_history)
                         else:
-                            # Non-search tool result (e.g., get_current_datetime)
-                            # Just stop the thinking spinner, don't show search completed
+                            # Non-search tool result (e.g., get_current_datetime): remove initial block, collapse this tool's thinking block
                             logger.debug(
-                                "Non-search tool result received, stopping thinking spinner only"
+                                "Non-search tool result received, removing initial thinking block and collapsing tool thinking block"
+                            )
+                            remove_message_by_id(gradio_history, thinking_id)
+                            update_message_status_in_history(
+                                gradio_history, "thinking", "done"
                             )
 
                         # Stop SGR planning spinner after any tool result
@@ -1622,12 +1624,9 @@ async def agent_chat_handler(
                                 if not tool_executing:
                                     text_chunk = block["text"]
 
-                                    # On first text chunk after tool results, show and immediately stop
-                                    # "Generating Answer" spinner (visual feedback that answer is coming)
+                                    # On first text chunk after tool results, remove initial thinking block and stop other spinners
                                     if not answer:
-                                        update_message_status_in_history(
-                                            gradio_history, "thinking", "done"
-                                        )
+                                        remove_message_by_id(gradio_history, thinking_id)
                                         update_message_status_in_history(
                                             gradio_history, "search_started", "done"
                                         )
