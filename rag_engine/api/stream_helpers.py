@@ -3,10 +3,16 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 
 from rag_engine.api.i18n import get_text
 
 logger = logging.getLogger(__name__)
+
+
+def short_uid() -> str:
+    """Return a short unique id (8 hex chars) for metadata blocks and search/thinking IDs."""
+    return str(uuid.uuid4())[:8]
 
 
 class ToolCallAccumulator:
@@ -214,28 +220,24 @@ def yield_search_started(query: str | None = None, search_id: str | None = None)
         >>> msg["metadata"]["status"]
         'pending'
     """
-    import uuid
+    # Generate unique ID if not provided (for matching with result)
+    if search_id is None:
+        search_id = short_uid()
 
     # Resolve i18n translations to plain strings before yielding
     # This ensures Chatbot receives strings, not __i18n__ metadata objects
     title = get_text("search_started_title")
     content = get_text("search_started_content", query=(query or "").strip())
 
-    # Generate unique ID if not provided (for matching with result)
-    if search_id is None:
-        search_id = str(uuid.uuid4())[:8]  # Short UUID for readability
-
     return {
         "role": "assistant",
         "content": content,
         "metadata": {
             "title": title,
-            # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "search_started",
-            # Native Gradio spinner: "pending" shows spinner, "done" hides it
             "status": "pending",
-            # Unique ID for matching with result in parallel execution
             "search_id": search_id,
+            "id": search_id,
         },
     }
 
@@ -257,10 +259,8 @@ def yield_search_bubble(query: str, search_id: str | None = None) -> dict:
         Title: "🔄 Поиск в базе знаний"
         Status: "pending" (spinner visible)
     """
-    import uuid
-
     if search_id is None:
-        search_id = str(uuid.uuid4())[:8]
+        search_id = short_uid()
 
     display_query = query
 
@@ -276,6 +276,7 @@ def yield_search_bubble(query: str, search_id: str | None = None) -> dict:
             "status": "pending",
             "search_id": search_id,
             "query": query,  # Store original query for updates
+            "id": search_id,
         },
     }
 
@@ -300,6 +301,10 @@ def yield_thinking_block(tool_name: str, block_id: str | None = None) -> dict:
         >>> msg["metadata"]["status"]
         'pending'
     """
+    # Ensure stable id for removal via remove_message_by_id()
+    if block_id is None:
+        block_id = short_uid()
+
     # Resolve i18n translations to plain strings before yielding
     # This ensures Chatbot receives strings, not __i18n__ metadata objects
     title = get_text("thinking_title")
@@ -309,9 +314,8 @@ def yield_thinking_block(tool_name: str, block_id: str | None = None) -> dict:
         "title": title,
         "ui_type": "thinking",
         "status": "pending",
+        "id": block_id,
     }
-    if block_id:
-        metadata["id"] = block_id
 
     return {
         "role": "assistant",
@@ -347,10 +351,9 @@ def yield_sgr_planning_started() -> dict:
         "content": content,
         "metadata": {
             "title": title,
-            # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "sgr_planning",
-            # Native Gradio spinner: "pending" shows spinner, "done" hides it
             "status": "pending",
+            "id": short_uid(),
         },
     }
 
@@ -411,10 +414,8 @@ def yield_search_completed(count: int, articles: list[dict] | None = None) -> di
         "content": content,
         "metadata": {
             "title": title,
-            # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "search_completed",
-            # NO status field - accordion stays open to show clickable article links
-            # Previous "search_started" spinner is stopped via update_message_status_in_history()
+            "id": short_uid(),
         },
     }
 
@@ -445,15 +446,17 @@ def yield_model_switch_notice(model: str) -> dict:
         "content": "",
         "metadata": {
             "title": title,
-            # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "model_switch",
-            # NO status - accordion stays open for visibility (important info)
+            "id": short_uid(),
         },
     }
 
 
-def yield_generating_answer() -> dict:
+def yield_generating_answer(block_id: str | None = None) -> dict:
     """Yield metadata message for answer generation phase with spinner.
+
+    Args:
+        block_id: Optional stable ID for later removal via remove_message_by_id()
 
     Returns:
         Gradio message dict with metadata for answer generation.
@@ -468,21 +471,26 @@ def yield_generating_answer() -> dict:
         >>> msg["metadata"]["status"]
         'pending'
     """
+    # Ensure stable id for removal via remove_message_by_id()
+    if block_id is None:
+        block_id = short_uid()
+
     # Resolve i18n translations to plain strings before yielding
     # This ensures Chatbot receives strings, not __i18n__ metadata objects
     title = get_text("generating_answer_title")
     content = get_text("generating_answer_content")
 
+    metadata = {
+        "title": title,
+        "ui_type": "generating_answer",
+        "status": "pending",
+        "id": block_id,
+    }
+
     return {
         "role": "assistant",
         "content": content,
-        "metadata": {
-            "title": title,
-            # Explicit UI-only marker (used by _is_ui_only_message)
-            "ui_type": "generating_answer",
-            # Native Gradio spinner: "pending" shows spinner, "done" hides it
-            "status": "pending",
-        },
+        "metadata": metadata,
     }
 
 
@@ -510,9 +518,8 @@ def yield_cancelled() -> dict:
         "content": content,
         "metadata": {
             "title": title,
-            # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "cancelled",
-            # NO status - accordion stays open for visibility (important notice)
+            "id": short_uid(),
         },
     }
 
@@ -871,13 +878,11 @@ def update_search_bubble_by_id(
                 else:
                     content_parts.append(f"{idx}. {title}")
 
-        # Update the bubble in place
-        # Keep status="pending" to prevent accordion collapse, but the spinner visually
-        # indicates completion through the title change from "🔄 Поиск..." to "✅ Поиск завершен"
+        # Update the bubble in place - remove status key to stop spinner but keep accordion open
         msg["content"] = "\n".join(content_parts)
         metadata["title"] = get_text("search_completed_title")
-        # Note: NOT changing status to "done" to prevent accordion collapse
-        # Title change signals completion while keeping content visible
+        # Remove status key to stop spinner while keeping accordion open
+        metadata.pop("status", None)
 
         logger.info(
             "Updated search bubble to complete: search_id=%s, count=%d (index %d)",
