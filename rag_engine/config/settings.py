@@ -1,4 +1,3 @@
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,9 +17,15 @@ class Settings(BaseSettings):
     vllm_base_url: str = "http://localhost:8000/v1"
     vllm_api_key: str = "EMPTY"
 
-    # Embedding
-    embedding_model: str
-    embedding_device: str
+    # Embedding Configuration (Model-Slug Based)
+    # Provider type: direct | infinity | openrouter
+    embedding_provider_type: str = "direct"
+    # Model slug (e.g., "ai-forever/FRIDA", "Qwen/Qwen3-Embedding-8B")
+    # Case insensitive - "qwen/qwen3-embedding-8b" works too
+    embedding_model: str = "ai-forever/FRIDA"
+    # Device for direct embedding/reranker when not using factory (e.g. build_index, legacy retriever).
+    # Factory path uses device from models.yaml. Default auto covers most cases.
+    embedding_device: str = "auto"
 
     # ChromaDB
     chromadb_persist_dir: str
@@ -29,6 +34,7 @@ class Settings(BaseSettings):
     # Retrieval
     top_k_retrieve: int
     top_k_rerank: int
+    rerank_enabled: bool = True
     chunk_size: int
     chunk_overlap: int
 
@@ -43,16 +49,36 @@ class Settings(BaseSettings):
     retrieval_query_decomp_enabled: bool = False
     retrieval_query_decomp_max_subqueries: int = 4
 
-    # Reranker
-    rerank_enabled: bool
-    reranker_model: str
+    # Reranker Provider Selection
+    # Options: direct_crossencoder | infinity_dity | infinity_bge_reranker | infinity_qwen3_reranker_8b | infinity_qwen3_reranker_4b | infinity_qwen3_reranker_0_6b
+    # Reranker Configuration (Model-Slug Based)
+    # Provider type: direct | infinity | openrouter
+    reranker_provider_type: str = "direct"
+    # Model slug (e.g., "DiTy/cross-encoder-russian-msmarco", "Qwen/Qwen3-Reranker-8B")
+    # Case insensitive
+    reranker_model: str = "DiTy/cross-encoder-russian-msmarco"
+
+    # Provider Endpoints (optional, have defaults)
+    infinity_embedding_endpoint: str = "http://localhost:7997"
+    infinity_reranker_endpoint: str = "http://localhost:7998"
+    openrouter_endpoint: str = "https://openrouter.ai/api/v1"
+
+    # Request Configuration
+    embedding_timeout: float = 60.0
+    embedding_max_retries: int = 3
+    reranker_timeout: float = 60.0
+    reranker_max_retries: int = 3
 
     # LLM
     default_llm_provider: str
     default_model: str
     llm_temperature: float
-    llm_max_tokens: int | None = None  # Optional override for max_tokens from model config (hard cutoff)
-    llm_mild_limit: int | None = None  # Optional soft guidance limit for response length (injected into system prompt)
+    llm_max_tokens: int | None = (
+        None  # Optional override for max_tokens from model config (hard cutoff)
+    )
+    llm_mild_limit: int | None = (
+        None  # Optional soft guidance limit for response length (injected into system prompt)
+    )
     # Optional overrides for model config (if set, overrides model_configs.py values)
     llm_token_limit: int | None = None  # Optional override for token_limit from model config
 
@@ -137,6 +163,3 @@ settings = Settings()
 def get_allowed_fallback_models() -> list[str]:
     raw = settings.llm_allowed_fallback_models or ""
     return [m.strip() for m in raw.split(",") if m and m.strip()]
-
-
-

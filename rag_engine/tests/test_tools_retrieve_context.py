@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import sys
 from unittest.mock import Mock, patch
 
 import pytest
@@ -12,6 +13,7 @@ from rag_engine.tools.retrieve_context import (
     RetrieveContextSchema,
     _format_articles_to_json,
     retrieve_context,
+    set_app_retriever,
 )
 
 
@@ -120,6 +122,37 @@ class TestFormatArticlesToJson:
         result = json.loads(result_str)
 
         assert result["articles"][0]["title"] == "789"
+
+
+def _retrieve_context_module():
+    """Return the retrieve_context module (avoid shadowing by tool of same name)."""
+    return sys.modules["rag_engine.tools.retrieve_context"]
+
+
+class TestSetAppRetriever:
+    """Tests for set_app_retriever injection."""
+
+    def test_get_or_create_uses_injected_retriever(self):
+        """When app retriever is set, _get_or_create_retriever returns it without creating one."""
+        mod = _retrieve_context_module()
+        mod._app_retriever = None
+        mod._retriever = None
+        injected = Mock(spec=RAGRetriever)
+        set_app_retriever(injected)
+        try:
+            got = mod._get_or_create_retriever()
+            assert got is injected
+        finally:
+            set_app_retriever(None)
+
+    def test_set_none_clears_app_retriever(self):
+        """set_app_retriever(None) clears the injected retriever."""
+        mod = _retrieve_context_module()
+        injected = Mock(spec=RAGRetriever)
+        set_app_retriever(injected)
+        assert mod._app_retriever is injected
+        set_app_retriever(None)
+        assert mod._app_retriever is None
 
 
 class TestRetrieveContextTool:

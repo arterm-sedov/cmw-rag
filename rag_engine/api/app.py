@@ -24,10 +24,11 @@ from rag_engine.config.settings import get_allowed_fallback_models, settings  # 
 from rag_engine.llm.fallback import check_context_fallback
 from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.llm.schemas import StructuredAgentResult
-from rag_engine.retrieval.embedder import FRIDAEmbedder
+from rag_engine.retrieval.embedder import create_embedder
 from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
 from rag_engine.tools import retrieve_context
+from rag_engine.tools.retrieve_context import set_app_retriever
 from rag_engine.utils.context_tracker import (
     AgentContext,
     compute_context_tokens,
@@ -138,10 +139,7 @@ def format_articles_dataframe(articles: list[dict]) -> list[list]:
 
 
 # Initialize singletons (order matters: llm_manager before retriever)
-embedder = FRIDAEmbedder(
-    model_name=settings.embedding_model,
-    device=settings.embedding_device,
-)
+embedder = create_embedder(settings)
 vector_store = ChromaStore(
     persist_dir=settings.chromadb_persist_dir,
     collection_name=settings.chromadb_collection,
@@ -159,6 +157,9 @@ retriever = RAGRetriever(
     top_k_rerank=settings.top_k_rerank,
     rerank_enabled=settings.rerank_enabled,
 )
+# Use same retriever in retrieve_context tool so FRIDA/direct embedder is never
+# loaded in a worker thread (avoids crash when agent first calls the tool).
+set_app_retriever(retriever)
 
 
 def _find_model_for_tokens(required_tokens: int) -> str | None:
@@ -884,8 +885,6 @@ async def agent_chat_handler(
                 )
 
             if sgr_plan_dict:
-                import json
-
                 plan_json = json.dumps(sgr_plan_dict, ensure_ascii=False, separators=(",", ":"))
 
                 messages = list(messages) + [

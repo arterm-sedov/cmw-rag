@@ -89,7 +89,7 @@ The project uses `ruff` for linting and import sorting. Configuration is in `pyp
 
 ---
 
-## 🤖 Cursor & Copilot Rules
+## 🤖 Agent Instructions (OpenCode, Cursor, Copilot)
 
 ### Commit Messages
 - **Format:** Concise, structured, and strictly relevant to the changes.

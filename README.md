@@ -179,14 +179,14 @@ pip install -r rag_engine\requirements.txt
 
 ### 2. Configure Environment Variables
 
-Copy `.env.example` to `.env` and configure your API keys:
+Copy `.env-example` to `.env` and configure your API keys:
 
 ```bash
 # WSL/Linux
-cp .env.example .env
+cp .env-example .env
 
 # Windows PowerShell
-Copy-Item .env.example .env
+Copy-Item .env-example .env
 ```
 
 Minimum required: `GOOGLE_API_KEY` (for Gemini) or `OPENROUTER_API_KEY`
@@ -385,7 +385,7 @@ Environment variables (configure in `.env`):
 - `LLM_COMPRESSION_MIN_TOKENS`: Minimum tokens to preserve per article during proportional-by-rank tool-results compression (default: `300`)
 - `USE_AGENT_MODE`: Enable LangChain agent mode with tool calling (`true`/`false`, default: `false`)
 
-See `.env.example` for full configuration options.
+See `.env-example` for full configuration options.
 
 ### Retrieval – Multi-vector and Query Decomposition
 
@@ -430,7 +430,7 @@ Create and activate a virtual environment:
 
 ### Settings Validation Error
 
-Ensure `.env` file contains all required variables. Check `.env.example` for reference.
+Ensure `.env` file contains all required variables. Check `.env-example` for reference.
 
 ### No Relevant Results Found
 

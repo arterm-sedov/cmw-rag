@@ -10,7 +10,9 @@ def test_retriever_singleton_serialized(monkeypatch):
     # Import module fresh to reset globals
     tool_mod = importlib.import_module("rag_engine.tools.retrieve_context")
 
-    # Ensure starting from a clean state
+    # Ensure starting from a clean state (no app-injected retriever, no lazy instance)
+    if getattr(tool_mod, "_app_retriever", None) is not None:
+        tool_mod._app_retriever = None  # type: ignore[attr-defined]
     if getattr(tool_mod, "_retriever", None) is not None:
         tool_mod._retriever = None  # type: ignore[attr-defined]
 

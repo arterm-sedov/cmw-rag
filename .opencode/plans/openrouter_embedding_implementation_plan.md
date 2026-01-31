@@ -1,505 +1,929 @@
-# OpenRouter Qwen3-Embedding API Support Implementation Plan
+# Unified Embedding & Reranker Implementation Plan
 
 ## Overview
 
-Add configurable embedding provider support with provider-based naming convention, preserving existing FRIDA functionality while enabling API-based embeddings through OpenRouter and future local/embedding providers.
+Add unified embedding and reranker provider support with three categories:
+1. **Direct**: Current sentence-transformers implementations (FRIDA, CrossEncoder/DiTy)
+2. **Server**: Infinity HTTP servers (FRIDA, Qwen3, BGE, DiTy via OpenAI-compatible API)
+3. **API**: OpenRouter cloud API (Qwen3-Embedding)
 
-## Key Requirements
+All providers use **unified Pydantic config schemas** and **interoperable interfaces**.
 
-- **Backward Compatibility**: FRIDA functionality remains unchanged and default
-- **Provider-Based Naming**: Consistent `local_*` and API provider naming
-- **Configurable Provider**: Switch between providers via `.env` flag
-- **Dimension Flexibility**: Configurable embedding dimensions (MRL support)
-- **Chunk Size Awareness**: Automatic capping based on model capacity
-- **Complete Testing**: Unit tests + integration tests
-- **Documentation**: README updates with migration guidance
+**Key Decision**: Include DiTy reranker in Infinity configs (it's our battle-tested default).
 
 ---
 
-## Implementation Phases
+## Architecture
 
-### Phase 1: Configuration Layer
-
-#### 1.1 Update `rag_engine/config/settings.py`
-
-**Add new fields:**
-```python
-# Provider selection using provider-based naming convention (default: local_frida for backward compatibility)
-embedding_provider: str = "local_frida"  # "local_frida", "local_e5", "openrouter", etc.
-
-# OpenRouter embedding configuration
-openrouter_embedding_model: str = "qwen/qwen3-embedding-8b"
-openrouter_embedding_instruction: str = "Given a web search query, retrieve relevant passages that answer the query"
-openrouter_embedding_dim: int | None = None  # Configurable dimension (MRL support)
+```
+┌─────────────────────────────────────────────────────────────┐
+│  cmw-rag (Client Application)                               │
+│  ├─ .env: Provider selection (which to use)                 │
+│  ├─ config/models.yaml: Client-side Pydantic configs        │
+│  │   (endpoints, prefixes, instructions, timeouts)          │
+│  └─ rag_engine/                                             │
+│      ├─ retrieval/embedder.py: Factory + implementations    │
+│      └─ retrieval/reranker.py: Factory + implementations    │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              HTTP/REST
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│  cmw-infinity (Server Management - NEW REPO)                │
+│  ├─ config/models.yaml: Server-side configs                 │
+│  │   (ports, dtypes, batch_sizes, device)                   │
+│  ├─ cmw_infinity/                                           │
+│  │   ├─ cli.py: start/stop/status commands                  │
+│  │   ├─ server_manager.py: Process management               │
+│  │   └─ server_config.py: Pydantic schemas                  │
+│  └─ Thin wrapper around `infinity_emb` CLI                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-#### 1.2 Add validation helper with backward compatibility:
-```python
-def validate_embedding_config() -> None:
-    """Validate embedding configuration matches provider."""
-    provider = settings.embedding_provider.lower()
-    
-    # Handle backward compatibility: map old "frida" to "local_frida"
-    if provider == "frida":
-        provider = "local_frida"
-        logger.info("Migrating EMBEDDING_PROVIDER from 'frida' to 'local_frida' for consistency")
-    
-    # Current supported providers (extensible for future)
-    local_providers = ("local_frida", "local_e5", "local_bge", "tei_server")
-    api_providers = ("openrouter", "openai", "voyage", "together")
-    
-    if provider not in local_providers + api_providers:
-        raise ValueError(f"Invalid embedding_provider: {provider}")
-    
-    # Provider-specific validation
-    if provider == "openrouter" and not settings.openrouter_api_key:
-        raise ValueError("OPENROUTER_API_KEY required when embedding_provider=openrouter")
+### Port Allocation Strategy
+
+**Each model has a UNIQUE port** to allow simultaneous running:
+
+```
+Embedding Models:
+  7997: FRIDA (4GB)
+  7998: Qwen3-0.6B (2GB)
+  7999: Qwen3-4B (12GB)
+  8000: Qwen3-8B (22GB)
+
+Reranker Models:
+  8001: BGE-Reranker (2GB)
+  8002: DiTy (2GB)
+  8003: Qwen3-0.6B (2GB)
+  8004: Qwen3-4B (12GB)
+  8005: Qwen3-8B (22GB)
 ```
 
-### Phase 2: Embedding Abstraction Layer
+**Benefits:**
+- A/B test different models without stopping/starting
+- Run small models alongside large models (if VRAM permits)
+- Easy model comparison and benchmarking
+- No port conflicts when switching providers
 
-#### 2.1 Update `rag_engine/retrieval/embedder.py`
+---
 
-**A. Add imports:**
-```python
-from openai import OpenAI
-from typing import Protocol
+## Phase 1: cmw-infinity Package
+
+**Location**: `/c/Repos/cmw-infinity` (new repo, separate from cmw-rag)
+
+**Purpose**: Manage Infinity servers (embedding + reranker) via CLI
+
+### 1.1 Repository Structure
+```
+cmw-infinity/
+├── cmw_infinity/
+│   ├── __init__.py
+│   ├── cli.py                    # Click CLI: start/stop/status
+│   ├── server_config.py          # Pydantic schemas
+│   ├── server_manager.py         # Process start/stop
+│   └── model_registry.py         # Available models
+├── config/
+│   └── models.yaml              # Server-side configs
+├── tests/
+├── pyproject.toml
+├── README.md
+└── AGENTS.md                    # Adapted from cmw-vllm
 ```
 
-**B. Define `Embedder` Protocol:**
+### 1.2 Server Config Schema (Pydantic)
+
 ```python
+# server_config.py
+from pydantic import BaseModel, Field, field_validator
+from typing import Literal
+
+class InfinityModelConfig(BaseModel):
+    """Server-side configuration for Infinity models."""
+    model_id: str = Field(description="HuggingFace model ID")
+    model_type: Literal["embedding", "reranker"] = Field(description="Model type")
+    port: int = Field(description="Server port (must be unique per model)")
+    device: str = Field(default="auto", description="Device (auto/cpu/cuda)")
+    dtype: Literal["float16", "float32", "int8"] = Field(default="float16")
+    batch_size: int = Field(default=32, description="Dynamic batching size")
+    memory_gb: float = Field(description="Estimated VRAM usage in GB")
+    
+    @field_validator('port')
+    def validate_port_range(cls, v):
+        if not 7000 <= v <= 65535:
+            raise ValueError("Port must be between 7000-65535")
+        return v
+    
+    def to_infinity_args(self) -> list[str]:
+        """Convert to infinity_emb CLI arguments."""
+        args = [
+            "v2",
+            "--model-name-or-path", self.model_id,
+            "--port", str(self.port),
+            "--dtype", self.dtype,
+            "--batch-size", str(self.batch_size),
+        ]
+        if self.device != "auto":
+            args.extend(["--device", self.device])
+        return args
+```
+
+### 1.3 Server-Side YAML Config
+
+```yaml
+# config/models.yaml
+# These are SERVER startup configs (ports, dtype, batch_size)
+# NOT client connection configs (those are in cmw-rag)
+# NOTE: Each model has UNIQUE port to allow simultaneous running
+
+embedding_models:
+  # Small models (use when vLLM is running, ~30GB used)
+  frida:
+    model_id: ai-forever/FRIDA
+    model_type: embedding
+    port: 7997
+    dtype: float16
+    batch_size: 32
+    memory_gb: 4
+    
+  qwen3-embedding-0.6b:
+    model_id: Qwen/Qwen3-Embedding-0.6B
+    model_type: embedding
+    port: 7998
+    dtype: float16
+    batch_size: 32
+    memory_gb: 2
+    
+  # Large models (use when vLLM is NOT running, 48GB available)
+  qwen3-embedding-4b:
+    model_id: Qwen/Qwen3-Embedding-4B
+    model_type: embedding
+    port: 7999
+    dtype: float16
+    batch_size: 16
+    memory_gb: 12  # ~10GB weights + overhead
+    
+  qwen3-embedding-8b:
+    model_id: Qwen/Qwen3-Embedding-8B
+    model_type: embedding
+    port: 8000
+    dtype: float16
+    batch_size: 8
+    memory_gb: 22  # ~16GB weights + 6GB overhead
+
+reranker_models:
+  # Small models
+  bge-reranker:
+    model_id: BAAI/bge-reranker-v2-m3
+    model_type: reranker
+    port: 8001
+    dtype: float16
+    batch_size: 32
+    memory_gb: 2
+    
+  dity-reranker:
+    model_id: DiTy/cross-encoder-russian-msmarco
+    model_type: reranker
+    port: 8002
+    dtype: float16
+    batch_size: 32
+    memory_gb: 2
+    
+  qwen3-reranker-0.6b:
+    model_id: Qwen/Qwen3-Reranker-0.6B
+    model_type: reranker
+    port: 8003
+    dtype: float16
+    batch_size: 32
+    memory_gb: 2
+    
+  # Large models
+  qwen3-reranker-4b:
+    model_id: Qwen/Qwen3-Reranker-4B
+    model_type: reranker
+    port: 8004
+    dtype: float16
+    batch_size: 16
+    memory_gb: 12
+    
+  qwen3-reranker-8b:
+    model_id: Qwen/Qwen3-Reranker-8B
+    model_type: reranker
+    port: 8005
+    dtype: float16
+    batch_size: 8
+    memory_gb: 22
+```
+
+### 1.4 CLI Commands
+
+```bash
+# Start servers
+cmw-infinity start frida              # Embedding on :7997
+cmw-infinity start dity-reranker      # Reranker on :7998
+cmw-infinity start qwen3-embedding-8b # Large model on :7997
+
+# Check status
+cmw-infinity status
+# Output:
+# frida                embedding  port:7997   ✓ running  pid:12345
+# dity-reranker        reranker   port:7998   ✓ running  pid:12346
+
+# Stop servers
+cmw-infinity stop frida
+cmw-infinity stop --all
+```
+
+### 1.5 Test Plan
+
+**Self-contained tests:**
+```bash
+# Test 1: Start/Stop FRIDA
+cmw-infinity start frida
+cmw-infinity status  # Verify running
+cmw-infinity stop frida
+cmw-infinity status  # Verify stopped
+
+# Test 2: HTTP API working
+curl http://localhost:7997/v1/embeddings \
+  -X POST \
+  -d '{"input": ["test query"], "model": "ai-forever/FRIDA"}' \
+  -H "Content-Type: application/json"
+
+# Test 3: Reranker API
+curl http://localhost:7998/rerank \
+  -X POST \
+  -d '{"query": "test", "documents": ["doc1", "doc2"]}' \
+  -H "Content-Type: application/json"
+```
+
+**Phase 1 Complete When:**
+- [ ] cmw-infinity package created
+- [ ] `cmw-infinity start/stop/status` commands work
+- [ ] FRIDA embedding server responds to HTTP requests
+- [ ] DiTy reranker server responds to HTTP requests
+- [ ] Tests pass
+
+---
+
+## Phase 2: cmw-rag Client Updates
+
+**Purpose**: Update cmw-rag to use new providers via unified factory pattern
+
+### 2.1 Client-Side Pydantic Schemas (Discriminated Unions)
+
+```python
+# rag_engine/config/schemas.py
+from pydantic import BaseModel, Field
+from typing import Literal, Optional, Union
+from typing_extensions import Annotated
+
+# ============ EMBEDDING CONFIGS ============
+
+class DirectEmbeddingConfig(BaseModel):
+    """Direct sentence-transformers embedder (current implementation)."""
+    type: Literal["direct"]
+    model: str = Field(..., description="Model name for sentence-transformers")
+    device: str = Field(default="auto")
+    max_seq_length: int = Field(default=512)
+
+class ServerEmbeddingConfig(BaseModel):
+    """HTTP server embedder (Infinity)."""
+    type: Literal["server"]
+    endpoint: str = Field(..., description="HTTP endpoint (e.g., http://localhost:7997/v1)")
+    
+    # Model-specific formatting
+    query_prefix: Optional[str] = Field(None)  # FRIDA: "search_query: "
+    doc_prefix: Optional[str] = Field(None)    # FRIDA: "search_document: "
+    default_instruction: Optional[str] = Field(None)  # Qwen3: instruction template
+
+class ApiEmbeddingConfig(BaseModel):
+    """Cloud API embedder (OpenRouter)."""
+    type: Literal["api"]
+    endpoint: str = Field(..., description="API endpoint URL")
+    model: str = Field(..., description="Model identifier (e.g., qwen/qwen3-embedding-8b)")
+    default_instruction: str = Field(..., description="Default instruction template")
+    timeout: float = Field(default=60.0, description="Request timeout in seconds")
+    max_retries: int = Field(default=3, description="Max retries on failure")
+
+# Discriminated union for type-safe config loading
+EmbeddingProviderConfig = Annotated[
+    Union[DirectEmbeddingConfig, ServerEmbeddingConfig, ApiEmbeddingConfig],
+    Field(discriminator="type")
+]
+
+# ============ RERANKER CONFIGS ============
+
+class DirectRerankerConfig(BaseModel):
+    """Direct CrossEncoder reranker (current implementation)."""
+    type: Literal["direct"]
+    model: str = Field(..., description="Model name for CrossEncoder")
+    device: str = Field(default="auto")
+    batch_size: int = Field(default=16)
+
+class ServerRerankerConfig(BaseModel):
+    """HTTP server reranker (Infinity)."""
+    type: Literal["server"]
+    endpoint: str = Field(..., description="HTTP endpoint (e.g., http://localhost:7998)")
+    default_instruction: Optional[str] = Field(None)  # Qwen3 only
+
+RerankerProviderConfig = Annotated[
+    Union[DirectRerankerConfig, ServerRerankerConfig],
+    Field(discriminator="type")
+]
+
+# ============ DIMENSION VALIDATION ============
+
+class ModelDimensions:
+    """Embedding dimensions by model - used for validation."""
+    DIMENSIONS = {
+        "ai-forever/FRIDA": 1024,
+        "Qwen/Qwen3-Embedding-0.6B": 1024,
+        "Qwen/Qwen3-Embedding-4B": 2560,
+        "Qwen/Qwen3-Embedding-8B": 4096,
+        "qwen/qwen3-embedding-0.6b": 1024,
+        "qwen/qwen3-embedding-4b": 2560,
+        "qwen/qwen3-embedding-8b": 4096,
+    }
+    
+    @classmethod
+    def get_dimension(cls, model: str) -> int:
+        if model not in cls.DIMENSIONS:
+            raise ValueError(f"Unknown model: {model}. Must rebuild index when switching models.")
+        return cls.DIMENSIONS[model]
+```
+
+### 2.2 Client-Side YAML Config
+
+```yaml
+# rag_engine/config/models.yaml
+# These are CLIENT connection configs
+# NOT server startup configs (those are in cmw-infinity)
+
+embedding_providers:
+  # FRIDA - Direct (current, unchanged)
+  direct_frida:
+    type: direct
+    model: ai-forever/FRIDA
+    device: auto
+    max_seq_length: 512
+    
+  # FRIDA - Via Infinity (new)
+  infinity_frida:
+    type: server
+    endpoint: http://localhost:7997/v1
+    query_prefix: "search_query: "      # Match FRIDA's prompt_name
+    doc_prefix: "search_document: "
+    
+  # Qwen3 - Via OpenRouter (new)
+  openrouter_qwen3:
+    type: api
+    endpoint: https://openrouter.ai/api/v1
+    model: qwen/qwen3-embedding-8b
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    timeout: 60.0
+    max_retries: 3
+    
+  # Qwen3 - Via Infinity (new)
+  infinity_qwen3_8b:
+    type: server
+    endpoint: http://localhost:8000/v1  # Unique port (not 7997)
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+
+reranker_providers:
+  # CrossEncoder/DiTy - Direct (current, unchanged)
+  direct_crossencoder:
+    type: direct
+    model: DiTy/cross-encoder-russian-msmarco
+    batch_size: 16
+    
+  # DiTy - Via Infinity (new, our default)
+  infinity_dity:
+    type: server
+    endpoint: http://localhost:8002  # Unique port (not 8001)
+    # DiTy doesn't use instructions - direct (query, doc) pairs
+    
+  # BGE - Via Infinity (alternative)
+  infinity_bge_reranker:
+    type: server
+    endpoint: http://localhost:8001  # Unique port
+    
+  # Qwen3 Reranker - Via Infinity (future)
+  infinity_qwen3_reranker_8b:
+    type: server
+    endpoint: http://localhost:8005  # Unique port (not 8001)
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+```
+
+### 2.3 .env Provider Selection
+
+```bash
+# ============================================
+# Provider Selection (Runtime)
+# ============================================
+
+# Embedding Provider
+# Options: direct_frida | infinity_frida | openrouter_qwen3 | infinity_qwen3_8b
+EMBEDDING_PROVIDER=openrouter_qwen3
+
+# Reranker Provider  
+# Options: direct_crossencoder | infinity_dity | infinity_bge_reranker | infinity_qwen3_reranker_8b
+RERANKER_PROVIDER=infinity_dity
+
+# Server endpoints (when using server providers)
+INFINITY_EMBEDDING_ENDPOINT=http://localhost:7997
+INFINITY_RERANKER_ENDPOINT=http://localhost:7998
+
+# API keys (when using API providers)
+OPENROUTER_API_KEY=sk-...
+
+# Which Infinity models to use (keys from cmw-infinity config)
+INFINITY_EMBEDDING_MODEL=frida
+INFINITY_RERANKER_MODEL=dity-reranker
+```
+
+### 2.4 Unified Embedder Interface
+
+```python
+# rag_engine/retrieval/embedder.py
+from typing import Protocol, Optional
+
 class Embedder(Protocol):
-    """Protocol for embedding backends."""
-
-    def embed_query(self, query: str) -> list[float]: ...
-
+    """Unified interface for all embedding providers."""
+    
+    def embed_query(
+        self, 
+        query: str, 
+        instruction: Optional[str] = None
+    ) -> list[float]:
+        """
+        Embed a single query.
+        
+        Args:
+            query: The search query text
+            instruction: Optional custom instruction (Qwen3 only, overrides default)
+            
+        Returns:
+            Embedding vector as list of floats
+        """
+        ...
+    
     def embed_documents(
-        self, texts: list[str], batch_size: int = 8, show_progress: bool = True
-    ) -> list[list[float]]: ...
+        self, 
+        texts: list[str],
+        batch_size: int = 8,
+        show_progress: bool = True
+    ) -> list[list[float]]:
+        """Embed multiple documents."""
+        ...
+    
+    def get_embedding_dim(self) -> int:
+        """Get embedding dimension."""
+        ...
 
-    def get_embedding_dim(self) -> int: ...
 
-    def get_max_chunk_size(self) -> int: ...
+# Implementation: FRIDA Direct (preserved exactly)
+class FRIDAEmbedder:
+    """Current implementation - uses sentence-transformers directly."""
+    
+    def embed_query(self, query: str, instruction: Optional[str] = None) -> list[float]:
+        if instruction:
+            logger.warning("FRIDA doesn't support dynamic instructions, ignoring")
+        return self.model.encode(query, prompt_name="search_query", ...).tolist()
+    
+    def embed_documents(self, texts: list[str], ...) -> list[list[float]]:
+        return self.model.encode(texts, prompt_name="search_document", ...).tolist()
+
+
+# Implementation: FRIDA via Infinity
+class InfinityFRIDAEmbedder:
+    """FRIDA via Infinity HTTP server."""
+    
+    def __init__(self, config: EmbeddingProviderConfig):
+        self.client = OpenAI(base_url=config.endpoint, api_key="EMPTY")
+        self.query_prefix = config.query_prefix
+        self.doc_prefix = config.doc_prefix
+    
+    def embed_query(self, query: str, instruction: Optional[str] = None) -> list[float]:
+        if instruction:
+            logger.warning("FRIDA doesn't support dynamic instructions, ignoring")
+        formatted = f"{self.query_prefix}{query}"
+        response = self.client.embeddings.create(model="ai-forever/FRIDA", input=formatted)
+        return response.data[0].embedding
+    
+    def embed_documents(self, texts: list[str], ...) -> list[list[float]]:
+        formatted = [f"{self.doc_prefix}{t}" for t in texts]
+        response = self.client.embeddings.create(model="ai-forever/FRIDA", input=formatted)
+        return [d.embedding for d in response.data]
+
+
+# Implementation: Qwen3 via OpenRouter
+class OpenRouterEmbedder:
+    """Qwen3 via OpenRouter API."""
+    
+    def __init__(self, config: EmbeddingProviderConfig):
+        self.client = OpenAI(
+            base_url=config.endpoint, 
+            api_key=os.getenv("OPENROUTER_API_KEY")
+        )
+        self.model = config.model
+        self.default_instruction = config.default_instruction
+    
+    def embed_query(self, query: str, instruction: Optional[str] = None) -> list[float]:
+        # Dynamic instruction support!
+        task = instruction or self.default_instruction
+        formatted = f"Instruct: {task}\nQuery: {query}"
+        response = self.client.embeddings.create(model=self.model, input=formatted)
+        return response.data[0].embedding
+    
+    def embed_documents(self, texts: list[str], ...) -> list[list[float]]:
+        # Documents don't get instruction
+        response = self.client.embeddings.create(model=self.model, input=texts)
+        return [d.embedding for d in response.data]
+
+
+# Factory Function
+from rag_engine.config.schemas import EmbeddingProviderConfig, load_config
+
+def create_embedder(settings) -> Embedder:
+    """Factory creates appropriate embedder based on .env selection."""
+    provider = settings.embedding_provider
+    config = load_config("embedding_providers", provider)
+    
+    if provider == "direct_frida":
+        return FRIDAEmbedder(model_name=config.model, device=config.device)
+    
+    elif provider == "infinity_frida":
+        return InfinityFRIDAEmbedder(config)
+    
+    elif provider == "openrouter_qwen3":
+        return OpenRouterEmbedder(config)
+    
+    elif provider == "infinity_qwen3_8b":
+        return InfinityQwen3Embedder(config)  # Same as OpenRouter format
+    
+    else:
+        raise ValueError(f"Unknown embedding provider: {provider}")
 ```
 
-**C. Keep `FRIDAEmbedder` unchanged** (implements Protocol implicitly)
-**D. Add `OpenRouterEmbedder` class:** (same as original plan)
-**E. Add factory function with backward compatibility:**
+### 2.5 Unified Reranker Interface
+
 ```python
-def create_embedder(settings: Settings) -> Embedder:
-    """Factory function to create embedder based on provider."""
-    provider = settings.embedding_provider.lower()
+# rag_engine/retrieval/reranker.py
+from typing import Protocol, Optional, Any, Sequence
+
+class Reranker(Protocol):
+    """Unified interface for all reranker providers."""
     
-    # Handle backward compatibility: map old "frida" to "local_frida"
-    if provider == "frida":
-        provider = "local_frida"
+    def rerank(
+        self,
+        query: str,
+        candidates: Sequence[tuple[Any, float]],
+        top_k: int,
+        metadata_boost_weights: Optional[dict[str, float]] = None,
+        instruction: Optional[str] = None,  # Qwen3 only
+    ) -> list[tuple[Any, float]]:
+        """
+        Rerank candidates based on query relevance.
+        
+        Args:
+            query: Search query
+            candidates: List of (document, initial_score) tuples
+            top_k: Number of top results to return
+            metadata_boost_weights: Optional metadata-based score boosts
+            instruction: Optional custom instruction (Qwen3 reranker only)
+            
+        Returns:
+            Sorted list of (document, reranker_score) tuples
+        """
+        ...
+
+
+# Implementation: CrossEncoder Direct (preserved exactly)
+class CrossEncoderReranker:
+    """Current implementation - uses sentence-transformers directly."""
     
-    # API Providers
-    if provider == "openrouter":
-        if not settings.openrouter_api_key:
-            raise ValueError(
-                "OPENROUTER_API_KEY required when embedding_provider=openrouter"
+    def rerank(self, query, candidates, top_k, metadata_boost_weights=None, instruction=None):
+        if instruction:
+            logger.warning("CrossEncoder doesn't support dynamic instructions, ignoring")
+        pairs = [(query, doc.page_content) for doc, _ in candidates]
+        scores = self.model.predict(pairs, batch_size=self.batch_size)
+        # ... rest unchanged
+
+
+# Implementation: DiTy/BGE via Infinity
+class InfinityReranker:
+    """Reranker via Infinity HTTP server."""
+    
+    def __init__(self, config: RerankerProviderConfig):
+        self.endpoint = config.endpoint
+        self.default_instruction = config.default_instruction
+    
+    def rerank(self, query, candidates, top_k, metadata_boost_weights=None, instruction=None):
+        task = instruction or self.default_instruction
+        
+        # Format based on model type
+        if self.default_instruction:
+            # Qwen3 format: "Instruct: {task}\nQuery: {query}"
+            formatted_query = f"Instruct: {task}\nQuery: {query}"
+        else:
+            # DiTy/BGE format: raw query
+            formatted_query = query
+        
+        documents = [doc.page_content for doc, _ in candidates]
+        
+        # Call Infinity /rerank endpoint
+        response = requests.post(
+            f"{self.endpoint}/rerank",
+            json={
+                "query": formatted_query,
+                "documents": documents,
+                "top_k": top_k
+            }
+        )
+        scores = response.json()["scores"]
+        
+        # Apply metadata boosts if provided
+        scored = []
+        for (doc, _), score in zip(candidates, scores):
+            final_score = self._apply_metadata_boost(score, doc, metadata_boost_weights)
+            scored.append((doc, final_score))
+        
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return scored[:top_k]
+
+
+# Factory Function
+def create_reranker(settings) -> Reranker:
+    """Factory creates appropriate reranker based on .env selection."""
+    provider = settings.reranker_provider
+    config = load_config("reranker_providers", provider)
+    
+    if provider == "direct_crossencoder":
+        return CrossEncoderReranker(model_name=config.model)
+    
+    elif provider == "infinity_dity":
+        return InfinityReranker(config)
+    
+    elif provider == "infinity_bge_reranker":
+        return InfinityReranker(config)
+    
+    elif provider == "infinity_qwen3_reranker_8b":
+        return InfinityReranker(config)
+    
+    else:
+        raise ValueError(f"Unknown reranker provider: {provider}")
+```
+
+### 2.5 Error Handling & Resilience
+
+**HTTP clients must handle failures gracefully:**
+
+```python
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+class HTTPClientMixin:
+    """Mixin providing resilient HTTP client with retries and timeouts."""
+    
+    def __init__(self, endpoint: str, timeout: float = 60.0, max_retries: int = 3):
+        self.endpoint = endpoint
+        self.timeout = timeout
+        
+        # Setup session with retry strategy
+        self.session = requests.Session()
+        retry_strategy = Retry(
+            total=max_retries,
+            backoff_factor=1,  # 1s, 2s, 4s between retries
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["POST", "GET"]
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+    
+    def _post(self, path: str, json_data: dict) -> dict:
+        """Make POST request with error handling."""
+        url = f"{self.endpoint}{path}"
+        try:
+            response = self.session.post(
+                url,
+                json=json_data,
+                timeout=self.timeout
             )
-        return OpenRouterEmbedder(
-            model=settings.openrouter_embedding_model,
-            api_key=settings.openrouter_api_key,
-            base_url=settings.openrouter_base_url,
-            instruction=settings.openrouter_embedding_instruction,
-            dimensions=settings.openrouter_embedding_dim,
-        )
-    elif provider == "openai":
-        # Future: OpenAI embeddings API
-        raise NotImplementedError("OpenAI embeddings provider not yet implemented")
-    elif provider == "voyage":
-        # Future: Voyage AI embeddings
-        raise NotImplementedError("Voyage embeddings provider not yet implemented")
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.Timeout:
+            logger.error(f"Request to {url} timed out after {self.timeout}s")
+            raise EmbeddingTimeoutError(f"Server at {url} not responding")
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Cannot connect to {url}")
+            raise ServerNotAvailableError(f"Server at {url} is not running")
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTP error from {url}: {e.response.status_code} - {e.response.text}")
+            raise EmbeddingAPIError(f"Server returned error: {e.response.status_code}")
+        except Exception as e:
+            logger.error(f"Unexpected error calling {url}: {e}")
+            raise
+
+
+# Updated InfinityEmbedder with error handling
+class InfinityEmbedder(HTTPClientMixin):
+    """FRIDA/Qwen3 via Infinity HTTP server with resilience."""
     
-    # Local Providers
-    elif provider == "local_frida":
-        # Current FRIDA implementation (uses existing settings)
-        return FRIDAEmbedder(
-            model_name=settings.embedding_model,
-            device=settings.embedding_device,
+    def __init__(self, config: ServerEmbeddingConfig):
+        super().__init__(
+            endpoint=config.endpoint,
+            timeout=getattr(config, 'timeout', 60.0),
+            max_retries=getattr(config, 'max_retries', 3)
         )
-    elif provider == "local_e5":
-        # Future: Local E5 embeddings
-        raise NotImplementedError("Local E5 embeddings provider not yet implemented")
-    elif provider == "local_bge":
-        # Future: Local BGE embeddings
-        raise NotImplementedError("Local BGE embeddings provider not yet implemented")
-    elif provider == "tei_server":
-        # Future: TEI server client
-        raise NotImplementedError("TEI server provider not yet implemented")
+        self.query_prefix = config.query_prefix
+        self.doc_prefix = config.doc_prefix
+        self.default_instruction = config.default_instruction
+    
+    def embed_query(self, query: str, instruction: Optional[str] = None) -> list[float]:
+        if self.default_instruction:
+            # Qwen3 format
+            task = instruction or self.default_instruction
+            formatted = f"Instruct: {task}\nQuery: {query}"
+        else:
+            # FRIDA format
+            if instruction:
+                logger.warning("FRIDA doesn't support dynamic instructions, ignoring")
+            formatted = f"{self.query_prefix}{query}"
+        
+        response = self._post("/v1/embeddings", {
+            "input": [formatted],
+            "model": "auto"  # Infinity ignores this, uses loaded model
+        })
+        return response["data"][0]["embedding"]
 
-    # Default to FRIDA for backward compatibility (should not reach here due to mapping above)
-    return FRIDAEmbedder(
-        model_name=settings.embedding_model,
-        device=settings.embedding_device,
-    )
+
+# Updated InfinityReranker with error handling
+class InfinityReranker(HTTPClientMixin):
+    """DiTy/BGE/Qwen3 via Infinity HTTP server with resilience."""
+    
+    def __init__(self, config: ServerRerankerConfig):
+        super().__init__(
+            endpoint=config.endpoint,
+            timeout=getattr(config, 'timeout', 60.0),
+            max_retries=getattr(config, 'max_retries', 3)
+        )
+        self.default_instruction = config.default_instruction
+    
+    def rerank(self, query, candidates, top_k, metadata_boost_weights=None, instruction=None):
+        if self.default_instruction:
+            # Qwen3 format
+            task = instruction or self.default_instruction
+            formatted_query = f"Instruct: {task}\nQuery: {query}"
+        else:
+            # DiTy/BGE format
+            if instruction:
+                logger.warning("This reranker doesn't support dynamic instructions, ignoring")
+            formatted_query = query
+        
+        documents = [doc.page_content for doc, _ in candidates]
+        
+        response = self._post("/rerank", {
+            "query": formatted_query,
+            "documents": documents,
+            "top_k": top_k
+        })
+        
+        scores = response["scores"]
+        # ... rest of processing
+```
 ```
 
-**F. Add `get_max_chunk_size()` to `FRIDAEmbedder`:**
-```python
-def get_max_chunk_size(self) -> int:
-    """Maximum chunk size this embedder supports."""
-    return 500  # Current working value
-```
-
-#### 2.2 Update `rag_engine/core/indexer.py`
-
-**Add chunk size capping logic:** (same as original plan)
-
-### Phase 3: Update Instantiation Points
-
-All instantiation points updated to use `create_embedder(settings)` (same as original plan).
-
-### Phase 4: Documentation
-
-#### 4.1 Update `rag_engine/.env-example`
-
-**Add new configuration section with consistent provider naming:**
-```bash
-# ============================================
-# Embedding Provider Configuration
-# ============================================
-
-# Embedding provider using provider-based naming convention
-# Local providers: "local_frida", "local_e5", "local_bge", "tei_server"
-# API providers: "openrouter", "openai", "voyage", "together"
-# Default: local_frida (backward compatible with old "frida")
-EMBEDDING_PROVIDER=local_frida
-
-# FRIDA settings (used when EMBEDDING_PROVIDER=local_frida)
-EMBEDDING_MODEL=ai-forever/FRIDA
-EMBEDDING_DEVICE=auto
-
-# OpenRouter embedding settings (used when EMBEDDING_PROVIDER=openrouter)
-# Available models:
-# - qwen/qwen3-embedding-8b (4096 dim, $0.01/M tokens, 32K context)
-# - qwen/qwen3-embedding-4b (2560 dim, $0.02/M tokens, 32K context)
-# - qwen/qwen3-embedding-0.6b (1024 dim, ~$0.01/M tokens, 32K context)
-OPENROUTER_EMBEDDING_MODEL=qwen/qwen3-embedding-8b
-
-# Custom instruction for queries (Qwen3 requires instruction format)
-OPENROUTER_EMBEDDING_INSTRUCT="Given a web search query, retrieve relevant passages that answer the query"
-
-# Optional: Reduce embedding dimension (MRL support)
-# Range depends on model:
-# - 8B: 32-4096
-# - 4B: 32-2560
-# - 0.6B: 32-1024
-# Leave empty for full dimension
-OPENROUTER_EMBEDDING_DIM=
-
-# Future local provider settings (examples, NOT implementing now)
-# LOCAL_E5_MODEL=intfloat/multilingual-e5-large
-# LOCAL_BGE_MODEL=BAAI/bge-large-en-v1.5
-# TEI_SERVER_URL=http://localhost:8080
-
-# Future API provider settings (examples, NOT implementing now)
-# OPENAI_EMBEDDING_MODEL=text-embedding-3-large
-# VOYAGE_API_KEY=your-voyage-key
-# TOGETHER_API_KEY=your-together-key
-
-# Chunk size for document splitting (tokens)
-# Automatically capped per embedder model capacity:
-# - local_frida (FRIDA): max 500 tokens (current working value)
-# - openrouter: max 12000 tokens (soft cap for 32K context)
-# - Future local models: model-dependent (typically 512-8192)
-# - Future API providers: provider-dependent (typically 8192-32768)
-CHUNK_SIZE=500
-CHUNK_OVERLAP=150
-```
-
-#### 4.2 Update `README.md`
-
-**Add section: "Switching Embedding Providers"**
-
-```markdown
-## Switching Embedding Providers
-
-The system supports multiple embedding backends with a consistent provider-based naming convention.
-
-### Available Providers
-
-#### Local Providers (Offline)
-**local_frida** (Default)
-- **Pros**: Free, offline, fast inference, proven in production
-- **Cons**: Requires 4GB disk space, 512 token context limit
-- **Best for**: Development, local deployments, privacy-sensitive data
-- **Settings**: `EMBEDDING_MODEL`, `EMBEDDING_DEVICE`
-
-**Future Local Providers** (Not yet implemented):
-- `local_e5`: E5 multilingual embeddings
-- `local_bge`: BGE large embeddings  
-- `tei_server`: Text Embeddings Inference server client
-
-#### API Providers (Online)
-
-**openrouter** (Current API)
-- **Pros**: High quality (32K context), no local resources needed, scalable
-- **Cons**: API costs, requires internet connection
-- **Models**:
-  - `qwen/qwen3-embedding-8b`: 4096 dim, $0.01/M tokens (best quality)
-  - `qwen/qwen3-embedding-4b`: 2560 dim, $0.02/M tokens (balanced)
-  - `qwen/qwen3-embedding-0.6b`: 1024 dim, ~$0.01/M tokens (fastest)
-
-**Future API Providers** (Not yet implemented):
-- `openai`: OpenAI embeddings API
-- `voyage`: Voyage AI embeddings
-- `together`: Together AI embeddings
-
-### Configuration
-
-```bash
-# Current FRIDA users can keep using "frida" (automatically mapped to "local_frida")
-EMBEDDING_PROVIDER=frida  # Backward compatible
-
-# Or use new consistent naming
-EMBEDDING_PROVIDER=local_frida
-
-# Switch to OpenRouter
-EMBEDDING_PROVIDER=openrouter
-OPENROUTER_EMBEDDING_MODEL=qwen/qwen3-embedding-8b
-OPENROUTER_API_KEY=your-key
-
-# Optional: Reduce dimension for faster processing
-OPENROUTER_EMBEDDING_DIM=512
-```
-
-### Migration
-
-**Important**: When switching providers or changing dimensions, you **must rebuild the index**:
-
-```bash
-# Rebuild index with new embedding provider
-python rag_engine/scripts/build_index.py --source "path/to/docs" --mode folder
-```
-
-**Backward Compatibility**: Existing `EMBEDDING_PROVIDER=frida` configurations continue to work and are automatically mapped to `local_frida`.
-
-Different models produce incompatible embeddings - vector database must be fully recreated.
-```
-
-### Phase 5: Testing
-
-All test files updated to use consistent provider naming with backward compatibility tests.
-
-#### 5.2 Updated `rag_engine/tests/test_embedder_factory.py`
+### 2.6 Usage Examples
 
 ```python
-@pytest.fixture
-def frida_settings():
-    """Settings with FRIDA provider (backward compatible)."""
-    return Settings(
-        embedding_provider="frida",  # Old name for backward compatibility test
-        embedding_model="ai-forever/FRIDA",
-        embedding_device="auto",
-        openrouter_api_key="test-key",
-    )
+# Example 1: Current setup (no changes needed)
+# .env:
+# EMBEDDING_PROVIDER=direct_frida
+# RERANKER_PROVIDER=direct_crossencoder
 
-@pytest.fixture
-def local_frida_settings():
-    """Settings with local_frida provider."""
-    return Settings(
-        embedding_provider="local_frida",  # New consistent naming
-        embedding_model="ai-forever/FRIDA",
-        embedding_device="auto",
-        openrouter_api_key="test-key",
-    )
-
-def test_factory_backward_compatibility(frida_settings):
-    """Test factory handles old 'frida' name correctly."""
-    embedder = create_embedder(frida_settings)
-    assert isinstance(embedder, FRIDAEmbedder)
-    
-def test_factory_local_frida_provider(local_frida_settings):
-    """Test factory returns FRIDA embedder when provider=local_frida."""
-    embedder = create_embedder(local_frida_settings)
-    assert isinstance(embedder, FRIDAEmbedder)
-```
-
-### Phase 6: Verification & Validation
-
-Same validation steps as original plan, plus:
-
-#### 6.5 Backward Compatibility Test
-```bash
-# Test that old "frida" name still works
-export EMBEDDING_PROVIDER=frida
-export OPENROUTER_API_KEY=your-key
-python -c "
 from rag_engine.retrieval.embedder import create_embedder
-from rag_engine.config.settings import settings
+from rag_engine.retrieval.reranker import create_reranker
+
 embedder = create_embedder(settings)
-print(f'Provider: {settings.embedding_provider} -> {type(embedder).__name__}')
-print(f'Dimension: {embedder.get_embedding_dim()}')
-"
+reranker = create_reranker(settings)
+
+# Example 2: New setup with Infinity
+# .env:
+# EMBEDDING_PROVIDER=infinity_frida
+# RERANKER_PROVIDER=infinity_dity
+
+embedder = create_embedder(settings)  # HTTP to :7997
+reranker = create_reranker(settings)  # HTTP to :7998
+
+# Example 3: OpenRouter + Infinity hybrid
+# .env:
+# EMBEDDING_PROVIDER=openrouter_qwen3
+# RERANKER_PROVIDER=infinity_dity
+
+embedder = create_embedder(settings)  # API call to OpenRouter
+reranker = create_reranker(settings)  # HTTP to local :7998
+
+# Example 4: Dynamic instruction (Qwen3 only)
+embedding = embedder.embed_query(
+    "Python tutorial",
+    instruction="Given a code search query, retrieve relevant tutorials"
+)
 ```
 
----
+### 2.7 Test Plan
 
-## Configuration Matrix
-
-| Setting | local_frida | OpenRouter Qwen3-Embedding |
-|----------|--------------|----------------------------|
-| **Default Model** | `ai-forever/FRIDA` | `qwen/qwen3-embedding-8b` |
-| **Context Window** | 512 tokens | 32K tokens |
-| **Dimensions** | 1024 | 1024-4096 (configurable) |
-| **Max Chunk Size** | 500 tokens | 12000 tokens (soft cap) |
-| **Cost** | Free (hardware) | $0.01-$0.02/M tokens |
-| **Latency** | Low (local) | Network delay |
-| **Setup** | 4GB disk space | API key only |
-| **Offline** | Yes | No |
-
-## Provider Naming Convention
-
-| Category | Current | Future Examples | Pattern |
-|----------|----------|------------------|----------|
-| **Local** | `local_frida` | `local_e5`, `local_bge`, `tei_server` | `local_<model_or_service>` |
-| **API** | `openrouter` | `openai`, `voyage`, `together` | `<provider_name>` |
-
-## Chunk Size Behavior
-
-| Configured CHUNK_SIZE | local_frida (effective) | OpenRouter (effective) |
-|----------------------|-------------------------|---------------------------|
-| 300 | 300 | 300 |
-| 500 | 500 | 500 |
-| 600 | **500** (capped) | 600 |
-| 2000 | **500** (capped) | 2000 |
-| 15000 | **500** (capped) | **12000** (capped) |
-
-## Migration Notes
-
-### Backward Compatibility
-
-**Existing `.env` files with `EMBEDDING_PROVIDER=frida` continue to work:**
-- Automatically mapped to `local_frida` in factory
-- No immediate changes required
-- Migration log indicates mapping occurred
-
-### When to Re-index
-
-**Required** when switching:
-- Between providers (local ↔ API)
-- Between models (local_frida ↔ local_e5 ↔ openrouter 8B ↔ 4B)
-- Changing provider-specific dimensions
-
-**Not Required** when:
-- Staying with same provider/model/dimension
-- Changing other settings (temperature, reranker, etc.)
-
-### Migration Path for Existing Users
-
-```bash
-# Step 1: Existing configuration (works unchanged)
-EMBEDDING_PROVIDER=frida
-
-# Step 2: Optional - migrate to consistent naming
-EMBEDDING_PROVIDER=local_frida
-
-# Step 3: When ready for API
-EMBEDDING_PROVIDER=openrouter
-```
-
----
-
-## Summary of Changes
-
-| File | Change Type | Lines Added |
-|------|-------------|-------------|
-| `rag_engine/config/settings.py` | Add fields + validation + backward compatibility | ~20 |
-| `rag_engine/retrieval/embedder.py` | Add Protocol, OpenRouterEmbedder, factory | ~120 |
-| `rag_engine/core/indexer.py` | Add chunk size capping | ~15 |
-| `rag_engine/api/app.py` | Use factory | ~3 |
-| `rag_engine/tools/retrieve_context.py` | Use factory | ~3 |
-| `rag_engine/scripts/build_index.py` | Use factory | ~3 |
-| `rag_engine/.env-example` | Add config section with consistent naming | ~35 |
-| `rag_engine/tests/test_openrouter_embedder.py` | New test file | ~80 |
-| `rag_engine/tests/test_embedder_factory.py` | Updated with backward compatibility | ~60 |
-| `rag_engine/tests/test_integration_openrouter.py` | New test file | ~60 |
-| `README.md` | Update with migration guide + provider naming | ~120 |
-
-**Total:** ~519 lines added, ~0 lines modified (FRIDA untouched)
-
----
-
-## Implementation Checklist
-
-- [ ] Add configuration fields to `settings.py`
-- [ ] Create `Embedder` protocol
-- [ ] Implement `OpenRouterEmbedder` class
-- [ ] Add `get_max_chunk_size()` to both embedders
-- [ ] Implement factory function with backward compatibility
-- [ ] Update all instantiation points
-- [ ] Add chunk size capping to indexer
-- [ ] Update `.env-example` with consistent provider naming
-- [ ] Create comprehensive tests with backward compatibility
-- [ ] Update README with migration guide and provider naming
-- [ ] Verify all existing tests pass
-- [ ] Run linting and validation
-- [ ] Test with real API key
-- [ ] Test backward compatibility with old "frida" name
-
----
-
-## Tradeoff Guidance
-
-| Use Case | Recommended Provider | Reason |
-|----------|-------------------|---------|
-| **Development/Testing** | local_frida | Free, fast, no API calls |
-| **Production (best quality)** | openrouter 8B | Highest dimensions, best retrieval |
-| **Production (cost-sensitive)** | openrouter 0.6B | Fast, cheapest API calls |
-| **Privacy-sensitive data** | local_frida | Local processing only |
-| **Long documents** | openrouter any | 32K context vs FRIDA's 512 |
-| **Offline deployment** | local_frida | No network dependency |
-| **Multilingual needs** | local_e5 (future) | Better multilingual support |
-
----
-
-## Security & Best Practices
-
-- **API Key Security**: Never commit `OPENROUTER_API_KEY` to repository
-- **Rate Limits**: OpenRouter has rate limits - implement retry logic if needed
-- **Error Handling**: Graceful fallback when API unavailable
-- **Cost Monitoring**: Track API usage, especially during bulk indexing
-- **Model Validation**: Verify model availability before switching providers
-- **Backward Compatibility**: Support old "frida" naming during transition period
-
----
-
-## Future Extensibility
-
-This implementation enables future providers without code changes using consistent naming:
+**Self-contained tests:**
 
 ```python
-# Provider examples following naming convention:
-local_frida     # Current: FRIDA via sentence-transformers
-local_e5          # Future: E5 multilingual embeddings
-local_bge          # Future: BGE large embeddings
-tei_server         # Future: Text Embeddings Inference server
-openrouter         # Current: OpenRouter API
-openai            # Future: OpenAI embeddings API
-voyage            # Future: Voyage AI embeddings
-together           # Future: Together AI embeddings
+# tests/test_embedder_factory.py
+def test_direct_frida_embedder():
+    """Test direct FRIDA embedder (current implementation)."""
+    settings = Settings(embedding_provider="direct_frida")
+    embedder = create_embedder(settings)
+    assert isinstance(embedder, FRIDAEmbedder)
+    
+    # Test actual embedding
+    embedding = embedder.embed_query("test query")
+    assert len(embedding) == 1024  # FRIDA dimension
+
+def test_infinity_frida_embedder():
+    """Test FRIDA via Infinity (requires server running)."""
+    settings = Settings(embedding_provider="infinity_frida")
+    embedder = create_embedder(settings)
+    assert isinstance(embedder, InfinityFRIDAEmbedder)
+    
+    # Requires: cmw-infinity start frida
+    embedding = embedder.embed_query("test query")
+    assert len(embedding) == 1024
+
+# tests/test_reranker_factory.py
+def test_direct_crossencoder_reranker():
+    """Test direct CrossEncoder reranker (current implementation)."""
+    settings = Settings(reranker_provider="direct_crossencoder")
+    reranker = create_reranker(settings)
+    assert isinstance(reranker, CrossEncoderReranker)
+
+def test_infinity_dity_reranker():
+    """Test DiTy via Infinity (requires server running)."""
+    settings = Settings(reranker_provider="infinity_dity")
+    reranker = create_reranker(settings)
+    assert isinstance(reranker, InfinityReranker)
 ```
 
-The `Embedder` Protocol and factory pattern provide clean abstraction for any future embedding backend while maintaining consistent naming across all providers.
+**Phase 2 Complete When:**
+- [ ] Pydantic schemas created
+- [ ] YAML configs with all providers
+- [ ] Factory functions work
+- [ ] Direct implementations preserved (backward compatibility)
+- [ ] Infinity clients implemented (HTTP)
+- [ ] OpenRouter client implemented (API)
+- [ ] Tests pass for all provider combinations
 
 ---
 
-## Migration Timeline
+## Summary
 
-### Phase 1: Implementation (Current Sprint)
-- Add new provider naming
-- Implement OpenRouter support
-- Add backward compatibility mapping
+### Two Self-Contained Phases:
 
-### Phase 2: Transition Period (Optional)
-- Existing `frida` users get migration log
-- Documentation updated to recommend `local_frida`
-- No breaking changes during transition
+| Phase | Component | Testable Independently | Duration |
+|-------|-----------|----------------------|----------|
+| **1** | cmw-infinity package | ✅ Yes (start/stop servers, HTTP API) | 1-2 days |
+| **2** | cmw-rag client updates | ✅ Yes (with mock servers) | 2-3 days |
 
-### Phase 3: Future Deprecation (Optional)
-- Remove old "frida" mapping after transition period
-- All documentation uses consistent naming
+### Key Decisions:
+
+1. **DiTy included**: Yes, in Infinity configs (our default reranker)
+2. **Pydantic schemas**: Yes, for type safety and validation
+3. **Two packages**: cmw-infinity (server) + cmw-rag (client)
+4. **Dynamic instructions**: Optional parameter for Qwen3 (default from config)
+5. **Backward compatibility**: Direct implementations preserved unchanged
+
+### Memory Allocation (48GB RTX 4090):
+
+**NOTE: Memory estimates include model weights + activation overhead + batch buffer**
+
+**With vLLM running:**
+- vLLM (LLM): ~30GB
+- Infinity (FRIDA 4GB + DiTy 2GB): ~6GB
+- System overhead: ~2GB
+- **Total: ~38GB / 48GB** ✅ (10GB safety margin)
+
+**Without vLLM (remote LLM):**
+- Infinity (Qwen3-8B embed 22GB): ~22GB
+- Infinity (Qwen3-8B rerank 22GB): ~22GB
+- System overhead: ~2GB
+- **Total: ~46GB / 48GB** ⚠️ (2GB tight margin)
+
+**Recommendation for 8B models:** Run only one at a time, or use 4B models (~12GB each)
+
+### Next Steps:
+
+1. Review this plan
+2. Approve and I'll start Phase 1 (cmw-infinity)
+3. Phase 1 testing
+4. Phase 2 implementation
+5. Integration testing
+
+**Ready to proceed?**
