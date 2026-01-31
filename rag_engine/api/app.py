@@ -413,6 +413,19 @@ def _is_ui_only_message(msg: dict) -> bool:
     return False
 
 
+def _disclaimer_injected_in_history(gradio_history: list) -> bool:
+    """Return True if an AI disclaimer with disclaimer_injected flag is already in history (this QA turn)."""
+    if not gradio_history:
+        return False
+    for msg in gradio_history:
+        if not isinstance(msg, dict):
+            continue
+        meta = msg.get("metadata")
+        if isinstance(meta, dict) and meta.get("disclaimer_injected") is True:
+            return True
+    return False
+
+
 def _messages_are_equivalent(msg1: dict, msg2: dict) -> bool:
     """Check if two messages are equivalent (same role and content).
 
@@ -1591,7 +1604,9 @@ async def agent_chat_handler(
 
                                     # On first text chunk: inject disclaimer as separate message (UI only), then stream answer
                                     if not answer:
-                                        if not disclaimer_prepended:
+                                        if not disclaimer_prepended and not _disclaimer_injected_in_history(
+                                            gradio_history
+                                        ):
                                             from rag_engine.api.stream_helpers import (
                                                 yield_disclaimer_display,
                                             )
@@ -1648,7 +1663,11 @@ async def agent_chat_handler(
 
                             if new_chunk:
                                 # On first text chunk: inject disclaimer as separate message (UI only)
-                                if not answer and not disclaimer_prepended:
+                                if (
+                                    not answer
+                                    and not disclaimer_prepended
+                                    and not _disclaimer_injected_in_history(gradio_history)
+                                ):
                                     from rag_engine.api.stream_helpers import (
                                         yield_disclaimer_display,
                                     )
@@ -1829,7 +1848,11 @@ async def agent_chat_handler(
         articles = accumulate_articles_from_tool_results(tool_results)
 
         # Inject disclaimer as separate message if it wasn't added during streaming
-        if not disclaimer_prepended and answer:
+        if (
+            not disclaimer_prepended
+            and not _disclaimer_injected_in_history(gradio_history)
+            and answer
+        ):
             from rag_engine.api.stream_helpers import yield_disclaimer_display
 
             gradio_history.append(yield_disclaimer_display())
@@ -2069,7 +2092,11 @@ async def agent_chat_handler(
                             pass
 
                     # Inject disclaimer as separate message if it wasn't added during streaming
-                    if not disclaimer_prepended and answer:
+                    if (
+                        not disclaimer_prepended
+                        and not _disclaimer_injected_in_history(gradio_history)
+                        and answer
+                    ):
                         from rag_engine.api.stream_helpers import yield_disclaimer_display
 
                         gradio_history.append(yield_disclaimer_display())
