@@ -919,6 +919,28 @@ async def agent_chat_handler(
             from rag_engine.api.stream_helpers import update_message_status_in_history
 
             update_message_status_in_history(gradio_history, "sgr_planning", "done")
+            
+            # Replace SGR planning bubble with user intent message (UI only, not context)
+            if sgr_plan_dict and sgr_plan_dict.get("user_intent"):
+                user_intent = sgr_plan_dict.get("user_intent", "").strip()
+                if user_intent:
+                    # Find and replace the sgr_planning bubble with normal assistant message
+                    for i, msg in enumerate(gradio_history):
+                        if isinstance(msg, dict) and msg.get("role") == "assistant":
+                            metadata = msg.get("metadata")
+                            if isinstance(metadata, dict) and metadata.get("ui_type") == "sgr_planning":
+                                # Replace with normal assistant message (no metadata, just text)
+                                gradio_history[i] = {
+                                    "role": "assistant",
+                                    "content": f"Как я понял ваш запрос: {user_intent}",
+                                    # No metadata - this is a normal message, not a bubble
+                                }
+                                logger.info(
+                                    "Replaced SGR planning bubble with user intent: '%s'...",
+                                    user_intent[:100]
+                                )
+                                break
+            
             yield list(gradio_history)
         except Exception as exc:  # noqa: BLE001
             logger.error(
