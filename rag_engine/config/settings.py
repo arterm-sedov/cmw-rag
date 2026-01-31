@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Global configuration constants
 # Normalize Unicode escapes (e.g., \u0432\u043e -> воз) in search queries
 # Set to False if search engine needs raw Unicode escapes (edge case)
-NORMALIZE_SEARCH_QUERIES: bool = True
+NORMALIZE_SEARCH_QUERIES: bool = False
 
 
 class Settings(BaseSettings):

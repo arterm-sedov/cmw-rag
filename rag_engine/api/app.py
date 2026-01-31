@@ -1445,44 +1445,34 @@ async def agent_chat_handler(
                             if tool_name == "retrieve_context":
                                 tool_query = tool_call_accumulator.process_token(token)
                                 
-                                # Fallback: directly extract query from token.tool_calls if accumulator failed
+                                 # Fallback: directly extract query from token.tool_calls if accumulator failed
                                 if not tool_query:
-                                    from rag_engine.api.stream_helpers import decode_unicode_escapes
-                                    from rag_engine.config.settings import NORMALIZE_SEARCH_QUERIES
-                                    
-                                    tool_calls = getattr(token, "tool_calls", None)
-                                    if tool_calls:
-                                        for tc in tool_calls:
-                                            if isinstance(tc, dict):
-                                                tc_name = tc.get("name", "")
-                                            else:
-                                                tc_name = getattr(tc, "name", "")
-                                            if tc_name == "retrieve_context":
-                                                tc_args = tc.get("args", {}) or tc.get("arguments", "")
-                                                if isinstance(tc_args, dict):
-                                                    raw_query = tc_args.get("query", "")
-                                                elif isinstance(tc_args, str):
-                                                    try:
-                                                        import json
-                                                        parsed = json.loads(tc_args)
-                                                        raw_query = parsed.get("query", "")
-                                                    except json.JSONDecodeError:
-                                                        raw_query = ""
-                                                else:
-                                                    raw_query = ""
-                                                
-                                                # Normalize query if enabled
-                                                if raw_query and NORMALIZE_SEARCH_QUERIES:
-                                                    tool_query = decode_unicode_escapes(raw_query)
-                                                else:
-                                                    tool_query = raw_query
-                                                
-                                                if tool_query:
-                                                    logger.debug(
-                                                        "Fallback: extracted and normalized query: %s",
-                                                        tool_query[:50]
-                                                    )
-                                                    break
+                                     tool_calls = getattr(token, "tool_calls", None)
+                                     if tool_calls:
+                                         for tc in tool_calls:
+                                             if isinstance(tc, dict):
+                                                 tc_name = tc.get("name", "")
+                                             else:
+                                                 tc_name = getattr(tc, "name", "")
+                                             if tc_name == "retrieve_context":
+                                                 tc_args = tc.get("args", {}) or tc.get("arguments", "")
+                                                 if isinstance(tc_args, dict):
+                                                     tool_query = tc_args.get("query", "")
+                                                 elif isinstance(tc_args, str):
+                                                     try:
+                                                         parsed = json.loads(tc_args)
+                                                         tool_query = parsed.get("query", "")
+                                                     except (json.JSONDecodeError, ValueError):
+                                                         tool_query = ""
+                                                 else:
+                                                     tool_query = ""
+
+                                                 if tool_query:
+                                                     logger.debug(
+                                                         "Fallback: extracted query: %s",
+                                                         tool_query[:50]
+                                                     )
+                                                     break
                                 
                                 # Create or update search bubble based on query availability
                                 if tool_query:

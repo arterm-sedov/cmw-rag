@@ -5,28 +5,8 @@ import json
 import logging
 
 from rag_engine.api.i18n import get_text
-from rag_engine.config.settings import NORMALIZE_SEARCH_QUERIES
 
 logger = logging.getLogger(__name__)
-
-
-def decode_unicode_escapes(text: str) -> str:
-    """Decode JSON-style Unicode escapes (e.g., \u0432\u043e -> воз).
-
-    Args:
-        text: Text that may contain Unicode escape sequences
-
-    Returns:
-        Decoded text with escapes converted to actual characters
-    """
-    if not isinstance(text, str):
-        return text
-    try:
-        # Encode to bytes then decode with unicode_escape to handle \uXXXX sequences
-        return text.encode("utf-8").decode("unicode_escape")
-    except (UnicodeDecodeError, AttributeError):
-        # Return original if decoding fails
-        return text
 
 
 class ToolCallAccumulator:
@@ -169,8 +149,6 @@ class ToolCallAccumulator:
                 if match:
                     raw_query = match.group(1)
 
-        if raw_query and NORMALIZE_SEARCH_QUERIES:
-            return decode_unicode_escapes(raw_query)
         return raw_query
 
 
@@ -284,8 +262,7 @@ def yield_search_bubble(query: str, search_id: str | None = None) -> dict:
     if search_id is None:
         search_id = str(uuid.uuid4())[:8]
 
-    # Always normalize query for display (UI should show decoded text)
-    display_query = decode_unicode_escapes(query)
+    display_query = query
 
     title = get_text("search_started_title")
     content = get_text("search_started_content", query=display_query.strip())
