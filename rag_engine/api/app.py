@@ -406,6 +406,7 @@ def _is_ui_only_message(msg: dict) -> bool:
             "generating_answer",
             "model_switch",
             "cancelled",
+            "user_intent_display",  # User intent message (UI only, not for agent context)
         }:
             return True
 
@@ -916,7 +917,10 @@ async def agent_chat_handler(
             else:
                 logger.warning("SGR plan dict is None or empty, not injecting into messages")
 
-            from rag_engine.api.stream_helpers import update_message_status_in_history
+            from rag_engine.api.stream_helpers import (
+                update_message_status_in_history,
+                get_text,
+            )
 
             update_message_status_in_history(gradio_history, "sgr_planning", "done")
             
@@ -929,11 +933,14 @@ async def agent_chat_handler(
                         if isinstance(msg, dict) and msg.get("role") == "assistant":
                             metadata = msg.get("metadata")
                             if isinstance(metadata, dict) and metadata.get("ui_type") == "sgr_planning":
-                                # Replace with normal assistant message (no metadata, just text)
+                                # Replace with normal assistant message with type metadata for context management
+                                prefix = get_text("user_intent_prefix")
                                 gradio_history[i] = {
                                     "role": "assistant",
-                                    "content": f"Как я понял ваш запрос: {user_intent}",
-                                    # No metadata - this is a normal message, not a bubble
+                                    "content": f"{prefix} {user_intent}",
+                                    "metadata": {
+                                        "ui_type": "user_intent_display",  # Type for future context management
+                                    },
                                 }
                                 logger.info(
                                     "Replaced SGR planning bubble with user intent: '%s'...",
