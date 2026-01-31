@@ -960,6 +960,12 @@ async def agent_chat_handler(
     else:
         logger.info("SGR planning disabled (enable_sgr_planning=False), skipping")
 
+    # Add thinking spinner to show progress while LLM generates tool calls
+    from rag_engine.api.stream_helpers import yield_thinking_block
+    thinking_msg = yield_thinking_block("agent")
+    gradio_history.append(thinking_msg)
+    yield list(gradio_history)
+
     # Create agent (with fallback model if needed) and stream execution
     # Force tool choice only on first message; allow model to choose on subsequent turns
     # TEMPORARILY DISABLED FOR TESTING: force_tool_choice=False
@@ -984,6 +990,8 @@ async def agent_chat_handler(
     from rag_engine.api.stream_helpers import (
         ToolCallAccumulator,
         yield_search_bubble,
+        yield_thinking_block,
+        update_message_status_in_history,
         update_search_bubble_by_id,
     )
 
@@ -1493,6 +1501,8 @@ async def agent_chat_handler(
                                         search_id_by_query[tool_query.strip()] = search_id
                                         search_started_msg = yield_search_bubble(tool_query, search_id=search_id)
                                         gradio_history.append(search_started_msg)
+                                        # Remove thinking spinner now that search bubble is shown
+                                        update_message_status_in_history(gradio_history, "thinking", "done")
                                         yield list(gradio_history)
                                     else:
                                         # First search - check if bubble already exists for this query
@@ -1516,6 +1526,8 @@ async def agent_chat_handler(
                                                 tool_query, search_id=search_id
                                             )
                                             gradio_history.append(search_started_msg)
+                                            # Remove thinking spinner now that search bubble is shown
+                                            update_message_status_in_history(gradio_history, "thinking", "done")
                                             yield list(gradio_history)
                                 else:
                                     # Query not ready yet - do NOT create empty block
