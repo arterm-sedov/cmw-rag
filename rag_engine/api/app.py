@@ -1190,13 +1190,27 @@ async def agent_chat_handler(
 
                                     # Only update bubble if not already completed to prevent duplicates
                                     if search_id not in completed_search_ids:
-                                        update_search_bubble_by_id(
-                                            gradio_history,
-                                            search_id,
-                                            count=count,
-                                            articles=articles_for_display
-                                        )
-                                        completed_search_ids.add(search_id)
+                                        # Use query from bubble metadata (not from tool result) for consistent matching
+                                        # The bubble stores the exact query used for search, which is most reliable
+                                        query_from_bubble = None
+                                        for msg in gradio_history:
+                                            if isinstance(msg, dict) and msg.get("role") == "assistant":
+                                                metadata = msg.get("metadata") or {}
+                                                if metadata.get("ui_type") == "search_bubble":
+                                                    query_from_bubble = metadata.get("query")
+                                                    if query_from_bubble and query_from_bubble == tool_query_from_accumulator:
+                                                        # Found matching bubble by stored query
+                                                        search_id = metadata.get("search_id")
+                                                        break
+                                        if search_id:
+                                            update_search_bubble_by_id(
+                                                gradio_history,
+                                                search_id,
+                                                count=count,
+                                                articles=articles_for_display
+                                            )
+                                            completed_search_ids.add(search_id)
+                                            yield list(gradio_history)
                                     else:
                                         logger.debug(
                                             "Skipping bubble update for search_id=%s (already completed)",
