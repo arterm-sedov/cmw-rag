@@ -1203,6 +1203,7 @@ async def agent_chat_handler(
                         update_message_status_in_history(gradio_history, "thinking", "done")
 
                         # For unified bubble, update it with results
+                        bubble_updated = False
                         try:
                             result_data = json.loads(token.content) if isinstance(token.content, str) else {}
                             query_from_result = result_data.get("metadata", {}).get("query", "")
@@ -1239,6 +1240,7 @@ async def agent_chat_handler(
                                                 articles=articles_for_display
                                             )
                                             completed_search_ids.add(search_id)
+                                            bubble_updated = True
                                             yield list(gradio_history)
                                     else:
                                         logger.debug(
@@ -1300,8 +1302,9 @@ async def agent_chat_handler(
                         except (json.JSONDecodeError, TypeError):
                             pass
 
-                        if is_search_result:
+                        if is_search_result and not bubble_updated:
                             # This is a retrieve_context result - show search completed with sources
+                            # Only emit if bubble wasn't already updated (to avoid duplicates)
                             articles_list = parse_tool_result_to_articles(token.content)
                             articles_count = (
                                 len(articles_list)
