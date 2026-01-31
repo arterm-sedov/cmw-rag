@@ -399,6 +399,7 @@ def _is_ui_only_message(msg: dict) -> bool:
     if isinstance(metadata, dict):
         ui_type = metadata.get("ui_type")
         if isinstance(ui_type, str) and ui_type in {
+            "search_bubble",
             "search_started",
             "search_completed",
             "thinking",
@@ -953,14 +954,16 @@ async def agent_chat_handler(
     # Initialize tool call accumulator for streaming chunks
     from rag_engine.api.stream_helpers import (
         ToolCallAccumulator,
-        last_pending_search_started_has_query,
-        update_search_started_by_id,
+        yield_search_bubble,
+        update_search_bubble_by_id,
     )
 
     tool_call_accumulator = ToolCallAccumulator()
-    # Track query -> search_id mapping for parallel execution bubble management
-    # Key: query string, Value: search_id generated when bubble was created
+    # Unified bubble approach: track query -> search_id mapping
+    # Key: normalized query string (stripped), Value: search_id generated when bubble was created
     search_id_by_query: dict[str, str] = {}
+    # Track which search bubbles have been marked as completed to prevent duplicates
+    completed_search_ids: set[str] = set()
 
     agent_context: AgentContext | None = None
     try:
@@ -1039,78 +1042,65 @@ async def agent_chat_handler(
                             tool_name_from_accumulator == "retrieve_context"
                             and not has_seen_tool_results
                         ):
-                            from rag_engine.api.stream_helpers import (
-                                update_search_started_in_history,
-                                yield_search_started,
-                            )
-
                             # Always try to update if we have a query, even if block was created with empty query
                             if tool_query_from_accumulator:
-                                # Query is available - always try to update existing block first
-                                logger.info(
-                                    "Query available from accumulator: query='%s', attempting to update search_started block",
-                                    tool_query_from_accumulator[:50],
+                                # Query is available - check if we already have a bubble for this query (avoid duplicates)
+                                has_search_bubble = any(
+                                    isinstance(msg, dict)
+                                    and msg.get("role") == "assistant"
+                                    and (msg.get("metadata") or {}).get("ui_type")
+                                    == "search_bubble"
+                                    and (msg.get("metadata") or {}).get("query") == tool_query_from_accumulator
+                                    for msg in gradio_history
                                 )
-                                updated = update_search_started_in_history(
-                                    gradio_history, tool_query_from_accumulator
-                                )
-                                if updated:
-                                    logger.info(
-                                        "Successfully updated existing search_started block with query='%s'",
-                                        tool_query_from_accumulator[:50],
-                                    )
-                                    yield list(gradio_history)
-                                else:
-                                    # No block to update: either none exists or existing already has a query (different tool call)
-                                    has_search_started = any(
+                                if not has_search_bubble:
+                                    # Check if any search bubble exists at all
+                                    any_search_bubble = any(
                                         isinstance(msg, dict)
                                         and msg.get("role") == "assistant"
                                         and (msg.get("metadata") or {}).get("ui_type")
-                                        == "search_started"
+                                        == "search_bubble"
                                         for msg in gradio_history
                                     )
-                                    if not has_search_started:
+                                    if not any_search_bubble:
                                         logger.info(
-                                            "No existing block found, creating new search_started block with query='%s'",
+                                            "No existing bubble found, creating new search bubble with query='%s'",
                                             tool_query_from_accumulator[:50],
                                         )
                                         # Generate unique search_id for this query
                                         search_id = str(uuid.uuid4())[:8]
-                                        search_id_by_query[tool_query_from_accumulator] = search_id
-                                        search_started_msg = yield_search_started(
+                                        search_id_by_query[tool_query_from_accumulator.strip()] = search_id
+                                        search_started_msg = yield_search_bubble(
                                             tool_query_from_accumulator, search_id=search_id
                                         )
                                         gradio_history.append(search_started_msg)
                                         logger.info(
-                                            "YIELDING search_started bubble: query='%s', search_id=%s, history_len=%d",
+                                            "YIELDING search bubble: query='%s', search_id=%s, history_len=%d",
                                             tool_query_from_accumulator[:50],
                                             search_id,
                                             len(gradio_history)
                                         )
                                         yield list(gradio_history)
                                     else:
-                                        # Existing bubble already has a query - add new bubble only if different query (avoid duplicate from other path)
-                                        if not last_pending_search_started_has_query(
-                                            gradio_history, tool_query_from_accumulator
-                                        ):
-                                            logger.info(
-                                                "Adding new search_started block for subsequent tool call (accumulator): query='%s'",
-                                                tool_query_from_accumulator[:50],
-                                            )
-                                            # Generate unique search_id for this query
-                                            search_id = str(uuid.uuid4())[:8]
-                                            search_id_by_query[tool_query_from_accumulator] = search_id
-                                            search_started_msg = yield_search_started(
-                                                tool_query_from_accumulator, search_id=search_id
-                                            )
-                                            gradio_history.append(search_started_msg)
-                                            logger.info(
-                                                "YIELDING subsequent search_started bubble: query='%s', search_id=%s, history_len=%d",
-                                                tool_query_from_accumulator[:50],
-                                                search_id,
-                                                len(gradio_history)
-                                            )
-                                            yield list(gradio_history)
+                                        # Existing bubble for different query - add new bubble
+                                        logger.info(
+                                            "Adding new search bubble for subsequent tool call: query='%s'",
+                                            tool_query_from_accumulator[:50],
+                                        )
+                                        # Generate unique search_id for this query
+                                        search_id = str(uuid.uuid4())[:8]
+                                        search_id_by_query[tool_query_from_accumulator.strip()] = search_id
+                                        search_started_msg = yield_search_bubble(
+                                            tool_query_from_accumulator, search_id=search_id
+                                        )
+                                        gradio_history.append(search_started_msg)
+                                        logger.info(
+                                            "YIELDING subsequent search bubble: query='%s', search_id=%s, history_len=%d",
+                                            tool_query_from_accumulator[:50],
+                                            search_id,
+                                            len(gradio_history)
+                                        )
+                                        yield list(gradio_history)
                             elif not tool_query_from_accumulator:
                                 # Tool detected but query not ready yet - do NOT create empty block
                                 # The block will be created when we receive the tool result with query
@@ -1183,32 +1173,41 @@ async def agent_chat_handler(
 
                         update_message_status_in_history(gradio_history, "thinking", "done")
 
-                        # For parallel execution, mark the specific search bubble by search_id
-                        # First try to find search_id from the query, then mark by ID
+                        # For unified bubble, update it with results
                         try:
                             result_data = json.loads(token.content) if isinstance(token.content, str) else {}
                             query_from_result = result_data.get("metadata", {}).get("query", "")
+                            articles_list = result_data.get("articles", [])
+                            count = result_data.get("metadata", {}).get("articles_count", 0)
+
                             if query_from_result:
-                                # Look up search_id from the query mapping
-                                search_id = search_id_by_query.get(query_from_result)
+                                search_id = search_id_by_query.get(query_from_result.strip())
                                 if search_id:
-                                    # Mark the specific search_started bubble by its ID
-                                    update_search_started_by_id(gradio_history, search_id, "done")
-                                    # Clean up the mapping to avoid memory leak
-                                    del search_id_by_query[query_from_result]
+                                    articles_for_display = [
+                                        {"title": a.get("title", "Untitled"), "url": a.get("url", "")}
+                                        for a in articles_list
+                                    ] if articles_list else None
+
+                                    # Only update bubble if not already completed to prevent duplicates
+                                    if search_id not in completed_search_ids:
+                                        update_search_bubble_by_id(
+                                            gradio_history,
+                                            search_id,
+                                            count=count,
+                                            articles=articles_for_display
+                                        )
+                                        completed_search_ids.add(search_id)
+                                    else:
+                                        logger.debug(
+                                            "Skipping bubble update for search_id=%s (already completed)",
+                                            search_id
+                                        )
+                                    del search_id_by_query[query_from_result.strip()]
+                                    yield list(gradio_history)
                                 else:
-                                    # Fallback: query not in mapping (shouldn't happen)
-                                    logger.warning(
-                                        "No search_id found for query: %s, using fallback",
-                                        query_from_result[:50]
-                                    )
-                                    update_message_status_in_history(gradio_history, "search_started", "done")
-                            else:
-                                # Fallback: no query in result
-                                update_message_status_in_history(gradio_history, "search_started", "done")
-                        except (json.JSONDecodeError, AttributeError):
-                            # Fallback: mark most recent if parsing fails
-                            update_message_status_in_history(gradio_history, "search_started", "done")
+                                    logger.warning("No search_id found for query: %s", query_from_result[:50])
+                        except (json.JSONDecodeError, AttributeError) as e:
+                            logger.debug("Failed to parse tool result for bubble update: %s", e)
 
                         # Update accumulated context for next tool call
                         # Agent tracks context, not the tool!
@@ -1402,64 +1401,44 @@ async def agent_chat_handler(
 
                             if tool_name == "retrieve_context":
                                 tool_query = tool_call_accumulator.process_token(token)
-                                # Update existing search_started block with query if available, or create new one
-                                from rag_engine.api.stream_helpers import (
-                                    update_search_started_in_history,
-                                    yield_search_started,
-                                )
-
+                                # Create or update search bubble based on query availability
                                 if tool_query:
-                                    # Query is complete - always try to update existing block first
+                                    # Query is complete - check if this is a subsequent search or first one
                                     if has_seen_tool_results:
-                                        # Add NEW search_started block for subsequent tool calls
+                                        # Add NEW search bubble for subsequent tool calls
                                         logger.info(
-                                            "Adding NEW search_started block via tool_calls (subsequent): query=%s",
+                                            "Adding NEW search bubble via tool_calls (subsequent): query=%s",
                                             tool_query[:50],
                                         )
                                         # Generate unique search_id for this query
                                         search_id = str(uuid.uuid4())[:8]
-                                        search_id_by_query[tool_query] = search_id
-                                        search_started_msg = yield_search_started(tool_query, search_id=search_id)
+                                        search_id_by_query[tool_query.strip()] = search_id
+                                        search_started_msg = yield_search_bubble(tool_query, search_id=search_id)
                                         gradio_history.append(search_started_msg)
                                         yield list(gradio_history)
                                     else:
-                                        # Update existing block (might have been created with empty query)
-                                        logger.info(
-                                            "Updating search_started block via tool_calls for retrieve_context: query=%s",
-                                            tool_query[:50],
+                                        # First search - check if bubble already exists for this query
+                                        has_search_bubble = any(
+                                            isinstance(msg, dict)
+                                            and msg.get("role") == "assistant"
+                                            and (msg.get("metadata") or {}).get("ui_type")
+                                            == "search_bubble"
+                                            and (msg.get("metadata") or {}).get("query") == tool_query
+                                            for msg in gradio_history
                                         )
-                                        updated = update_search_started_in_history(
-                                            gradio_history, tool_query
-                                        )
-                                        if not updated:
-                                            # No block to update: create new one (first call) or append (existing has another query)
-                                            has_search_started = any(
-                                                isinstance(msg, dict)
-                                                and msg.get("role") == "assistant"
-                                                and (msg.get("metadata") or {}).get("ui_type")
-                                                == "search_started"
-                                                for msg in gradio_history
+                                        if not has_search_bubble:
+                                            logger.info(
+                                                "Adding search bubble via tool_calls (new): query=%s",
+                                                tool_query[:50],
                                             )
-                                            # Skip append if same query already shown (duplicate from accumulator path)
-                                            if (
-                                                not has_search_started
-                                                or not last_pending_search_started_has_query(
-                                                    gradio_history, tool_query
-                                                )
-                                            ):
-                                                logger.info(
-                                                    "Adding search_started block via tool_calls (%s): query=%s",
-                                                    "subsequent" if has_search_started else "new",
-                                                    tool_query[:50],
-                                                )
-                                                # Generate unique search_id for this query
-                                                search_id = str(uuid.uuid4())[:8]
-                                                search_id_by_query[tool_query] = search_id
-                                                search_started_msg = yield_search_started(
-                                                    tool_query, search_id=search_id
-                                                )
-                                                gradio_history.append(search_started_msg)
-                                        yield list(gradio_history)
+                                            # Generate unique search_id for this query
+                                            search_id = str(uuid.uuid4())[:8]
+                                            search_id_by_query[tool_query.strip()] = search_id
+                                            search_started_msg = yield_search_bubble(
+                                                tool_query, search_id=search_id
+                                            )
+                                            gradio_history.append(search_started_msg)
+                                            yield list(gradio_history)
                                 else:
                                     # Query not ready yet - do NOT create empty block
                                     # The block will be created when we receive the tool result with query
@@ -1504,87 +1483,47 @@ async def agent_chat_handler(
 
                                     if tool_name == "retrieve_context":
                                         tool_query = tool_call_accumulator.process_token(token)
-                                        # Update existing search_started block with query if available, or create new one
-                                        from rag_engine.api.stream_helpers import (
-                                            update_search_started_in_history,
-                                            yield_search_started,
-                                        )
-
+                                        # Create or update search bubble based on query availability
                                         if tool_query:
-                                            # Query is complete - always try to update existing block first
+                                            # Query is complete - check if this is a subsequent search or first one
                                             if has_seen_tool_results:
-                                                # Add NEW search_started block for subsequent tool calls
+                                                # Add NEW search bubble for subsequent tool calls
                                                 logger.info(
-                                                    "Adding NEW search_started block via chunk (subsequent): query=%s",
+                                                    "Adding NEW search bubble via chunk (subsequent): query=%s",
                                                     tool_query[:50],
                                                 )
                                                 # Generate unique search_id for this query
                                                 search_id = str(uuid.uuid4())[:8]
-                                                search_id_by_query[tool_query] = search_id
-                                                search_started_msg = yield_search_started(
+                                                search_id_by_query[tool_query.strip()] = search_id
+                                                search_started_msg = yield_search_bubble(
                                                     tool_query, search_id=search_id
                                                 )
                                                 gradio_history.append(search_started_msg)
                                                 yield list(gradio_history)
                                             else:
-                                                # Update existing block (might have been created with empty query)
-                                                logger.info(
-                                                    "Updating search_started block via chunk for retrieve_context: query=%s",
-                                                    tool_query[:50],
+                                                # First search - check if bubble already exists for this query
+                                                has_search_bubble = any(
+                                                    isinstance(msg, dict)
+                                                    and msg.get("role") == "assistant"
+                                                    and (msg.get("metadata") or {}).get("ui_type")
+                                                    == "search_bubble"
+                                                    and (msg.get("metadata") or {}).get("query") == tool_query
+                                                    for msg in gradio_history
                                                 )
-                                                updated = update_search_started_in_history(
-                                                    gradio_history, tool_query
-                                                )
-                                                if not updated:
-                                                    # No block to update: create new one (first call) or append (existing has another query)
-                                                    has_search_started = any(
-                                                        isinstance(msg, dict)
-                                                        and msg.get("role") == "assistant"
-                                                        and (msg.get("metadata") or {}).get(
-                                                            "ui_type"
-                                                        )
-                                                        == "search_started"
-                                                        for msg in gradio_history
+                                                if not has_search_bubble:
+                                                    logger.info(
+                                                        "Adding search bubble via chunk (new): query=%s",
+                                                        tool_query[:50],
                                                     )
-                                                    # Skip append if same query already shown (duplicate from accumulator path)
-                                                    if (
-                                                        not has_search_started
-                                                        or not last_pending_search_started_has_query(
-                                                            gradio_history, tool_query
-                                                        )
-                                                    ):
-                                                        logger.info(
-                                                            "Adding search_started block via chunk (%s): query=%s",
-                                                            "subsequent"
-                                                            if has_search_started
-                                                            else "new",
-                                                            tool_query[:50],
-                                                        )
-                                                        # Generate unique search_id for this query
-                                                        search_id = str(uuid.uuid4())[:8]
-                                                        search_id_by_query[tool_query] = search_id
-                                                        search_started_msg = yield_search_started(
-                                                            tool_query, search_id=search_id
-                                                        )
-                                                        gradio_history.append(search_started_msg)
-                                                yield list(gradio_history)
-                                        else:
-                                            # Query not ready yet - do NOT create empty block
-                                            # The block will be created when we receive the tool result with query
-                                            logger.debug(
-                                                "retrieve_context detected via chunk but query not ready, deferring"
-                                            )
-                                    elif tool_name:
-                                        # Show generic thinking block for non-search tools
-                                        # Reference agent pattern: always append, don't check duplicates
-                                        from rag_engine.api.stream_helpers import (
-                                            yield_thinking_block,
-                                        )
-
-                                        thinking_msg = yield_thinking_block(tool_name)
-                                        gradio_history.append(thinking_msg)
-                                        yield list(gradio_history)
-                                # Never stream tool call chunks as text
+                                                    # Generate unique search_id for this query
+                                                    search_id = str(uuid.uuid4())[:8]
+                                                    search_id_by_query[tool_query.strip()] = search_id
+                                                    search_started_msg = yield_search_bubble(
+                                                        tool_query, search_id=search_id
+                                                    )
+                                                    gradio_history.append(search_started_msg)
+                                                    yield list(gradio_history)
+                                # Skip displaying the tool call itself and any content
                                 continue
 
                             elif block.get("type") == "text" and block.get("text"):
