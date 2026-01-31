@@ -406,6 +406,7 @@ def _is_ui_only_message(msg: dict) -> bool:
             "model_switch",
             "cancelled",
             "user_intent_display",  # User intent message (UI only, not for agent context)
+            "disclaimer_display",  # AI disclaimer (UI only, not for agent context)
         }:
             return True
 
@@ -559,29 +560,22 @@ def _process_text_chunk_for_streaming(
     disclaimer_prepended: bool,
     has_seen_tool_results: bool,
 ) -> tuple[str, bool]:
-    """Process a text chunk for streaming with disclaimer and formatting.
+    """Process a text chunk for streaming and accumulate the answer.
 
-    Handles optional newline after tool results and accumulates the answer.
-    Prepends AI disclaimer to the first chunk of any answer (all LLM responses are AI-generated).
+    Disclaimer is injected as a separate message before the first chunk (UI only).
+    Handles optional newline after tool results.
 
     Args:
         text_chunk: Raw text chunk from agent
         answer: Accumulated answer so far
-        disclaimer_prepended: Whether disclaimer has already been added
+        disclaimer_prepended: Whether disclaimer message has already been injected
         has_seen_tool_results: Whether tool results have been seen
 
     Returns:
         Tuple of (updated_answer, updated_disclaimer_prepended)
     """
-    # Prepend disclaimer to first chunk of any answer (all LLM responses are AI-generated)
-    # Only prepend once per answer, tracked by disclaimer_prepended flag
-    if not disclaimer_prepended and not answer:
-        from rag_engine.llm.prompts import AI_DISCLAIMER
-
-        answer = AI_DISCLAIMER
-        disclaimer_prepended = True
-    # Prepend newline before first text chunk after tool results (if disclaimer already exists separately)
-    elif has_seen_tool_results and not answer:
+    # Newline before first text chunk after tool results (disclaimer is a separate message)
+    if has_seen_tool_results and not answer:
         text_chunk = "\n" + text_chunk
 
     answer = answer + text_chunk
@@ -727,37 +721,8 @@ async def agent_chat_handler(
     # The submit_event chain adds the user message to chatbot before calling agent_chat_handler
     # (pattern from test script: line 128-129)
 
-    # Determine if this is the first message (for disclaimer and template)
+    # Determine if this is the first message (for template only; disclaimer injected before first answer chunk)
     is_first_message = not history
-
-    # Stream AI-generated content disclaimer as a persistent assistant message
-    # so it stays above tool-call progress/thinking chunks in the Chatbot UI.
-    # Only add it ONCE after the first question (pattern from test script)
-    if is_first_message:
-        from rag_engine.llm.prompts import AI_DISCLAIMER
-
-        # Check if disclaimer already exists in history (safety check)
-        disclaimer_exists = False
-        for msg in gradio_history:
-            if isinstance(msg, dict):
-                content = msg.get("content", "")
-                if isinstance(content, str) and AI_DISCLAIMER.strip() in content:
-                    disclaimer_exists = True
-                    break
-
-        # Add disclaimer to history only if it doesn't exist yet (first question only)
-        if not disclaimer_exists:
-            disclaimer_msg = {
-                "role": "assistant",
-                "content": AI_DISCLAIMER,
-            }
-            # Double-check it doesn't exist (robust duplicate prevention)
-            if not _message_exists_in_history(disclaimer_msg, gradio_history):
-                gradio_history.append(disclaimer_msg)
-                # Yield full history - ChatInterface will replace its internal history
-                # According to Gradio docs, yielding a list should replace, not append
-                # Create a new list to avoid mutating ChatInterface's internal state
-                yield list(gradio_history)
 
     # Three UI blocks pattern (from test script):
     # Thinking/search blocks are added dynamically when tools are actually called
@@ -774,7 +739,7 @@ async def agent_chat_handler(
         USER_QUESTION_TEMPLATE_SUBSEQUENT,
     )
 
-    # is_first_message already determined above (for disclaimer)
+    # is_first_message already determined above (for template)
     wrapped_message = (
         USER_QUESTION_TEMPLATE_FIRST.format(question=message)
         if is_first_message
@@ -1624,8 +1589,18 @@ async def agent_chat_handler(
                                 if not tool_executing:
                                     text_chunk = block["text"]
 
-                                    # On first text chunk after tool results, remove initial thinking block and stop other spinners
+                                    # On first text chunk: inject disclaimer as separate message (UI only), then stream answer
                                     if not answer:
+                                        if not disclaimer_prepended:
+                                            from rag_engine.api.stream_helpers import (
+                                                yield_disclaimer_display,
+                                            )
+
+                                            gradio_history.append(
+                                                yield_disclaimer_display()
+                                            )
+                                            disclaimer_prepended = True
+                                            yield list(gradio_history)
                                         remove_message_by_id(gradio_history, thinking_id)
                                         update_message_status_in_history(
                                             gradio_history, "search_started", "done"
@@ -1634,7 +1609,6 @@ async def agent_chat_handler(
                                             gradio_history, "sgr_planning", "done"
                                         )
                                         # Show "Generating Answer" spinner while answer is being generated
-                                        # It will spin until answer finishes OR a new tool call is detected
                                         if has_seen_tool_results:
                                             from rag_engine.api.stream_helpers import (
                                                 yield_generating_answer,
@@ -1643,7 +1617,6 @@ async def agent_chat_handler(
                                             generating_msg = yield_generating_answer(block_id=generating_answer_id)
                                             gradio_history.append(generating_msg)
                                             yield list(gradio_history)
-                                            # Keep spinner spinning - will stop when answer finishes or new tool call
 
                                     answer, disclaimer_prepended = (
                                         _process_text_chunk_for_streaming(
@@ -1674,8 +1647,18 @@ async def agent_chat_handler(
                                 new_chunk = token_content
 
                             if new_chunk:
-                                # On first text chunk after tool results, show "Generating Answer" spinner
-                                # It will spin until answer finishes OR a new tool call is detected
+                                # On first text chunk: inject disclaimer as separate message (UI only)
+                                if not answer and not disclaimer_prepended:
+                                    from rag_engine.api.stream_helpers import (
+                                        yield_disclaimer_display,
+                                    )
+
+                                    gradio_history.append(
+                                        yield_disclaimer_display()
+                                    )
+                                    disclaimer_prepended = True
+                                    yield list(gradio_history)
+                                # Show "Generating Answer" spinner on first chunk after tool results
                                 if not answer and has_seen_tool_results:
                                     from rag_engine.api.stream_helpers import (
                                         yield_generating_answer,
@@ -1684,7 +1667,6 @@ async def agent_chat_handler(
                                     generating_msg = yield_generating_answer(block_id=generating_answer_id)
                                     gradio_history.append(generating_msg)
                                     yield list(gradio_history)
-                                    # Keep spinner spinning - will stop when answer finishes or new tool call
 
                                 answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                     new_chunk, answer, disclaimer_prepended, has_seen_tool_results
@@ -1846,15 +1828,13 @@ async def agent_chat_handler(
 
         articles = accumulate_articles_from_tool_results(tool_results)
 
-        # Ensure disclaimer is prepended if it wasn't added during streaming
-        # (e.g., in fallback scenarios or if streaming didn't work correctly)
-        # All LLM responses are AI-generated, so disclaimer should always be present
+        # Inject disclaimer as separate message if it wasn't added during streaming
         if not disclaimer_prepended and answer:
-            from rag_engine.llm.prompts import AI_DISCLAIMER
+            from rag_engine.api.stream_helpers import yield_disclaimer_display
 
-            answer = AI_DISCLAIMER + answer
+            gradio_history.append(yield_disclaimer_display())
             disclaimer_prepended = True
-            logger.info("Prepended disclaimer to final answer (was missing from stream)")
+            logger.info("Injected disclaimer message (was missing from stream)")
 
         # Handle no results case
         if not articles:
@@ -2088,15 +2068,14 @@ async def agent_chat_handler(
                             # No-op for UI
                             pass
 
-                    # Ensure disclaimer is prepended if it wasn't added during streaming
-                    # All LLM responses are AI-generated, so disclaimer should always be present
+                    # Inject disclaimer as separate message if it wasn't added during streaming
                     if not disclaimer_prepended and answer:
-                        from rag_engine.llm.prompts import AI_DISCLAIMER
+                        from rag_engine.api.stream_helpers import yield_disclaimer_display
 
-                        answer = AI_DISCLAIMER + answer
+                        gradio_history.append(yield_disclaimer_display())
                         disclaimer_prepended = True
                         logger.info(
-                            "Prepended disclaimer to fallback retry answer (was missing from stream)"
+                            "Injected disclaimer message (fallback retry, was missing from stream)"
                         )
 
                     from rag_engine.tools import accumulate_articles_from_tool_results
