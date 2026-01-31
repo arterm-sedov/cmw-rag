@@ -176,14 +176,15 @@ class ToolCallAccumulator:
         return None
 
 
-def yield_search_started(query: str | None = None) -> dict:
+def yield_search_started(query: str | None = None, search_id: str | None = None) -> dict:
     """Yield metadata message for search started with pending spinner.
 
     Args:
-        query: Optional user query being searched, for display in the bubble.
+        query: Optional search query string to display
+        search_id: Unique ID to match this bubble with its result (for parallel execution)
 
     Returns:
-        Gradio message dict with metadata for search started.
+        Gradio message dict with metadata for search started indicator.
         Content and title are resolved i18n strings (never i18n metadata objects).
         Includes status="pending" to show native Gradio spinner.
 
@@ -195,10 +196,16 @@ def yield_search_started(query: str | None = None) -> dict:
         >>> msg["metadata"]["status"]
         'pending'
     """
+    import uuid
+
     # Resolve i18n translations to plain strings before yielding
     # This ensures Chatbot receives strings, not __i18n__ metadata objects
     title = get_text("search_started_title")
     content = get_text("search_started_content", query=(query or "").strip())
+
+    # Generate unique ID if not provided (for matching with result)
+    if search_id is None:
+        search_id = str(uuid.uuid4())[:8]  # Short UUID for readability
 
     return {
         "role": "assistant",
@@ -209,6 +216,8 @@ def yield_search_started(query: str | None = None) -> dict:
             "ui_type": "search_started",
             # Native Gradio spinner: "pending" shows spinner, "done" hides it
             "status": "pending",
+            # Unique ID for matching with result in parallel execution
+            "search_id": search_id,
         },
     }
 
@@ -590,4 +599,51 @@ def update_message_status_in_history(
                 metadata["status"] = new_status
                 return True
 
+    return False
+
+
+def update_search_started_by_id(
+    gradio_history: list[dict],
+    search_id: str,
+    new_status: str = "done",
+) -> bool:
+    """Update the status of a specific search_started message by its ID.
+
+    This is crucial for parallel execution where multiple searches happen concurrently.
+    Uses stable ID matching instead of content comparison for reliability.
+
+    Args:
+        gradio_history: List of Gradio message dictionaries
+        search_id: The unique search_id to match
+        new_status: New status value ("pending" or "done")
+
+    Returns:
+        True if message was updated, False otherwise
+    """
+    if not search_id:
+        return False
+
+    # Search backwards to find the search_started with matching ID
+    for i in range(len(gradio_history) - 1, -1, -1):
+        msg = gradio_history[i]
+        if not isinstance(msg, dict) or msg.get("role") != "assistant":
+            continue
+        metadata = msg.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        if metadata.get("ui_type") != "search_started":
+            continue
+
+        # Match by search_id
+        if metadata.get("search_id") == search_id:
+            metadata["status"] = new_status
+            logger.info(
+                "Marked search_started as %s for search_id=%s (index %d)",
+                new_status,
+                search_id,
+                i
+            )
+            return True
+
+    logger.debug("No matching search_started found for search_id: %s", search_id)
     return False
