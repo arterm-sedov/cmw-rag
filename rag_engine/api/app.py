@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 import time
+import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -953,9 +954,13 @@ async def agent_chat_handler(
     from rag_engine.api.stream_helpers import (
         ToolCallAccumulator,
         last_pending_search_started_has_query,
+        update_search_started_by_id,
     )
 
     tool_call_accumulator = ToolCallAccumulator()
+    # Track query -> search_id mapping for parallel execution bubble management
+    # Key: query string, Value: search_id generated when bubble was created
+    search_id_by_query: dict[str, str] = {}
 
     agent_context: AgentContext | None = None
     try:
@@ -1069,10 +1074,19 @@ async def agent_chat_handler(
                                             "No existing block found, creating new search_started block with query='%s'",
                                             tool_query_from_accumulator[:50],
                                         )
+                                        # Generate unique search_id for this query
+                                        search_id = str(uuid.uuid4())[:8]
+                                        search_id_by_query[tool_query_from_accumulator] = search_id
                                         search_started_msg = yield_search_started(
-                                            tool_query_from_accumulator
+                                            tool_query_from_accumulator, search_id=search_id
                                         )
                                         gradio_history.append(search_started_msg)
+                                        logger.info(
+                                            "YIELDING search_started bubble: query='%s', search_id=%s, history_len=%d",
+                                            tool_query_from_accumulator[:50],
+                                            search_id,
+                                            len(gradio_history)
+                                        )
                                         yield list(gradio_history)
                                     else:
                                         # Existing bubble already has a query - add new bubble only if different query (avoid duplicate from other path)
@@ -1083,10 +1097,19 @@ async def agent_chat_handler(
                                                 "Adding new search_started block for subsequent tool call (accumulator): query='%s'",
                                                 tool_query_from_accumulator[:50],
                                             )
+                                            # Generate unique search_id for this query
+                                            search_id = str(uuid.uuid4())[:8]
+                                            search_id_by_query[tool_query_from_accumulator] = search_id
                                             search_started_msg = yield_search_started(
-                                                tool_query_from_accumulator
+                                                tool_query_from_accumulator, search_id=search_id
                                             )
                                             gradio_history.append(search_started_msg)
+                                            logger.info(
+                                                "YIELDING subsequent search_started bubble: query='%s', search_id=%s, history_len=%d",
+                                                tool_query_from_accumulator[:50],
+                                                search_id,
+                                                len(gradio_history)
+                                            )
                                             yield list(gradio_history)
                             elif not tool_query_from_accumulator:
                                 # Tool detected but query not ready yet - do NOT create empty block
@@ -1159,7 +1182,33 @@ async def agent_chat_handler(
                         from rag_engine.api.stream_helpers import update_message_status_in_history
 
                         update_message_status_in_history(gradio_history, "thinking", "done")
-                        update_message_status_in_history(gradio_history, "search_started", "done")
+
+                        # For parallel execution, mark the specific search bubble by search_id
+                        # First try to find search_id from the query, then mark by ID
+                        try:
+                            result_data = json.loads(token.content) if isinstance(token.content, str) else {}
+                            query_from_result = result_data.get("metadata", {}).get("query", "")
+                            if query_from_result:
+                                # Look up search_id from the query mapping
+                                search_id = search_id_by_query.get(query_from_result)
+                                if search_id:
+                                    # Mark the specific search_started bubble by its ID
+                                    update_search_started_by_id(gradio_history, search_id, "done")
+                                    # Clean up the mapping to avoid memory leak
+                                    del search_id_by_query[query_from_result]
+                                else:
+                                    # Fallback: query not in mapping (shouldn't happen)
+                                    logger.warning(
+                                        "No search_id found for query: %s, using fallback",
+                                        query_from_result[:50]
+                                    )
+                                    update_message_status_in_history(gradio_history, "search_started", "done")
+                            else:
+                                # Fallback: no query in result
+                                update_message_status_in_history(gradio_history, "search_started", "done")
+                        except (json.JSONDecodeError, AttributeError):
+                            # Fallback: mark most recent if parsing fails
+                            update_message_status_in_history(gradio_history, "search_started", "done")
 
                         # Update accumulated context for next tool call
                         # Agent tracks context, not the tool!
@@ -1367,7 +1416,10 @@ async def agent_chat_handler(
                                             "Adding NEW search_started block via tool_calls (subsequent): query=%s",
                                             tool_query[:50],
                                         )
-                                        search_started_msg = yield_search_started(tool_query)
+                                        # Generate unique search_id for this query
+                                        search_id = str(uuid.uuid4())[:8]
+                                        search_id_by_query[tool_query] = search_id
+                                        search_started_msg = yield_search_started(tool_query, search_id=search_id)
                                         gradio_history.append(search_started_msg)
                                         yield list(gradio_history)
                                     else:
@@ -1400,8 +1452,11 @@ async def agent_chat_handler(
                                                     "subsequent" if has_search_started else "new",
                                                     tool_query[:50],
                                                 )
+                                                # Generate unique search_id for this query
+                                                search_id = str(uuid.uuid4())[:8]
+                                                search_id_by_query[tool_query] = search_id
                                                 search_started_msg = yield_search_started(
-                                                    tool_query
+                                                    tool_query, search_id=search_id
                                                 )
                                                 gradio_history.append(search_started_msg)
                                         yield list(gradio_history)
@@ -1463,8 +1518,11 @@ async def agent_chat_handler(
                                                     "Adding NEW search_started block via chunk (subsequent): query=%s",
                                                     tool_query[:50],
                                                 )
+                                                # Generate unique search_id for this query
+                                                search_id = str(uuid.uuid4())[:8]
+                                                search_id_by_query[tool_query] = search_id
                                                 search_started_msg = yield_search_started(
-                                                    tool_query
+                                                    tool_query, search_id=search_id
                                                 )
                                                 gradio_history.append(search_started_msg)
                                                 yield list(gradio_history)
@@ -1502,8 +1560,11 @@ async def agent_chat_handler(
                                                             else "new",
                                                             tool_query[:50],
                                                         )
+                                                        # Generate unique search_id for this query
+                                                        search_id = str(uuid.uuid4())[:8]
+                                                        search_id_by_query[tool_query] = search_id
                                                         search_started_msg = yield_search_started(
-                                                            tool_query
+                                                            tool_query, search_id=search_id
                                                         )
                                                         gradio_history.append(search_started_msg)
                                                 yield list(gradio_history)
