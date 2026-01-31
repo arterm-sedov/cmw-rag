@@ -31,6 +31,7 @@ i18n = gr.I18n(
         "model_switch_title": "⚡ Switched to {model} (requires more context)",
         "cancelled_title": "⏹️ Cancelled",
         "cancelled_message": "⚠️ Response cancelled by user.",
+        "user_intent_prefix": "How I understood your request:",
         # Debug metadata UI
         "spam_badge_label": "Spam",
         "spam_level_low": "Low",
@@ -71,6 +72,7 @@ i18n = gr.I18n(
         "model_switch_title": "⚡ Переключение на {model} (требуется больше контекста)",
         "cancelled_title": "⏹️ Отменено",
         "cancelled_message": "⚠️ Ответ отменён пользователем.",
+        "user_intent_prefix": "Как я понял ваш запрос:",
         # Debug metadata UI
         "spam_badge_label": "Спам",
         "spam_level_low": "Низкий",
