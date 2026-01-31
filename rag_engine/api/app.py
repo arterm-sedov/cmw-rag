@@ -1442,37 +1442,39 @@ async def agent_chat_handler(
                             # Get tool name to determine which thinking block to show
                             tool_name = tool_call_accumulator.get_tool_name(token)
 
+                            logger.debug("Tool name detected: %s", tool_name)
+
                             if tool_name == "retrieve_context":
                                 tool_query = tool_call_accumulator.process_token(token)
-                                
-                                 # Fallback: directly extract query from token.tool_calls if accumulator failed
-                                if not tool_query:
-                                     tool_calls = getattr(token, "tool_calls", None)
-                                     if tool_calls:
-                                         for tc in tool_calls:
-                                             if isinstance(tc, dict):
-                                                 tc_name = tc.get("name", "")
-                                             else:
-                                                 tc_name = getattr(tc, "name", "")
-                                             if tc_name == "retrieve_context":
-                                                 tc_args = tc.get("args", {}) or tc.get("arguments", "")
-                                                 if isinstance(tc_args, dict):
-                                                     tool_query = tc_args.get("query", "")
-                                                 elif isinstance(tc_args, str):
-                                                     try:
-                                                         parsed = json.loads(tc_args)
-                                                         tool_query = parsed.get("query", "")
-                                                     except (json.JSONDecodeError, ValueError):
-                                                         tool_query = ""
-                                                 else:
-                                                     tool_query = ""
 
-                                                 if tool_query:
-                                                     logger.debug(
-                                                         "Fallback: extracted query: %s",
-                                                         tool_query[:50]
-                                                     )
-                                                     break
+                                # Fallback: directly extract query from token.tool_calls if accumulator failed
+                                if not tool_query:
+                                    tool_calls = getattr(token, "tool_calls", None)
+                                    if tool_calls:
+                                        for tc in tool_calls:
+                                            if isinstance(tc, dict):
+                                                tc_name = tc.get("name", "")
+                                            else:
+                                                tc_name = getattr(tc, "name", "")
+                                            if tc_name == "retrieve_context":
+                                                tc_args = tc.get("args", {}) or tc.get("arguments", "")
+                                                if isinstance(tc_args, dict):
+                                                    tool_query = tc_args.get("query", "")
+                                                elif isinstance(tc_args, str):
+                                                    try:
+                                                        parsed = json.loads(tc_args)
+                                                        tool_query = parsed.get("query", "")
+                                                    except (json.JSONDecodeError, ValueError):
+                                                        tool_query = ""
+                                                else:
+                                                    tool_query = ""
+
+                                                if tool_query:
+                                                    logger.debug(
+                                                        "Fallback: extracted query: %s",
+                                                        tool_query[:50]
+                                                    )
+                                                    break
                                 
                                 # Create or update search bubble based on query availability
                                 if tool_query:
