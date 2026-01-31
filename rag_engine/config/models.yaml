@@ -17,7 +17,8 @@ models:
         max_seq_length: 512
       infinity:
         endpoint_path: "/v1/embeddings"
-        # Auto-detected from loaded model
+        query_prefix: "search_query: "
+        doc_prefix: "search_document: "
       openrouter:
         # Not available on OpenRouter
         supported: false
@@ -31,6 +32,7 @@ models:
         supported: false  # Not tested with sentence-transformers directly
       infinity:
         endpoint_path: "/v1/embeddings"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
       openrouter:
         model_id: "qwen/qwen3-embedding-0.6b"
         default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
@@ -44,6 +46,7 @@ models:
         supported: false
       infinity:
         endpoint_path: "/v1/embeddings"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
       openrouter:
         model_id: "qwen/qwen3-embedding-4b"
         default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
@@ -57,6 +60,7 @@ models:
         supported: false
       infinity:
         endpoint_path: "/v1/embeddings"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
       openrouter:
         model_id: "qwen/qwen3-embedding-8b"
         default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
