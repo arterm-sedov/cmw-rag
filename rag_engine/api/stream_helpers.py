@@ -180,16 +180,21 @@ def yield_disclaimer_display() -> dict:
 
     Injected before the first answer chunk so it appears above the streamed answer.
     Excluded from agent context via ui_type 'disclaimer_display'.
+    Carries disclaimer_injected=True so callers can ensure only one per QA turn.
 
     Returns:
-        Gradio message dict: role assistant, content AI_DISCLAIMER, metadata ui_type.
+        Gradio message dict: role assistant, content AI_DISCLAIMER, metadata ui_type + disclaimer_injected + id.
     """
     from rag_engine.llm.prompts import AI_DISCLAIMER
 
     return {
         "role": "assistant",
-        "content": AI_DISCLAIMER.strip(),
-        "metadata": {"ui_type": "disclaimer_display"},
+        "content": "\n\n" + AI_DISCLAIMER.strip(),
+        "metadata": {
+            "ui_type": "disclaimer_display",
+            "disclaimer_injected": True,
+            "id": short_uid(),
+        },
     }
 
 
