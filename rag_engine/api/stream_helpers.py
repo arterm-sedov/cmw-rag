@@ -120,8 +120,10 @@ class ToolCallAccumulator:
 
         return None
 
-    def _extract_query_from_args(self, args: dict | str) -> str | None:
-        """Extract query from tool call arguments.
+    def _extract_query_from_args(self, args) -> str | None:
+        """Extract query from accumulated args.
+
+        Handles both string (JSON) and dict formats.
 
         Args:
             args: Tool call arguments (dict or JSON string)
@@ -130,50 +132,63 @@ class ToolCallAccumulator:
             Query string if found, None otherwise
         """
         if isinstance(args, dict):
-            query = args.get("query")
-            if query and isinstance(query, str):
-                return query.strip()
-        elif isinstance(args, str):
-            # Args might be JSON string (from accumulated chunks)
+            return args.get("query", "")
+
+        if isinstance(args, str):
             try:
-                parsed_args = json.loads(args)
-                if isinstance(parsed_args, dict):
-                    query = parsed_args.get("query")
-                    if query and isinstance(query, str):
-                        return query.strip()
-            except (json.JSONDecodeError, AttributeError):
-                pass
+                parsed = json.loads(args)
+                return parsed.get("query", "")
+            except json.JSONDecodeError:
+                # Try to extract from partial/accumulated JSON
+                # Look for "query": "..." pattern
+                import re
+                match = re.search(r'"query"\s*:\s*"([^"]*)"', args)
+                if match:
+                    return match.group(1)
 
         return None
 
-    def reset(self) -> None:
-        """Reset accumulator state (clear accumulated calls)."""
-        self._accumulated_calls.clear()
 
-    @staticmethod
-    def extract_query_from_complete_tool_call(tool_call: dict | object) -> str | None:
-        """Extract query from a complete tool call (non-streaming mode).
+def yield_disclaimer() -> dict:
+    """Yield disclaimer message at start of conversation (stays open for visibility).
 
-        Args:
-            tool_call: Complete tool call object (dict or object with attributes)
+    Returns:
+        Gradio message dict with disclaimer content.
+        The disclaimer stays visible to inform users about AI limitations.
+    """
+    from rag_engine.llm.prompts import AI_DISCLAIMER
 
-        Returns:
-            Query string if found, None otherwise
-        """
-        # Handle different formats: dict or object with attributes
-        if isinstance(tool_call, dict):
-            args = tool_call.get("args", {}) or tool_call.get("arguments", {})
-            name = tool_call.get("name", "")
-        else:
-            args = getattr(tool_call, "args", None) or getattr(tool_call, "arguments", None)
-            name = getattr(tool_call, "name", "")
+    return {
+        "role": "assistant",
+        "content": AI_DISCLAIMER.strip(),
+        # NO metadata - disclaimer is a regular message, not UI-only
+        # This ensures it's included in conversation context
+    }
 
-        # Check if this is retrieve_context tool
-        if name == "retrieve_context" and args:
-            accumulator = ToolCallAccumulator()
-            return accumulator._extract_query_from_args(args)
 
-        return None
+def yield_thinking_spinner() -> dict:
+    """Yield thinking spinner at start of agent processing.
+
+    Returns:
+        Gradio message dict with thinking spinner metadata.
+        Includes status="pending" to show native Gradio spinner.
+    """
+    # Resolve i18n translations to plain strings before yielding
+    # This ensures Chatbot receives strings, not __i18n__ metadata objects
+    title = get_text("thinking_title")
+    content = get_text("thinking_content_initial")
+
+    return {
+        "role": "assistant",
+        "content": content,
+        "metadata": {
+            "title": title,
+            # Explicit UI-only marker (used by _is_ui_only_message)
+            "ui_type": "thinking",
+            # Native Gradio spinner: "pending" shows spinner, "done" hides it
+            "status": "pending",
+        },
+    }
 
 
 def yield_search_started(query: str | None = None, search_id: str | None = None) -> dict:
@@ -222,6 +237,44 @@ def yield_search_started(query: str | None = None, search_id: str | None = None)
     }
 
 
+def yield_search_bubble(query: str, search_id: str | None = None) -> dict:
+    """Create a unified search bubble that evolves from pending to complete.
+
+    This is the single dynamic bubble approach that replaces the old two-bubble
+    system (search_started + search_completed). The bubble is created with pending
+    status and updated in-place when results arrive.
+
+    Args:
+        query: Search query string to display
+        search_id: Unique ID for matching (auto-generated if not provided)
+
+    Returns:
+        Gradio message dict with metadata for search bubble.
+        Content: "Ищу: {query}"
+        Title: "🔄 Поиск в базе знаний"
+        Status: "pending" (spinner visible)
+    """
+    import uuid
+
+    if search_id is None:
+        search_id = str(uuid.uuid4())[:8]
+
+    title = get_text("search_started_title")
+    content = get_text("search_started_content", query=query.strip())
+
+    return {
+        "role": "assistant",
+        "content": content,
+        "metadata": {
+            "title": title,
+            "ui_type": "search_bubble",  # New unified type
+            "status": "pending",
+            "search_id": search_id,
+            "query": query,  # Store original query for updates
+        },
+    }
+
+
 def yield_thinking_block(tool_name: str) -> dict:
     """Yield metadata message for generic thinking block with pending spinner.
 
@@ -260,47 +313,72 @@ def yield_thinking_block(tool_name: str) -> dict:
 
 
 def yield_sgr_planning_started() -> dict:
-    """Yield metadata message for SGR planning started with pending spinner."""
+    """Yield metadata message for SGR (Spam/Goal/Recipe) planning phase.
+
+    This indicates the agent is analyzing the user request before executing tools.
+
+    Returns:
+        Gradio message dict with metadata for SGR planning indicator.
+        Content and title are resolved i18n strings.
+        Includes status="pending" to show native Gradio spinner.
+
+    Example:
+        >>> from rag_engine.api.stream_helpers import yield_sgr_planning_started
+        >>> msg = yield_sgr_planning_started()
+        >>> "Planning" in msg["metadata"]["title"] or "Планирование" in msg["metadata"]["title"]
+        True
+        >>> msg["metadata"]["status"]
+        'pending'
+    """
+    # Resolve i18n translations to plain strings before yielding
     title = get_text("sgr_planning_title")
     content = get_text("sgr_planning_content")
+
     return {
         "role": "assistant",
         "content": content,
         "metadata": {
             "title": title,
+            # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "sgr_planning",
+            # Native Gradio spinner: "pending" shows spinner, "done" hides it
             "status": "pending",
         },
     }
 
 
-def yield_search_completed(
-    count: int | None = None,
-    articles: list[dict] | None = None,
-) -> dict:
-    """Yield metadata message for search completed (no spinner, stays open).
+def yield_search_completed(count: int, articles: list[dict] | None = None) -> dict:
+    """Yield metadata message for search completed (stays open for visibility).
 
     Args:
-        count: Optional article count to include in message.
-        articles: Optional list of article dicts with 'title' and 'url' keys to display as sources.
+        count: Number of articles found
+        articles: Optional list of article dicts with 'title' and 'url' keys
 
     Returns:
         Gradio message dict with metadata for search completed.
-        Content and title are resolved i18n strings (never i18n metadata objects).
+        Content and title are resolved i18n strings.
         No status field - accordion stays open to show clickable article links.
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_search_completed
         >>> msg = yield_search_completed(5)
-        >>> "Found" in msg["metadata"]["title"] or "завершен" in msg["metadata"]["title"]
+        >>> "Found" in msg["metadata"]["title"] or "Найдено" in msg["metadata"]["title"]
         True
     """
-    # Resolve i18n translations to plain strings
-    title = get_text("search_completed_title_with_count")
-    base_content = get_text(
-        "search_completed_content_with_count",
-        count=count if count is not None else 0,
-    )
+    # Resolve i18n translations to plain strings before yielding
+    # This ensures Chatbot receives strings, not __i18n__ metadata objects
+    title = get_text("search_completed_title")
+
+    # Format content based on count
+    if count == 0:
+        base_content = get_text("search_completed_content_no_results")
+    elif count == 1:
+        base_content = get_text("search_completed_content_single")
+    else:
+        base_content = get_text(
+            "search_completed_content_with_count",
+            count=count if count is not None else 0,
+        )
 
     # Add article sources if provided
     content_parts = [base_content]
@@ -383,6 +461,7 @@ def yield_generating_answer() -> dict:
         'pending'
     """
     # Resolve i18n translations to plain strings before yielding
+    # This ensures Chatbot receives strings, not __i18n__ metadata objects
     title = get_text("generating_answer_title")
     content = get_text("generating_answer_content")
 
@@ -393,19 +472,19 @@ def yield_generating_answer() -> dict:
             "title": title,
             # Explicit UI-only marker (used by _is_ui_only_message)
             "ui_type": "generating_answer",
-            # Native Gradio spinner: "pending" shows spinner during answer generation
+            # Native Gradio spinner: "pending" shows spinner, "done" hides it
             "status": "pending",
         },
     }
 
 
 def yield_cancelled() -> dict:
-    """Yield metadata message for cancelled response (stays open for visibility).
+    """Yield metadata message for cancelled generation (stays open for visibility).
 
     Returns:
-        Gradio message dict with metadata for cancellation.
-        Content and title are resolved i18n strings (never i18n metadata objects).
-        No status field - accordion stays open so users see the cancellation notice.
+        Gradio message dict with metadata for cancelled indicator.
+        Content and title are resolved i18n strings.
+        No status field - accordion stays open so users see cancellation notice.
 
     Example:
         >>> from rag_engine.api.stream_helpers import yield_cancelled
@@ -496,23 +575,15 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
 
         # Track the most recent pending search_started
         if ui_type == "search_started":
-            status = metadata.get("status", "pending")
-            # Only update if still pending (not "done")
-            if status == "pending":
-                # Only update in place if this bubble has no query yet (empty placeholder).
-                # If it already has a query, it belongs to a previous tool call; do not overwrite.
-                existing_content = (msg.get("content") or "").strip()
-                empty_query_content = get_text("search_started_content", query="").strip()
-                if existing_content != empty_query_content:
-                    logger.debug(
-                        "update_search_started_in_history: pending search_started at index %d already has query, skip update (append new bubble)",
-                        i,
-                    )
-                    return False
-                last_pending_search_started_idx = i
-                logger.debug("update_search_started_in_history: found pending search_started at index %d", i)
-                # Use the first pending one we find (most recent)
+            # Check if this search_started already has the same query
+            content = msg.get("content", "")
+            empty_query_content = get_text("search_started_content", query="").strip()
+            if content.strip() != empty_query_content:
+                # This search_started already has a query, skip update (will append new bubble)
+                logger.debug("update_search_started_in_history: pending search_started at index %d already has query, skip update (append new bubble)", i)
                 break
+            last_pending_search_started_idx = i
+            logger.debug("update_search_started_in_history: found pending search_started at index %d", i)
 
     # Update the found pending search_started message
     if last_pending_search_started_idx is not None:
@@ -528,8 +599,8 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
 def last_pending_search_started_has_query(gradio_history: list[dict], query: str) -> bool:
     """Return True if the most recent pending search_started message already displays this query.
 
-    Used to avoid appending a duplicate bubble when the same tool call is handled
-    by multiple code paths (e.g. accumulator and content_blocks).
+    This prevents duplicate bubbles when multiple detection paths (accumulator vs tool_calls)
+    try to create bubbles for the same query.
 
     Args:
         gradio_history: List of Gradio message dictionaries
@@ -538,20 +609,27 @@ def last_pending_search_started_has_query(gradio_history: list[dict], query: str
     Returns:
         True if the last pending search_started has the same query content, False otherwise
     """
-    if not query:
-        return False
     expected_content = get_text("search_started_content", query=query).strip()
+
+    # Search backwards to find the most recent pending search_started
     for i in range(len(gradio_history) - 1, -1, -1):
         msg = gradio_history[i]
         if not isinstance(msg, dict) or msg.get("role") != "assistant":
             continue
-        metadata = msg.get("metadata") or {}
+        metadata = msg.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
         if metadata.get("ui_type") != "search_started":
             continue
-        if metadata.get("status") == "pending":
-            content = (msg.get("content") or "").strip()
-            return content == expected_content
+
+        # Check if content matches
+        content = msg.get("content", "").strip()
+        if content == expected_content:
+            return True
+
+        # Stop at first search_started found (most recent pending)
         break
+
     return False
 
 
@@ -646,4 +724,80 @@ def update_search_started_by_id(
             return True
 
     logger.debug("No matching search_started found for search_id: %s", search_id)
+    return False
+
+
+def update_search_bubble_by_id(
+    gradio_history: list[dict],
+    search_id: str,
+    count: int,
+    articles: list[dict] | None = None,
+) -> bool:
+    """Update search bubble to show results.
+
+    Transforms the bubble from pending state to complete state:
+    - Title: "🔄 Поиск в базе знаний" → "✅ Поиск завершен"
+    - Content: "Ищу: query" → "Запрос: query\nНайдено статей: count\n\nИсточники: [...]"
+    - Status: "pending" → "done" (spinner stops)
+
+    Args:
+        gradio_history: List of Gradio message dictionaries
+        search_id: The unique search_id to match
+        count: Number of articles found
+        articles: List of article dicts with 'title' and 'url' keys
+
+    Returns:
+        True if bubble was updated, False otherwise
+    """
+    if not search_id:
+        return False
+
+    # Find bubble by search_id
+    for i in range(len(gradio_history) - 1, -1, -1):
+        msg = gradio_history[i]
+        if not isinstance(msg, dict) or msg.get("role") != "assistant":
+            continue
+        metadata = msg.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        if metadata.get("ui_type") != "search_bubble":
+            continue
+        if metadata.get("search_id") != search_id:
+            continue
+
+        # Found the bubble - update it
+        query = metadata.get("query", "")
+
+        # Build new content
+        content_parts = [
+            get_text("search_completed_query_prefix", query=query),
+            get_text("search_completed_count", count=count),
+        ]
+
+        # Add sources if count > 0 and articles provided
+        if count > 0 and articles:
+            content_parts.append("")
+            content_parts.append(get_text("sources_header"))
+            for idx, article in enumerate(articles, start=1):
+                title = article.get("title", "Untitled")
+                url = article.get("url", "")
+                if url:
+                    content_parts.append(f"{idx}. [{title}]({url})")
+                else:
+                    content_parts.append(f"{idx}. {title}")
+
+        # Update the bubble in place
+        msg["content"] = "\n".join(content_parts)
+        metadata["title"] = get_text("search_completed_title")
+        metadata["status"] = "done"
+
+        logger.info(
+            "Updated search bubble to complete: search_id=%s, count=%d (index %d)",
+            search_id,
+            count,
+            i
+        )
+        return True
+
+    logger.debug("No matching search_bubble found for search_id: %s", search_id)
     return False
