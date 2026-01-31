@@ -175,6 +175,24 @@ def yield_disclaimer() -> dict:
     }
 
 
+def yield_disclaimer_display() -> dict:
+    """Yield AI disclaimer as a separate assistant message (UI only, not in LLM context).
+
+    Injected before the first answer chunk so it appears above the streamed answer.
+    Excluded from agent context via ui_type 'disclaimer_display'.
+
+    Returns:
+        Gradio message dict: role assistant, content AI_DISCLAIMER, metadata ui_type.
+    """
+    from rag_engine.llm.prompts import AI_DISCLAIMER
+
+    return {
+        "role": "assistant",
+        "content": AI_DISCLAIMER.strip(),
+        "metadata": {"ui_type": "disclaimer_display"},
+    }
+
+
 def yield_thinking_spinner() -> dict:
     """Yield thinking spinner at start of agent processing.
 
