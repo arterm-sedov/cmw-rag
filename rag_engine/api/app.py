@@ -962,7 +962,8 @@ async def agent_chat_handler(
 
     # Add thinking spinner to show progress while LLM generates tool calls
     from rag_engine.api.stream_helpers import yield_thinking_block
-    thinking_msg = yield_thinking_block("agent")
+    thinking_id = str(uuid.uuid4())[:8]
+    thinking_msg = yield_thinking_block("agent", block_id=thinking_id)
     gradio_history.append(thinking_msg)
     yield list(gradio_history)
 
@@ -991,7 +992,7 @@ async def agent_chat_handler(
         ToolCallAccumulator,
         yield_search_bubble,
         yield_thinking_block,
-        update_message_status_in_history,
+        remove_message_by_id,
         update_search_bubble_by_id,
     )
 
@@ -1501,8 +1502,8 @@ async def agent_chat_handler(
                                         search_id_by_query[tool_query.strip()] = search_id
                                         search_started_msg = yield_search_bubble(tool_query, search_id=search_id)
                                         gradio_history.append(search_started_msg)
-                                        # Remove thinking spinner now that search bubble is shown
-                                        update_message_status_in_history(gradio_history, "thinking", "done")
+                                        # Remove thinking spinner completely now that search bubble is shown
+                                        remove_message_by_id(gradio_history, thinking_id)
                                         yield list(gradio_history)
                                     else:
                                         # First search - check if bubble already exists for this query
@@ -1526,8 +1527,8 @@ async def agent_chat_handler(
                                                 tool_query, search_id=search_id
                                             )
                                             gradio_history.append(search_started_msg)
-                                            # Remove thinking spinner now that search bubble is shown
-                                            update_message_status_in_history(gradio_history, "thinking", "done")
+                                            # Remove thinking spinner completely now that search bubble is shown
+                                            remove_message_by_id(gradio_history, thinking_id)
                                             yield list(gradio_history)
                                 else:
                                     # Query not ready yet - do NOT create empty block

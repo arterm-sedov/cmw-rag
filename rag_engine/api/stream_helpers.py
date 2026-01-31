@@ -280,11 +280,12 @@ def yield_search_bubble(query: str, search_id: str | None = None) -> dict:
     }
 
 
-def yield_thinking_block(tool_name: str) -> dict:
+def yield_thinking_block(tool_name: str, block_id: str | None = None) -> dict:
     """Yield metadata message for generic thinking block with pending spinner.
 
     Args:
         tool_name: Name of the tool being used (e.g., "add", "get_current_datetime")
+        block_id: Optional stable ID for later removal via remove_message_by_id()
 
     Returns:
         Gradio message dict with metadata for thinking block.
@@ -304,16 +305,18 @@ def yield_thinking_block(tool_name: str) -> dict:
     title = get_text("thinking_title")
     content = get_text("thinking_content", tool_name=tool_name)
 
+    metadata = {
+        "title": title,
+        "ui_type": "thinking",
+        "status": "pending",
+    }
+    if block_id:
+        metadata["id"] = block_id
+
     return {
         "role": "assistant",
         "content": content,
-        "metadata": {
-            "title": title,
-            # Explicit UI-only marker (used by _is_ui_only_message)
-            "ui_type": "thinking",
-            # Native Gradio spinner: "pending" shows spinner, "done" hides it
-            "status": "pending",
-        },
+        "metadata": metadata,
     }
 
 
@@ -685,6 +688,83 @@ def update_message_status_in_history(
     return False
 
 
+def remove_message_by_ui_type(gradio_history: list[dict], ui_type: str) -> bool:
+    """Remove the last message with given ui_type from Gradio history.
+
+    This is used to completely remove transient UI elements like thinking spinners
+    when they are no longer needed, instead of just collapsing them.
+
+    Args:
+        gradio_history: List of Gradio message dictionaries
+        ui_type: The ui_type to search for and remove ("thinking", etc.)
+
+    Returns:
+        True if message was removed, False otherwise
+
+    Example:
+        >>> history = [{
+        ...     "role": "assistant",
+        ...     "content": "Thinking...",
+        ...     "metadata": {"ui_type": "thinking", "status": "pending"}
+        ... }]
+        >>> remove_message_by_ui_type(history, "thinking")
+        True
+        >>> len(history)
+        0
+    """
+    # Search backwards to find and remove the most recent message with matching ui_type
+    for i in range(len(gradio_history) - 1, -1, -1):
+        msg = gradio_history[i]
+        if isinstance(msg, dict) and msg.get("role") == "assistant":
+            metadata = msg.get("metadata")
+            if metadata is None or not isinstance(metadata, dict):
+                continue
+            if metadata.get("ui_type") == ui_type:
+                # Remove the message from history
+                del gradio_history[i]
+                return True
+
+    return False
+
+
+def remove_message_by_id(gradio_history: list[dict], msg_id: str) -> bool:
+    """Remove a message by its stable ID from Gradio history.
+
+    This is used to remove specific UI elements by their unique identifier,
+    similar to how search bubbles are managed.
+
+    Args:
+        gradio_history: List of Gradio message dictionaries
+        msg_id: The stable ID to match (stored in metadata["id"])
+
+    Returns:
+        True if message was removed, False otherwise
+
+    Example:
+        >>> history = [{
+        ...     "role": "assistant",
+        ...     "content": "Thinking...",
+        ...     "metadata": {"ui_type": "thinking", "id": "abc123"}
+        ... }]
+        >>> remove_message_by_id(history, "abc123")
+        True
+        >>> len(history)
+        0
+    """
+    if not msg_id:
+        return False
+
+    for i in range(len(gradio_history) - 1, -1, -1):
+        msg = gradio_history[i]
+        if isinstance(msg, dict) and msg.get("role") == "assistant":
+            metadata = msg.get("metadata")
+            if isinstance(metadata, dict) and metadata.get("id") == msg_id:
+                del gradio_history[i]
+                return True
+
+    return False
+
+
 def update_search_started_by_id(
     gradio_history: list[dict],
     search_id: str,
@@ -792,9 +872,12 @@ def update_search_bubble_by_id(
                     content_parts.append(f"{idx}. {title}")
 
         # Update the bubble in place
+        # Keep status="pending" to prevent accordion collapse, but the spinner visually
+        # indicates completion through the title change from "🔄 Поиск..." to "✅ Поиск завершен"
         msg["content"] = "\n".join(content_parts)
         metadata["title"] = get_text("search_completed_title")
-        metadata["status"] = "done"
+        # Note: NOT changing status to "done" to prevent accordion collapse
+        # Title change signals completion while keeping content visible
 
         logger.info(
             "Updated search bubble to complete: search_id=%s, count=%d (index %d)",
