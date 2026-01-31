@@ -6,8 +6,9 @@ This document provides essential commands, code style guidelines, and developmen
 
 ### 1. Environment Setup
 Always ensure the virtual environment is activated before running commands.
-- **Linux/WSL:** `source .venv-wsl/bin/activate`
-- **Windows:** `.venv\\Scripts\\Activate.ps1`
+- **Linux (native):** `source .venv/bin/activate`
+- **Windows (WSL):** `source .venv-wsl/bin/activate`
+- **Windows (PowerShell):** `.venv\Scripts\Activate.ps1`
 - **Install Dependencies:** `pip install -r rag_engine/requirements.txt`
 
 ### 2. Testing
