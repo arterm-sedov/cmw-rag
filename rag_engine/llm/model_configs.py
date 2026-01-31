@@ -174,6 +174,11 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 32_768,  # Reasonable max output for large context model
         "temperature": 0,
     },
+    "z-ai/glm-4.7-flash": {
+        "token_limit": 202_752,  # 202,752 context window as per OpenRouter API
+        "max_tokens": 32_768,  # Reasonable max output for large context model
+        "temperature": 0,
+    },
     # OpenAI specialized models
     "openai/gpt-5-codex": {
         "token_limit": 400_000,
