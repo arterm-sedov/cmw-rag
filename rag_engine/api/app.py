@@ -8,7 +8,6 @@ import logging
 import os
 import sys
 import time
-import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -918,12 +917,12 @@ async def agent_chat_handler(
                 logger.warning("SGR plan dict is None or empty, not injecting into messages")
 
             from rag_engine.api.stream_helpers import (
-                update_message_status_in_history,
                 get_text,
+                update_message_status_in_history,
             )
 
             update_message_status_in_history(gradio_history, "sgr_planning", "done")
-            
+
             # Replace SGR planning bubble with user intent message (UI only, not context)
             if sgr_plan_dict and sgr_plan_dict.get("user_intent"):
                 user_intent = sgr_plan_dict.get("user_intent", "").strip()
@@ -947,7 +946,7 @@ async def agent_chat_handler(
                                     user_intent[:100]
                                 )
                                 break
-            
+
             yield list(gradio_history)
         except Exception as exc:  # noqa: BLE001
             logger.error(
@@ -961,8 +960,8 @@ async def agent_chat_handler(
         logger.info("SGR planning disabled (enable_sgr_planning=False), skipping")
 
     # Add thinking spinner to show progress while LLM generates tool calls
-    from rag_engine.api.stream_helpers import yield_thinking_block
-    thinking_id = str(uuid.uuid4())[:8]
+    from rag_engine.api.stream_helpers import short_uid, yield_thinking_block
+    thinking_id = short_uid()
     thinking_msg = yield_thinking_block("agent", block_id=thinking_id)
     gradio_history.append(thinking_msg)
     yield list(gradio_history)
@@ -990,10 +989,11 @@ async def agent_chat_handler(
     # Initialize tool call accumulator for streaming chunks
     from rag_engine.api.stream_helpers import (
         ToolCallAccumulator,
+        remove_message_by_id,
+        short_uid,
+        update_search_bubble_by_id,
         yield_search_bubble,
         yield_thinking_block,
-        remove_message_by_id,
-        update_search_bubble_by_id,
     )
 
     tool_call_accumulator = ToolCallAccumulator()
@@ -1002,6 +1002,10 @@ async def agent_chat_handler(
     search_id_by_query: dict[str, str] = {}
     # Track which search bubbles have been marked as completed to prevent duplicates
     completed_search_ids: set[str] = set()
+    # Track thinking block ID for removal when first search bubble appears
+    thinking_id = short_uid()
+    # Track generating answer block ID for removal when done
+    generating_answer_id = short_uid()
 
     agent_context: AgentContext | None = None
     try:
@@ -1068,8 +1072,6 @@ async def agent_chat_handler(
                         or "AIMessage" in str(token_type)
                     )
 
-                    logger.debug("Token: type=%s, class=%s, is_ai=%s", token_type, token_class, is_ai_message)
-
                     # Process all AI tokens through accumulator to accumulate tool_call chunks
                     # This ensures we capture query even if chunks arrive before tool_call is detected
                     if is_ai_message:
@@ -1108,7 +1110,7 @@ async def agent_chat_handler(
                                             tool_query_from_accumulator[:50],
                                         )
                                         # Generate unique search_id for this query
-                                        search_id = str(uuid.uuid4())[:8]
+                                        search_id = short_uid()
                                         search_id_by_query[tool_query_from_accumulator.strip()] = search_id
                                         search_started_msg = yield_search_bubble(
                                             tool_query_from_accumulator, search_id=search_id
@@ -1128,7 +1130,7 @@ async def agent_chat_handler(
                                             tool_query_from_accumulator[:50],
                                         )
                                         # Generate unique search_id for this query
-                                        search_id = str(uuid.uuid4())[:8]
+                                        search_id = short_uid()
                                         search_id_by_query[tool_query_from_accumulator.strip()] = search_id
                                         search_started_msg = yield_search_bubble(
                                             tool_query_from_accumulator, search_id=search_id
@@ -1208,10 +1210,8 @@ async def agent_chat_handler(
                         tool_executing = False
                         has_seen_tool_results = True
 
-                        # Stop any pending thinking and search spinners when tool result arrives
-                        from rag_engine.api.stream_helpers import update_message_status_in_history
-
-                        update_message_status_in_history(gradio_history, "thinking", "done")
+                        # Remove thinking block when tool result arrives (if still present)
+                        remove_message_by_id(gradio_history, thinking_id)
 
                         # For unified bubble, update it with results
                         bubble_updated = False
@@ -1418,12 +1418,10 @@ async def agent_chat_handler(
                         tool_calls_detected_in_stream = True
                         if not tool_executing:
                             tool_executing = True
-                            # Stop generating_answer spinner when a new tool call is detected
-                            # This allows the next generating_answer spinner to appear after this tool completes
+                            # Remove generating_answer block when a new tool call is detected
+                            # So the next generating_answer block can appear after this tool completes
                             if has_seen_tool_results:
-                                update_message_status_in_history(
-                                    gradio_history, "generating_answer", "done"
-                                )
+                                remove_message_by_id(gradio_history, generating_answer_id)
                             # Log which method detected the tool call
                             if has_tool_calls_attr:
                                 call_count = (
@@ -1489,7 +1487,7 @@ async def agent_chat_handler(
                                                         tool_query[:50]
                                                     )
                                                     break
-                                
+
                                 # Create or update search bubble based on query availability
                                 if tool_query:
                                     # Query is complete - check if this is a subsequent search or first one
@@ -1500,7 +1498,7 @@ async def agent_chat_handler(
                                             tool_query[:50],
                                         )
                                         # Generate unique search_id for this query
-                                        search_id = str(uuid.uuid4())[:8]
+                                        search_id = short_uid()
                                         search_id_by_query[tool_query.strip()] = search_id
                                         search_started_msg = yield_search_bubble(tool_query, search_id=search_id)
                                         gradio_history.append(search_started_msg)
@@ -1523,7 +1521,7 @@ async def agent_chat_handler(
                                                 tool_query[:50],
                                             )
                                             # Generate unique search_id for this query
-                                            search_id = str(uuid.uuid4())[:8]
+                                            search_id = short_uid()
                                             search_id_by_query[tool_query.strip()] = search_id
                                             search_started_msg = yield_search_bubble(
                                                 tool_query, search_id=search_id
@@ -1563,11 +1561,10 @@ async def agent_chat_handler(
                                 # Tool call chunk detected - emit metadata if not already done
                                 if not tool_executing:
                                     tool_executing = True
-                                    # Stop generating_answer spinner when a new tool call is detected
-                                    # This allows the next generating_answer spinner to appear after this tool completes
+                                    # Remove generating_answer block when a new tool call is detected
                                     if has_seen_tool_results:
-                                        update_message_status_in_history(
-                                            gradio_history, "generating_answer", "done"
+                                        remove_message_by_id(
+                                            gradio_history, generating_answer_id
                                         )
                                     logger.debug("Agent calling tool via chunk")
 
@@ -1586,7 +1583,7 @@ async def agent_chat_handler(
                                                     tool_query[:50],
                                                 )
                                                 # Generate unique search_id for this query
-                                                search_id = str(uuid.uuid4())[:8]
+                                                search_id = short_uid()
                                                 search_id_by_query[tool_query.strip()] = search_id
                                                 search_started_msg = yield_search_bubble(
                                                     tool_query, search_id=search_id
@@ -1609,7 +1606,7 @@ async def agent_chat_handler(
                                                         tool_query[:50],
                                                     )
                                                     # Generate unique search_id for this query
-                                                    search_id = str(uuid.uuid4())[:8]
+                                                    search_id = short_uid()
                                                     search_id_by_query[tool_query.strip()] = search_id
                                                     search_started_msg = yield_search_bubble(
                                                         tool_query, search_id=search_id
@@ -1644,7 +1641,7 @@ async def agent_chat_handler(
                                                 yield_generating_answer,
                                             )
 
-                                            generating_msg = yield_generating_answer()
+                                            generating_msg = yield_generating_answer(block_id=generating_answer_id)
                                             gradio_history.append(generating_msg)
                                             yield list(gradio_history)
                                             # Keep spinner spinning - will stop when answer finishes or new tool call
@@ -1685,7 +1682,7 @@ async def agent_chat_handler(
                                         yield_generating_answer,
                                     )
 
-                                    generating_msg = yield_generating_answer()
+                                    generating_msg = yield_generating_answer(block_id=generating_answer_id)
                                     gradio_history.append(generating_msg)
                                     yield list(gradio_history)
                                     # Keep spinner spinning - will stop when answer finishes or new tool call
@@ -1774,7 +1771,7 @@ async def agent_chat_handler(
 
                     # Stop SGR planning spinner when starting to generate answer
                     update_message_status_in_history(gradio_history, "sgr_planning", "done")
-                    generating_msg = yield_generating_answer()
+                    generating_msg = yield_generating_answer(block_id=generating_answer_id)
                     gradio_history.append(generating_msg)
                     yield list(gradio_history)
 
@@ -1793,11 +1790,9 @@ async def agent_chat_handler(
                         gradio_history.append(chunk)
                         yield list(gradio_history)
                     elif isinstance(chunk, str):
-                        # Text chunk - stop generating spinner on first chunk
+                        # Text chunk - remove generating_answer block on first chunk
                         if not answer and has_seen_tool_results:
-                            update_message_status_in_history(
-                                gradio_history, "generating_answer", "done"
-                            )
+                            remove_message_by_id(gradio_history, generating_answer_id)
                         # Update last message or create new one
                         _update_or_append_assistant_message(gradio_history, chunk)
                         yield list(gradio_history)
@@ -1888,13 +1883,13 @@ async def agent_chat_handler(
             llm_manager.save_assistant_turn(session_id, final_response)
             logger.info(f"Saved complete response to memory ({len(final_response)} chars)")
 
-        # Mark all pending spinners as done before final yield (prevents persistent spinners)
+        # Remove transient blocks and mark pending spinners done before final yield
         from rag_engine.api.stream_helpers import update_message_status_in_history
 
-        update_message_status_in_history(gradio_history, "thinking", "done")
+        remove_message_by_id(gradio_history, thinking_id)
+        remove_message_by_id(gradio_history, generating_answer_id)
         update_message_status_in_history(gradio_history, "search_started", "done")
         update_message_status_in_history(gradio_history, "sgr_planning", "done")
-        update_message_status_in_history(gradio_history, "generating_answer", "done")
         logger.info("Marked all pending UI spinners as done before final yield")
 
         # Log final history state for debugging
@@ -2054,7 +2049,7 @@ async def agent_chat_handler(
                                     update_message_status_in_history(
                                         gradio_history, "sgr_planning", "done"
                                     )
-                                    generating_msg = yield_generating_answer()
+                                    generating_msg = yield_generating_answer(block_id=generating_answer_id)
                                     gradio_history.append(generating_msg)
                                     yield list(gradio_history)
                                 continue
@@ -2068,10 +2063,10 @@ async def agent_chat_handler(
                                     if block.get("type") == "text" and block.get("text"):
                                         text_chunk = block["text"]
 
-                                        # Stop generating spinner on first text chunk
+                                        # Remove generating_answer block on first text chunk
                                         if not answer and has_seen_tool_results:
-                                            update_message_status_in_history(
-                                                gradio_history, "generating_answer", "done"
+                                            remove_message_by_id(
+                                                gradio_history, generating_answer_id
                                             )
 
                                         answer, disclaimer_prepended = (
@@ -2163,13 +2158,13 @@ async def agent_chat_handler(
 
         _update_or_append_assistant_message(gradio_history, error_msg)
 
-        # Mark all pending spinners as done before yielding error (prevents persistent spinners)
+        # Remove transient blocks and mark pending spinners done before yielding error
         from rag_engine.api.stream_helpers import update_message_status_in_history
 
-        update_message_status_in_history(gradio_history, "thinking", "done")
+        remove_message_by_id(gradio_history, thinking_id)
+        remove_message_by_id(gradio_history, generating_answer_id)
         update_message_status_in_history(gradio_history, "search_started", "done")
         update_message_status_in_history(gradio_history, "sgr_planning", "done")
-        update_message_status_in_history(gradio_history, "generating_answer", "done")
 
         yield list(gradio_history)
 
