@@ -1068,6 +1068,8 @@ async def agent_chat_handler(
                         or "AIMessage" in str(token_type)
                     )
 
+                    logger.debug("Token: type=%s, class=%s, is_ai=%s", token_type, token_class, is_ai_message)
+
                     # Process all AI tokens through accumulator to accumulate tool_call chunks
                     # This ensures we capture query even if chunks arrive before tool_call is detected
                     if is_ai_message:
