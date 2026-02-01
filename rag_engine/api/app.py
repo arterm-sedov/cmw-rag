@@ -297,33 +297,24 @@ class ToolBudgetMiddleware(AgentMiddleware):
             if isinstance(tool_call, dict) and not tool_call.get("id"):
                 tool_call["id"] = f"call_{uuid.uuid4().hex}"
 
-            # Initialize runtime.context if it doesn't exist (LangChain should set this, but ensure it's there)
-            if state and runtime is not None:
-                if not hasattr(runtime, "context") or runtime.context is None:
-                    # Try to get context from request.config if available
-                    config = getattr(request, "config", None) or {}
-                    context_from_config = config.get("context") if config else None
-                    if context_from_config is None:
-                        # Fallback: create a new AgentContext if none exists
-                        from rag_engine.utils.context_tracker import AgentContext
+            # Ensure runtime.context exists for every tool invocation.
+            # Prefer the thread-local AgentContext created by the stream loop (set_current_context()).
+            if runtime is not None and (not hasattr(runtime, "context") or runtime.context is None):
+                from rag_engine.utils.context_tracker import AgentContext, get_current_context
 
-                        context_from_config = AgentContext()
+                runtime.context = get_current_context() or AgentContext()
+                logger.debug("[ToolBudget] Initialized runtime.context (was missing)")
 
-                    # Set runtime.context so tools can access it
-                    runtime.context = context_from_config
-                    logger.debug("[ToolBudget] Initialized runtime.context (was missing)")
-
-                if hasattr(runtime, "context") and runtime.context:
-                    conv_toks, tool_toks = _compute_context_tokens_from_state(
-                        state.get("messages", [])
-                    )
-                    runtime.context.conversation_tokens = conv_toks
-                    runtime.context.accumulated_tool_tokens = tool_toks
-                    logger.debug(
-                        "[ToolBudget] runtime.context updated before tool: conv=%d, tools=%d",
-                        conv_toks,
-                        tool_toks,
-                    )
+            # Update runtime.context token budget when state has messages.
+            if runtime is not None and getattr(runtime, "context", None) and state:
+                conv_toks, tool_toks = _compute_context_tokens_from_state(state.get("messages", []))
+                runtime.context.conversation_tokens = conv_toks
+                runtime.context.accumulated_tool_tokens = tool_toks
+                logger.debug(
+                    "[ToolBudget] runtime.context updated before tool: conv=%d, tools=%d",
+                    conv_toks,
+                    tool_toks,
+                )
 
             # Enqueue pending search bubble at tool invocation time (100% reliability).
             if runtime is not None and hasattr(runtime, "context") and runtime.context:
@@ -1296,6 +1287,23 @@ async def agent_chat_handler(
                         # Stop SGR planning spinner after any tool result
                         update_message_status_in_history(gradio_history, "sgr_planning", "done")
 
+                        # Show generating-answer spinner immediately after search results,
+                        # before any expensive compression / next LLM call starts.
+                        if is_search_result and not answer:
+                            has_generating = any(
+                                isinstance(msg, dict)
+                                and msg.get("role") == "assistant"
+                                and (msg.get("metadata") or {}).get("id") == generating_answer_id
+                                for msg in gradio_history
+                            )
+                            if not has_generating:
+                                from rag_engine.api.stream_helpers import yield_generating_answer
+
+                                gradio_history.append(
+                                    yield_generating_answer(block_id=generating_answer_id)
+                                )
+                                yield list(gradio_history)
+
                         # CRITICAL: Check if accumulated tool results exceed safe threshold
                         # This prevents overflow when agent makes multiple tool calls
                         if settings.llm_fallback_enabled and not selected_model:
@@ -1541,9 +1549,19 @@ async def agent_chat_handler(
                                                 yield_generating_answer,
                                             )
 
-                                            generating_msg = yield_generating_answer(block_id=generating_answer_id)
-                                            gradio_history.append(generating_msg)
-                                            yield list(gradio_history)
+                                            has_generating = any(
+                                                isinstance(msg, dict)
+                                                and msg.get("role") == "assistant"
+                                                and (msg.get("metadata") or {}).get("id")
+                                                == generating_answer_id
+                                                for msg in gradio_history
+                                            )
+                                            if not has_generating:
+                                                generating_msg = yield_generating_answer(
+                                                    block_id=generating_answer_id
+                                                )
+                                                gradio_history.append(generating_msg)
+                                                yield list(gradio_history)
 
                                     answer, disclaimer_prepended = (
                                         _process_text_chunk_for_streaming(
@@ -1574,6 +1592,10 @@ async def agent_chat_handler(
                                 new_chunk = token_content
 
                             if new_chunk:
+                                # As soon as answer text starts streaming, remove the generating-answer spinner.
+                                if not answer and has_seen_tool_results:
+                                    remove_message_by_id(gradio_history, generating_answer_id)
+
                                 # On first text chunk: inject disclaimer as separate message (UI only)
                                 if (
                                     not answer
@@ -1595,9 +1617,18 @@ async def agent_chat_handler(
                                         yield_generating_answer,
                                     )
 
-                                    generating_msg = yield_generating_answer(block_id=generating_answer_id)
-                                    gradio_history.append(generating_msg)
-                                    yield list(gradio_history)
+                                    has_generating = any(
+                                        isinstance(msg, dict)
+                                        and msg.get("role") == "assistant"
+                                        and (msg.get("metadata") or {}).get("id") == generating_answer_id
+                                        for msg in gradio_history
+                                    )
+                                    if not has_generating:
+                                        generating_msg = yield_generating_answer(
+                                            block_id=generating_answer_id
+                                        )
+                                        gradio_history.append(generating_msg)
+                                        yield list(gradio_history)
 
                                 answer, disclaimer_prepended = _process_text_chunk_for_streaming(
                                     new_chunk, answer, disclaimer_prepended, has_seen_tool_results
@@ -1802,6 +1833,14 @@ async def agent_chat_handler(
 
         remove_message_by_id(gradio_history, thinking_id)
         remove_message_by_id(gradio_history, generating_answer_id)
+        # Defensive: remove any duplicate generating_answer blocks (shouldn't happen, but avoids UI hang).
+        for i in range(len(gradio_history) - 1, -1, -1):
+            msg = gradio_history[i]
+            if not isinstance(msg, dict) or msg.get("role") != "assistant":
+                continue
+            md = msg.get("metadata")
+            if isinstance(md, dict) and md.get("ui_type") == "generating_answer":
+                del gradio_history[i]
         update_message_status_in_history(gradio_history, "search_started", "done")
         update_message_status_in_history(gradio_history, "sgr_planning", "done")
         logger.info("Marked all pending UI spinners as done before final yield")
@@ -2080,6 +2119,13 @@ async def agent_chat_handler(
 
         remove_message_by_id(gradio_history, thinking_id)
         remove_message_by_id(gradio_history, generating_answer_id)
+        for i in range(len(gradio_history) - 1, -1, -1):
+            msg = gradio_history[i]
+            if not isinstance(msg, dict) or msg.get("role") != "assistant":
+                continue
+            md = msg.get("metadata")
+            if isinstance(md, dict) and md.get("ui_type") == "generating_answer":
+                del gradio_history[i]
         update_message_status_in_history(gradio_history, "search_started", "done")
         update_message_status_in_history(gradio_history, "sgr_planning", "done")
 
