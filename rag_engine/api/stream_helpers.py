@@ -917,3 +917,13 @@ def update_search_bubble_by_id(
 
     logger.debug("No matching search_bubble found for search_id: %s", search_id)
     return False
+
+
+def drain_pending_ui_messages(gradio_history: list[dict], agent_context: object) -> bool:
+    """Drain AgentContext.pending_ui_messages into history (best-effort)."""
+    pending = getattr(agent_context, "pending_ui_messages", None)
+    if not isinstance(pending, list) or not pending:
+        return False
+    gradio_history.extend(pending)
+    pending.clear()
+    return True

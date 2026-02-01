@@ -81,10 +81,22 @@ class AgentContext(BaseModel):
         description="Run diagnostics (tokens, compression flags) excluded from LLM context.",
     )
 
+    # --- UI-only correlation (excluded from LLM) ---
+    pending_ui_messages: list[dict[str, Any]] = Field(
+        default_factory=list,
+        exclude=True,
+        description="UI-only messages enqueued by middleware for immediate display.",
+    )
+    emitted_ui_ids: set[str] = Field(
+        default_factory=set,
+        exclude=True,
+        description="IDs of UI-only messages already emitted in this turn (dedupe).",
+    )
+
 
 def set_current_context(context: AgentContext) -> None:
     """Set the current AgentContext for this thread (workaround for LangChain streaming bug).
-    
+
     This allows tools to access the context even when runtime.context is None during streaming.
     """
     _thread_local_context.agent_context = context
@@ -92,7 +104,7 @@ def set_current_context(context: AgentContext) -> None:
 
 def get_current_context() -> AgentContext | None:
     """Get the current AgentContext for this thread (workaround for LangChain streaming bug).
-    
+
     Returns None if no context has been set for this thread.
     """
     return getattr(_thread_local_context, "agent_context", None)
