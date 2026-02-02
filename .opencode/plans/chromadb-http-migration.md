@@ -352,7 +352,7 @@ Concurrent → Scales with HTTP server capacity
    - **Yes**: Use Phase 1 (Docker) for better management
    - **No**: Use Phase 0 (`chroma run`) - works everywhere
 
-3. **Backup Strategy**: Should we keep the embedded ChromaDB as a fallback during initial testing?
+3. **Data Migration**: The HTTP server will use the same data files (`chroma.sqlite3`, `index/`). Ensure your app is stopped before switching to avoid SQLite locks. After migration, the embedded Python Chroma path will be completely removed.
 
 4. **Monitoring**: Would you like detailed performance metrics during the migration phase?
 
@@ -386,7 +386,7 @@ The combination of native HTTP server + async integration perfectly addresses yo
 - [ ] Update `retriever.py` to use async methods
 - [ ] Implement health check in main app
 - [ ] Add error handling and retry logic
-- [ ] Update `check_chroma.py` to use HttpClient with env-based fallback
+- [ ] Update `check_chroma.py` to use HttpClient with env configuration
 
 ### **Phase 3: Testing & Optimization (1-2 hours)**
 - [ ] Create performance testing script
