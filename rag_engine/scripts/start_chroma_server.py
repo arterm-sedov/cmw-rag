@@ -249,10 +249,18 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
         # Run in background (detached)
         try:
             if sys.platform == "win32":
-                # Windows: Use CREATE_NEW_PROCESS_GROUP and DETACHED_PROCESS
+                # Windows: Use CREATE_NEW_PROCESS_GROUP, DETACHED_PROCESS, and CREATE_NO_WINDOW
+                # CREATE_NO_WINDOW (0x08000000) prevents console window from appearing
+                import subprocess as sp
+
+                creation_flags = (
+                    sp.CREATE_NEW_PROCESS_GROUP
+                    | sp.DETACHED_PROCESS
+                    | 0x08000000  # CREATE_NO_WINDOW
+                )
                 process = subprocess.Popen(
                     cmd,
-                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS,
+                    creationflags=creation_flags,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     stdin=subprocess.DEVNULL,
