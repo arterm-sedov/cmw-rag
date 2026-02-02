@@ -1,4 +1,4 @@
-"""Chroma vector store wrapper (direct chromadb client)."""
+"""Chroma vector store wrapper (HTTP client)."""
 
 from __future__ import annotations
 
@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from typing import Any
 
 import chromadb
+
+from rag_engine.config.settings import settings
 
 
 @dataclass
@@ -15,19 +17,28 @@ class RetrievedDoc:
 
 
 class ChromaStore:
-    """Thin wrapper around Chroma persistent client for add/query."""
+    """Thin wrapper around Chroma HTTP client for add/query."""
 
-    def __init__(self, persist_dir: str, collection_name: str):
-        self.persist_dir = persist_dir
+    def __init__(
+        self,
+        collection_name: str,
+        host: str | None = None,
+        port: int | None = None,
+    ):
         self.collection_name = collection_name
-        self._client: chromadb.PersistentClient | None = None
+        self.host = host or settings.chromadb_host
+        self.port = port or settings.chromadb_port
+        self._client: chromadb.HttpClient | None = None
         self._collection = None
 
     @property
     def collection(self):
         if self._client is None:
-            # Use PersistentClient from latest ChromaDB (1.x)
-            self._client = chromadb.PersistentClient(path=self.persist_dir)
+            # Use HttpClient for separate ChromaDB server process
+            self._client = chromadb.HttpClient(
+                host=self.host,
+                port=self.port,
+            )
         if self._collection is None:
             self._collection = self._client.get_or_create_collection(
                 name=self.collection_name, metadata={"hnsw:space": "cosine"}

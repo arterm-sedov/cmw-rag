@@ -67,10 +67,7 @@ def _get_or_create_retriever() -> RAGRetriever:
 
                 # Initialize infrastructure
                 embedder = create_embedder(settings)
-                vector_store = ChromaStore(
-                    persist_dir=settings.chromadb_persist_dir,
-                    collection_name=settings.chromadb_collection,
-                )
+                vector_store = ChromaStore(collection_name=settings.chromadb_collection)
                 llm_manager = LLMManager(
                     provider=settings.default_llm_provider,
                     model=settings.default_model,
