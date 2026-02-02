@@ -1136,6 +1136,15 @@ async def agent_chat_handler(
                         tool_executing = False
                         has_seen_tool_results = True
 
+                        # Flush any middleware-enqueued UI messages BEFORE we mutate bubbles to completed.
+                        # This guarantees the user sees pending -> complete as two yields,
+                        # even when the tool result is the first chunk we receive.
+                        if agent_context is not None and drain_pending_ui_messages(
+                            gradio_history, agent_context
+                        ):
+                            remove_message_by_id(gradio_history, thinking_id)
+                            yield list(gradio_history)
+
                         # Remove thinking block when tool result arrives (if still present)
                         remove_message_by_id(gradio_history, thinking_id)
 
