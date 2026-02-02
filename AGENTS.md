@@ -110,6 +110,16 @@ The project uses `ruff` for linting and import sorting. Configuration is in `pyp
 - **No Breakage:** Never break existing code.
 - **Git Commits:** Do NOT create or push commits unless explicitly asked by the user.
 
+### 12-Factor App Principles
+Following twelve-factor methodology for SaaS apps:
+
+- **Config:** Store all environment-specific config in env vars (never in code). Use `.env` files for local development, ensure the codebase could be open-sourced without compromising credentials.
+- **Backing Services:** Treat vector stores, databases, caches as attached resources accessed via URLs/credentials in config. No distinction between local and third-party services in code.
+- **Stateless Processes:** App processes are stateless and share-nothing. Session data belongs in backing services (Redis, database), never in local memory or filesystem.
+- **Dev/Prod Parity:** Keep dev, staging, and production as similar as possible. Use the same backing services (types and versions) across all environments.
+- **Logs:** Treat logs as event streams. Write logs unbuffered to stdout; let the execution environment handle routing and archival.
+- **Admin Processes:** Run admin tasks (migrations, REPL, one-off scripts) as one-off processes using the same codebase and config as the main app.
+
 ### Project Specifics
 - **Docs:** Put reports in `docs/progress_reports/`.
 - **Tests:** Put tests in `rag_engine/tests`.
