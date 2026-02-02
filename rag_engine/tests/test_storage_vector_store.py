@@ -6,8 +6,7 @@ from rag_engine.storage.vector_store import ChromaStore
 
 
 def test_chroma_store_add_and_query(tmp_path):
-    persist_dir = tmp_path / "chroma"
-    store = ChromaStore(persist_dir=str(persist_dir), collection_name="test_collection")
+    store = ChromaStore(collection_name="test_collection")
 
     texts = ["First document", "Second document"]
     metadatas = [{"kbId": "doc1"}, {"kbId": "doc2"}]
@@ -19,12 +18,10 @@ def test_chroma_store_add_and_query(tmp_path):
 
     assert len(results) == 1
     assert results[0].metadata["kbId"] == "doc1"
-    assert Path(store.persist_dir).exists()
 
 
 def test_chroma_store_get_any_and_delete_where(tmp_path):
-    persist_dir = tmp_path / "chroma"
-    store = ChromaStore(persist_dir=str(persist_dir), collection_name="test_collection")
+    store = ChromaStore(collection_name="test_collection")
 
     texts = ["Doc A", "Doc B"]
     metas = [

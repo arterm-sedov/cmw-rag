@@ -65,9 +65,7 @@ def main() -> None:
         print(f"{'File':<60} {'Source':<12} {'Epoch':<12} {'ISO String':<25}")
         print("-" * 80)
 
-        store = ChromaStore(
-            persist_dir=settings.chromadb_persist_dir, collection_name=settings.chromadb_collection
-        )
+        store = ChromaStore(collection_name=settings.chromadb_collection)
 
         for doc in docs:
             base_meta = getattr(doc, "metadata", {})
@@ -86,7 +84,11 @@ def main() -> None:
 
             status = ""
             if existing_epoch is not None:
-                if isinstance(existing_epoch, int) and epoch is not None and existing_epoch >= epoch:
+                if (
+                    isinstance(existing_epoch, int)
+                    and epoch is not None
+                    and existing_epoch >= epoch
+                ):
                     status = " [SKIP]"
                 elif epoch is not None:
                     status = " [REINDEX]"
@@ -106,7 +108,7 @@ def main() -> None:
         return
 
     embedder = create_embedder(settings)
-    store = ChromaStore(persist_dir=settings.chromadb_persist_dir, collection_name=settings.chromadb_collection)
+    store = ChromaStore(collection_name=settings.chromadb_collection)
 
     indexer = RAGIndexer(embedder=embedder, vector_store=store)
     summary = indexer.index_documents(
@@ -120,7 +122,10 @@ def main() -> None:
 
     # Optional pruning step: remove entries whose kbId is not in current source set
     if args.prune_missing:
-        from rag_engine.utils.metadata_utils import extract_numeric_kbid  # local import to avoid cycle
+        from rag_engine.utils.metadata_utils import (
+            extract_numeric_kbid,
+        )  # local import to avoid cycle
+
         # Build set of normalized kbIds present in source docs
         present_kbids = set()
         for doc in docs:
@@ -186,5 +191,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

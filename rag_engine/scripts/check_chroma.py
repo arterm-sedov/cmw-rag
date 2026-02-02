@@ -15,8 +15,13 @@ def main() -> None:
         print("Chromadb import failed:", e)
         sys.exit(1)
 
-    persist_dir = os.getenv("CHROMADB_PERSIST_DIR", "data/chromadb_data")
-    client = chromadb.PersistentClient(path=persist_dir)
+    # Use HTTP client with settings from .env
+    from rag_engine.config.settings import settings
+
+    client = chromadb.HttpClient(
+        host=settings.chromadb_host,
+        port=settings.chromadb_port,
+    )
 
     # Detect collection
     collection_name = os.getenv("CHROMADB_COLLECTION")
@@ -33,7 +38,7 @@ def main() -> None:
     if collection is None:
         cols = client.list_collections()
         if not cols:
-            print("No collections found in:", persist_dir)
+            print("No collections found on server")
             return
         # Pick the first collection
         col0 = cols[0]
@@ -56,7 +61,7 @@ def main() -> None:
         offset += batch
         if batch < limit:
             break
-    print("Persist dir:", persist_dir)
+    print("ChromaDB Server:", f"{settings.chromadb_host}:{settings.chromadb_port}")
     print("Collection:", getattr(collection, "name", "<unknown>"))
     print("Total items:", count)
 

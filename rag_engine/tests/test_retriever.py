@@ -1,4 +1,5 @@
 """Tests for RAG retriever with hybrid approach."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, Mock, patch
@@ -33,10 +34,12 @@ class TestRAGRetriever:
         manager.get_current_llm_context_window.return_value = 100000  # 100K context
         manager.get_max_output_tokens.return_value = 32768
         manager.get_system_prompt.return_value = "SYS"
+
         # Provide a chat model that returns a string content response
         class _FakeModel:
             def invoke(self, messages):  # noqa: ANN001
                 return type("Resp", (), {"content": "summary"})()
+
         manager._chat_model.return_value = _FakeModel()
         return manager
 
@@ -78,6 +81,7 @@ class TestRAGRetriever:
         """Long queries are segmented; multiple searches performed; pre-rerank cap enforced."""
         # Configure settings to force segmentation and a small pre-rerank cap
         from rag_engine.config import settings as cfg
+
         monkeypatch.setattr(cfg.settings, "retrieval_multiquery_enabled", True, raising=False)
         monkeypatch.setattr(cfg.settings, "retrieval_multiquery_segment_tokens", 16, raising=False)
         monkeypatch.setattr(cfg.settings, "retrieval_multiquery_segment_overlap", 4, raising=False)
@@ -87,8 +91,10 @@ class TestRAGRetriever:
         # Prepare two distinct chunk hits from the same article file so downstream succeeds
         f = tmp_path / "a.md"
         f.write_text("Doc A")
-        d1 = Mock(); d1.metadata = {"kbId": "kb1", "source_file": str(f), "stable_id": "s1"}
-        d2 = Mock(); d2.metadata = {"kbId": "kb1", "source_file": str(f), "stable_id": "s2"}
+        d1 = Mock()
+        d1.metadata = {"kbId": "kb1", "source_file": str(f), "stable_id": "s1"}
+        d2 = Mock()
+        d2.metadata = {"kbId": "kb1", "source_file": str(f), "stable_id": "s2"}
         # Each search returns one doc; multiple calls will append until cap trims to 2
         mock_search.side_effect = [[d1], [d2], [d2]]
 
@@ -102,22 +108,31 @@ class TestRAGRetriever:
         assert len(articles) == 1
 
     @patch("rag_engine.retrieval.retriever.top_k_search")
-    def test_query_decomposition_adds_candidates(self, mock_search, retriever, monkeypatch, tmp_path):
+    def test_query_decomposition_adds_candidates(
+        self, mock_search, retriever, monkeypatch, tmp_path
+    ):
         """LLM decomposition produces extra sub-queries whose results are unioned."""
         from rag_engine.config import settings as cfg
+
         monkeypatch.setattr(cfg.settings, "retrieval_multiquery_enabled", False, raising=False)
         monkeypatch.setattr(cfg.settings, "retrieval_query_decomp_enabled", True, raising=False)
         monkeypatch.setattr(cfg.settings, "retrieval_query_decomp_max_subqueries", 3, raising=False)
-        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_pre_rerank_limit", 10, raising=False)
+        monkeypatch.setattr(
+            cfg.settings, "retrieval_multiquery_pre_rerank_limit", 10, raising=False
+        )
 
         # Decompose into 2 sub-queries
         retriever.llm_manager.generate.return_value = "sub one\nsub two"
 
         # Set up two files for two distinct articles
-        f1 = tmp_path / "a.md"; f1.write_text("A")
-        f2 = tmp_path / "b.md"; f2.write_text("B")
-        d1 = Mock(); d1.metadata = {"kbId": "kb1", "source_file": str(f1), "stable_id": "s1"}
-        d2 = Mock(); d2.metadata = {"kbId": "kb2", "source_file": str(f2), "stable_id": "s2"}
+        f1 = tmp_path / "a.md"
+        f1.write_text("A")
+        f2 = tmp_path / "b.md"
+        f2.write_text("B")
+        d1 = Mock()
+        d1.metadata = {"kbId": "kb1", "source_file": str(f1), "stable_id": "s1"}
+        d2 = Mock()
+        d2.metadata = {"kbId": "kb2", "source_file": str(f2), "stable_id": "s2"}
 
         # First call for original query, then for each subquery: return distinct docs
         mock_search.side_effect = [[d1], [d2], []]
@@ -128,7 +143,6 @@ class TestRAGRetriever:
         assert len(articles) == 2
         kb_ids = {a.kb_id for a in articles}
         assert kb_ids == {"kb1", "kb2"}
-
 
     def test_read_article_success(self, retriever, tmp_path):
         """Test reading article from file."""
@@ -217,7 +231,6 @@ class TestRAGRetriever:
         assert len(articles) == 1
         assert isinstance(articles[0], Article)
         assert len(articles[0].matched_chunks) == 3
-
 
     @patch("rag_engine.retrieval.retriever.top_k_search")
     def test_retrieve_multiple_articles(self, mock_search, retriever, tmp_path):
@@ -360,10 +373,7 @@ class TestIntegration:
                 device=settings.embedding_device,
             )
             # Use temporary directory for vector store to avoid conflicts
-            vector_store = ChromaStore(
-                persist_dir=str(tmp_path / "test_chroma"),
-                collection_name="test_collection",
-            )
+            vector_store = ChromaStore(collection_name="test_collection")
             llm_manager = LLMManager(
                 provider=settings.default_llm_provider,
                 model=settings.default_model,
@@ -394,4 +404,3 @@ class TestIntegration:
                 f"FRIDA model unavailable, out of memory, or already in use: "
                 f"{error_type}: {error_msg}"
             )
-

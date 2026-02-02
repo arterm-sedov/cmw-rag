@@ -1,9 +1,10 @@
 """Quick script to check what kbId values are actually in the database."""
+
 import re
 from rag_engine.config.settings import settings
 from rag_engine.storage.vector_store import ChromaStore
 
-store = ChromaStore(persist_dir=settings.chromadb_persist_dir, collection_name=settings.chromadb_collection)
+store = ChromaStore(collection_name=settings.chromadb_collection)
 
 # Get sample of documents
 res = store.collection.get(limit=100, include=["metadatas"])
@@ -15,7 +16,7 @@ kbids_seen = {}
 for meta in metadatas:
     kb_id = str(meta.get("kbId", ""))
     source_file = meta.get("source_file", "")
-    
+
     # Count occurrences
     if kb_id not in kbids_seen:
         kbids_seen[kb_id] = []
@@ -25,7 +26,7 @@ for meta in metadatas:
 print(f"\nUnique kbIds found in sample (first 30):")
 for i, (kb_id, sources) in enumerate(sorted(kbids_seen.items())[:30], 1):
     print(f"{i}. kbId: '{kb_id}' (appears {len(sources)} times)")
-    if re.match(r'^\d+-', kb_id):
+    if re.match(r"^\d+-", kb_id):
         # Check if it's path-like
         is_path = "\\" in kb_id or "/" in kb_id or " " in kb_id or len(kb_id) > 50
         if not is_path:
@@ -41,14 +42,14 @@ suffixed = []
 for kb_id in kbids_seen.keys():
     kb_str = str(kb_id)
     is_path_like = (
-        "\\" in kb_str or 
-        "/" in kb_str or 
-        " " in kb_str or
-        (len(kb_str) > 50) or
-        re.match(r'^\d+\.\s', kb_str) is not None
+        "\\" in kb_str
+        or "/" in kb_str
+        or " " in kb_str
+        or (len(kb_str) > 50)
+        or re.match(r"^\d+\.\s", kb_str) is not None
     )
-    matches_pattern = re.match(r'^\d+-', kb_str) is not None
-    
+    matches_pattern = re.match(r"^\d+-", kb_str) is not None
+
     if matches_pattern and not is_path_like:
         suffixed.append(kb_id)
 
@@ -58,4 +59,3 @@ if suffixed:
         print(f"  - '{kb}'")
 else:
     print("No suffixed kbIds found in sample (all are already normalized or path-like)")
-
