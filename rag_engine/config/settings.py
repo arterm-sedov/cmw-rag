@@ -36,11 +36,12 @@ class Settings(BaseSettings):
     chromadb_persist_dir: str
     chromadb_collection: str
     # ChromaDB HTTP client configuration (replaces embedded PersistentClient)
-    chromadb_host: str = "localhost"
-    chromadb_port: int = 8000
-    chromadb_ssl: bool = False
-    chromadb_connection_timeout: float = 30.0
-    chromadb_max_connections: int = 100
+    # Must be set in .env - no defaults to ensure single source of truth
+    chromadb_host: str
+    chromadb_port: int
+    chromadb_ssl: bool
+    chromadb_connection_timeout: float
+    chromadb_max_connections: int
 
     # Retrieval
     top_k_retrieve: int
