@@ -5,12 +5,14 @@ This script reads ChromaDB configuration from .env and starts the ChromaDB
 HTTP server with the correct parameters, ensuring consistency between
 the app configuration and the server startup.
 
+By default, runs in daemon (background) mode. Use --foreground to see logs.
+
 Usage:
-    # Run in foreground (blocking)
+    # Run in background (default, daemon mode)
     python scripts/start_chroma_server.py
 
-    # Run in background (detached)
-    python scripts/start_chroma_server.py --daemon
+    # Run in foreground (blocking, shows logs)
+    python scripts/start_chroma_server.py --foreground
 
     # Stop background server
     python scripts/start_chroma_server.py --stop
@@ -18,7 +20,7 @@ Usage:
     # Check if running
     python scripts/start_chroma_server.py --status
 
-    # Show verbose output
+    # Verbose output
     python scripts/start_chroma_server.py --verbose
 """
 
@@ -278,6 +280,18 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
             print("Commands:")
             print(f"   Stop:   python {__file__} --stop")
             print(f"   Status: python {__file__} --status")
+            print(f"   Logs:   Check terminal or system process logs")
+            print()
+            print("Tracing:")
+            print(
+                f"   Process: chroma run --host {config['host']} --port {config['port']} --path {config['persist_dir']}"
+            )
+            print(f"   Working directory: {Path.cwd()}")
+            print(f"   Python: {sys.executable}")
+            if sys.platform == "win32":
+                print(f"   Platform: Windows (PID: {process.pid})")
+            else:
+                print(f"   Platform: Unix/Linux (PID: {process.pid})")
 
         except Exception as e:
             print(f"❌ Error starting background server: {e}")
@@ -291,11 +305,11 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Run in foreground (blocking, shows logs)
+  # Run in background (default, daemon mode)
   python start_chroma_server.py
   
-  # Run in background (detached)
-  python start_chroma_server.py --daemon
+  # Run in foreground (blocking, shows logs)
+  python start_chroma_server.py --foreground
   
   # Stop background server
   python start_chroma_server.py --stop
@@ -309,7 +323,10 @@ Examples:
     )
 
     parser.add_argument(
-        "--daemon", "-d", action="store_true", help="Run server in background (detached)"
+        "--foreground",
+        "-f",
+        action="store_true",
+        help="Run server in foreground (blocking, shows logs)",
     )
     parser.add_argument("--stop", "-s", action="store_true", help="Stop the background server")
     parser.add_argument("--status", action="store_true", help="Check if server is running")
@@ -325,7 +342,8 @@ Examples:
         print("🎯 ChromaDB Server Starter")
         print("   Reading configuration from .env file...")
         print()
-        start_chroma_server(foreground=not args.daemon, verbose=args.verbose)
+        # Default to daemon mode (background)
+        start_chroma_server(foreground=args.foreground, verbose=args.verbose)
 
 
 if __name__ == "__main__":
