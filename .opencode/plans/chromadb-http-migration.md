@@ -51,12 +51,17 @@
 # Install ChromaDB (same version as your app)
 pip install chromadb
 
-# Start ChromaDB HTTP server
-chroma run --host localhost --port 8000 --path ./chroma_data
+# Option A: Use helper script (reads from .env automatically)
+python rag_engine/scripts/start_chroma_server.py --verbose
 
-# Or with persistence path
-chroma run --host 0.0.0.0 --port 8000 --path ./data/chromadb_data
+# Option B: Run manually with parameters
+chroma run --host localhost --port 8000 --path ./data/chromadb_data
 ```
+
+**Helper script benefits:**
+- Reads `CHROMADB_HOST`, `CHROMADB_PORT`, `CHROMADB_PERSIST_DIR` from `.env`
+- Ensures consistency between app config and server startup
+- Provides colored output and error handling
 
 #### 0.2 Environment Variables
 ```bash
