@@ -12,25 +12,29 @@ class Settings(BaseSettings):
     Most configuration is env-driven. Some fields include safe, opinionated
     defaults to ensure resilience when env vars are not set. Secrets and
     provider credentials must be provided via environment variables.
+
+    NOTE: All configuration must be explicitly set in .env - no hardcoded defaults
+    to ensure single source of truth per 12-Factor principles. Variables listed
+    below without defaults MUST be configured in environment variables.
     """
 
     # LLM Providers
     google_api_key: str
     openrouter_api_key: str
-    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_base_url: str
     # vLLM configuration (OpenAI-compatible API)
     vllm_base_url: str = "http://localhost:8000/v1"
     vllm_api_key: str = "EMPTY"
 
     # Embedding Configuration (Model-Slug Based)
     # Provider type: direct | infinity | openrouter
-    embedding_provider_type: str = "direct"
+    embedding_provider_type: str
     # Model slug (e.g., "ai-forever/FRIDA", "Qwen/Qwen3-Embedding-8B")
     # Case insensitive - "qwen/qwen3-embedding-8b" works too
-    embedding_model: str = "ai-forever/FRIDA"
+    embedding_model: str
     # Device for direct embedding/reranker when not using factory (e.g. build_index, legacy retriever).
-    # Factory path uses device from models.yaml. Default auto covers most cases.
-    embedding_device: str = "auto"
+    # Factory path uses device from models.yaml.
+    embedding_device: str
 
     # ChromaDB
     chromadb_persist_dir: str
@@ -46,7 +50,7 @@ class Settings(BaseSettings):
     # Retrieval
     top_k_retrieve: int
     top_k_rerank: int
-    rerank_enabled: bool = True
+    rerank_enabled: bool
     chunk_size: int
     chunk_overlap: int
 
@@ -65,14 +69,14 @@ class Settings(BaseSettings):
     # Options: direct_crossencoder | infinity_dity | infinity_bge_reranker | infinity_qwen3_reranker_8b | infinity_qwen3_reranker_4b | infinity_qwen3_reranker_0_6b
     # Reranker Configuration (Model-Slug Based)
     # Provider type: direct | infinity | openrouter
-    reranker_provider_type: str = "direct"
+    reranker_provider_type: str
     # Model slug (e.g., "DiTy/cross-encoder-russian-msmarco", "Qwen/Qwen3-Reranker-8B")
     # Case insensitive
-    reranker_model: str = "DiTy/cross-encoder-russian-msmarco"
+    reranker_model: str
 
     # Provider Endpoints (optional, have defaults)
-    infinity_embedding_endpoint: str = "http://localhost:7997"
-    infinity_reranker_endpoint: str = "http://localhost:7998"
+    infinity_embedding_endpoint: str
+    infinity_reranker_endpoint: str
     openrouter_endpoint: str = "https://openrouter.ai/api/v1"
 
     # Request Configuration
@@ -110,10 +114,10 @@ class Settings(BaseSettings):
     gradio_server_port: int
     # Share link: if True, attempts to create a public shareable link.
     # If share link creation fails (network/service issues), app still runs locally.
-    gradio_share: bool = False
+    gradio_share: bool
     # Embedded widget mode: if True, uses smaller heights suitable for embedded widget.
     # If False, uses larger heights suitable for standalone app.
-    gradio_embedded_widget: bool = False
+    gradio_embedded_widget: bool
     # Queue configuration: concurrency limit for all event listeners
     # Per Gradio docs: https://www.gradio.app/guides/queuing
     gradio_default_concurrency_limit: int = 3
@@ -121,7 +125,7 @@ class Settings(BaseSettings):
     # Agent Mode
     # If True, uses LangChain agent-based handler with tool calling
     # If False, uses direct retrieval handler (legacy behavior)
-    use_agent_mode: bool = False
+    use_agent_mode: bool
 
     # Memory compression (conversation history)
     # Percentage of context window at which we trigger compression
@@ -158,7 +162,7 @@ class Settings(BaseSettings):
 
     # Timezone configuration
     # Default timezone for datetime operations (IANA timezone name, e.g., 'Europe/Moscow', 'UTC')
-    default_timezone: str = "Europe/Moscow"
+    default_timezone: str
 
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
