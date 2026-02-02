@@ -73,22 +73,26 @@ services:
 CHROMADB_HOST=localhost
 CHROMADB_PORT=8000
 CHROMADB_SSL=false
-CHROMADB_USE_ASYNC=true
+CHROMADB_USE_HTTP=true
 CHROMADB_CONNECTION_TIMEOUT=30.0
 CHROMADB_MAX_CONNECTIONS=100
 ```
+
+> **Note**: These env vars are read by `settings.py` using Pydantic's `Field(env="VAR_NAME")` for validation and centralized access.
 
 ### **Phase 2: Code Migration** ⏱️ 2-3 hours
 
 #### 2.1 Configuration Updates
 ```python
 # rag_engine/config/settings.py - Add these settings
-chromadb_host: str = "localhost"
-chromadb_port: int = 8000
-chromadb_ssl: bool = False
-chromadb_use_async: bool = True
-chromadb_connection_timeout: float = 30.0
-chromadb_max_connections: int = 100
+from pydantic import Field
+
+chromadb_host: str = Field(default="localhost", env="CHROMADB_HOST")
+chromadb_port: int = Field(default=8000, env="CHROMADB_PORT")
+chromadb_ssl: bool = Field(default=False, env="CHROMADB_SSL")
+chromadb_use_http: bool = Field(default=True, env="CHROMADB_USE_HTTP")
+chromadb_connection_timeout: float = Field(default=30.0, env="CHROMADB_CONNECTION_TIMEOUT")
+chromadb_max_connections: int = Field(default=100, env="CHROMADB_MAX_CONNECTIONS")
 ```
 
 #### 2.2 Vector Store Refactoring
@@ -133,6 +137,8 @@ class ChromaStore:
         )
         return self._process_results(results)
 ```
+
+> **Coverage**: All scripts using `ChromaStore` (build_index.py, maintain_chroma.py, search_kbid.py, etc.) will auto-update. Only `check_chroma.py` needs manual migration (uses direct chromadb client).
 
 #### 2.3 Retriever Integration
 ```python
@@ -193,7 +199,7 @@ python scripts/migrate_to_http_chroma.py
 # 3. Update .env configuration
 # CHROMADB_HOST=localhost
 # CHROMADB_PORT=8000
-# CHROMADB_USE_ASYNC=true
+# CHROMADB_USE_HTTP=true
 
 # 4. Restart application (uses HTTP client now)
 # Existing embedded database still available as backup
@@ -278,6 +284,7 @@ The combination of Docker deployment + HTTP client + async integration perfectly
 - [ ] Update `retriever.py` to use async methods
 - [ ] Implement health check in main app
 - [ ] Add error handling and retry logic
+- [ ] Update `check_chroma.py` to use HttpClient with env-based fallback
 
 ### **Phase 3: Testing & Optimization (1-2 hours)**
 - [ ] Create performance testing script
@@ -303,5 +310,5 @@ The combination of Docker deployment + HTTP client + async integration perfectly
 
 ---
 
-*Last Updated: 2025-01-31*
+*Last Updated: 2025-02-02*
 *Author: OpenCode Agent*
