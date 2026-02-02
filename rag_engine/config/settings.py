@@ -34,10 +34,10 @@ class Settings(BaseSettings):
     # Factory path uses device from models.yaml.
     embedding_device: str
 
-    # ChromaDB
+    # ChromaDB (HTTP-only: separate server via chroma run or Docker; no embedded PersistentClient)
     chromadb_persist_dir: str
     chromadb_collection: str
-    # ChromaDB HTTP client configuration (replaces embedded PersistentClient)
+    # ChromaDB HTTP client configuration
     # Must be set in .env - no defaults to ensure single source of truth
     chromadb_host: str
     chromadb_port: int
