@@ -69,10 +69,11 @@ chroma run --host localhost --port 8000 --path ./data/chromadb_data
 CHROMADB_HOST=localhost
 CHROMADB_PORT=8000
 CHROMADB_SSL=false
-CHROMADB_USE_HTTP=true
 CHROMADB_CONNECTION_TIMEOUT=30.0
 CHROMADB_MAX_CONNECTIONS=100
 ```
+
+**HTTP-only:** The app uses ChromaDB in HTTP-only mode (no `CHROMADB_USE_HTTP` toggle). All retrieval and the main app path use `chromadb.HttpClient` against a separate Chroma server. Embedded PersistentClient is not supported in the RAG agent; the migration plan intentionally removed it for performance and scaling.
 
 > **Note**: These env vars are read by `settings.py` using Pydantic's `Field(env="VAR_NAME")` for validation and centralized access.
 

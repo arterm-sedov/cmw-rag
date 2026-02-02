@@ -166,15 +166,20 @@ def stop_server(verbose: bool = False) -> bool:
 
 def check_status() -> None:
     """Check if ChromaDB server is running."""
+    env_path = get_env_file_path()
+    env_vars = read_env_file(env_path)
+    config = get_chroma_config(env_vars)
+    port = config["port"]
+    host = config["host"]
+
     pid = get_running_pid()
 
     if pid:
         print(f"✅ ChromaDB server is running (PID: {pid})")
-        print(f"   Connect at: http://localhost:8000")
+        print(f"   Connect at: http://{host}:{port}")
     else:
-        # Check if something else is using the port
-        if is_server_running(8000):
-            print("⚠️  Something is running on port 8000, but it's not our tracked process.")
+        if is_server_running(port):
+            print(f"⚠️  Something is running on port {port}, but it's not our tracked process.")
             print("   You may need to stop it manually.")
         else:
             print("ℹ️  ChromaDB server is not running.")
@@ -182,17 +187,6 @@ def check_status() -> None:
 
 def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
     """Start ChromaDB server with configuration from .env."""
-    # Check if already running
-    if is_server_running(8000):
-        pid = get_running_pid()
-        if pid:
-            print(f"⚠️  ChromaDB server is already running (PID: {pid})")
-            print(f"   Connect at: http://localhost:8000")
-            return
-        else:
-            print("⚠️  Port 8000 is already in use by another process.")
-            sys.exit(1)
-
     # Find and read .env file
     env_path = get_env_file_path()
     if verbose:
@@ -209,6 +203,18 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
 
     # Get ChromaDB configuration
     config = get_chroma_config(env_vars)
+    port = config["port"]
+    host = config["host"]
+
+    # Check if already running on configured port
+    if is_server_running(port):
+        pid = get_running_pid()
+        if pid:
+            print(f"⚠️  ChromaDB server is already running (PID: {pid})")
+            print(f"   Connect at: http://{host}:{port}")
+            return
+        print(f"⚠️  Port {port} is already in use by another process.")
+        sys.exit(1)
 
     if verbose or foreground:
         print(f"🔧 Configuration:")
@@ -283,7 +289,7 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
                 f.write(str(process.pid))
 
             print(f"✅ ChromaDB server started in background (PID: {process.pid})")
-            print(f"   Connect at: http://localhost:8000")
+            print(f"   Connect at: http://{host}:{port}")
             print(f"   Data path: {config['persist_dir']}")
             print(f"   PID file: {pid_file}")
             print()
