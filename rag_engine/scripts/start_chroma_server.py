@@ -89,9 +89,10 @@ def get_chroma_config(env_vars: dict[str, str]) -> dict[str, str | int]:
 
 
 def get_pid_file() -> Path:
-    """Get path to PID file for background process tracking."""
-    script_dir = Path(__file__).parent
-    return script_dir / ".chroma_server.pid"
+    """Get path to PID file for background process tracking (project root)."""
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent.parent
+    return project_root / ".chroma_server.pid"
 
 
 def is_server_running(port: int) -> bool:
@@ -249,18 +250,19 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
         # Run in background (detached)
         try:
             if sys.platform == "win32":
-                # Windows: Use CREATE_NEW_PROCESS_GROUP, DETACHED_PROCESS, and CREATE_NO_WINDOW
-                # CREATE_NO_WINDOW (0x08000000) prevents console window from appearing
-                import subprocess as sp
-
+                # Windows: no console window (invisible), detached process
                 creation_flags = (
-                    sp.CREATE_NEW_PROCESS_GROUP
-                    | sp.DETACHED_PROCESS
-                    | 0x08000000  # CREATE_NO_WINDOW
+                    subprocess.CREATE_NEW_PROCESS_GROUP
+                    | subprocess.DETACHED_PROCESS
+                    | subprocess.CREATE_NO_WINDOW
                 )
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = subprocess.SW_HIDE
                 process = subprocess.Popen(
                     cmd,
                     creationflags=creation_flags,
+                    startupinfo=startupinfo,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     stdin=subprocess.DEVNULL,
