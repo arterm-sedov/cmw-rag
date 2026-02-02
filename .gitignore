@@ -1,5 +1,7 @@
 # ChromaDB local data (generated, environment-specific)
 data/chromadb_data/**
+chroma/**
+./chroma/**
 
 # Application logs (generated, environment-specific)
 logs/**
