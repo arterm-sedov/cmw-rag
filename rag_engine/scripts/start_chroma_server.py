@@ -6,15 +6,29 @@ HTTP server with the correct parameters, ensuring consistency between
 the app configuration and the server startup.
 
 Usage:
+    # Run in foreground (blocking)
     python scripts/start_chroma_server.py
+
+    # Run in background (detached)
+    python scripts/start_chroma_server.py --daemon
+
+    # Stop background server
+    python scripts/start_chroma_server.py --stop
+
+    # Check if running
+    python scripts/start_chroma_server.py --status
+
+    # Show verbose output
     python scripts/start_chroma_server.py --verbose
 """
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
@@ -72,23 +86,110 @@ def get_chroma_config(env_vars: dict[str, str]) -> dict[str, str | int]:
     return config
 
 
-def build_chroma_command(config: dict[str, str | int]) -> list[str]:
-    """Build chroma run command with configuration."""
-    cmd = [
-        "chroma",
-        "run",
-        "--host",
-        str(config["host"]),
-        "--port",
-        str(config["port"]),
-        "--path",
-        str(config["persist_dir"]),
-    ]
-    return cmd
+def get_pid_file() -> Path:
+    """Get path to PID file for background process tracking."""
+    script_dir = Path(__file__).parent
+    return script_dir / ".chroma_server.pid"
 
 
-def start_chroma_server(verbose: bool = False) -> None:
+def is_server_running(port: int) -> bool:
+    """Check if ChromaDB server is already running on the specified port."""
+    import socket
+
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex(("localhost", port))
+        sock.close()
+        return result == 0
+    except Exception:
+        return False
+
+
+def get_running_pid() -> int | None:
+    """Get PID of running ChromaDB server from PID file."""
+    pid_file = get_pid_file()
+    if not pid_file.exists():
+        return None
+
+    try:
+        with open(pid_file, "r") as f:
+            pid = int(f.read().strip())
+        # Check if process actually exists
+        import psutil
+
+        if psutil.pid_exists(pid):
+            return pid
+        else:
+            # Stale PID file
+            pid_file.unlink()
+            return None
+    except (ValueError, FileNotFoundError):
+        return None
+
+
+def stop_server(verbose: bool = False) -> bool:
+    """Stop the background ChromaDB server."""
+    pid = get_running_pid()
+
+    if not pid:
+        print("ℹ️  No background ChromaDB server is running.")
+        return False
+
+    try:
+        import psutil
+
+        process = psutil.Process(pid)
+        process.terminate()
+
+        # Wait for process to terminate
+        try:
+            process.wait(timeout=5)
+            print(f"✅ Stopped ChromaDB server (PID: {pid})")
+        except psutil.TimeoutExpired:
+            process.kill()
+            print(f"⚠️  Force-killed ChromaDB server (PID: {pid})")
+
+        # Clean up PID file
+        pid_file = get_pid_file()
+        if pid_file.exists():
+            pid_file.unlink()
+
+        return True
+    except Exception as e:
+        print(f"❌ Error stopping server: {e}")
+        return False
+
+
+def check_status() -> None:
+    """Check if ChromaDB server is running."""
+    pid = get_running_pid()
+
+    if pid:
+        print(f"✅ ChromaDB server is running (PID: {pid})")
+        print(f"   Connect at: http://localhost:8000")
+    else:
+        # Check if something else is using the port
+        if is_server_running(8000):
+            print("⚠️  Something is running on port 8000, but it's not our tracked process.")
+            print("   You may need to stop it manually.")
+        else:
+            print("ℹ️  ChromaDB server is not running.")
+
+
+def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
     """Start ChromaDB server with configuration from .env."""
+    # Check if already running
+    if is_server_running(8000):
+        pid = get_running_pid()
+        if pid:
+            print(f"⚠️  ChromaDB server is already running (PID: {pid})")
+            print(f"   Connect at: http://localhost:8000")
+            return
+        else:
+            print("⚠️  Port 8000 is already in use by another process.")
+            sys.exit(1)
+
     # Find and read .env file
     env_path = get_env_file_path()
     if verbose:
@@ -106,44 +207,125 @@ def start_chroma_server(verbose: bool = False) -> None:
     # Get ChromaDB configuration
     config = get_chroma_config(env_vars)
 
-    if verbose:
+    if verbose or foreground:
         print(f"🔧 Configuration:")
         print(f"   Host: {config['host']}")
         print(f"   Port: {config['port']}")
         print(f"   Data path: {config['persist_dir']}")
 
-    # Build and run command
-    cmd = build_chroma_command(config)
+    # Build command
+    cmd = [
+        "chroma",
+        "run",
+        "--host",
+        str(config["host"]),
+        "--port",
+        str(config["port"]),
+        "--path",
+        str(config["persist_dir"]),
+    ]
 
-    if verbose:
-        print(f"🚀 Starting: {' '.join(cmd)}")
-        print()
+    if foreground:
+        # Run in foreground (blocking)
+        if verbose:
+            print(f"🚀 Starting: {' '.join(cmd)}")
+            print()
 
-    try:
-        # Run chroma server
-        subprocess.run(cmd, check=True)
-    except FileNotFoundError:
-        print("❌ Error: 'chroma' command not found.")
-        print("   Please install ChromaDB: pip install chromadb")
-        sys.exit(1)
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error: ChromaDB server exited with code {e.returncode}")
-        sys.exit(e.returncode)
-    except KeyboardInterrupt:
-        print("\n👋 ChromaDB server stopped.")
-        sys.exit(0)
+        try:
+            subprocess.run(cmd, check=True)
+        except FileNotFoundError:
+            print("❌ Error: 'chroma' command not found.")
+            print("   Please install ChromaDB: pip install chromadb")
+            sys.exit(1)
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Error: ChromaDB server exited with code {e.returncode}")
+            sys.exit(e.returncode)
+        except KeyboardInterrupt:
+            print("\n👋 ChromaDB server stopped.")
+            sys.exit(0)
+    else:
+        # Run in background (detached)
+        try:
+            if sys.platform == "win32":
+                # Windows: Use CREATE_NEW_PROCESS_GROUP and DETACHED_PROCESS
+                process = subprocess.Popen(
+                    cmd,
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    stdin=subprocess.DEVNULL,
+                )
+            else:
+                # Unix/Linux/Mac: Use start_new_session
+                process = subprocess.Popen(
+                    cmd,
+                    start_new_session=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    stdin=subprocess.DEVNULL,
+                )
+
+            # Write PID to file
+            pid_file = get_pid_file()
+            with open(pid_file, "w") as f:
+                f.write(str(process.pid))
+
+            print(f"✅ ChromaDB server started in background (PID: {process.pid})")
+            print(f"   Connect at: http://localhost:8000")
+            print(f"   Data path: {config['persist_dir']}")
+            print(f"   PID file: {pid_file}")
+            print()
+            print("Commands:")
+            print(f"   Stop:   python {__file__} --stop")
+            print(f"   Status: python {__file__} --status")
+
+        except Exception as e:
+            print(f"❌ Error starting background server: {e}")
+            sys.exit(1)
 
 
 def main() -> None:
     """Main entry point."""
-    # Check for verbose flag
-    verbose = "--verbose" in sys.argv or "-v" in sys.argv
+    parser = argparse.ArgumentParser(
+        description="Start ChromaDB HTTP server with configuration from .env",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run in foreground (blocking, shows logs)
+  python start_chroma_server.py
+  
+  # Run in background (detached)
+  python start_chroma_server.py --daemon
+  
+  # Stop background server
+  python start_chroma_server.py --stop
+  
+  # Check if running
+  python start_chroma_server.py --status
+  
+  # Verbose output
+  python start_chroma_server.py --verbose
+        """,
+    )
 
-    print("🎯 ChromaDB Server Starter")
-    print("   Reading configuration from .env file...")
-    print()
+    parser.add_argument(
+        "--daemon", "-d", action="store_true", help="Run server in background (detached)"
+    )
+    parser.add_argument("--stop", "-s", action="store_true", help="Stop the background server")
+    parser.add_argument("--status", action="store_true", help="Check if server is running")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show verbose output")
 
-    start_chroma_server(verbose=verbose)
+    args = parser.parse_args()
+
+    if args.stop:
+        stop_server(args.verbose)
+    elif args.status:
+        check_status()
+    else:
+        print("🎯 ChromaDB Server Starter")
+        print("   Reading configuration from .env file...")
+        print()
+        start_chroma_server(foreground=not args.daemon, verbose=args.verbose)
 
 
 if __name__ == "__main__":
