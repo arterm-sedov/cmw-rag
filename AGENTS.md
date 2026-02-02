@@ -113,12 +113,18 @@ The project uses `ruff` for linting and import sorting. Configuration is in `pyp
 ### 12-Factor App Principles
 Following twelve-factor methodology for SaaS apps:
 
+- **Codebase:** One codebase tracked in revision control, many deploys.
+- **Dependencies:** Declare all dependencies explicitly in `requirements.txt` (and `pyproject.toml` for build metadata). See Environment Setup section for isolation commands.
 - **Config:** Store all environment-specific config in env vars (never in code). Use `.env` files for local development, ensure the codebase could be open-sourced without compromising credentials.
 - **Backing Services:** Treat vector stores, databases, caches as attached resources accessed via URLs/credentials in config. No distinction between local and third-party services in code.
-- **Stateless Processes:** App processes are stateless and share-nothing. Session data belongs in backing services (Redis, database), never in local memory or filesystem.
-- **Dev/Prod Parity:** Keep dev, staging, and production as similar as possible. Use the same backing services (types and versions) across all environments.
-- **Logs:** Treat logs as event streams. Write logs unbuffered to stdout; let the execution environment handle routing and archival.
-- **Admin Processes:** Run admin tasks (migrations, REPL, one-off scripts) as one-off processes using the same codebase and config as the main app.
+- **Build, Release, Run:** Strictly separate build and run stages. See scripts in `rag_engine/scripts/` for build/release automation.
+- **Processes:** Execute the app as one or more stateless processes. Session data in backing services. Note: Local Chroma SQLite is acceptable for dev; production should use external vector store.
+- **Port Binding:** Export services via port binding. App should be self-contained and bind to a port specified via env var.
+- **Concurrency:** Scale out via the process model. Use Gradio's concurrency limits (`gradio_default_concurrency_limit`) and thread pools for non-blocking operation under multi-user load.
+- **Disposability:** Maximize robustness with fast startup and graceful shutdown. Processes should start quickly and shut down gracefully on SIGTERM, finishing current requests before exiting.
+- **Dev/Prod Parity:** Keep development, staging, and production as similar as possible. Use the same backing services (types and versions) across all environments.
+- **Logs:** Treat logs as event streams. Prefer stdout for containerized deployments; file logging optional via `LOG_FILE_ENABLED` env var. Default to both for local dev.
+- **Admin Processes:** Run admin/management tasks as one-off processes using the same codebase and config as the main app.
 
 ### Project Specifics
 - **Docs:** Put reports in `docs/progress_reports/`.
