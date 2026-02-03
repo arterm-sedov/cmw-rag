@@ -1,90 +1,86 @@
+"""Simple ChromaDB connection test using HTTP client."""
+
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
 
 from dotenv import load_dotenv
 
 
-def main() -> None:
-    # Load .env the same way as the rest of the project
+def check_chroma_sync():
+    """Synchronous check for backwards compatibility."""
     load_dotenv()
+    persist_dir = os.getenv("CHROMADB_PERSIST_DIR", "data/chromadb_data")
+
     try:
         import chromadb
-    except Exception as e:  # noqa: BLE001
-        print("Chromadb import failed:", e)
-        sys.exit(1)
 
-    # Use HTTP client with settings from .env
-    from rag_engine.config.settings import settings
+        client = chromadb.PersistentClient(path=persist_dir)
+        collections = client.list_collections()
 
-    client = chromadb.HttpClient(
-        host=settings.chromadb_host,
-        port=settings.chromadb_port,
-    )
+        if collections:
+            print(f"✓ ChromaDB connected (embedded mode)")
+            print(f"Found {len(collections)} collection(s):")
+            for col in collections:
+                name = getattr(col, "name", str(col))
+                try:
+                    count = client.get_collection(name).count()
+                    print(f"  - {name}: {count} items")
+                except Exception as e:
+                    print(f"  - {name}: error counting ({e})")
+            return True
+        else:
+            print("No collections found in:", persist_dir)
+            return False
+    except Exception as e:
+        print(f"✗ Failed to connect to ChromaDB: {e}")
+        return False
 
-    # Detect collection
-    collection_name = os.getenv("CHROMADB_COLLECTION")
-    collection = None
-    if collection_name:
-        try:
-            collection = client.get_or_create_collection(
-                name=collection_name,
-                metadata={"hnsw:space": "cosine"},
-            )
-        except Exception as e:  # noqa: BLE001
-            print(f"Failed to open collection {collection_name}: {e}")
 
-    if collection is None:
-        cols = client.list_collections()
-        if not cols:
-            print("No collections found on server")
-            return
-        # Pick the first collection
-        col0 = cols[0]
-        name = getattr(col0, "name", None) or str(col0)
-        collection = client.get_or_create_collection(name=name)
+async def check_chroma_async():
+    """Async check using HTTP client."""
+    load_dotenv()
 
-    # Optional filters and limits via env
-    sample_limit = int(os.getenv("CHROMA_SAMPLE_LIMIT", "5"))
-    filter_kbid = os.getenv("CHROMA_SAMPLE_KBID")
+    try:
+        import chromadb
 
-    # Count items (paged)
-    limit = 1000
-    offset = 0
-    count = 0
-    while True:
-        res = collection.get(include=[], limit=limit, offset=offset)
-        ids = res.get("ids", [])
-        batch = len(ids)
-        count += batch
-        offset += batch
-        if batch < limit:
-            break
-    print("ChromaDB Server:", f"{settings.chromadb_host}:{settings.chromadb_port}")
-    print("Collection:", getattr(collection, "name", "<unknown>"))
-    print("Total items:", count)
+        host = os.getenv("CHROMADB_HOST", "localhost")
+        port = int(os.getenv("CHROMADB_PORT", "8000"))
 
-    # Sample items (optionally filtered by kbId)
-    where = {"kbId": filter_kbid} if filter_kbid else None
-    # Note: ids are always returned by collection.get; don't request via include
-    sample = collection.get(include=["metadatas", "documents"], where=where, limit=sample_limit)
-    metas = sample.get("metadatas", [])
-    docs = sample.get("documents", [])
-    ids = sample.get("ids", [])
+        client = await chromadb.AsyncHttpClient(host=host, port=port)
+        collections = await client.list_collections()
 
-    if not ids:
-        print("No sample items to show." + (f" Filter kbId={filter_kbid}" if filter_kbid else ""))
-        return
+        if collections:
+            print(f"✓ ChromaDB connected (HTTP: {host}:{port})")
+            print(f"Found {len(collections)} collection(s):")
+            for col in collections:
+                name = getattr(col, "name", str(col))
+                try:
+                    collection = await client.get_collection(name)
+                    count = await collection.count()
+                    print(f"  - {name}: {count} items")
+                except Exception as e:
+                    print(f"  - {name}: error counting ({e})")
+            return True
+        else:
+            print(f"No collections found on {host}:{port}")
+            return False
+    except Exception as e:
+        print(f"✗ Failed to connect to ChromaDB HTTP: {e}")
+        return False
 
-    for i, (id_, m, d) in enumerate(zip(ids, metas, docs), 1):
-        print(
-            f"\nSample {i} id={id_} kbId={m.get('kbId')} "
-            f"chunk_index={m.get('chunk_index')} has_code={m.get('has_code')}"
-        )
-        print("source_file:", m.get("source_file"))
-        print("doc[:120]:", (d or "")[:120].replace("\n", " "))
+
+def main():
+    """Main entry point - supports both sync and async modes."""
+    if len(sys.argv) > 1 and sys.argv[1] == "--async":
+        result = asyncio.run(check_chroma_async())
+        return 0 if result else 1
+    else:
+        result = check_chroma_sync()
+        return 0 if result else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

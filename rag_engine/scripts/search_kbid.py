@@ -7,6 +7,7 @@ their metadata, content preview, and statistics.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import sys
 from pathlib import Path
 
@@ -21,7 +22,9 @@ from rag_engine.config.settings import settings
 from rag_engine.storage.vector_store import ChromaStore
 
 
-def search_kbid(kbid: str, show_content: bool = False, limit: int | None = None) -> None:
+async def search_kbid_async(
+    kbid: str, show_content: bool = False, limit: int | None = None
+) -> None:
     """Search for documents with a specific kbid in ChromaDB.
 
     Args:
