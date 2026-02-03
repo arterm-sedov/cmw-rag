@@ -1,4 +1,4 @@
-"""Chroma vector store wrapper (HTTP client)."""
+"""Chroma vector store wrapper (async HTTP client only)."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import chromadb
+from chromadb.config import Settings as ChromaSettings
 
 from rag_engine.config.settings import settings
 
@@ -17,7 +18,7 @@ class RetrievedDoc:
 
 
 class ChromaStore:
-    """Thin wrapper around Chroma HTTP client for add/query."""
+    """Async-only thin wrapper around Chroma HTTP client for add/query."""
 
     def __init__(
         self,
@@ -28,54 +29,73 @@ class ChromaStore:
         self.collection_name = collection_name
         self.host = host or settings.chromadb_host
         self.port = port or settings.chromadb_port
-        self._client: chromadb.HttpClient | None = None
-        self._collection = None
+        self._async_client: chromadb.AsyncHttpClient | None = None
+        self._async_collection = None
 
-    @property
-    def collection(self):
-        if self._client is None:
-            # Use HttpClient for separate ChromaDB server process
-            self._client = chromadb.HttpClient(
+    async def _get_async_client(self) -> chromadb.AsyncHttpClient:
+        """Lazy initialization of async HTTP client."""
+        if self._async_client is None:
+            chroma_settings = ChromaSettings(
+                chroma_http_keepalive_secs=settings.chromadb_connection_timeout,
+            )
+            self._async_client = await chromadb.AsyncHttpClient(
                 host=self.host,
                 port=self.port,
+                ssl=settings.chromadb_ssl,
+                settings=chroma_settings,
             )
-        if self._collection is None:
-            self._collection = self._client.get_or_create_collection(
-                name=self.collection_name, metadata={"hnsw:space": "cosine"}
-            )
-        return self._collection
+        return self._async_client
 
-    def add(
+    async def get_collection(self):
+        """Get or create async collection."""
+        if self._async_collection is None:
+            client = await self._get_async_client()
+            self._async_collection = await client.get_or_create_collection(
+                name=self.collection_name,
+                metadata={"hnsw:space": "cosine"},
+            )
+        return self._async_collection
+
+    async def similarity_search_async(
+        self, query_embedding: list[float], k: int = 5
+    ) -> list[RetrievedDoc]:
+        """Async similarity search."""
+        collection = await self.get_collection()
+        res = await collection.query(
+            query_embeddings=[query_embedding],
+            n_results=k,
+            include=["documents", "metadatas"],
+        )
+        docs = res.get("documents", [[]])[0]
+        metas = res.get("metadatas", [[]])[0]
+        return [RetrievedDoc(page_content=d, metadata=m) for d, m in zip(docs, metas)]
+
+    async def add_async(
         self,
         texts: list[str],
         metadatas: list[dict[str, Any]],
         ids: list[str] | None = None,
         embeddings: list[list[float]] | None = None,
     ) -> None:
-        self.collection.add(
+        """Async add documents to collection."""
+        collection = await self.get_collection()
+        await collection.add(
             ids=ids,
             documents=texts,
             metadatas=metadatas,
             embeddings=embeddings,
         )
 
-    def similarity_search(self, query_embedding: list[float], k: int = 5) -> list[RetrievedDoc]:
-        res = self.collection.query(
-            query_embeddings=[query_embedding], n_results=k, include=["documents", "metadatas"]
-        )
-        docs = res.get("documents", [[]])[0]
-        metas = res.get("metadatas", [[]])[0]
-        return [RetrievedDoc(page_content=d, metadata=m) for d, m in zip(docs, metas)]
-
-    # Incremental reindexing helpers
-    def get_any_doc_meta(self, where: dict[str, Any]) -> dict[str, Any] | None:
+    async def get_any_doc_meta_async(self, where: dict[str, Any]) -> dict[str, Any] | None:
         """Return metadata of any one document matching a metadata filter."""
-        res = self.collection.get(where=where, include=["metadatas"], limit=1)
+        collection = await self.get_collection()
+        res = await collection.get(where=where, include=["metadatas"], limit=1)
         metas = res.get("metadatas", [])
         if metas:
             return metas[0]
         return None
 
-    def delete_where(self, where: dict[str, Any]) -> None:
+    async def delete_where_async(self, where: dict[str, Any]) -> None:
         """Delete all records matching a metadata filter."""
-        self.collection.delete(where=where)
+        collection = await self.get_collection()
+        await collection.delete(where=where)
