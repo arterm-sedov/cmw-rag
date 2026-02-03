@@ -1,5 +1,10 @@
 # ChromaDB local data (generated, environment-specific)
 data/chromadb_data/**
+chroma/**
+./chroma/**
+
+# Application logs (generated, environment-specific)
+logs/**
 
 .reference-repos/**
 .venv/**
@@ -30,3 +35,5 @@ build/
 
 ui/gradio-config.json
 ui/index.php
+*.pid
+*.log

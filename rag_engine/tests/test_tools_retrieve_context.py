@@ -1,8 +1,10 @@
-"""Tests for RAG context retrieval LangChain tool."""
+"""Tests for RAG context retrieval LangChain tool (async)."""
+
 from __future__ import annotations
 
 import json
-from unittest.mock import Mock, patch
+import sys
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -10,8 +12,8 @@ from rag_engine.retrieval.retriever import Article, RAGRetriever
 from rag_engine.tools.retrieve_context import (
     RetrieveContextSchema,
     _format_articles_to_json,
-    _get_or_create_retriever,
     retrieve_context,
+    set_app_retriever,
 )
 
 
@@ -122,13 +124,45 @@ class TestFormatArticlesToJson:
         assert result["articles"][0]["title"] == "789"
 
 
-class TestRetrieveContextTool:
-    """Tests for retrieve_context tool function."""
+def _retrieve_context_module():
+    """Return the retrieve_context module (avoid shadowing by tool of same name)."""
+    return sys.modules["rag_engine.tools.retrieve_context"]
 
+
+class TestSetAppRetriever:
+    """Tests for set_app_retriever injection."""
+
+    def test_get_or_create_uses_injected_retriever(self):
+        """When app retriever is set, _get_or_create_retriever returns it without creating one."""
+        mod = _retrieve_context_module()
+        mod._app_retriever = None
+        mod._retriever = None
+        injected = Mock(spec=RAGRetriever)
+        set_app_retriever(injected)
+        try:
+            got = mod._get_or_create_retriever()
+            assert got is injected
+        finally:
+            set_app_retriever(None)
+
+    def test_set_none_clears_app_retriever(self):
+        """set_app_retriever(None) clears the injected retriever."""
+        mod = _retrieve_context_module()
+        injected = Mock(spec=RAGRetriever)
+        set_app_retriever(injected)
+        assert mod._app_retriever is injected
+        set_app_retriever(None)
+        assert mod._app_retriever is None
+
+
+class TestRetrieveContextTool:
+    """Tests for retrieve_context tool function (async)."""
+
+    @pytest.mark.asyncio
     @patch("rag_engine.tools.retrieve_context._get_or_create_retriever")
-    def test_retrieve_success(self, mock_get_retriever):
-        """Test successful retrieval."""
-        # Setup mock retriever
+    async def test_retrieve_async_success(self, mock_get_retriever):
+        """Test successful async retrieval."""
+        # Setup mock retriever with async method
         mock_ret = Mock(spec=RAGRetriever)
         mock_articles = [
             Article(
@@ -137,15 +171,15 @@ class TestRetrieveContextTool:
                 metadata={"title": "Article 1", "article_url": "https://example.com/1"},
             )
         ]
-        mock_ret.retrieve.return_value = mock_articles
+        mock_ret.retrieve_async = AsyncMock(return_value=mock_articles)
         mock_get_retriever.return_value = mock_ret
 
         # Invoke tool
-        result_str = retrieve_context.invoke({"query": "test query", "top_k": 5})
+        result_str = await retrieve_context.ainvoke({"query": "test query", "top_k": 5})
         result = json.loads(result_str)
 
-        # Verify retriever was called correctly (no reserved_tokens parameter)
-        mock_ret.retrieve.assert_called_once_with("test query", top_k=5)
+        # Verify retriever was called with async method
+        mock_ret.retrieve_async.assert_called_once_with("test query", top_k=5)
 
         # Verify result structure
         assert len(result["articles"]) == 1
@@ -155,28 +189,30 @@ class TestRetrieveContextTool:
         assert result["metadata"]["top_k_requested"] == 5
         assert result["metadata"]["has_results"] is True
 
+    @pytest.mark.asyncio
     @patch("rag_engine.tools.retrieve_context._get_or_create_retriever")
-    def test_retrieve_no_results(self, mock_get_retriever):
-        """Test retrieval with no results."""
+    async def test_retrieve_async_no_results(self, mock_get_retriever):
+        """Test async retrieval with no results."""
         mock_ret = Mock(spec=RAGRetriever)
-        mock_ret.retrieve.return_value = []
+        mock_ret.retrieve_async = AsyncMock(return_value=[])
         mock_get_retriever.return_value = mock_ret
 
-        result_str = retrieve_context.invoke({"query": "no results query"})
+        result_str = await retrieve_context.ainvoke({"query": "no results query"})
         result = json.loads(result_str)
 
         assert result["articles"] == []
         assert result["metadata"]["has_results"] is False
         assert result["metadata"]["articles_count"] == 0
 
+    @pytest.mark.asyncio
     @patch("rag_engine.tools.retrieve_context._get_or_create_retriever")
-    def test_retrieve_error_handling(self, mock_get_retriever):
-        """Test error handling during retrieval."""
+    async def test_retrieve_async_error_handling(self, mock_get_retriever):
+        """Test error handling during async retrieval."""
         mock_ret = Mock(spec=RAGRetriever)
-        mock_ret.retrieve.side_effect = Exception("Database connection failed")
+        mock_ret.retrieve_async = AsyncMock(side_effect=Exception("Database connection failed"))
         mock_get_retriever.return_value = mock_ret
 
-        result_str = retrieve_context.invoke({"query": "error query"})
+        result_str = await retrieve_context.ainvoke({"query": "error query"})
         result = json.loads(result_str)
 
         assert "error" in result
@@ -184,31 +220,40 @@ class TestRetrieveContextTool:
         assert result["articles"] == []
         assert result["metadata"]["has_results"] is False
 
+    @pytest.mark.asyncio
     @patch("rag_engine.tools.retrieve_context._get_or_create_retriever")
-    def test_retrieve_same_as_direct_call(self, mock_get_retriever):
-        """Test tool returns same articles as direct retriever.retrieve() call."""
+    async def test_retrieve_async_same_as_direct_call(self, mock_get_retriever):
+        """Test tool returns same articles as direct retriever.retrieve_async() call."""
         # Setup mock retriever with specific articles
         mock_ret = Mock(spec=RAGRetriever)
         mock_articles = [
             Article(
                 kb_id="1",
                 content="Full content 1",
-                metadata={"title": "Article 1", "kbId": "1", "article_url": "https://example.com/1"},
+                metadata={
+                    "title": "Article 1",
+                    "kbId": "1",
+                    "article_url": "https://example.com/1",
+                },
             ),
             Article(
                 kb_id="2",
                 content="Full content 2",
-                metadata={"title": "Article 2", "kbId": "2", "article_url": "https://example.com/2"},
+                metadata={
+                    "title": "Article 2",
+                    "kbId": "2",
+                    "article_url": "https://example.com/2",
+                },
             ),
         ]
-        mock_ret.retrieve.return_value = mock_articles
+        mock_ret.retrieve_async = AsyncMock(return_value=mock_articles)
         mock_get_retriever.return_value = mock_ret
 
-        # Direct call
-        direct_results = mock_ret.retrieve("test query", top_k=5)
+        # Direct async call
+        direct_results = await mock_ret.retrieve_async("test query", top_k=5)
 
         # Tool call
-        tool_result_str = retrieve_context.invoke({"query": "test query", "top_k": 5})
+        tool_result_str = await retrieve_context.ainvoke({"query": "test query", "top_k": 5})
         tool_result = json.loads(tool_result_str)
 
         # Verify same articles are returned (same count and kb_ids)
@@ -218,9 +263,11 @@ class TestRetrieveContextTool:
         assert tool_kb_ids == direct_kb_ids
 
         # Verify content matches
-        for tool_article, direct_article in zip(tool_result["articles"], direct_results, strict=True):
+        for tool_article, direct_article in zip(
+            tool_result["articles"], direct_results, strict=True
+        ):
             assert tool_article["kb_id"] == direct_article.kb_id
             assert tool_article["content"] == direct_article.content
-            assert tool_article["title"] == direct_article.metadata.get("title", direct_article.kb_id)
-
-
+            assert tool_article["title"] == direct_article.metadata.get(
+                "title", direct_article.kb_id
+            )

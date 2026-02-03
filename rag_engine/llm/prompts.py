@@ -87,6 +87,13 @@ Do not mix languages in the answer output unless specifically needed for clarity
 For internal reasoning use English.
 </answer_language>
 
+<conversation_management>
+- Focus on and answer the ONLY the current question in the current turn.
+- Avid repetitively answering questions from previous turns.
+- Previous messages are provided for context only. Use them to understand the overall conversation flow.
+- The user might switch subjects between the turns and previous context might become irrelevant.
+</conversation_management>
+
 <answer_structure>
 - Keep answers precise and strictly grounded in the provided context.
 - Be brief, do not over-engineer the answer, but do not omit useful information.
@@ -172,4 +179,5 @@ AI_DISCLAIMER = """## Сгенерированный ИИ контент
 Материалы на https://kb.comindware.ru имеют приоритет над ответом ИИ-агента.
 Всегда сверяйтесь с фактическими материалами в базе знаний.
 
+-----------------
 """

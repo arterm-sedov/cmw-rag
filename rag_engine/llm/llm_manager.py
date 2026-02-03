@@ -2,21 +2,21 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple
+from collections.abc import Generator, Iterable
+from typing import Any
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
 
+from rag_engine.config.settings import settings
+from rag_engine.llm.model_configs import MODEL_CONFIGS
 from rag_engine.llm.prompts import get_system_prompt
 from rag_engine.llm.token_utils import estimate_tokens_for_request
-from rag_engine.config.settings import settings
 from rag_engine.utils.conversation_store import ConversationStore
 from rag_engine.utils.metadata_utils import extract_numeric_kbid
 
 logger = logging.getLogger(__name__)
-
-
-from rag_engine.llm.model_configs import MODEL_CONFIGS
 
 
 def get_model_config(model_name: str) -> dict:
@@ -62,12 +62,18 @@ def get_model_config(model_name: str) -> dict:
     # Create a copy to avoid mutating the original
     config = base_config.copy()
 
-    # Apply .env overrides if set
-    if settings.llm_token_limit is not None:
+    # Apply .env overrides only for the configured default local/vLLM model.
+    # This prevents unintentionally overriding known external model configs
+    # (e.g., Gemini/OpenRouter) in unit tests and production.
+    is_default_vllm_model = (
+        getattr(settings, "default_llm_provider", "").lower() == "vllm"
+        and getattr(settings, "default_model", "") == model_name
+    )
+    if is_default_vllm_model and settings.llm_token_limit is not None:
         logger.debug("Overriding token_limit with .env value: %d", settings.llm_token_limit)
         config["token_limit"] = settings.llm_token_limit
 
-    if settings.llm_max_tokens is not None:
+    if is_default_vllm_model and settings.llm_max_tokens is not None:
         logger.debug("Overriding max_tokens with .env value: %d", settings.llm_max_tokens)
         config["max_tokens"] = settings.llm_max_tokens
 
@@ -124,18 +130,55 @@ class LLMManager:
         """
         return self._model_config["max_tokens"]
 
-    def _chat_model(self, provider: str | None = None):
+    def _apply_structured_output(
+        self, model: Any, schema: type[BaseModel] | dict[str, Any]
+    ) -> Any:
+        """Apply structured output schema to a LangChain chat model if supported."""
+        with_structured_output = getattr(model, "with_structured_output", None)
+        if with_structured_output is None:
+            logger.warning(
+                "Model %s does not support with_structured_output(); ignoring schema.",
+                type(model).__name__,
+            )
+            return model
+
+        try:
+            # Prefer strict json_schema first: it enforces the schema (not just “some JSON”).
+            return with_structured_output(schema, method="json_schema", strict=True)
+        except Exception as exc_json_schema:
+            try:
+                # Fallback for providers/models that don't support json_schema well.
+                return with_structured_output(schema, method="json_mode")
+            except Exception as exc_json_mode:
+                logger.warning(
+                    "Failed to apply structured output (json_schema=%s, json_mode=%s). Using regular model.",
+                    exc_json_schema,
+                    exc_json_mode,
+                )
+                return model
+
+    def _chat_model(
+        self,
+        provider: str | None = None,
+        structured_output_schema: type[BaseModel] | dict[str, Any] | None = None,
+    ):
         """Create chat model instance.
+
+        Args:
+            provider: Optional provider override (openrouter, gemini, vllm)
+            structured_output_schema: Optional Pydantic model or JSON schema dict to enforce
+                structured output. Only supported for ChatOpenAI models (OpenRouter/vLLM).
 
         Note: max_tokens is not passed to the model as providers have their own limits.
         It's only used for context size estimation.
         """
         p = (provider or self.provider).lower()
         if p == "gemini":
-            return ChatGoogleGenerativeAI(
+            model = ChatGoogleGenerativeAI(
                 model=self.model_name,
                 temperature=self.temperature,
             )
+            return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "openrouter":
             # OpenRouter via OpenAI-compatible client
             api_key = settings.openrouter_api_key
@@ -151,7 +194,7 @@ class LLMManager:
                 f"base_url={base_url}, api_key={api_key[:10]}..."
             )
 
-            return ChatOpenAI(
+            model = ChatOpenAI(
                 model=self.model_name,
                 api_key=api_key,
                 base_url=base_url,
@@ -164,6 +207,7 @@ class LLMManager:
                     "X-Title": "CMW RAG Engine",
                 },
             )
+            return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "vllm":
             # vLLM via OpenAI-compatible API
             # OpenAI client requires api_key to be set, use "EMPTY" as default if not provided
@@ -175,7 +219,7 @@ class LLMManager:
                 f"base_url={base_url}, api_key={api_key if api_key == 'EMPTY' else api_key[:10] + '...'}"
             )
 
-            return ChatOpenAI(
+            model = ChatOpenAI(
                 model=self.model_name,
                 api_key=api_key,
                 base_url=base_url,
@@ -183,16 +227,18 @@ class LLMManager:
                 # Note: streaming is controlled at call site (.stream() vs .invoke()),
                 # not at model construction time, to avoid issues with LangChain agents
             )
+            return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         # default fallback to Gemini
         logger.warning(f"Unknown provider {p}, falling back to Gemini")
-        return ChatGoogleGenerativeAI(
+        model = ChatGoogleGenerativeAI(
             model=self.model_name,
             temperature=self.temperature,
         )
+        return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
 
     def get_system_prompt(self) -> str:
         """Expose system prompt for other components (no import cycles)."""
-        mild_limit = settings.llm_mild_limit
+        mild_limit = getattr(settings, "llm_mild_limit", None)
         return get_system_prompt(mild_limit=mild_limit)
 
     def _format_article_header(self, doc: Any) -> str:
@@ -234,14 +280,14 @@ class LLMManager:
         )
 
     def _build_messages_with_memory(
-        self, session_id: Optional[str], question: str, context: str
-    ) -> List[Tuple[str, str]]:
+        self, session_id: str | None, question: str, context: str
+    ) -> list[tuple[str, str]]:
         """Assemble chat messages including prior memory (if any).
 
         System prompt is injected at call time and never stored in memory.
         """
-        messages: List[Tuple[str, str]] = []
-        mild_limit = settings.llm_mild_limit
+        messages: list[tuple[str, str]] = []
+        mild_limit = getattr(settings, "llm_mild_limit", None)
         system_prompt_text = get_system_prompt(mild_limit=mild_limit)
         messages.append(("system", system_prompt_text + "\n\nContext:\n" + context))
         if session_id:
@@ -252,7 +298,7 @@ class LLMManager:
         messages.append(("user", question))
         return messages
 
-    def _compress_memory(self, session_id: Optional[str], question: str, context: str) -> None:
+    def _compress_memory(self, session_id: str | None, question: str, context: str) -> None:
         """Compress older turns into a single assistant message when over threshold.
 
         Keeps the latest two turns intact; replaces earlier turns with one summary.
@@ -296,10 +342,10 @@ class LLMManager:
         except Exception:
             compressed = prior_text[:2000]
 
-        new_history: List[Tuple[str, str]] = [("assistant", compressed)] + preserved
+        new_history: list[tuple[str, str]] = [("assistant", compressed)] + preserved
         self._conversations.set(session_id, new_history)
 
-    def _get_fallback_model(self, required_tokens: int, allowed_models: list[str] | None) -> Optional[str]:
+    def _get_fallback_model(self, required_tokens: int, allowed_models: list[str] | None) -> str | None:
         allowed = set(allowed_models or [])
         # If allowed list is empty, do not fallback
         if not allowed:
@@ -333,7 +379,7 @@ class LLMManager:
             return "gemini"
         return "openrouter"
 
-    def _create_manager_for(self, model_name: str) -> "LLMManager":
+    def _create_manager_for(self, model_name: str) -> LLMManager:
         provider = self._infer_provider_for_model(model_name)
         return LLMManager(provider=provider, model=model_name, temperature=self.temperature)
 
@@ -342,15 +388,15 @@ class LLMManager:
         question: str,
         context_docs: Iterable,
         enable_fallback: bool = False,
-        allowed_fallback_models: Optional[list[str]] = None,
+        allowed_fallback_models: list[str] | None = None,
         *,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
     ) -> Generator[str, None, None]:
         """Stream LLM response with context from complete articles.
 
         Supports immediate model fallback if estimated tokens exceed window.
         """
-        content_blocks: List[str] = []
+        content_blocks: list[str] = []
         for d in context_docs:
             text = getattr(d, "page_content", None) or getattr(d, "content", "")
             header = self._format_article_header(d)
@@ -418,10 +464,10 @@ class LLMManager:
                 self._conversations.append(session_id, "user", question)
 
     def generate(
-        self, question: str, context_docs: Iterable, provider: str | None = None, *, session_id: Optional[str] = None
+        self, question: str, context_docs: Iterable, provider: str | None = None, *, session_id: str | None = None
     ) -> str:
         """Generate LLM response (non-streaming) with context from complete articles."""
-        content_blocks: List[str] = []
+        content_blocks: list[str] = []
         for d in context_docs:
             text = getattr(d, "page_content", None) or getattr(d, "content", "")
             header = self._format_article_header(d)
@@ -439,7 +485,7 @@ class LLMManager:
             self._conversations.append(session_id, "assistant", content)
         return content
 
-    def save_assistant_turn(self, session_id: Optional[str], content: str) -> None:
+    def save_assistant_turn(self, session_id: str | None, content: str) -> None:
         if session_id and content:
             self._conversations.append(session_id, "assistant", content)
 

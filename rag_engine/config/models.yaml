@@ -1,0 +1,151 @@
+# Static model metadata registry for cmw-rag
+# This file contains model specifications, dimensions, and provider-specific formatting rules
+# Runtime configuration (which model/provider to use) goes in .env
+
+models:
+  # ============ EMBEDDING MODELS ============
+  
+  ai-forever/FRIDA:
+    type: embedding
+    dimensions: 1536
+    description: "Russian-optimized multilingual embeddings"
+    provider_formats:
+      direct:
+        query_prefix: "search_query: "
+        doc_prefix: "search_document: "
+        device: auto
+        max_seq_length: 512
+      infinity:
+        endpoint_path: "/v1/embeddings"
+        query_prefix: "search_query: "
+        doc_prefix: "search_document: "
+      openrouter:
+        # Not available on OpenRouter
+        supported: false
+
+  Qwen/Qwen3-Embedding-0.6B:
+    type: embedding
+    dimensions: 1024
+    description: "Lightweight Qwen3 embedding model"
+    provider_formats:
+      direct:
+        supported: false  # Not tested with sentence-transformers directly
+      infinity:
+        endpoint_path: "/v1/embeddings"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+      openrouter:
+        model_id: "qwen/qwen3-embedding-0.6b"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+
+  Qwen/Qwen3-Embedding-4B:
+    type: embedding
+    dimensions: 2560
+    description: "Mid-size Qwen3 embedding model"
+    provider_formats:
+      direct:
+        supported: false
+      infinity:
+        endpoint_path: "/v1/embeddings"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+      openrouter:
+        model_id: "qwen/qwen3-embedding-4b"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+
+  Qwen/Qwen3-Embedding-8B:
+    type: embedding
+    dimensions: 4096
+    description: "Large Qwen3 embedding model (best quality)"
+    provider_formats:
+      direct:
+        supported: false
+      infinity:
+        endpoint_path: "/v1/embeddings"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+      openrouter:
+        model_id: "qwen/qwen3-embedding-8b"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+
+  # ============ RERANKER MODELS ============
+  
+  DiTy/cross-encoder-russian-msmarco:
+    type: reranker
+    dimensions: 1  # Rerankers output scores, not embeddings
+    description: "Russian-optimized cross-encoder reranker"
+    provider_formats:
+      direct:
+        batch_size: 16
+        device: auto
+      infinity:
+        endpoint_path: "/rerank"
+        # DiTy doesn't use instructions
+      openrouter:
+        # Not available on OpenRouter
+        supported: false
+
+  BAAI/bge-reranker-v2-m3:
+    type: reranker
+    dimensions: 1
+    description: "Multilingual BGE reranker"
+    provider_formats:
+      direct:
+        batch_size: 16
+        device: auto
+      infinity:
+        endpoint_path: "/rerank"
+      openrouter:
+        supported: false
+
+  Qwen/Qwen3-Reranker-0.6B:
+    type: reranker
+    dimensions: 1
+    description: "Lightweight Qwen3 reranker"
+    provider_formats:
+      direct:
+        supported: false
+      infinity:
+        endpoint_path: "/rerank"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+      openrouter:
+        supported: false  # Not yet available
+
+  Qwen/Qwen3-Reranker-4B:
+    type: reranker
+    dimensions: 1
+    description: "Mid-size Qwen3 reranker"
+    provider_formats:
+      direct:
+        supported: false
+      infinity:
+        endpoint_path: "/rerank"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+      openrouter:
+        supported: false
+
+  Qwen/Qwen3-Reranker-8B:
+    type: reranker
+    dimensions: 1
+    description: "Large Qwen3 reranker"
+    provider_formats:
+      direct:
+        supported: false
+      infinity:
+        endpoint_path: "/rerank"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+      openrouter:
+        supported: false
+
+  # ============ DEFAULT ENDPOINTS (can be overridden in .env) ============
+defaults:
+  endpoints:
+    infinity:
+      embedding: "http://localhost:7997"
+      reranker: "http://localhost:7998"
+    openrouter: "https://openrouter.ai/api/v1"
+  
+  timeouts:
+    infinity: 60.0
+    openrouter: 60.0
+    
+  retries:
+    infinity: 3
+    openrouter: 3

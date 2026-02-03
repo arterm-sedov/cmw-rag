@@ -68,6 +68,7 @@ alwaysApply: true
 - Produce flawless code.
 - Reanalyze your changes twice for any issues you might have introduced.
 - Place imports always on top.
+- Do not add orphan spaces on empty lines.
 - Use environment variables for secrets.
 - Put reports to a relevant `docs/**/progress_reports/` folder under `/docs/`
 - Put tests to `/rag_engine/tests` preferably.

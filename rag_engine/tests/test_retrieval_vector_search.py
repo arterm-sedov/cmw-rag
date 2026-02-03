@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from unittest.mock import Mock
+import asyncio
+from unittest.mock import AsyncMock, Mock
 
-from rag_engine.retrieval.vector_search import top_k_search
+import pytest
+
+from rag_engine.retrieval.vector_search import top_k_search_async
 
 
-def test_top_k_search_delegates_to_store():
+@pytest.mark.asyncio
+async def test_top_k_search_async_delegates_to_store():
+    """Test that top_k_search_async delegates to store.similarity_search_async."""
     store = Mock()
-    store.similarity_search.return_value = ["result"]
+    store.similarity_search_async = AsyncMock(return_value=["result"])
 
-    results = top_k_search(store, embedding=[0.1, 0.2], k=3)
+    results = await top_k_search_async(store, embedding=[0.1, 0.2], k=3)
 
-    store.similarity_search.assert_called_once_with(query_embedding=[0.1, 0.2], k=3)
+    store.similarity_search_async.assert_called_once_with(query_embedding=[0.1, 0.2], k=3)
     assert results == ["result"]
-

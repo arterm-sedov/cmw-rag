@@ -6,6 +6,7 @@ The agent only needs to import and use the tool - no setup required.
 Now supports async execution to prevent blocking the event loop during
 concurrent requests.
 """
+
 from __future__ import annotations
 
 import json
@@ -24,19 +25,36 @@ logger = logging.getLogger(__name__)
 
 # Module-level retriever instance (lazy singleton)
 _retriever: RAGRetriever | None = None
+# When running inside the Gradio app, the app injects its pre-initialized retriever
+# so FRIDA/direct embedder is never loaded in a worker thread (avoids crash on Windows).
+_app_retriever: RAGRetriever | None = None
 _retriever_init_lock = threading.Lock()
+
+
+def set_app_retriever(retriever: RAGRetriever | None) -> None:
+    """Inject the app's pre-initialized retriever for use by the tool.
+
+    When the Gradio app starts, it creates embedder and retriever on the main thread.
+    Calling this with that retriever ensures the agent path uses the same instance
+    and never loads FRIDA/sentence_transformers in a worker thread (which can
+    crash on Windows). Pass None to clear (e.g. tests).
+    """
+    global _app_retriever
+    _app_retriever = retriever
 
 
 def _get_or_create_retriever() -> RAGRetriever:
     """Get or create the retriever instance (lazy singleton).
 
-    This creates the retriever on first use and reuses it for subsequent calls.
+    Uses app-injected retriever if set (Gradio app); otherwise creates on first use.
     The retriever is stateless, so it's safe to share across sessions.
 
     Returns:
         RAGRetriever instance
     """
     global _retriever
+    if _app_retriever is not None:
+        return _app_retriever
     if _retriever is None:
         # Serialize first-time initialization across threads
         with _retriever_init_lock:
@@ -54,7 +72,6 @@ def _get_or_create_retriever() -> RAGRetriever:
             device=settings.embedding_device,
         )
         vector_store = ChromaStore(
-            persist_dir=settings.chromadb_persist_dir,
             collection_name=settings.chromadb_collection,
         )
         llm_manager = LLMManager(
@@ -97,7 +114,7 @@ class RetrieveContextSchema(BaseModel):
         description="Maximum number of articles to retrieve. "
         f"Default: {settings.top_k_rerank} articles. "
         "Use a smaller value (e.g., 3) for focused retrieval. "
-        "Use larger value (e.g., 10) for comprehensive coverage. "
+        "Use larger value (e.g., 10) for comprehensive coverage. ",
     )
     exclude_kb_ids: list[str] | None = Field(
         default=None,
@@ -137,13 +154,15 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
         article_metadata = dict(article.metadata)
         # Metadata already contains rerank_score and normalized_rank from retriever
 
-        articles_data.append({
-            "kb_id": article.kb_id,
-            "title": title,
-            "url": url,
-            "content": article.content,  # Uncompressed content
-            "metadata": article_metadata,  # Includes rerank_score, normalized_rank
-        })
+        articles_data.append(
+            {
+                "kb_id": article.kb_id,
+                "title": title,
+                "url": url,
+                "content": article.content,  # Uncompressed content
+                "metadata": article_metadata,  # Includes rerank_score, normalized_rank
+            }
+        )
 
     result = {
         "articles": articles_data,
@@ -154,7 +173,7 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
             "has_results": len(articles_data) > 0,
         },
     }
-    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
+    return json.dumps(result, ensure_ascii=False, separators=(",", ":"))
 
 
 @tool("retrieve_context", args_schema=RetrieveContextSchema)
@@ -254,8 +273,8 @@ async def retrieve_context(
         # Get retriever (initialization is fast, but wrap in thread pool for safety)
         retriever = await run_in_thread_pool(_get_or_create_retriever)
 
-        # Run blocking retrieval in thread pool to avoid blocking event loop
-        docs = await run_in_thread_pool(retriever.retrieve, query, top_k=top_k)
+        # Use async retrieval directly
+        docs = await retriever.retrieve_async(query, top_k=top_k)
 
         # Determine which kb_ids to exclude (explicit argument takes precedence, then context)
         excluded_set: set[str] = set()
@@ -287,8 +306,12 @@ async def retrieve_context(
             {
                 "error": f"Retrieval failed: {str(exc)}",
                 "articles": [],
-                "metadata": {"has_results": False, "query": query, "top_k_requested": top_k, "articles_count": 0},
+                "metadata": {
+                    "has_results": False,
+                    "query": query,
+                    "top_k_requested": top_k,
+                    "articles_count": 0,
+                },
             },
             ensure_ascii=False,
         )
-
