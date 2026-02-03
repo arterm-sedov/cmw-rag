@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import sys
 from pathlib import Path
 import logging
@@ -13,7 +14,7 @@ if str(_project_root) not in sys.path:
 from rag_engine.config.settings import settings
 from rag_engine.core.document_processor import DocumentProcessor
 from rag_engine.core.indexer import RAGIndexer
-from rag_engine.retrieval.embedder import create_embedder
+from rag_engine.retrieval.embedder import FRIDAEmbedder
 from hashlib import sha1
 
 from rag_engine.storage.vector_store import ChromaStore
@@ -24,7 +25,7 @@ from rag_engine.utils.logging_manager import setup_logging
 logger = logging.getLogger(__name__)
 
 
-def main() -> None:
+async def run_async() -> None:
     parser = argparse.ArgumentParser(description="Build RAG index from markdown sources")
     parser.add_argument("--source", required=True, help="Path to folder or file")
     parser.add_argument("--mode", choices=["folder", "file", "mkdocs"], default="folder")
@@ -65,7 +66,9 @@ def main() -> None:
         print(f"{'File':<60} {'Source':<12} {'Epoch':<12} {'ISO String':<25}")
         print("-" * 80)
 
-        store = ChromaStore(collection_name=settings.chromadb_collection)
+        store = ChromaStore(
+            collection_name=settings.chromadb_collection,
+        )
 
         for doc in docs:
             base_meta = getattr(doc, "metadata", {})
@@ -79,7 +82,11 @@ def main() -> None:
             # Normalize kbId to numeric for consistent lookup
             numeric_kb_id = extract_numeric_kbid(kb_id) or str(kb_id)
             doc_stable_id = sha1(numeric_kb_id.encode("utf-8")).hexdigest()[:12]
-            existing = store.get_any_doc_meta({"doc_stable_id": doc_stable_id}) if store else None
+            existing = (
+                await store.get_any_doc_meta_async({"doc_stable_id": doc_stable_id})
+                if store
+                else None
+            )
             existing_epoch = existing.get("file_mtime_epoch") if existing else None
 
             status = ""
@@ -107,8 +114,17 @@ def main() -> None:
         print("Dry-run complete. No files were indexed.")
         return
 
-    embedder = create_embedder(settings)
+    embedder = FRIDAEmbedder(model_name=settings.embedding_model, device=settings.embedding_device)
     store = ChromaStore(collection_name=settings.chromadb_collection)
+
+    indexer = RAGIndexer(embedder=embedder, vector_store=store)
+    summary = await indexer.index_documents_async(
+        docs,
+        chunk_size=settings.chunk_size,
+        chunk_overlap=settings.chunk_overlap,
+        max_files=args.max_files,
+        force_reindex=args.reindex,
+    )
 
     indexer = RAGIndexer(embedder=embedder, vector_store=store)
     summary = indexer.index_documents(
@@ -122,10 +138,6 @@ def main() -> None:
 
     # Optional pruning step: remove entries whose kbId is not in current source set
     if args.prune_missing:
-        from rag_engine.utils.metadata_utils import (
-            extract_numeric_kbid,
-        )  # local import to avoid cycle
-
         # Build set of normalized kbIds present in source docs
         present_kbids = set()
         for doc in docs:
@@ -141,8 +153,10 @@ def main() -> None:
         delete_candidates: list[tuple[str, str]] = []  # (kbId, doc_stable_id)
         offset = 0
         page_size = 1000
+
+        collection = await store.get_collection()
         while True:
-            res = store.collection.get(limit=page_size, offset=offset, include=["metadatas"])
+            res = await collection.get(limit=page_size, offset=offset, include=["metadatas"])
             metas_batch = res.get("metadatas", [])
             if not metas_batch:
                 break
@@ -161,7 +175,7 @@ def main() -> None:
         # Delete with progress logging similar to indexing
         total_to_delete = len(delete_candidates)
         for idx, (kb, doc_id) in enumerate(delete_candidates, start=1):
-            store.delete_where({"doc_stable_id": doc_id})
+            await store.delete_where_async({"doc_stable_id": doc_id})
             deleted_docs += 1
             logger.info(
                 "Deleted document %d/%d (kbId: %s, doc_stable_id: %s)",
@@ -190,4 +204,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(run_async())
