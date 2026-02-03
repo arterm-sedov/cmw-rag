@@ -20,6 +20,15 @@ Usage:
     # Check if running
     python scripts/start_chroma_server.py --status
 
+    # Restart background server
+    python scripts/start_chroma_server.py --restart
+
+    # Show recent log output
+    python scripts/start_chroma_server.py --log
+
+    # Follow log output in real-time
+    python scripts/start_chroma_server.py --tail
+
     # Verbose output
     python scripts/start_chroma_server.py --verbose
 """
@@ -95,6 +104,13 @@ def get_pid_file() -> Path:
     return project_root / ".chroma_server.pid"
 
 
+def get_log_file() -> Path:
+    """Get path to log file for background process output (project root)."""
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent.parent
+    return project_root / "chroma_server.log"
+
+
 def is_server_running(port: int) -> bool:
     """Check if ChromaDB server is already running on the specified port."""
     import socket
@@ -162,6 +178,52 @@ def stop_server(verbose: bool = False) -> bool:
     except Exception as e:
         print(f"❌ Error stopping server: {e}")
         return False
+
+
+def tail_logs(lines: int = 50, follow: bool = False) -> None:
+    """Show the tail of the ChromaDB server log.
+
+    Args:
+        lines: Number of lines to show from the end of the log
+        follow: If True, continuously follow log updates (like tail -f)
+    """
+    log_file = get_log_file()
+
+    if not log_file.exists():
+        print(f"ℹ️  Log file not found: {log_file}")
+        print(
+            "   The server may not have been started in background mode, or no logs have been written yet."
+        )
+        return
+
+    try:
+        # Read the file and show last N lines
+        with open(log_file, "r", encoding="utf-8") as f:
+            if follow:
+                # Follow mode: show existing content then follow
+                import time
+
+                # Go to end of file
+                f.seek(0, 2)
+                print(f"📋 Following log file: {log_file}")
+                print("   Press Ctrl+C to stop\n")
+                try:
+                    while True:
+                        line = f.readline()
+                        if line:
+                            print(line, end="")
+                        else:
+                            time.sleep(0.1)
+                except KeyboardInterrupt:
+                    print("\n👋 Stopped following logs.")
+            else:
+                # Tail mode: show last N lines
+                all_lines = f.readlines()
+                tail_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+                print(f"📋 Last {len(tail_lines)} lines from {log_file}:\n")
+                print("".join(tail_lines))
+    except Exception as e:
+        print(f"❌ Error reading log file: {e}")
 
 
 def check_status() -> None:
@@ -255,6 +317,15 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
     else:
         # Run in background (detached)
         try:
+            log_file_path = get_log_file()
+            # Open log file for appending stdout/stderr
+            log_handle = open(log_file_path, "a", encoding="utf-8")
+            log_handle.write(f"\n{'=' * 60}\n")
+            log_handle.write(f"ChromaDB server started at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            log_handle.write(f"Command: {' '.join(cmd)}\n")
+            log_handle.write(f"{'=' * 60}\n\n")
+            log_handle.flush()
+
             if sys.platform == "win32":
                 # Windows: no console window (invisible), detached process
                 creation_flags = (
@@ -269,8 +340,8 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
                     cmd,
                     creationflags=creation_flags,
                     startupinfo=startupinfo,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    stdout=log_handle,
+                    stderr=subprocess.STDOUT,
                     stdin=subprocess.DEVNULL,
                 )
             else:
@@ -278,8 +349,8 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
                 process = subprocess.Popen(
                     cmd,
                     start_new_session=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    stdout=log_handle,
+                    stderr=subprocess.STDOUT,
                     stdin=subprocess.DEVNULL,
                 )
 
@@ -292,11 +363,12 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
             print(f"   Connect at: http://{host}:{port}")
             print(f"   Data path: {config['persist_dir']}")
             print(f"   PID file: {pid_file}")
+            print(f"   Log file: {log_file_path}")
             print()
             print("Commands:")
             print(f"   Stop:   python {__file__} --stop")
             print(f"   Status: python {__file__} --status")
-            print(f"   Logs:   Check terminal or system process logs")
+            print(f"   Logs:   python {__file__} --log")
             print()
             print("Tracing:")
             print(
@@ -323,16 +395,25 @@ def main() -> None:
 Examples:
   # Run in background (default, daemon mode)
   python start_chroma_server.py
-  
+
   # Run in foreground (blocking, shows logs)
   python start_chroma_server.py --foreground
-  
+
   # Stop background server
   python start_chroma_server.py --stop
-  
+
   # Check if running
   python start_chroma_server.py --status
-  
+
+  # Restart background server
+  python start_chroma_server.py --restart
+
+  # Show recent log output
+  python start_chroma_server.py --log
+
+  # Follow log output in real-time
+  python start_chroma_server.py --tail
+
   # Verbose output
   python start_chroma_server.py --verbose
         """,
@@ -345,15 +426,41 @@ Examples:
         help="Run server in foreground (blocking, shows logs)",
     )
     parser.add_argument("--stop", "-s", action="store_true", help="Stop the background server")
+    parser.add_argument(
+        "--restart",
+        "-r",
+        action="store_true",
+        help="Restart the background server (stop if running, then start)",
+    )
     parser.add_argument("--status", action="store_true", help="Check if server is running")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show verbose output")
+    parser.add_argument(
+        "--log",
+        action="store_true",
+        help="Show the last 50 lines of the server log file",
+    )
+    parser.add_argument(
+        "--tail",
+        action="store_true",
+        help="Follow the server log in real-time (like tail -f)",
+    )
 
     args = parser.parse_args()
 
     if args.stop:
         stop_server(args.verbose)
+    elif args.restart:
+        # Restart: stop if running, then start
+        stop_server(args.verbose)
+        print("🔄 Restarting ChromaDB server...")
+        print()
+        start_chroma_server(foreground=args.foreground, verbose=args.verbose)
     elif args.status:
         check_status()
+    elif args.log:
+        tail_logs(lines=50, follow=False)
+    elif args.tail:
+        tail_logs(lines=50, follow=True)
     else:
         print("🎯 ChromaDB Server Starter")
         print("   Reading configuration from .env file...")
