@@ -9,8 +9,8 @@ echo ""
 
 # Check if .env exists
 if [ ! -f ".env" ]; then
-    echo "Warning: .env file not found. Copy .env.example to .env and fill in your API keys."
-    echo "  cp rag_engine/.env.example .env"
+    echo "Warning: .env file not found. Copy .env-example to .env and fill in your API keys."
+    echo "  cp .env-example .env"
     echo ""
 fi
 

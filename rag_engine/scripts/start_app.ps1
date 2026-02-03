@@ -8,8 +8,8 @@ Write-Host ""
 
 # Check if .env exists
 if (!(Test-Path ".env")) {
-    Write-Host "Warning: .env file not found. Copy .env.example to .env and fill in your API keys." -ForegroundColor Yellow
-    Write-Host "  Copy-Item rag_engine\.env.example .env" -ForegroundColor Yellow
+    Write-Host "Warning: .env file not found. Copy .env-example to .env and fill in your API keys." -ForegroundColor Yellow
+    Write-Host "  Copy-Item .env-example .env" -ForegroundColor Yellow
     Write-Host ""
 }
 

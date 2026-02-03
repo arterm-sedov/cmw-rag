@@ -7,6 +7,7 @@ enabling progressive budgeting and preventing context overflow.
 from __future__ import annotations
 
 import logging
+import threading
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
@@ -15,6 +16,9 @@ if TYPE_CHECKING:
     from rag_engine.retrieval.retriever import Article
 
 logger = logging.getLogger(__name__)
+
+# Thread-local storage for AgentContext (workaround for LangChain streaming bug where runtime.context is None)
+_thread_local_context = threading.local()
 
 
 class AgentContext(BaseModel):
@@ -45,6 +49,65 @@ class AgentContext(BaseModel):
         description="Set of kb_ids already fetched in this turn (prevents duplicate retrieval). "
         "Optional - defaults to empty set if not provided (e.g., for MCP calls).",
     )
+
+    # --- SGR planning + structured trace ---
+    # NOTE: sgr_plan is intentionally NOT excluded: it is injected into the LLM context
+    # to guide retrieval decisions (subqueries as suggestions, action_plan as guidance).
+    sgr_plan: dict[str, Any] | None = Field(
+        default=None,
+        description="SGR plan (spam score, subqueries, action plan) injected into LLM context.",
+    )
+
+    # Execution trace + final results are excluded from serialization to the LLM.
+    # They are used for batch output and UI debug panels.
+    query_traces: list[dict[str, Any]] = Field(
+        default_factory=list,
+        exclude=True,
+        description="Actual executed retrieval calls trace (excluded from LLM context).",
+    )
+    final_answer: str = Field(
+        default="",
+        exclude=True,
+        description="Final answer text with citations (excluded from LLM context).",
+    )
+    final_articles: list[dict[str, Any]] = Field(
+        default_factory=list,
+        exclude=True,
+        description="Final deduplicated articles serialized to dicts (excluded from LLM context).",
+    )
+    diagnostics: dict[str, Any] = Field(
+        default_factory=dict,
+        exclude=True,
+        description="Run diagnostics (tokens, compression flags) excluded from LLM context.",
+    )
+
+    # --- UI-only correlation (excluded from LLM) ---
+    pending_ui_messages: list[dict[str, Any]] = Field(
+        default_factory=list,
+        exclude=True,
+        description="UI-only messages enqueued by middleware for immediate display.",
+    )
+    emitted_ui_ids: set[str] = Field(
+        default_factory=set,
+        exclude=True,
+        description="IDs of UI-only messages already emitted in this turn (dedupe).",
+    )
+
+
+def set_current_context(context: AgentContext) -> None:
+    """Set the current AgentContext for this thread (workaround for LangChain streaming bug).
+
+    This allows tools to access the context even when runtime.context is None during streaming.
+    """
+    _thread_local_context.agent_context = context
+
+
+def get_current_context() -> AgentContext | None:
+    """Get the current AgentContext for this thread (workaround for LangChain streaming bug).
+
+    Returns None if no context has been set for this thread.
+    """
+    return getattr(_thread_local_context, "agent_context", None)
 
 
 def compute_context_tokens(

@@ -146,7 +146,7 @@ def execute_fallback_invoke(
                     final_answer = content
                     logger.debug("Final answer extracted from invoke() result: %d chars", len(content))
 
-    # Process answer with disclaimer if needed
+    # Yield answer (disclaimer is injected as separate message by app before answer)
     if final_answer:
         # Yield answer (simulate streaming by yielding in chunks for UX)
         chunk_size = 50  # Characters per chunk for simulated streaming

@@ -24,6 +24,8 @@ def create_rag_agent(
     compress_tool_results_middleware=None,
     tool_budget_middleware=None,
     force_tool_choice: bool = False,
+    enable_sgr_planning: bool = True,
+    sgr_spam_threshold: float = 0.8,
 ) -> any:
     """Create LangChain agent with optional forced retrieval tool execution and memory compression.
 
@@ -60,6 +62,7 @@ def create_rag_agent(
             multiply,
             power,
             retrieve_context,
+            analyse_user_request,
             square_root,
             subtract,
         )
@@ -100,6 +103,9 @@ def create_rag_agent(
     # On first call: force retrieve_context to ensure knowledge base search
     # On subsequent calls: allow model to choose tools freely
     all_tools = [
+        # User request analysis tool (forced externally per turn)
+        # If enable_sgr_planning is False, we won't register it at all.
+        *( [analyse_user_request] if enable_sgr_planning else [] ),
         retrieve_context_tool,
         get_current_datetime,
         add,
