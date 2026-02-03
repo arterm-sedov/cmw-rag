@@ -159,7 +159,8 @@ def test_config_loads_infinity():
 - **Git Commits:** Do NOT create or push commits unless explicitly asked by the user.
 
 ### 12-Factor App Principles
-Following twelve-factor methodology for SaaS apps:
+
+Follow the twelve-factor methodology:
 
 - **Codebase:** One codebase tracked in revision control, many deploys.
 - **Dependencies:** Declare all dependencies explicitly in `requirements.txt` (and `pyproject.toml` for build metadata). See Environment Setup section for isolation commands.
