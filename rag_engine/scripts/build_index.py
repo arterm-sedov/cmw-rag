@@ -125,15 +125,6 @@ async def run_async() -> None:
         max_files=args.max_files,
         force_reindex=args.reindex,
     )
-
-    indexer = RAGIndexer(embedder=embedder, vector_store=store)
-    summary = indexer.index_documents(
-        docs,
-        chunk_size=settings.chunk_size,
-        chunk_overlap=settings.chunk_overlap,
-        max_files=args.max_files,
-        force_reindex=args.reindex,
-    )
     deleted_docs = 0
 
     # Optional pruning step: remove entries whose kbId is not in current source set
