@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
+
+import pytest
 
 from rag_engine.config.settings import settings
 from rag_engine.retrieval.embedder import FRIDAEmbedder
@@ -14,6 +15,7 @@ from rag_engine.llm.llm_manager import LLMManager
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.asyncio
 async def test_async_retrieval():
     """Test async retrieval against real ChromaDB server."""
 
