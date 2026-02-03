@@ -1,5 +1,8 @@
+"""Tests for build_index script (async version)."""
+
 from __future__ import annotations
 
+import asyncio
 import importlib
 import sys
 from types import SimpleNamespace
@@ -8,18 +11,22 @@ import pytest
 
 
 def test_build_index_help(monkeypatch):
+    """Test build_index --help works with async entry point."""
     module = importlib.import_module("rag_engine.scripts.build_index")
     argv = sys.argv
     monkeypatch.setattr(sys, "argv", ["build_index.py", "--help"])
 
     with pytest.raises(SystemExit) as exc:
-        module.main()
+        # Use the async entry point
+        asyncio.run(module.run_async())
 
     assert exc.value.code == 0
     monkeypatch.setattr(sys, "argv", argv)
 
 
-def test_build_index_runs_with_fakes(monkeypatch, docs_fixture_path):
+@pytest.mark.asyncio
+async def test_build_index_runs_with_fakes(monkeypatch, docs_fixture_path):
+    """Test async build_index runs with mocked components."""
     recorded = {}
 
     class FakeEmbedder:
@@ -34,17 +41,28 @@ def test_build_index_runs_with_fakes(monkeypatch, docs_fixture_path):
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
-        def index_documents(self, docs, chunk_size, chunk_overlap, **kwargs):  # noqa: ANN001
+        async def index_documents_async(self, docs, chunk_size, chunk_overlap, **kwargs):  # noqa: ANN001
             recorded["docs"] = docs
             recorded["chunk_size"] = chunk_size
             recorded["chunk_overlap"] = chunk_overlap
             recorded["kwargs"] = kwargs
+            return {
+                "total_docs": len(docs),
+                "processed_docs": len(docs),
+                "new_docs": len(docs),
+                "reindexed_docs": 0,
+                "skipped_docs": 0,
+                "empty_docs": 0,
+                "no_chunk_docs": 0,
+                "total_chunks_indexed": len(docs),
+            }
 
     module = importlib.reload(importlib.import_module("rag_engine.scripts.build_index"))
 
     def fake_document_processor(mode):
         def process(source, max_files=None):  # noqa: ARG001
             return [SimpleNamespace(content="text", metadata={})]
+
         return SimpleNamespace(process=process)
 
     monkeypatch.setattr(module, "FRIDAEmbedder", FakeEmbedder)
@@ -58,16 +76,20 @@ def test_build_index_runs_with_fakes(monkeypatch, docs_fixture_path):
     monkeypatch.setattr(module.settings, "chunk_overlap", 150)
 
     argv = sys.argv
-    monkeypatch.setattr(sys, "argv", ["build_index.py", "--source", str(docs_fixture_path), "--mode", "folder"])
+    monkeypatch.setattr(
+        sys, "argv", ["build_index.py", "--source", str(docs_fixture_path), "--mode", "folder"]
+    )
 
-    module.main()
+    await module.run_async()
 
     assert recorded["chunk_size"] == 500
     assert recorded["chunk_overlap"] == 150
     sys.argv = argv
 
 
-def test_build_index_respects_max_files(monkeypatch, docs_fixture_path):
+@pytest.mark.asyncio
+async def test_build_index_respects_max_files(monkeypatch, docs_fixture_path):
+    """Test async build_index respects max_files parameter."""
     recorded = {}
 
     class FakeEmbedder:
@@ -82,9 +104,19 @@ def test_build_index_respects_max_files(monkeypatch, docs_fixture_path):
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             pass
 
-        def index_documents(self, docs, chunk_size, chunk_overlap, **kwargs):  # noqa: ANN001
+        async def index_documents_async(self, docs, chunk_size, chunk_overlap, **kwargs):  # noqa: ANN001
             recorded["kwargs"] = kwargs
             recorded["docs_count"] = len(docs)
+            return {
+                "total_docs": len(docs),
+                "processed_docs": len(docs),
+                "new_docs": len(docs),
+                "reindexed_docs": 0,
+                "skipped_docs": 0,
+                "empty_docs": 0,
+                "no_chunk_docs": 0,
+                "total_chunks_indexed": len(docs),
+            }
 
     def fake_document_processor(mode):
         def process(source, max_files=None):  # noqa: ARG001
@@ -98,6 +130,7 @@ def test_build_index_respects_max_files(monkeypatch, docs_fixture_path):
             if max_files is not None:
                 return all_docs[:max_files]
             return all_docs
+
         return SimpleNamespace(process=process)
 
     module = importlib.reload(importlib.import_module("rag_engine.scripts.build_index"))
@@ -108,9 +141,21 @@ def test_build_index_respects_max_files(monkeypatch, docs_fixture_path):
     monkeypatch.setattr(module, "DocumentProcessor", fake_document_processor)
 
     argv = sys.argv
-    monkeypatch.setattr(sys, "argv", ["build_index.py", "--source", str(docs_fixture_path), "--mode", "folder", "--max-files", "1"])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "build_index.py",
+            "--source",
+            str(docs_fixture_path),
+            "--mode",
+            "folder",
+            "--max-files",
+            "1",
+        ],
+    )
 
-    module.main()
+    await module.run_async()
 
     # Verify max_files is passed to DocumentProcessor
     assert recorded["max_files_to_processor"] == 1
@@ -119,4 +164,3 @@ def test_build_index_respects_max_files(monkeypatch, docs_fixture_path):
     # Verify max_files is still passed to indexer (as safety check)
     assert recorded["kwargs"].get("max_files") == 1
     sys.argv = argv
-
