@@ -42,7 +42,11 @@ class Settings(BaseSettings):
     chromadb_host: str
     chromadb_port: int
     chromadb_ssl: bool
-    chromadb_connection_timeout: float
+    # How long to keep HTTP connections alive (prevents premature disconnects, e.g., 60.0 seconds)
+    # Maps to ChromaDB's chroma_http_keepalive_secs setting
+    chromadb_http_keepalive_secs: float
+    # Maximum number of connections in the pool
+    # Maps to ChromaDB's chroma_http_max_connections setting
     chromadb_max_connections: int
 
     # Retrieval
