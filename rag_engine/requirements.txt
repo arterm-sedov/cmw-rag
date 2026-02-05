@@ -31,7 +31,6 @@ pyyaml>=6.0
 psutil>=5.9.0
 
 # Data Processing
-<<<<<<< HEAD
 # Constrained to <2.3.0 for compatibility with opencv-python-headless
 numpy>=1.24.0,<2.3.0
 pandas
