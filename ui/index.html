@@ -172,104 +172,47 @@
             }
         }
 
-        // Update chatbot height to percentage of container height
-        // Uses 70% when narrow (<= 470px) and 80% when wide (> 470px)
-        // Accounts for header and Textbox input (new compact layout with built-in buttons)
+        // Update chatbot height to percentage of container height.
+        // Uses 70% when narrow (<= 470px) and 81% when wide (> 470px),
+        // leaving room for the header and input while keeping only the
+        // internal chatbot scrollbar active.
         function updateChatbotHeight() {
             if (isContainerHidden()) return;
-            const container = chatContainer;
-            const containerRect = container.getBoundingClientRect();
+
+            const containerRect = chatContainer.getBoundingClientRect();
             const containerWidth = containerRect.width;
             const containerHeight = containerRect.height;
-            
+
             // Determine percentage based on width
             const isWide = containerWidth > WIDGET_WIDTH_THRESHOLD;
-            const heightPercentage = isWide ? CHATBOT_HEIGHT_PERCENTAGE_WIDE : CHATBOT_HEIGHT_PERCENTAGE_NARROW;
-            
-            // Account for header height
-            const headerHeight = container.querySelector('.cmw-widget-header')?.getBoundingClientRect().height || HEADER_HEIGHT_FALLBACK;
-            
-            // Account for Textbox input height (new compact layout - smaller than MultimodalTextbox)
-            // Textbox with built-in buttons is more compact, estimate ~80-100px including padding
-            const textboxHeight = 100; // Estimated height for Textbox with built-in buttons and padding
-            
-            const availableHeight = containerHeight - headerHeight - textboxHeight;
-            // Calculate base height with percentage
-            let chatbotHeight = Math.max(300, availableHeight * heightPercentage);
-            
-            // Account for padding, borders, and internal spacing that cause scrollbar
-            // Chatbot has ~16px padding top + 16px bottom = 32px, plus 1px borders = 2px total
-            // The scrollHeight vs clientHeight difference is typically 34-40px
-            // Increase buffer significantly to prevent scrollbar - need to account for actual content area
-            const scrollbarBuffer = 60; // Large buffer to prevent scrollbar (accounts for padding 32px + borders 2px + internal spacing ~26px)
-            chatbotHeight = chatbotHeight + scrollbarBuffer;
-            
-            // Ensure minimum height
-            chatbotHeight = Math.max(300, chatbotHeight);
-            
-            // Update CSS variable
-            container.style.setProperty('--chatbot-height', `${chatbotHeight}px`);
-            
-            // Also directly set height on the chatbot element for immediate effect
-            // Try multiple selectors to find the chatbot container
-            // Use a more aggressive approach - search in the entire container and shadow DOM if needed
-            const chatbotSelectors = [
-                '#chatbot-main',
-                '.chatbot-card',
-                '[role="log"][aria-label*="chatbot"]',
-                '.gradio-chatbot',
-                '[id*="chatbot"]',
-                '[class*="chatbot"]'
-            ];
-            
-            let chatbotFound = false;
-            for (const selector of chatbotSelectors) {
-                const chatbotEl = container.querySelector(selector);
-                if (chatbotEl) {
-                    chatbotEl.style.setProperty('height', `${chatbotHeight}px`, 'important');
-                    chatbotEl.style.setProperty('max-height', `${chatbotHeight}px`, 'important');
-                    chatbotEl.style.setProperty('min-height', '300px', 'important');
-                    // Fix scrollbar issue: ensure no unnecessary scrollbar
-                    // Set overflow to hidden initially, then auto only if content overflows
-                    // Calculate if content actually overflows
-                    const actualScrollHeight = chatbotEl.scrollHeight;
-                    const actualClientHeight = chatbotEl.clientHeight;
-                    if (actualScrollHeight <= actualClientHeight + 2) { // 2px tolerance
-                        chatbotEl.style.setProperty('overflow-y', 'hidden', 'important');
-                    } else {
-                        chatbotEl.style.setProperty('overflow-y', 'auto', 'important');
-                    }
-                    chatbotEl.style.setProperty('overflow-x', 'hidden', 'important');
-                    chatbotFound = true;
-                    // Also try to find parent containers that might control height
-                    let parent = chatbotEl.parentElement;
-                    let depth = 0;
-                    while (parent && parent !== container && depth < 3) {
-                        const parentHeight = getComputedStyle(parent).height;
-                        if (parentHeight && (parentHeight.includes('px') || parentHeight.includes('vh'))) {
-                            // If parent has a fixed height, ensure it's at least as tall as chatbot
-                            const parentHeightNum = parseFloat(parentHeight);
-                            if (!isNaN(parentHeightNum) && parentHeightNum < chatbotHeight) {
-                                parent.style.setProperty('height', `${chatbotHeight + 20}px`, 'important');
-                            }
-                        }
-                        parent = parent.parentElement;
-                        depth++;
-                    }
-                }
-            }
-            
-            // Fallback: if no chatbot found, try searching in gradio-app shadow DOM
-            if (!chatbotFound) {
-                const gradioApp = container.querySelector('gradio-app');
-                if (gradioApp && gradioApp.shadowRoot) {
-                    const shadowChatbot = gradioApp.shadowRoot.querySelector('#chatbot-main, .chatbot-card, [role="log"]');
-                    if (shadowChatbot) {
-                        shadowChatbot.style.setProperty('height', `${chatbotHeight}px`, 'important');
-                        shadowChatbot.style.setProperty('max-height', `${chatbotHeight}px`, 'important');
-                    }
-                }
-            }
+            const heightPercentage = isWide
+                ? CHATBOT_HEIGHT_PERCENTAGE_WIDE
+                : CHATBOT_HEIGHT_PERCENTAGE_NARROW;
+
+            // Header height
+            const headerHeight =
+                chatContainer
+                    .querySelector('.cmw-widget-header')
+                    ?.getBoundingClientRect().height || HEADER_HEIGHT_FALLBACK;
+
+            // Approximate height of the textbox + buttons area
+            const textboxHeight = 100;
+
+            // Small buffer for borders/padding so we don't force an extra outer scrollbar
+            const paddingBuffer = 16;
+
+            const availableHeight =
+                containerHeight - headerHeight - textboxHeight - paddingBuffer;
+
+            const chatbotHeight = Math.max(300, availableHeight * heightPercentage);
+
+            // Drive the CSS variable; CSS on the chatbot container uses
+            // max-height: var(--chatbot-height) and overflow-y: auto,
+            // so only the inner chat log scrolls.
+            chatContainer.style.setProperty(
+                '--chatbot-height',
+                `${chatbotHeight}px`,
+            );
         }
 
         // Save size on resize
