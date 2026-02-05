@@ -483,3 +483,9 @@ body[data-theme='dark'] .cmw-widget-loading,
 .dark .cmw-widget-loading {
     color: var(--cmw-text-fade);
 }
+
+
+.gradio-container.gradio-container-6-5-1 .contain  #chatbot-main {
+    resize: none !important;
+
+}
