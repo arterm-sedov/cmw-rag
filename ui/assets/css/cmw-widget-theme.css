@@ -485,7 +485,17 @@ body[data-theme='dark'] .cmw-widget-loading,
 }
 
 
-.gradio-container.gradio-container-6-5-1 .contain  #chatbot-main {
+/* Stable selector for chatbot container using ID and role attribute */
+#chatbot-main[role="log"][aria-label*="chatbot"] {
     resize: none !important;
+}
 
+/* Hide duplicate hidden form element created by Gradio that causes white space */
+.cmw-widget-container .form.hidden-css {
+    display: none !important;
+}
+
+/* Remove padding from main fillable container - stable selector */
+.cmw-widget-container .main.fillable {
+    padding-bottom: 0 !important;
 }

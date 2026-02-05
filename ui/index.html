@@ -118,10 +118,9 @@ require_once('./authenticate.php');
         const WIDGET_STORAGE_KEY = 'cmw_chat_widget_state';
         
         // Constants for chatbot height calculation
-        // Slightly reduced so the chat block is ~4–5% shorter than original,
-        // and a bit smaller than the last revision to avoid extra scrollbars.
-        const CHATBOT_HEIGHT_PERCENTAGE_NARROW = 0.66; // 66% of available height when narrow
-        const CHATBOT_HEIGHT_PERCENTAGE_WIDE = 0.76; // 76% of available height when wide
+        // Increased to fill more space and reduce white space below the chat
+        const CHATBOT_HEIGHT_PERCENTAGE_NARROW = 0.85; // 85% of available height when narrow
+        const CHATBOT_HEIGHT_PERCENTAGE_WIDE = 0.90; // 90% of available height when wide
         const WIDGET_WIDTH_THRESHOLD = 470; // Width threshold in pixels (narrow vs wide)
         const HEADER_HEIGHT_FALLBACK = 60; // Fallback header height in pixels
         const RESIZE_DEBOUNCE_MS = 300; // Debounce delay for resize events
@@ -233,6 +232,12 @@ require_once('./authenticate.php');
                 '--chatbot-height',
                 `${chatbotHeight}px`,
             );
+            
+            // Hide duplicate hidden form element that Gradio creates
+            const hiddenForms = chatContainer.querySelectorAll('.form.hidden-css');
+            hiddenForms.forEach(form => {
+                form.style.display = 'none';
+            });
         }
 
         // Save size on resize
