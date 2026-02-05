@@ -2697,12 +2697,13 @@ async def chat_with_metadata(
             f"articles_df_rows={len(articles_df_data) if isinstance(articles_df_data, list) else 0}"
         )
 
+        badge_visible = not settings.gradio_embedded_widget
         try:
             yield (
                 last_history,
-                gr.update(visible=True, value=spam_badge_html),
-                gr.update(visible=True, value=confidence_badge_html),
-                gr.update(visible=True, value=queries_badge_html),
+                gr.update(visible=badge_visible, value=spam_badge_html),
+                gr.update(visible=badge_visible, value=confidence_badge_html),
+                gr.update(visible=badge_visible, value=queries_badge_html),
                 gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
                 gr.update(
                     visible=False, value=[]
@@ -2799,20 +2800,25 @@ with gr.Blocks(
 
     # --- Metadata badges (populated after streaming completes, shown below chat) ---
     with gr.Row():
-        spam_badge = gr.HTML(visible=False)
-        confidence_badge = gr.HTML(visible=False)
-        queries_badge = gr.HTML(visible=False)
+        spam_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
+        confidence_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
+        queries_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
 
-    # Metadata panels (populated after streaming completes) - displayed directly, no accordions
-    # Markdown headers are always visible (static text)
-    gr.Markdown(f"### {i18n_resolve('analysis_summary_title')}")
+    # Metadata panels (populated after streaming completes)
+    gr.Markdown(
+        f"### {i18n_resolve('analysis_summary_title')}",
+        visible=not settings.gradio_embedded_widget,
+    )
     intent_text = gr.Textbox(
         label=i18n_resolve("user_intent_label"), interactive=False, visible=False
     )
     subqueries_json = gr.JSON(label=i18n_resolve("subqueries_label"), visible=False)
     action_plan_json = gr.JSON(label=i18n_resolve("action_plan_label"), visible=False)
 
-    gr.Markdown(f"### {i18n_resolve('retrieved_articles_title')}")
+    gr.Markdown(
+        f"### {i18n_resolve('retrieved_articles_title')}",
+        visible=not settings.gradio_embedded_widget,
+    )
     articles_df = gr.Dataframe(
         headers=[
             i18n_resolve("articles_rank_header"),
@@ -2937,6 +2943,9 @@ with gr.Blocks(
 
         Called after input is unlocked to populate SGR metadata.
         """
+        if settings.gradio_embedded_widget:
+            return (gr.update(), gr.update(), gr.update(), gr.update())
+
         if not metadata:
             logger.info("update_metadata_ui: no metadata to display")
             return (
