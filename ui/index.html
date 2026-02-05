@@ -1,9 +1,15 @@
+<?php
+$catid = '895';
+require_once('./authenticate.php');
+?> 
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ассистент базы знаний Comindware</title>
+     <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon.png">
+     <link rel="shortcut icon" href="assets/images/favicon.png">
     
     <!-- Preconnect to KB site fonts for faster loading when embedded -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,12 +19,35 @@
     
     <!-- CMW Widget Theme -->
     <link rel="stylesheet" href="assets/css/cmw-widget-theme.css">
-    <link href="assets/fontawesome/css/fontawesome.min.css" rel="stylesheet">
-    <link href="assets/fontawesome/css/brands.min.css" rel="stylesheet">
-    <link href="assets/fontawesome/css/solid.min.css" rel="stylesheet">
-    <link href="assets/fontawesome/css/light.min.css" rel="stylesheet">
+    <link href="/assets/fontawesome/css/fontawesome.min.css" rel="stylesheet">
+    <link href="/assets/fontawesome/css/brands.min.css" rel="stylesheet">
+    <link href="/assets/fontawesome/css/solid.min.css" rel="stylesheet">
+    <link href="/assets/fontawesome/css/light.min.css" rel="stylesheet">
+    <style>
+        /* Prevent outer page and KB iframe from adding extra scrollbars.
+           The only scrollable area should be the chatbot inside the widget. */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #kb-iframe {
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
+    <!-- Underlying KB page iframe -->
+    <iframe 
+        id="kb-iframe"
+        src="about:blank"
+        title="Comindware KB"
+        style="position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: 0;"
+        loading="eager"
+        referrerpolicy="no-referrer-when-downgrade"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+    ></iframe>
     <!-- Floating Chat Widget -->
     <div id="cmw-widget" class="cmw-widget">
         <!-- Toggle Button -->
@@ -57,10 +86,10 @@
         </div>
     </div>
 
-    <!-- Gradio JavaScript SDK -->
+    <!-- Gradio JavaScript SDK (aligned with widget build used in cmw-rag/ui) -->
     <script
         type="module"
-        src="https://gradio.s3-us-west-2.amazonaws.com/6.1.0/gradio.js"
+        src="https://gradio.s3-us-west-2.amazonaws.com/6.5.1/gradio.js"
     ></script>
 
     <script>
@@ -89,8 +118,10 @@
         const WIDGET_STORAGE_KEY = 'cmw_chat_widget_state';
         
         // Constants for chatbot height calculation
-        const CHATBOT_HEIGHT_PERCENTAGE_NARROW = 0.74; // 74% of available height when narrow (reduced by 3% from 77%)
-        const CHATBOT_HEIGHT_PERCENTAGE_WIDE = 0.85; // 85% of available height when wide (reduced by 3% from 88%)
+        // Slightly reduced so the chat block is ~4–5% shorter than original,
+        // and a bit smaller than the last revision to avoid extra scrollbars.
+        const CHATBOT_HEIGHT_PERCENTAGE_NARROW = 0.66; // 66% of available height when narrow
+        const CHATBOT_HEIGHT_PERCENTAGE_WIDE = 0.76; // 76% of available height when wide
         const WIDGET_WIDTH_THRESHOLD = 470; // Width threshold in pixels (narrow vs wide)
         const HEADER_HEIGHT_FALLBACK = 60; // Fallback header height in pixels
         const RESIZE_DEBOUNCE_MS = 300; // Debounce delay for resize events
@@ -161,104 +192,47 @@
             }
         }
 
-        // Update chatbot height to percentage of container height
-        // Uses 70% when narrow (<= 470px) and 80% when wide (> 470px)
-        // Accounts for header and Textbox input (new compact layout with built-in buttons)
+        // Update chatbot height to percentage of container height.
+        // Uses 66% when narrow (<= 470px) and 76% when wide (> 470px),
+        // leaving room for the header and input while keeping only the
+        // internal chatbot scrollbar active.
         function updateChatbotHeight() {
             if (isContainerHidden()) return;
-            const container = chatContainer;
-            const containerRect = container.getBoundingClientRect();
+
+            const containerRect = chatContainer.getBoundingClientRect();
             const containerWidth = containerRect.width;
             const containerHeight = containerRect.height;
-            
+
             // Determine percentage based on width
             const isWide = containerWidth > WIDGET_WIDTH_THRESHOLD;
-            const heightPercentage = isWide ? CHATBOT_HEIGHT_PERCENTAGE_WIDE : CHATBOT_HEIGHT_PERCENTAGE_NARROW;
-            
-            // Account for header height
-            const headerHeight = container.querySelector('.cmw-widget-header')?.getBoundingClientRect().height || HEADER_HEIGHT_FALLBACK;
-            
-            // Account for Textbox input height (new compact layout - smaller than MultimodalTextbox)
-            // Textbox with built-in buttons is more compact, estimate ~80-100px including padding
-            const textboxHeight = 100; // Estimated height for Textbox with built-in buttons and padding
-            
-            const availableHeight = containerHeight - headerHeight - textboxHeight;
-            // Calculate base height with percentage
-            let chatbotHeight = Math.max(300, availableHeight * heightPercentage);
-            
-            // Account for padding, borders, and internal spacing that cause scrollbar
-            // Chatbot has ~16px padding top + 16px bottom = 32px, plus 1px borders = 2px total
-            // The scrollHeight vs clientHeight difference is typically 34-40px
-            // Increase buffer significantly to prevent scrollbar - need to account for actual content area
-            const scrollbarBuffer = 60; // Large buffer to prevent scrollbar (accounts for padding 32px + borders 2px + internal spacing ~26px)
-            chatbotHeight = chatbotHeight + scrollbarBuffer;
-            
-            // Ensure minimum height
-            chatbotHeight = Math.max(300, chatbotHeight);
-            
-            // Update CSS variable
-            container.style.setProperty('--chatbot-height', `${chatbotHeight}px`);
-            
-            // Also directly set height on the chatbot element for immediate effect
-            // Try multiple selectors to find the chatbot container
-            // Use a more aggressive approach - search in the entire container and shadow DOM if needed
-            const chatbotSelectors = [
-                '#chatbot-main',
-                '.chatbot-card',
-                '[role="log"][aria-label*="chatbot"]',
-                '.gradio-chatbot',
-                '[id*="chatbot"]',
-                '[class*="chatbot"]'
-            ];
-            
-            let chatbotFound = false;
-            for (const selector of chatbotSelectors) {
-                const chatbotEl = container.querySelector(selector);
-                if (chatbotEl) {
-                    chatbotEl.style.setProperty('height', `${chatbotHeight}px`, 'important');
-                    chatbotEl.style.setProperty('max-height', `${chatbotHeight}px`, 'important');
-                    chatbotEl.style.setProperty('min-height', '300px', 'important');
-                    // Fix scrollbar issue: ensure no unnecessary scrollbar
-                    // Set overflow to hidden initially, then auto only if content overflows
-                    // Calculate if content actually overflows
-                    const actualScrollHeight = chatbotEl.scrollHeight;
-                    const actualClientHeight = chatbotEl.clientHeight;
-                    if (actualScrollHeight <= actualClientHeight + 2) { // 2px tolerance
-                        chatbotEl.style.setProperty('overflow-y', 'hidden', 'important');
-                    } else {
-                        chatbotEl.style.setProperty('overflow-y', 'auto', 'important');
-                    }
-                    chatbotEl.style.setProperty('overflow-x', 'hidden', 'important');
-                    chatbotFound = true;
-                    // Also try to find parent containers that might control height
-                    let parent = chatbotEl.parentElement;
-                    let depth = 0;
-                    while (parent && parent !== container && depth < 3) {
-                        const parentHeight = getComputedStyle(parent).height;
-                        if (parentHeight && (parentHeight.includes('px') || parentHeight.includes('vh'))) {
-                            // If parent has a fixed height, ensure it's at least as tall as chatbot
-                            const parentHeightNum = parseFloat(parentHeight);
-                            if (!isNaN(parentHeightNum) && parentHeightNum < chatbotHeight) {
-                                parent.style.setProperty('height', `${chatbotHeight + 20}px`, 'important');
-                            }
-                        }
-                        parent = parent.parentElement;
-                        depth++;
-                    }
-                }
-            }
-            
-            // Fallback: if no chatbot found, try searching in gradio-app shadow DOM
-            if (!chatbotFound) {
-                const gradioApp = container.querySelector('gradio-app');
-                if (gradioApp && gradioApp.shadowRoot) {
-                    const shadowChatbot = gradioApp.shadowRoot.querySelector('#chatbot-main, .chatbot-card, [role="log"]');
-                    if (shadowChatbot) {
-                        shadowChatbot.style.setProperty('height', `${chatbotHeight}px`, 'important');
-                        shadowChatbot.style.setProperty('max-height', `${chatbotHeight}px`, 'important');
-                    }
-                }
-            }
+            const heightPercentage = isWide
+                ? CHATBOT_HEIGHT_PERCENTAGE_WIDE
+                : CHATBOT_HEIGHT_PERCENTAGE_NARROW;
+
+            // Header height
+            const headerHeight =
+                chatContainer
+                    .querySelector('.cmw-widget-header')
+                    ?.getBoundingClientRect().height || HEADER_HEIGHT_FALLBACK;
+
+            // Approximate height of the textbox + buttons area
+            const textboxHeight = 100;
+
+            // Small buffer for borders/padding so we don't force an extra outer scrollbar
+            const paddingBuffer = 16;
+
+            const availableHeight =
+                containerHeight - headerHeight - textboxHeight - paddingBuffer;
+
+            const chatbotHeight = Math.max(300, availableHeight * heightPercentage);
+
+            // Drive the CSS variable; CSS on the chatbot container uses
+            // max-height: var(--chatbot-height) and overflow-y: auto,
+            // so only the inner chat log scrolls.
+            chatContainer.style.setProperty(
+                '--chatbot-height',
+                `${chatbotHeight}px`,
+            );
         }
 
         // Save size on resize
@@ -276,7 +250,7 @@
         function startResize(e) {
             if (isContainerHidden()) return;
             
-            // Prefer pointer events; capture to avoid loss over iframes
+            // Prefer pointer events for reliable capture across iframes
             if (e.pointerId !== undefined && e.isPrimary !== false) {
                 activePointerId = e.pointerId;
                 try { resizeHandle.setPointerCapture(activePointerId); } catch {}
@@ -292,10 +266,12 @@
             resizeStartBottom = window.innerHeight - rect.bottom;
             
             e.preventDefault();
-            // If a KB iframe exists on the page, disable pointer events during resize
+            // Temporarily disable underlying iframe interactions during resize
             const kbIframe = document.getElementById('kb-iframe');
-            if (kbIframe) kbIframe.style.pointerEvents = 'none';
-            
+            if (kbIframe) {
+                kbIframe.style.pointerEvents = 'none';
+            }
+
             document.addEventListener('pointermove', doResize);
             document.addEventListener('pointerup', stopResize);
         }
@@ -311,6 +287,7 @@
             let newWidth = resizeStartWidth + deltaX;
             let newHeight = resizeStartHeight + deltaY;
             let newLeft = resizeStartLeft - deltaX;
+            // Bottom stays constant - don't change it
             const newBottom = resizeStartBottom;
             
             // Apply min/max constraints
@@ -339,6 +316,7 @@
                 newLeft = 0;
                 newWidth = resizeStartWidth + resizeStartLeft;
             }
+            // Available height from fixed bottom to top of viewport
             const availableHeight = window.innerHeight - newBottom;
             if (newHeight > availableHeight) {
                 newHeight = Math.max(minHeight, availableHeight);
@@ -350,10 +328,8 @@
             chatContainer.style.right = 'auto';
             chatContainer.style.bottom = newBottom + 'px';
             
-            // Update chatbot height immediately during resize using requestAnimationFrame for smooth updates
-            requestAnimationFrame(() => {
-                updateChatbotHeight();
-            });
+            // Update chatbot height immediately during resize
+            updateChatbotHeight();
             handleResize();
         }
 
@@ -362,8 +338,11 @@
                 isResizing = false;
                 document.removeEventListener('pointermove', doResize);
                 document.removeEventListener('pointerup', stopResize);
+                // Restore iframe interactions
                 const kbIframe = document.getElementById('kb-iframe');
-                if (kbIframe) kbIframe.style.pointerEvents = '';
+                if (kbIframe) {
+                    kbIframe.style.pointerEvents = '';
+                }
                 if (activePointerId !== null) {
                     try { resizeHandle.releasePointerCapture(activePointerId); } catch {}
                     activePointerId = null;
@@ -386,12 +365,16 @@
             if (newState) {
                 // Show immediately
                 chatContainer.classList.remove('cmw-widget-hidden');
+                // Run an immediate height update so the very first paint matches the container
+                updateChatbotHeight();
                 
-                // Use requestAnimationFrame to ensure element is visible before animation
+                // Use requestAnimationFrame to ensure element is fully laid out before a second adjustment
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         chatContainer.classList.add('show');
-                        // Update chatbot height after widget is shown
+                        // Update chatbot height again right after the show animation starts
+                        updateChatbotHeight();
+                        // And once more after a short delay as a safety net for slower layouts
                         setTimeout(() => updateChatbotHeight(), WIDGET_SHOW_DELAY_MS);
                     });
                 });
@@ -421,6 +404,12 @@
             gradioApp.addEventListener('load', () => {
                 loadingIndicator.classList.add('cmw-widget-hidden');
                 isInitialized = true;
+                // Once Gradio is ready inside the popup, immediately align the chat height
+                // to the current container, then refine after a short delay.
+                if (!isContainerHidden()) {
+                    updateChatbotHeight();
+                    setTimeout(() => updateChatbotHeight(), WIDGET_OPEN_DELAY_MS);
+                }
             });
 
             // Fallback: hide loading after timeout
@@ -445,6 +434,7 @@
         
         // Custom resize handle
         if (resizeHandle) {
+            // Use Pointer Events for robust capture across iframes/contexts
             resizeHandle.addEventListener('pointerdown', startResize);
         }
 
@@ -514,6 +504,12 @@
                     // Update chatbot height after widget opens
                     setTimeout(() => updateChatbotHeight(), WIDGET_OPEN_DELAY_MS);
                 }, WIDGET_SHOW_DELAY_MS);
+            }
+
+            // Dynamically point KB iframe to local proxy on the same host
+            const kbIframe = document.getElementById('kb-iframe');
+            if (kbIframe) {
+                kbIframe.src = `https://kb.comindware.ru/category.php?id=798`;
             }
         })();
     </script>
