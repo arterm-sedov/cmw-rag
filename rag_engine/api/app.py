@@ -48,6 +48,10 @@ from rag_engine.utils.vllm_fallback import (
 
 setup_logging()
 
+from rag_engine.utils.huggingface_utils import configure_huggingface_env
+
+configure_huggingface_env()
+
 logger = logging.getLogger(__name__)
 
 

@@ -111,6 +111,14 @@ class Settings(BaseSettings):
     # Optional legacy/override; dynamic targets are used by default
     llm_summarization_target_tokens_per_article: int | None = None
 
+    # HuggingFace Configuration
+    # Token for authenticated downloads (prevents rate limiting)
+    # Get token: https://huggingface.co/settings/tokens
+    hf_token: str | None = None
+    # Trust locally cached models, skip remote validation (faster, offline-friendly)
+    # Set to true to skip HEAD requests checking for model updates
+    hf_hub_disable_remote_validation: bool = False
+
     # Gradio
     gradio_server_name: str
     gradio_server_port: int
