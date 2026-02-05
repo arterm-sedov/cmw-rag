@@ -347,9 +347,11 @@
     height: 100% !important;
 }
 
-/* CSS variable will be updated dynamically via JavaScript on resize */
+/* Chatbot area sizing
+   - Let the chatbot grow with its container
+   - Use normal scrolling instead of hard clipping by fixed max-height */
 .cmw-widget-container {
-    --chatbot-height: 400px; /* Default fallback */
+    --chatbot-height: 400px; /* Sensible default; can be overridden by JS */
 }
 
 /* Target the actual Gradio chatbot container - multiple selectors for compatibility */
@@ -357,13 +359,12 @@
 .cmw-widget-container .chatbot-card,
 .cmw-widget-container [role="log"][aria-label*="chatbot"],
 .cmw-widget-container .gradio-chatbot {
-    height: var(--chatbot-height, 400px) !important;
     min-height: 300px !important;
-    max-height: var(--chatbot-height, 400px) !important;
-    /* Fix scrollbar: hide by default, JavaScript will set to auto if content overflows */
-    overflow-y: hidden !important;
+    /* Prefer using available space rather than hard clipping by max-height */
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
     overflow-x: hidden !important;
-    /* Ensure proper box-sizing to account for padding/borders in height calculation */
     box-sizing: border-box !important;
 }
 
