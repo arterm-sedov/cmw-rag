@@ -119,11 +119,6 @@ class Settings(BaseSettings):
     # Per Gradio docs: https://www.gradio.app/guides/queuing
     gradio_default_concurrency_limit: int
 
-    # Agent Mode
-    # If True, uses LangChain agent-based handler with tool calling
-    # If False, uses direct retrieval handler (legacy behavior)
-    use_agent_mode: bool
-
     # Memory compression (conversation history)
     # Percentage of context window at which we trigger compression
     memory_compression_threshold_pct: int
