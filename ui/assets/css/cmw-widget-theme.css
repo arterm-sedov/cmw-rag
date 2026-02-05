@@ -300,7 +300,8 @@
 /* Gradio App Container */
 .cmw-widget-gradio-container {
     flex: 1;
-    overflow: auto;
+    /* Let the chatbot itself handle scrolling to avoid nested scrollbars */
+    overflow: hidden;
     min-height: 0;
     position: relative;
     height: 100%;
@@ -312,7 +313,7 @@
     display: block;
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
     flex: 1;
     min-height: 0;
 }
@@ -330,7 +331,8 @@
     margin-bottom: 0 !important;
     height: 100% !important;
     min-height: 100% !important;
-    overflow: auto;
+    /* Avoid extra scrollbars at this level; chatbot handles overflow */
+    overflow: hidden;
 }
 
 .cmw-widget-gradio-container .gradio-container .embed-container {
@@ -340,7 +342,7 @@
     margin-bottom: 0 !important;
     height: 100% !important;
     min-height: 100% !important;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .cmw-widget-gradio-container .gradio-container .embed-container main {
@@ -372,14 +374,14 @@
 .cmw-widget-gradio-container .gradio-container .embed-container main.fillable {
     height: 100% !important;
     min-height: 100% !important;
-    overflow: auto;
+    overflow: hidden;
 }
 
 /* Ensure main element fills available space (alternative selector) */
 .cmw-widget-gradio-container main.fillable {
     height: 100% !important;
     min-height: 100% !important;
-    overflow: auto;
+    overflow: hidden;
 }
 
 /* Loading State */
