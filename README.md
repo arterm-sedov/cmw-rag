@@ -380,7 +380,7 @@ Copy-Item .env-example .env
 | LLM | `DEFAULT_LLM_PROVIDER`, `DEFAULT_MODEL` |
 | Embeddings | `EMBEDDING_PROVIDER_TYPE`, `EMBEDDING_MODEL` |
 | Vector Store | `CHROMADB_HOST`, `CHROMADB_PORT` |
-| Retrieval | `TOP_K_RETRIEVE`, `TOP_K_RERANK` |
+| Retrieval | `TOP_K_RETRIEVE`, `TOP_K_RERANK`, `RERANK_SCORE_THRESHOLD` |
 | Web UI | `GRADIO_SERVER_NAME`, `GRADIO_SERVER_PORT` |
 
 See `.env-example` for complete documentation of all environment variables.
@@ -405,6 +405,17 @@ Query decomposition uses LLM to generate sub-queries:
 RETRIEVAL_QUERY_DECOMP_ENABLED=false       # Enable LLM-based query decomposition
 RETRIEVAL_QUERY_DECOMP_MAX_SUBQUERIES=4    # Maximum sub-queries to generate
 ```
+
+#### Retrieval – Reranking and Score Threshold
+
+Reranking filters and reorders retrieved chunks before loading complete articles. Configure:
+
+```
+RERANK_ENABLED=true                         # Enable cross-encoder reranking
+RERANK_SCORE_THRESHOLD=0.5                  # Minimum rerank score (articles below excluded)
+```
+
+- `RERANK_SCORE_THRESHOLD`: Articles with rerank score below this threshold are excluded before loading from disk. Set to `0.0` to disable filtering (default).
 
 #### LLM Context Budgeting
 

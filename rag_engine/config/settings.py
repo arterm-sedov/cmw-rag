@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     # Retrieval
     top_k_retrieve: int
     top_k_rerank: int
+    rerank_score_threshold: float | None = None
     rerank_enabled: bool
     chunk_size: int
     chunk_overlap: int

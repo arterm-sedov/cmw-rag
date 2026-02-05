@@ -155,6 +155,7 @@ def test_config_loads_infinity():
     - Run relevant tests after changes.
     - Reanalyze changes twice for introduced issues.
 - **Secrets:** NEVER hardcode secrets. Use environment variables.
+- **.env Files:** NEVER commit `.env` files to version control. Use `.env-example` as a template with placeholder values only. The `.env` file contains sensitive credentials and deployment-specific settings.
 - **No Breakage:** Never break existing code.
 - **Git Commits:** Do NOT create or push commits unless explicitly asked by the user.
 

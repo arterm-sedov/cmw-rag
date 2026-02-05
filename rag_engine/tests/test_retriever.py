@@ -282,3 +282,181 @@ class TestRAGRetrieverAsync:
         """Test error handling for missing file."""
         with pytest.raises(FileNotFoundError):
             retriever._read_article("/nonexistent/file.md")
+
+
+class TestRAGRetrieverScoreThreshold:
+    """Tests for rerank score threshold filtering."""
+
+    @pytest.fixture
+    def mock_llm_manager(self):
+        """Mock LLM manager."""
+        manager = Mock()
+        manager.get_current_llm_context_window.return_value = 100000
+        return manager
+
+    @pytest.fixture
+    def mock_embedder(self):
+        """Mock embedder."""
+        embedder = Mock()
+        embedder.embed_query.return_value = [0.1] * 768
+        return embedder
+
+    @pytest.fixture
+    def mock_vector_store(self):
+        """Mock vector store."""
+        store = Mock()
+        store.similarity_search_async = AsyncMock()
+        return store
+
+    @pytest.fixture
+    def retriever_with_threshold(self, mock_embedder, mock_vector_store, mock_llm_manager):
+        """Create retriever with score threshold enabled."""
+        import rag_engine.retrieval.retriever as retriever_module
+
+        retriever = RAGRetriever(
+            embedder=mock_embedder,
+            vector_store=mock_vector_store,
+            llm_manager=mock_llm_manager,
+            top_k_retrieve=20,
+            top_k_rerank=10,
+            rerank_enabled=True,
+        )
+        retriever.reranker = MagicMock()
+
+        original_threshold = retriever_module.settings.rerank_score_threshold
+        retriever_module.settings.rerank_score_threshold = 0.5
+
+        yield retriever
+
+        retriever_module.settings.rerank_score_threshold = original_threshold
+
+    @pytest.mark.asyncio
+    async def test_threshold_filters_low_scores(self, retriever_with_threshold, tmp_path):
+        """Test that articles below threshold are filtered out."""
+        file1 = tmp_path / "article1.md"
+        file1.write_text("Article 1 content")
+        file2 = tmp_path / "article2.md"
+        file2.write_text("Article 2 content")
+        file3 = tmp_path / "article3.md"
+        file3.write_text("Article 3 content")
+
+        chunk1 = Mock()
+        chunk1.metadata = {"kbId": "high_score", "source_file": str(file1)}
+        chunk1.page_content = "chunk1"
+
+        chunk2 = Mock()
+        chunk2.metadata = {"kbId": "low_score", "source_file": str(file2)}
+        chunk2.page_content = "chunk2"
+
+        chunk3 = Mock()
+        chunk3.metadata = {"kbId": "medium_score", "source_file": str(file3)}
+        chunk3.page_content = "chunk3"
+
+        retriever_with_threshold.store.similarity_search_async = AsyncMock(
+            return_value=[chunk1, chunk2, chunk3]
+        )
+
+        async def mock_rerank(*args, **kwargs):
+            return [
+                (chunk1, 0.9),
+                (chunk2, 0.1),
+                (chunk3, 0.5),
+            ]
+
+        original_to_thread = asyncio.to_thread
+
+        async def patched_to_thread(func, *args, **kwargs):
+            if func == retriever_with_threshold.reranker.rerank:
+                return await mock_rerank(*args, **kwargs)
+            return await original_to_thread(func, *args, **kwargs)
+
+        asyncio.to_thread = patched_to_thread
+
+        try:
+            articles = await retriever_with_threshold.retrieve_async("test query")
+
+            assert len(articles) == 2
+            kb_ids = {a.kb_id for a in articles}
+            assert "high_score" in kb_ids
+            assert "medium_score" in kb_ids
+            assert "low_score" not in kb_ids
+        finally:
+            asyncio.to_thread = original_to_thread
+
+    @pytest.mark.asyncio
+    async def test_threshold_edge_case_all_filtered(self, retriever_with_threshold, tmp_path):
+        """Test behavior when all articles are below threshold."""
+        file1 = tmp_path / "article1.md"
+        file1.write_text("Article 1")
+
+        chunk1 = Mock()
+        chunk1.metadata = {"kbId": "123", "source_file": str(file1)}
+        chunk1.page_content = "chunk1"
+
+        retriever_with_threshold.store.similarity_search_async = AsyncMock(return_value=[chunk1])
+
+        async def mock_rerank(*args, **kwargs):
+            return [
+                (chunk1, 0.1),
+            ]
+
+        original_to_thread = asyncio.to_thread
+
+        async def patched_to_thread(func, *args, **kwargs):
+            if func == retriever_with_threshold.reranker.rerank:
+                return await mock_rerank(*args, **kwargs)
+            return await original_to_thread(func, *args, **kwargs)
+
+        asyncio.to_thread = patched_to_thread
+
+        try:
+            articles = await retriever_with_threshold.retrieve_async("test query")
+
+            assert len(articles) == 0
+        finally:
+            asyncio.to_thread = original_to_thread
+
+    @pytest.mark.asyncio
+    async def test_threshold_0_5_includes_edge_cases(self, retriever_with_threshold, tmp_path):
+        """Test that articles with score exactly at threshold are included."""
+        file1 = tmp_path / "article1.md"
+        file1.write_text("Article 1")
+        file2 = tmp_path / "article2.md"
+        file2.write_text("Article 2")
+
+        chunk1 = Mock()
+        chunk1.metadata = {"kbId": "exact_threshold", "source_file": str(file1)}
+        chunk1.page_content = "chunk1"
+
+        chunk2 = Mock()
+        chunk2.metadata = {"kbId": "above_threshold", "source_file": str(file2)}
+        chunk2.page_content = "chunk2"
+
+        retriever_with_threshold.store.similarity_search_async = AsyncMock(
+            return_value=[chunk1, chunk2]
+        )
+
+        async def mock_rerank(*args, **kwargs):
+            return [
+                (chunk1, 0.5),
+                (chunk2, 0.51),
+            ]
+
+        original_to_thread = asyncio.to_thread
+
+        async def patched_to_thread(func, *args, **kwargs):
+            if func == retriever_with_threshold.reranker.rerank:
+                return await mock_rerank(*args, **kwargs)
+            return await original_to_thread(func, *args, **kwargs)
+
+        asyncio.to_thread = patched_to_thread
+
+        try:
+            articles = await retriever_with_threshold.retrieve_async("test query")
+
+            assert len(articles) == 2
+            kb_ids = {a.kb_id for a in articles}
+            assert "exact_threshold" in kb_ids
+            assert "above_threshold" in kb_ids
+        finally:
+            asyncio.to_thread = original_to_thread
