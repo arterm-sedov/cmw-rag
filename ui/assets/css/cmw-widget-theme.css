@@ -300,10 +300,10 @@
 /* Gradio App Container */
 .cmw-widget-gradio-container {
     flex: 1;
-    /* Allow this level to scroll; most browsers will visually show only the
-       innermost (chatbot) scrollbar, but this avoids layout thrashing while
-       the answer is streaming. */
-    overflow: auto;
+    /* Let the inner chat area handle scrolling; this wrapper only clips
+       overflow so we don't get an extra outer scrollbar after resize. */
+    overflow-y: hidden;
+    overflow-x: hidden;
     min-height: 0;
     position: relative;
     height: 100%;
@@ -365,9 +365,10 @@
 .cmw-widget-container [role="log"][aria-label*="chatbot"],
 .cmw-widget-container .gradio-chatbot {
     min-height: 300px !important;
-    /* Prefer using available space rather than hard clipping by max-height */
+    /* Let content grow but keep it constrained to the computed chat height
+       to avoid the inner box visually expanding beyond the popup. */
     height: auto !important;
-    max-height: none !important;
+    max-height: var(--chatbot-height, 400px) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     box-sizing: border-box !important;
