@@ -120,6 +120,45 @@ def format_queries_badge(query_traces: list[dict]) -> str:
     return _badge_html(label=label, value=str(count), color=color)
 
 
+def format_guard_badge(guard_info: dict | None) -> str:
+    """Format guard/safety info as colored HTML badge (localized).
+
+    Args:
+        guard_info: Dict with safety_level, categories, is_safe, refusal
+
+    Returns:
+        HTML badge string showing safety level and categories
+    """
+    if not guard_info:
+        return ""
+
+    label = i18n_resolve("guard_badge_label")
+    safety_level = guard_info.get("safety_level", "Unknown")
+    categories = guard_info.get("categories", [])
+
+    # Color based on safety level
+    if safety_level == "Safe":
+        color = "#4CAF50"  # green
+        level_text = i18n_resolve("guard_level_safe")
+    elif safety_level == "Controversial":
+        color = "#FF9800"  # orange
+        level_text = i18n_resolve("guard_level_controversial")
+    else:  # Unsafe or Unknown
+        color = "#F44336"  # red
+        level_text = i18n_resolve("guard_level_unsafe")
+
+    # Format categories (show first 2, truncate if too long)
+    if categories:
+        cats_str = ", ".join(categories[:2])
+        if len(categories) > 2:
+            cats_str += f" +{len(categories) - 2}"
+        content = f"{level_text} | {cats_str}"
+    else:
+        content = level_text
+
+    return _badge_html(label=label, value=content, color=color)
+
+
 def format_articles_dataframe(articles: list[dict]) -> list[list]:
     """Format final articles list for gr.Dataframe."""
     rows: list[list] = []
@@ -886,6 +925,7 @@ async def agent_chat_handler(
     if moderation_result:
         safety_level = moderation_result.get("safety_level", "Safe")
         categories = moderation_result.get("categories", [])
+        guard_mode = getattr(settings, "guard_mode", "enforce")
 
         if safety_level == "Safe":
             # Safe: only pass category (no safety level needed)
@@ -895,9 +935,16 @@ async def agent_chat_handler(
             # Controversial: pass level and categories
             if categories:
                 moderation_context = f"[GUARD] Safety: Controversial, Categories: {', '.join(categories)}"
-        elif safety_level == "Unsafe" and guard_mode == "report":
-            # Report mode with unsafe: still show level and categories
-            moderation_context = f"[GUARD] Safety: Unsafe, Categories: {', '.join(categories)}"
+            else:
+                moderation_context = "[GUARD] Safety: Controversial"
+        elif safety_level == "Unsafe":
+            if guard_mode == "report":
+                # Report mode with unsafe: always pass context (even if no categories)
+                if categories:
+                    moderation_context = f"[GUARD] Safety: Unsafe, Categories: {', '.join(categories)}"
+                else:
+                    moderation_context = "[GUARD] Safety: Unsafe"
+            # In enforce mode, we already returned early, so no need to handle
 
         # Inject moderation context into messages as system message
         if moderation_context:
@@ -2730,6 +2777,17 @@ async def chat_with_metadata(
             f"queries_count={len(query_traces)}"
         )
 
+        # Format guard/safety badge
+        guard_start = time.perf_counter()
+        try:
+            guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
+            guard_badge_html = format_guard_badge(guard_info)
+        except Exception as exc:
+            logger.error("Failed to format guard badge: %s", exc, exc_info=True)
+            guard_badge_html = ""
+        guard_elapsed = (time.perf_counter() - guard_start) * 1000
+        logger.info(f"chat_with_metadata: guard badge formatting took {guard_elapsed:.2f}ms")
+
         final_start = time.perf_counter()
         try:
             # format_articles_dataframe is disabled, returns empty list
@@ -2788,6 +2846,7 @@ async def chat_with_metadata(
                 gr.update(visible=badge_visible, value=spam_badge_html),
                 gr.update(visible=badge_visible, value=confidence_badge_html),
                 gr.update(visible=badge_visible, value=queries_badge_html),
+                gr.update(visible=badge_visible, value=guard_badge_html),
                 gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
                 gr.update(
                     visible=False, value=[]
@@ -2820,6 +2879,7 @@ async def chat_with_metadata(
             gr.update(visible=False),
             gr.update(visible=False),
             gr.update(visible=False),
+            gr.update(visible=False),  # guard_badge
             gr.update(visible=False, value=""),
             gr.update(visible=False, value=[]),
             gr.update(visible=False, value=[]),
@@ -2887,6 +2947,7 @@ with gr.Blocks(
         spam_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         confidence_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         queries_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
+        guard_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
 
     # Metadata panels (populated after streaming completes)
     gr.Markdown(
@@ -3074,6 +3135,7 @@ with gr.Blocks(
                 spam_badge,
                 confidence_badge,
                 queries_badge,
+                guard_badge,
                 intent_text,
                 subqueries_json,
                 action_plan_json,
