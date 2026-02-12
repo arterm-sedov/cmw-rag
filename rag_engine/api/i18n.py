@@ -52,6 +52,12 @@ i18n = gr.I18n(
         "articles_title_header": "Title",
         "articles_confidence_header": "Confidence",
         "articles_url_header": "URL",
+        # Guard/Safety badge
+        "guard_badge_label": "Safety",
+        "guard_level_safe": "Safe",
+        "guard_level_controversial": "Controversial",
+        "guard_level_unsafe": "Unsafe",
+        "guard_categories_label": "Categories",
     },
     ru={
         "language": "ru",
@@ -93,6 +99,12 @@ i18n = gr.I18n(
         "articles_title_header": "Название",
         "articles_confidence_header": "Релевантность",
         "articles_url_header": "URL",
+        # Guard/Safety badge
+        "guard_badge_label": "Безопасность",
+        "guard_level_safe": "Безопасно",
+        "guard_level_controversial": "Спорно",
+        "guard_level_unsafe": "Опасно",
+        "guard_categories_label": "Категории",
     },
 )
 
