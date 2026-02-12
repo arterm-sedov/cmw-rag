@@ -147,28 +147,66 @@ def format_guard_badge(guard_info: dict | None) -> str:
         color = "#F44336"  # red
         level_text = i18n_resolve("guard_level_unsafe")
 
-    # Map English category names to i18n keys
+    # Map English category names to i18n keys (case-insensitive, handles variations)
     category_mapping = {
+        # Violence variations
         "Violence": "cat_violence",
+        "Violent": "cat_violence",
+        "Violent Content": "cat_violence",
+        "Violent Behavior": "cat_violence",
+        # Sexual variations
         "Sexual": "cat_sexual",
+        "Sexual Content": "cat_sexual",
+        "Sexually Explicit": "cat_sexual",
+        # PII variations
         "PII": "cat_pii",
+        "Personal Data": "cat_pii",
+        "Personally Identifiable": "cat_pii",
+        # Self-Harm variations
         "Self-Harm": "cat_self_harm",
+        "Self Harm": "cat_self_harm",
+        "Suicide": "cat_self_harm",
+        # Harassment
         "Harassment": "cat_harassment",
+        "Harassment/Threats": "cat_harassment",
+        # Hate Speech
         "Hate Speech": "cat_hate",
+        "Hate": "cat_hate",
+        # Illegal variations
         "Illegal Acts": "cat_illegal",
+        "Illegal": "cat_illegal",
         "Non-violent Illegal Acts": "cat_illegal",
+        # Unethical
         "Unethical Acts": "cat_unethical",
+        "Unethical": "cat_unethical",
+        # Politically Sensitive
         "Politically Sensitive": "cat_politically",
+        "Political": "cat_politically",
+        # Copyright
         "Copyright": "cat_copyright",
         "Copyright Violation": "cat_copyright",
+        # Jailbreak
         "Jailbreak": "cat_jailbreak",
+        # Spam
         "Spam": "cat_spam",
     }
 
-    # Localize categories
+    # Localize categories (case-insensitive)
     localized_cats = []
     for cat in categories:
-        i18n_key = category_mapping.get(cat, "cat_other")
+        # Try exact match first, then case-insensitive search
+        i18n_key = category_mapping.get(cat)
+        if not i18n_key:
+            # Try case-insensitive search
+            cat_lower = cat.lower()
+            for key, value in category_mapping.items():
+                if key.lower() == cat_lower:
+                    i18n_key = value
+                    break
+        
+        if not i18n_key:
+            i18n_key = "cat_other"
+        
         localized_cat = i18n_resolve(i18n_key)
         localized_cats.append(localized_cat)
 
