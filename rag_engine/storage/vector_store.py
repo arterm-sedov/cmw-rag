@@ -26,7 +26,7 @@ class ChromaStore:
         port: int | None = None,
     ):
         self.collection_name = collection_name
-        self.host = host or settings.chromadb_host
+        self.host = host or settings.chroma_client_host
         self.port = port or settings.chromadb_port
         self._async_client: chromadb.AsyncHttpClient | None = None
         self._async_collection = None
