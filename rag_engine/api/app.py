@@ -830,25 +830,44 @@ async def agent_chat_handler(
     if settings.llm_fallback_enabled:
         selected_model = _check_context_fallback(messages)
 
-    # --- Content Moderation (IP Model) ---
-    # Check user message with external IP model BEFORE any processing
-    from rag_engine.core.content_moderation import content_moderation_client
+    # --- Guardian (Content Moderation) ---
+    # Check user message with guardian BEFORE any processing
+    from rag_engine.core.guard_client import guard_client
 
     moderation_result: dict | None = None
     moderation_context: str | None = None
-    try:
-        moderation_result = await content_moderation_client.classify(message)
-        logger.info(
-            "Content moderation result: safety_level=%s, categories=%s",
-            moderation_result.get("safety_level") if moderation_result else None,
-            moderation_result.get("categories") if moderation_result else None,
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.error("Content moderation API call failed: %s", exc, exc_info=True)
-        moderation_result = None
+    guard_debug_info: dict | None = None
 
-    # Block unsafe content immediately
-    if moderation_result and moderation_result.get("safety_level") == "Unsafe":
+    # Skip if guardian is disabled
+    if not settings.guard_enabled:
+        logger.info("Guardian is disabled, skipping moderation")
+    else:
+        try:
+            moderation_result = await guard_client.classify(message)
+            logger.info(
+                "Guardian result: safety_level=%s, categories=%s",
+                moderation_result.get("safety_level") if moderation_result else None,
+                moderation_result.get("categories") if moderation_result else None,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Guardian API call failed: %s", exc, exc_info=True)
+            moderation_result = None
+
+    # Prepare debug info (for both enforce and report modes)
+    if moderation_result:
+        guard_debug_info = {
+            "safety_level": moderation_result.get("safety_level", "Unknown"),
+            "categories": moderation_result.get("categories", []),
+            "is_safe": moderation_result.get("is_safe", True),
+            "refusal": moderation_result.get("refusal", "No"),
+        }
+
+    # Handle based on guard mode
+    guard_mode = getattr(settings, "guard_mode", "enforce")
+    should_block = guard_client.should_block(moderation_result) if moderation_result else False
+
+    if should_block and guard_mode == "enforce":
+        # Enforce mode: Block unsafe content immediately
         categories = moderation_result.get("categories", [])
         categories_str = ", ".join(categories) if categories else "Unknown"
         error_message = (
@@ -863,7 +882,7 @@ async def agent_chat_handler(
         yield list(gradio_history)
         return
 
-    # Build moderation context for SGR (only for Safe/Controversial)
+    # Build moderation context for SGR (only for Safe/Controversial, or always for report mode)
     if moderation_result:
         safety_level = moderation_result.get("safety_level", "Safe")
         categories = moderation_result.get("categories", [])
@@ -871,20 +890,23 @@ async def agent_chat_handler(
         if safety_level == "Safe":
             # Safe: only pass category (no safety level needed)
             if categories:
-                moderation_context = f"[CONTENT_MODERATION] Category: {categories[0]}"
+                moderation_context = f"[GUARD] Category: {categories[0]}"
         elif safety_level == "Controversial":
             # Controversial: pass level and categories
             if categories:
-                moderation_context = f"[CONTENT_MODERATION] Safety: Controversial, Categories: {', '.join(categories)}"
+                moderation_context = f"[GUARD] Safety: Controversial, Categories: {', '.join(categories)}"
+        elif safety_level == "Unsafe" and guard_mode == "report":
+            # Report mode with unsafe: still show level and categories
+            moderation_context = f"[GUARD] Safety: Unsafe, Categories: {', '.join(categories)}"
 
         # Inject moderation context into messages as system message
         if moderation_context:
             system_msg = {
                 "role": "system",
-                "content": f"{moderation_context}\n\nИспользуйте эти данные модерации контента для классификации спама.",
+                "content": f"{moderation_context}\n\nИспользуйте эти данные модерации для классификации спама.",
             }
             messages = [system_msg] + messages
-            logger.debug("Injected moderation context into messages: %s", moderation_context)
+            logger.debug("Injected guard context into messages: %s", moderation_context)
 
     # --- Forced user request analysis as tool call (per-turn) ---
     # We force an "analyse_user_request" tool call once per user turn, capture the plan, and
@@ -1996,6 +2018,7 @@ async def agent_chat_handler(
                 "tool_results_count": len(tool_results),
                 "conversation_tokens": agent_context.conversation_tokens,
                 "accumulated_tool_tokens": agent_context.accumulated_tool_tokens,
+                "guard": guard_debug_info,
             }
             logger.info(
                 f"agent_chat_handler: yielding AgentContext - "
@@ -2206,6 +2229,7 @@ async def agent_chat_handler(
                             "model": current_model,
                             "fallback_retry": True,
                             "tool_results_count": len(tool_results),
+                            "guard": guard_debug_info,
                         }
                         if sgr_plan_dict and not getattr(agent_context, "sgr_plan", None):
                             agent_context.sgr_plan = sgr_plan_dict
@@ -2251,7 +2275,7 @@ async def agent_chat_handler(
         try:
             agent_context.final_answer = error_msg
             agent_context.final_articles = []
-            agent_context.diagnostics = {"model": current_model, "error": str(e)}
+            agent_context.diagnostics = {"model": current_model, "error": str(e), "guard": guard_debug_info}
         except Exception:
             pass
         yield agent_context
