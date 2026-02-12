@@ -3009,10 +3009,10 @@ with gr.Blocks(
 
     # --- Metadata badges (populated after streaming completes, shown below chat) ---
     with gr.Row():
+        guard_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         spam_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         confidence_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         queries_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
-        guard_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
 
     # Metadata panels (populated after streaming completes)
     gr.Markdown(
