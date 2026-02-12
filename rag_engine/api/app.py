@@ -802,6 +802,62 @@ async def agent_chat_handler(
     if settings.llm_fallback_enabled:
         selected_model = _check_context_fallback(messages)
 
+    # --- Content Moderation (IP Model) ---
+    # Check user message with external IP model BEFORE any processing
+    from rag_engine.core.content_moderation import content_moderation_client
+
+    moderation_result: dict | None = None
+    moderation_context: str | None = None
+    try:
+        moderation_result = await content_moderation_client.classify(message)
+        logger.info(
+            "Content moderation result: safety_level=%s, categories=%s",
+            moderation_result.get("safety_level") if moderation_result else None,
+            moderation_result.get("categories") if moderation_result else None,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Content moderation API call failed: %s", exc, exc_info=True)
+        moderation_result = None
+
+    # Block unsafe content immediately
+    if moderation_result and moderation_result.get("safety_level") == "Unsafe":
+        categories = moderation_result.get("categories", [])
+        categories_str = ", ".join(categories) if categories else "Unknown"
+        error_message = (
+            f"❌ **Сообщение заблокировано по соображениям безопасности.**\n\n"
+            f"**Категории:** {categories_str}"
+        )
+        gradio_history.append({
+            "role": "assistant",
+            "content": error_message,
+            "metadata": {"ui_type": "error"},
+        })
+        yield list(gradio_history)
+        return
+
+    # Build moderation context for SGR (only for Safe/Controversial)
+    if moderation_result:
+        safety_level = moderation_result.get("safety_level", "Safe")
+        categories = moderation_result.get("categories", [])
+
+        if safety_level == "Safe":
+            # Safe: only pass category (no safety level needed)
+            if categories:
+                moderation_context = f"[CONTENT_MODERATION] Category: {categories[0]}"
+        elif safety_level == "Controversial":
+            # Controversial: pass level and categories
+            if categories:
+                moderation_context = f"[CONTENT_MODERATION] Safety: Controversial, Categories: {', '.join(categories)}"
+
+        # Inject moderation context into messages as system message
+        if moderation_context:
+            system_msg = {
+                "role": "system",
+                "content": f"{moderation_context}\n\nИспользуйте эти данные модерации контента для классификации спама.",
+            }
+            messages = [system_msg] + messages
+            logger.debug("Injected moderation context into messages: %s", moderation_context)
+
     # --- Forced user request analysis as tool call (per-turn) ---
     # We force an "analyse_user_request" tool call once per user turn, capture the plan, and
     # then inject the resulting tool-call transcript into the agent messages.

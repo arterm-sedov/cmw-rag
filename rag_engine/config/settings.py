@@ -153,6 +153,12 @@ class Settings(BaseSettings):
     # Default timezone for datetime operations (IANA timezone name, e.g., 'Europe/Moscow', 'UTC')
     default_timezone: str = "Europe/Moscow"
 
+    # Content Moderation (IP Model)
+    # External IP/content moderation model for pre-processing user queries
+    content_moderation_url: str = "http://localhost"
+    content_moderation_port: int = 8000
+    content_moderation_path: str = "/api/v1/classify"
+
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
         env_file=".env",
