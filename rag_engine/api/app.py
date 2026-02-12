@@ -2623,6 +2623,7 @@ async def chat_with_metadata(
         str | gr.HTML,
         str | gr.HTML,
         str | gr.HTML,
+        str | gr.HTML,  # guard_badge
         str | gr.Textbox,
         list | gr.JSON,
         list | gr.JSON,
