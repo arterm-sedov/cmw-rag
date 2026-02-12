@@ -2655,6 +2655,7 @@ async def chat_with_metadata(
                 gr.update(visible=False),
                 gr.update(visible=False),
                 gr.update(visible=False),
+                gr.update(visible=False),  # guard_badge - hidden during streaming
                 gr.update(visible=False, value=""),
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
