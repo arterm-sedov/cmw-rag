@@ -46,7 +46,7 @@ async def check_chroma_async():
     try:
         import chromadb
 
-        host = os.getenv("CHROMADB_HOST", "localhost")
+        host = os.getenv("CHROMA_CLIENT_HOST", "localhost")
         port = int(os.getenv("CHROMADB_PORT", "8000"))
 
         client = await chromadb.AsyncHttpClient(host=host, port=port)
