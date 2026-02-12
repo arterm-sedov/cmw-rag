@@ -48,6 +48,10 @@ from rag_engine.utils.vllm_fallback import (
 
 setup_logging()
 
+from rag_engine.utils.huggingface_utils import configure_huggingface_env
+
+configure_huggingface_env()
+
 logger = logging.getLogger(__name__)
 
 
@@ -141,10 +145,34 @@ def format_articles_dataframe(articles: list[dict]) -> list[list]:
 
 # Initialize singletons (order matters: llm_manager before retriever)
 embedder = create_embedder(settings)
-vector_store = ChromaStore(
-    persist_dir=settings.chromadb_persist_dir,
-    collection_name=settings.chromadb_collection,
-)
+vector_store = ChromaStore(collection_name=settings.chromadb_collection)
+
+# Health check: verify ChromaDB HTTP server is reachable
+try:
+    import chromadb
+
+    health_client = chromadb.HttpClient(
+        host=settings.chromadb_host,
+        port=settings.chromadb_port,
+    )
+    health_client.heartbeat()
+    logger.info(
+        "✅ ChromaDB HTTP server healthy at %s:%d",
+        settings.chromadb_host,
+        settings.chromadb_port,
+    )
+except Exception as e:
+    logger.error(
+        "❌ ChromaDB HTTP server unreachable at %s:%d - %s",
+        settings.chromadb_host,
+        settings.chromadb_port,
+        str(e),
+    )
+    raise RuntimeError(
+        f"Cannot connect to ChromaDB server at {settings.chromadb_host}:{settings.chromadb_port}. "
+        "Ensure 'chroma run' is started or Docker container is running."
+    ) from e
+
 llm_manager = LLMManager(
     provider=settings.default_llm_provider,
     model=settings.default_model,
@@ -977,7 +1005,10 @@ async def agent_chat_handler(
                     for i, msg in enumerate(gradio_history):
                         if isinstance(msg, dict) and msg.get("role") == "assistant":
                             metadata = msg.get("metadata")
-                            if isinstance(metadata, dict) and metadata.get("ui_type") == "sgr_planning":
+                            if (
+                                isinstance(metadata, dict)
+                                and metadata.get("ui_type") == "sgr_planning"
+                            ):
                                 # Replace with normal assistant message with type metadata for context management
                                 prefix = get_text("user_intent_prefix")
                                 gradio_history[i] = {
@@ -989,7 +1020,7 @@ async def agent_chat_handler(
                                 }
                                 logger.info(
                                     "Replaced SGR planning bubble with user intent: '%s'...",
-                                    user_intent[:100]
+                                    user_intent[:100],
                                 )
                                 break
 
@@ -1007,7 +1038,10 @@ async def agent_chat_handler(
 
     # Add thinking spinner to show progress while LLM generates tool calls (same id used for removal in stream)
     from rag_engine.api.stream_helpers import short_uid, yield_thinking_block
-    thinking_id = short_uid()  # single id for initial block; stream loop reuses it for remove_message_by_id
+
+    thinking_id = (
+        short_uid()
+    )  # single id for initial block; stream loop reuses it for remove_message_by_id
     thinking_msg = yield_thinking_block("agent", block_id=thinking_id)
     gradio_history.append(thinking_msg)
     yield list(gradio_history)
@@ -1103,7 +1137,9 @@ async def agent_chat_handler(
                 logger.debug("Stream chunk #%d: mode=%s", stream_chunk_count, stream_mode)
 
                 # Flush any middleware-enqueued UI messages (e.g., pending search bubbles).
-                if agent_context is not None and drain_pending_ui_messages(gradio_history, agent_context):
+                if agent_context is not None and drain_pending_ui_messages(
+                    gradio_history, agent_context
+                ):
                     remove_message_by_id(gradio_history, thinking_id)
                     yield list(gradio_history)
 
@@ -1207,7 +1243,9 @@ async def agent_chat_handler(
                         # For unified bubble, update it with results
                         bubble_updated = False
                         try:
-                            result_data = json.loads(token.content) if isinstance(token.content, str) else {}
+                            result_data = (
+                                json.loads(token.content) if isinstance(token.content, str) else {}
+                            )
                             query_from_result = result_data.get("metadata", {}).get("query", "")
                             articles_list = result_data.get("articles", [])
                             count = result_data.get("metadata", {}).get("articles_count", 0)
@@ -1216,7 +1254,9 @@ async def agent_chat_handler(
                                 tool_call_id = getattr(token, "tool_call_id", None)
                                 if not tool_call_id:
                                     # Should not happen; ToolMessage should always have tool_call_id.
-                                    logger.warning("Tool result missing tool_call_id; skipping bubble update")
+                                    logger.warning(
+                                        "Tool result missing tool_call_id; skipping bubble update"
+                                    )
                                     raise AttributeError("Missing tool_call_id on tool result")
 
                                 # Use tool_call_id as the stable bubble id.
@@ -1226,7 +1266,8 @@ async def agent_chat_handler(
                                 has_bubble = any(
                                     isinstance(msg, dict)
                                     and msg.get("role") == "assistant"
-                                    and (msg.get("metadata") or {}).get("ui_type") == "search_bubble"
+                                    and (msg.get("metadata") or {}).get("ui_type")
+                                    == "search_bubble"
                                     and (msg.get("metadata") or {}).get("search_id") == search_id
                                     for msg in gradio_history
                                 )
@@ -1237,7 +1278,10 @@ async def agent_chat_handler(
 
                                 articles_for_display = (
                                     [
-                                        {"title": a.get("title", "Untitled"), "url": a.get("url", "")}
+                                        {
+                                            "title": a.get("title", "Untitled"),
+                                            "url": a.get("url", ""),
+                                        }
                                         for a in articles_list
                                     ]
                                     if articles_list
@@ -1345,9 +1389,7 @@ async def agent_chat_handler(
                                 "Non-search tool result received, removing initial thinking block and collapsing tool thinking block"
                             )
                             remove_message_by_id(gradio_history, thinking_id)
-                            update_message_status_in_history(
-                                gradio_history, "thinking", "done"
-                            )
+                            update_message_status_in_history(gradio_history, "thinking", "done")
 
                         # Stop SGR planning spinner after any tool result
                         update_message_status_in_history(gradio_history, "sgr_planning", "done")
@@ -1431,7 +1473,9 @@ async def agent_chat_handler(
 
                         # Create pending search bubbles from stable tool_calls payload (best-effort, no accumulator).
                         # This must NOT depend on `tool_executing` because tool-call chunks can be detected earlier.
-                        if has_tool_calls_attr and isinstance(getattr(token, "tool_calls", None), list):
+                        if has_tool_calls_attr and isinstance(
+                            getattr(token, "tool_calls", None), list
+                        ):
                             for tc in token.tool_calls:
                                 if not isinstance(tc, dict) or tc.get("name") != "retrieve_context":
                                     continue
@@ -1456,7 +1500,8 @@ async def agent_chat_handler(
                                 has_bubble = any(
                                     isinstance(msg, dict)
                                     and msg.get("role") == "assistant"
-                                    and (msg.get("metadata") or {}).get("ui_type") == "search_bubble"
+                                    and (msg.get("metadata") or {}).get("ui_type")
+                                    == "search_bubble"
                                     and (msg.get("metadata") or {}).get("search_id") == search_id
                                     for msg in gradio_history
                                 )
@@ -1537,9 +1582,7 @@ async def agent_chat_handler(
                                     tool_executing = True
                                     # Remove generating_answer block when a new tool call is detected
                                     if has_seen_tool_results:
-                                        remove_message_by_id(
-                                            gradio_history, generating_answer_id
-                                        )
+                                        remove_message_by_id(gradio_history, generating_answer_id)
                                     logger.debug("Agent calling tool via chunk")
 
                                     # Get tool name to determine which thinking block to show
@@ -1565,9 +1608,13 @@ async def agent_chat_handler(
                                                     has_bubble = any(
                                                         isinstance(msg, dict)
                                                         and msg.get("role") == "assistant"
-                                                        and (msg.get("metadata") or {}).get("ui_type")
+                                                        and (msg.get("metadata") or {}).get(
+                                                            "ui_type"
+                                                        )
                                                         == "search_bubble"
-                                                        and (msg.get("metadata") or {}).get("search_id")
+                                                        and (msg.get("metadata") or {}).get(
+                                                            "search_id"
+                                                        )
                                                         == search_id
                                                         for msg in gradio_history
                                                     )
@@ -1589,16 +1636,15 @@ async def agent_chat_handler(
 
                                     # On first text chunk: inject disclaimer as separate message (UI only), then stream answer
                                     if not answer:
-                                        if not disclaimer_prepended and not _disclaimer_injected_in_history(
-                                            gradio_history
+                                        if (
+                                            not disclaimer_prepended
+                                            and not _disclaimer_injected_in_history(gradio_history)
                                         ):
                                             from rag_engine.api.stream_helpers import (
                                                 yield_disclaimer_display,
                                             )
 
-                                            gradio_history.append(
-                                                yield_disclaimer_display()
-                                            )
+                                            gradio_history.append(yield_disclaimer_display())
                                             disclaimer_prepended = True
                                             yield list(gradio_history)
                                         remove_message_by_id(gradio_history, thinking_id)
@@ -1671,9 +1717,7 @@ async def agent_chat_handler(
                                         yield_disclaimer_display,
                                     )
 
-                                    gradio_history.append(
-                                        yield_disclaimer_display()
-                                    )
+                                    gradio_history.append(yield_disclaimer_display())
                                     disclaimer_prepended = True
                                     yield list(gradio_history)
                                 # Show "Generating Answer" spinner on first chunk after tool results
@@ -1685,7 +1729,8 @@ async def agent_chat_handler(
                                     has_generating = any(
                                         isinstance(msg, dict)
                                         and msg.get("role") == "assistant"
-                                        and (msg.get("metadata") or {}).get("id") == generating_answer_id
+                                        and (msg.get("metadata") or {}).get("id")
+                                        == generating_answer_id
                                         for msg in gradio_history
                                     )
                                     if not has_generating:
@@ -2067,7 +2112,9 @@ async def agent_chat_handler(
                                     update_message_status_in_history(
                                         gradio_history, "sgr_planning", "done"
                                     )
-                                    generating_msg = yield_generating_answer(block_id=generating_answer_id)
+                                    generating_msg = yield_generating_answer(
+                                        block_id=generating_answer_id
+                                    )
                                     gradio_history.append(generating_msg)
                                     yield list(gradio_history)
                                 continue
@@ -2710,12 +2757,13 @@ async def chat_with_metadata(
             f"articles_df_rows={len(articles_df_data) if isinstance(articles_df_data, list) else 0}"
         )
 
+        badge_visible = not settings.gradio_embedded_widget
         try:
             yield (
                 last_history,
-                gr.update(visible=True, value=spam_badge_html),
-                gr.update(visible=True, value=confidence_badge_html),
-                gr.update(visible=True, value=queries_badge_html),
+                gr.update(visible=badge_visible, value=spam_badge_html),
+                gr.update(visible=badge_visible, value=confidence_badge_html),
+                gr.update(visible=badge_visible, value=queries_badge_html),
                 gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
                 gr.update(
                     visible=False, value=[]
@@ -2812,20 +2860,25 @@ with gr.Blocks(
 
     # --- Metadata badges (populated after streaming completes, shown below chat) ---
     with gr.Row():
-        spam_badge = gr.HTML(visible=False)
-        confidence_badge = gr.HTML(visible=False)
-        queries_badge = gr.HTML(visible=False)
+        spam_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
+        confidence_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
+        queries_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
 
-    # Metadata panels (populated after streaming completes) - displayed directly, no accordions
-    # Markdown headers are always visible (static text)
-    gr.Markdown(f"### {i18n_resolve('analysis_summary_title')}")
+    # Metadata panels (populated after streaming completes)
+    gr.Markdown(
+        f"### {i18n_resolve('analysis_summary_title')}",
+        visible=not settings.gradio_embedded_widget,
+    )
     intent_text = gr.Textbox(
         label=i18n_resolve("user_intent_label"), interactive=False, visible=False
     )
     subqueries_json = gr.JSON(label=i18n_resolve("subqueries_label"), visible=False)
     action_plan_json = gr.JSON(label=i18n_resolve("action_plan_label"), visible=False)
 
-    gr.Markdown(f"### {i18n_resolve('retrieved_articles_title')}")
+    gr.Markdown(
+        f"### {i18n_resolve('retrieved_articles_title')}",
+        visible=not settings.gradio_embedded_widget,
+    )
     articles_df = gr.Dataframe(
         headers=[
             i18n_resolve("articles_rank_header"),
@@ -2950,6 +3003,9 @@ with gr.Blocks(
 
         Called after input is unlocked to populate SGR metadata.
         """
+        if settings.gradio_embedded_widget:
+            return (gr.update(), gr.update(), gr.update(), gr.update())
+
         if not metadata:
             logger.info("update_metadata_ui: no metadata to display")
             return (

@@ -361,46 +361,102 @@ Environment-driven behavior:
 
 ## Configuration
 
-Environment variables (configure in `.env`):
+All configuration is managed through environment variables. Copy `.env-example` to `.env` and configure your settings:
 
-- `GOOGLE_API_KEY`: Google Gemini API key (required if using Gemini)
-- `OPENROUTER_API_KEY`: OpenRouter API key (required if using OpenRouter)
-- `DEFAULT_LLM_PROVIDER`: Default provider (`gemini` or `openrouter`)
-- `LLM_FALLBACK_ENABLED`: Enable immediate model fallback (`true`/`false`)
-- `LLM_FALLBACK_PROVIDER`: Provider for fallback (`gemini`/`openrouter`), otherwise inferred per model
-- `LLM_ALLOWED_FALLBACK_MODELS`: Comma-separated list of allowed fallback models
-- `LLM_SUMMARIZATION_ENABLED`: Enable summarization-first budgeting (`true`/`false`)
-- `LLM_SUMMARIZATION_TARGET_TOKENS_PER_ARTICLE`: Optional override for per-article summary target
-- `TOP_K_RETRIEVE`: Initial retrieval count (default: 20)
-- `TOP_K_RERANK`: Final results after reranking (default: 10)
-- `GRADIO_SERVER_NAME`: Web UI server name (default: `0.0.0.0`)
-- `GRADIO_SERVER_PORT`: Web UI port (default: 7860)
-- `GRADIO_SHARE`: Enable Gradio share link for public access (`true`/`false`, default: `false`)
-- `EMBEDDING_MODEL`: Embedding model name (default: `ai-forever/FRIDA`)
-- `EMBEDDING_DEVICE`: Device for embeddings and reranking (`auto`, `cpu`, or `cuda`). `auto` will detect and use GPU if available, else CPU. Both the FRIDA embedder and cross-encoder reranker use this setting.
-- `MEMORY_COMPRESSION_THRESHOLD_PCT`: Trigger compression when estimated request exceeds this percent of the model window (default: `80`)
-- `MEMORY_COMPRESSION_TARGET_TOKENS`: Target tokens for the compressed history turn (default: `1000`)
-- `LLM_COMPRESSION_THRESHOLD_PCT`: Trigger tool-results compression (and define post-tool checks) when total context exceeds this fraction of the model window (default: `0.85`)
-- `LLM_COMPRESSION_TARGET_PCT`: Target fraction of the model window to fit into after tool-results compression (default: `0.80`)
-- `LLM_COMPRESSION_MIN_TOKENS`: Minimum tokens to preserve per article during proportional-by-rank tool-results compression (default: `300`)
-- `USE_AGENT_MODE`: Enable LangChain agent mode with tool calling (`true`/`false`, default: `false`)
+```bash
+# WSL/Linux
+cp .env-example .env
 
-See `.env-example` for full configuration options.
+# Windows PowerShell
+Copy-Item .env-example .env
+```
 
-### Retrieval – Multi-vector and Query Decomposition
+**Important:** Never commit `.env` to version control. Use `.env-example` as a template with placeholder values only.
 
-Environment flags controlling long-query behavior:
+### Quick Reference
 
-- `RETRIEVAL_MULTIQUERY_ENABLED` (default: `true`): Enable multi-vector query retrieval
-- `RETRIEVAL_MULTIQUERY_MAX_SEGMENTS` (default: `4`): Max query segments
-- `RETRIEVAL_MULTIQUERY_SEGMENT_TOKENS` (default: `448`): Target tokens per segment (≤ 512)
-- `RETRIEVAL_MULTIQUERY_SEGMENT_OVERLAP` (default: `64`): Overlap tokens between segments
-- `RETRIEVAL_MULTIQUERY_PRE_RERANK_LIMIT` (default: `60`): Cap merged candidates before rerank
-- `RETRIEVAL_QUERY_DECOMP_ENABLED` (default: `false`): Enable LLM-based query decomposition
-- `RETRIEVAL_QUERY_DECOMP_MAX_SUBQUERIES` (default: `4`): Max sub-queries to generate
+| Category | Key Settings |
+|----------|-------------|
+| LLM | `DEFAULT_LLM_PROVIDER`, `DEFAULT_MODEL` |
+| Embeddings | `EMBEDDING_PROVIDER_TYPE`, `EMBEDDING_MODEL` |
+| Vector Store | `CHROMADB_HOST`, `CHROMADB_PORT` |
+| Retrieval | `TOP_K_RETRIEVE`, `TOP_K_RERANK`, `RERANK_SCORE_THRESHOLD` |
+| Web UI | `GRADIO_SERVER_NAME`, `GRADIO_SERVER_PORT` |
 
-Recommended ranges:
-- `SEGMENT_TOKENS`: 384–512; `OVERLAP`: 32–96; `MAX_SEGMENTS`: ≤ 4; `PRE_RERANK_LIMIT`: ≈ 3×`TOP_K_RETRIEVE`.
+See `.env-example` for complete documentation of all environment variables.
+
+### Functional Configuration
+
+#### Retrieval – Multi-vector Queries and Query Decomposition
+
+Multi-vector queries split long queries into token-aware segments, retrieve per segment, and union + rerank results. Configure in `.env`:
+
+```
+RETRIEVAL_MULTIQUERY_ENABLED=true           # Enable multi-vector query retrieval
+RETRIEVAL_MULTIQUERY_MAX_SEGMENTS=4        # Maximum query segments
+RETRIEVAL_MULTIQUERY_SEGMENT_TOKENS=448    # Target tokens per segment (≤512)
+RETRIEVAL_MULTIQUERY_SEGMENT_OVERLAP=64    # Overlap tokens between segments
+RETRIEVAL_MULTIQUERY_PRE_RERANK_LIMIT=60   # Cap merged candidates before rerank
+```
+
+Query decomposition uses LLM to generate sub-queries:
+
+```
+RETRIEVAL_QUERY_DECOMP_ENABLED=false       # Enable LLM-based query decomposition
+RETRIEVAL_QUERY_DECOMP_MAX_SUBQUERIES=4    # Maximum sub-queries to generate
+```
+
+#### Retrieval – Reranking and Score Threshold
+
+Reranking filters and reorders retrieved chunks before loading complete articles. Configure:
+
+```
+RERANK_ENABLED=true                         # Enable cross-encoder reranking
+RERANK_SCORE_THRESHOLD=0.5                  # Minimum rerank score (articles below excluded)
+```
+
+- `RERANK_SCORE_THRESHOLD`: Articles with rerank score below this threshold are excluded before loading from disk. Set to `0.0` to disable filtering (default).
+
+#### LLM Context Budgeting
+
+The engine uses summarization-first budgeting guided by the user question:
+
+```
+LLM_SUMMARIZATION_ENABLED=true              # Enable article summarization
+LLM_SUMMARIZATION_TARGET_TOKENS_PER_ARTICLE=1200  # Target tokens after summarization
+```
+
+Compression thresholds control when to compress accumulated tool results:
+
+```
+LLM_COMPRESSION_THRESHOLD_PCT=0.80          # Trigger compression at 80% of context
+LLM_COMPRESSION_TARGET_PCT=0.80              # Target 80% of context after compression
+LLM_COMPRESSION_MIN_TOKENS=300              # Minimum tokens per article
+```
+
+#### ChromaDB Vector Store
+
+HTTP client settings for the vector database connection:
+
+```
+CHROMADB_HOST=localhost                     # ChromaDB server host
+CHROMADB_PORT=8000                         # ChromaDB server port
+CHROMADB_HTTP_KEEPALIVE_SECS=60.0           # Keep HTTP connections alive (seconds)
+CHROMADB_MAX_CONNECTIONS=100                # Maximum connection pool size
+```
+
+#### Gradio Web Interface
+
+Web UI configuration for the chat interface:
+
+```
+GRADIO_SERVER_NAME=0.0.0.0                  # Bind address
+GRADIO_SERVER_PORT=7860                    # HTTP port
+GRADIO_SHARE=false                         # Create public share link
+GRADIO_DEFAULT_CONCURRENCY_LIMIT=3         # Max concurrent requests
+GRADIO_EMBEDDED_WIDGET=false               # Use compact widget layout
+GRADIO_LOCALE=ru                           # UI language (ru/en)
+```
 
 ## Project Structure
 

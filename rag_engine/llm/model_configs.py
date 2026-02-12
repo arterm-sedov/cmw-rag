@@ -3,6 +3,7 @@
 Defines context windows, max output tokens, and default temperatures
 for supported models. Kept separate for clarity and easier maintenance.
 """
+
 from __future__ import annotations
 
 MODEL_CONFIGS: dict[str, dict] = {
@@ -148,7 +149,7 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 32_768,
         "temperature": 0,
     },
-        "openai/gpt-oss-120b:exacto": {
+    "openai/gpt-oss-120b:exacto": {
         "token_limit": 131_072,
         "max_tokens": 32_768,
         "temperature": 0,
@@ -179,6 +180,18 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 32_768,  # Reasonable max output for large context model
         "temperature": 0,
     },
+    # Moonshot AI (Kimi) Models
+    "moonshotai/kimi-k2.5": {
+        "token_limit": 262_144,  # 262.1K context window
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    # Minimax Models
+    "minimax/minimax-m2.1": {
+        "token_limit": 196_608,  # 196.6K context window
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
     # OpenAI specialized models
     "openai/gpt-5-codex": {
         "token_limit": 400_000,
@@ -192,5 +205,3 @@ MODEL_CONFIGS: dict[str, dict] = {
         "temperature": 0.1,
     },
 }
-
-

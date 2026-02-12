@@ -1,4 +1,5 @@
 """ChromaDB maintenance script for diagnostics and maintenance operations."""
+
 from __future__ import annotations
 
 import argparse
@@ -20,17 +21,17 @@ from rag_engine.storage.vector_store import ChromaStore
 
 def get_all_metadata_paginated(store: ChromaStore, limit_per_batch: int = 1000) -> list[dict]:
     """Get all document metadatas with pagination (utility for maintenance scripts).
-    
+
     Args:
         store: ChromaStore instance
         limit_per_batch: Number of documents to fetch per batch (default: 1000)
-        
+
     Returns:
         List of all metadata dictionaries
     """
     all_metadata = []
     offset = 0
-    
+
     while True:
         res = store.collection.get(limit=limit_per_batch, offset=offset, include=["metadatas"])
         batch_metas = res.get("metadatas", [])
@@ -40,7 +41,7 @@ def get_all_metadata_paginated(store: ChromaStore, limit_per_batch: int = 1000) 
         if len(batch_metas) < limit_per_batch:
             break
         offset += limit_per_batch
-    
+
     return all_metadata
 
 
@@ -54,22 +55,23 @@ def get_db_info(persist_dir: str) -> dict:
     try:
         # Use ChromaDB API to get collection info (more reliable than direct SQLite)
         import chromadb
+
         client = chromadb.PersistentClient(path=persist_dir)
         collections_list = client.list_collections()
-        
+
         info["collections"] = []
         for col in collections_list:
             col_name = getattr(col, "name", None) or str(col)
             col_id = getattr(col, "id", None)
             col_metadata = getattr(col, "metadata", {})
-            
+
             # Get actual collection to count items
             try:
                 collection = client.get_collection(name=col_name)
                 count = collection.count()
             except Exception:  # noqa: BLE001
                 count = 0
-            
+
             info["collections"].append(
                 {
                     "id": col_id or "unknown",
@@ -219,7 +221,7 @@ def diagnose(persist_dir: str, collection_name: str | None = None) -> None:
         print("⚠️  Issues found:")
         for issue in consistency["issues"]:
             print(f"  - {issue}")
-        
+
         # If UUID mismatch but data is accessible, it might be okay
         if consistency["issues"] and db_info.get("collections"):
             print("\n📝 Note: UUID mismatch detected, but if ChromaDB can query data")
@@ -232,21 +234,22 @@ def diagnose(persist_dir: str, collection_name: str | None = None) -> None:
     print("ChromaDB Collection Statistics:")
     print("-" * 80)
     try:
-        store = ChromaStore(
-            persist_dir=persist_dir,
-            collection_name=collection_name or settings.chromadb_collection,
-        )
+        store = ChromaStore(collection_name=collection_name or settings.chromadb_collection)
         # Use ChromaDB's built-in count() method (most efficient)
         api_count = store.collection.count()
         print(f"Total chunks: {api_count}")
-        
+
         # Optionally count unique articles (requires loading all metadata - can be slow)
         try:
             all_metadata = get_all_metadata_paginated(store)
-            unique_doc_ids = {meta.get("doc_stable_id") for meta in all_metadata if meta.get("doc_stable_id")}
+            unique_doc_ids = {
+                meta.get("doc_stable_id") for meta in all_metadata if meta.get("doc_stable_id")
+            }
             print(f"Unique articles (by doc_stable_id): {len(unique_doc_ids)}")
             if len(all_metadata) != api_count:
-                print(f"⚠️  Note: Metadata pagination count ({len(all_metadata)}) != API count ({api_count})")
+                print(
+                    f"⚠️  Note: Metadata pagination count ({len(all_metadata)}) != API count ({api_count})"
+                )
         except Exception as e:  # noqa: BLE001
             print(f"⚠️  Could not count unique articles (may be slow for large collections): {e}")
     except Exception as e:  # noqa: BLE001
@@ -338,4 +341,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

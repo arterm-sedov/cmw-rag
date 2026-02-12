@@ -25,8 +25,8 @@
 
 ```
 ┌─────────────────┐    HTTP API     ┌─────────────────────┐
-│   Gradio App    │◄──────────────►│  ChromaDB Container │
-│  (async + UI)   │                │  (vector database)  │
+│   Gradio App    │◄──────────────►│  ChromaDB Server    │
+│  (async + UI)   │                │  (HTTP mode)        │
 │                 │                │                     │
 │  • Tool calls   │                │  • HNSW index       │
 │  • Agent logic  │                │  • Connection pool  │
@@ -35,18 +35,66 @@
          │                                   │
          ▼                                   ▼
 ┌─────────────────┐                ┌─────────────────────┐
-│  Thread Pool    │                │   Docker Volume     │
-│  (concurrency)  │                │   (persistent data) │
+│  Thread Pool    │                │   Local Storage     │
+│  (concurrency)  │                │   (./chroma_data)   │
 └─────────────────┘                └─────────────────────┘
 ```
 
 ## 📝 **Implementation Plan**
 
-### **Phase 1: Docker ChromaDB Setup** ⏱️ 30 minutes
+### **Phase 0: Native ChromaDB Server** ⏱️ 10 minutes
+
+**Start here for machines without Docker/sudo access.**
+
+#### 0.1 Install and Run ChromaDB
+```bash
+# Install ChromaDB (same version as your app)
+pip install chromadb
+
+# Option A: Use helper script (reads from .env automatically)
+python rag_engine/scripts/start_chroma_server.py --verbose
+
+# Option B: Run manually with parameters
+chroma run --host localhost --port 8000 --path ./data/chromadb_data
+```
+
+**Helper script benefits:**
+- Reads `CHROMADB_HOST`, `CHROMADB_PORT`, `CHROMADB_PERSIST_DIR` from `.env`
+- Ensures consistency between app config and server startup
+- Provides colored output and error handling
+
+#### 0.2 Environment Variables
+```bash
+# Add to .env
+CHROMADB_HOST=localhost
+CHROMADB_PORT=8000
+CHROMADB_SSL=false
+CHROMADB_CONNECTION_TIMEOUT=30.0
+CHROMADB_MAX_CONNECTIONS=100
+```
+
+**HTTP-only:** The app uses ChromaDB in HTTP-only mode (no `CHROMADB_USE_HTTP` toggle). All retrieval and the main app path use `chromadb.HttpClient` against a separate Chroma server. Embedded PersistentClient is not supported in the RAG agent; the migration plan intentionally removed it for performance and scaling.
+
+> **Note**: These env vars are read by `settings.py` using Pydantic's `Field(env="VAR_NAME")` for validation and centralized access.
+
+#### 0.3 Verify Server
+```bash
+# Test connection
+curl http://localhost:8000/api/v1/heartbeat
+
+# Or use existing script (reads from .env automatically)
+python rag_engine/scripts/test_chroma_connection.py
+```
+
+---
+
+### **Phase 1: Docker ChromaDB Setup** (Optional) ⏱️ 30 minutes
+
+**Use this when Docker is available for better process management and team consistency.**
 
 #### 1.1 Docker Compose Configuration
 ```yaml
-# docker-compose.yml (new file)
+# docker-compose.yml (optional - for Docker environments)
 version: '3.8'
 services:
   chromadb:
@@ -67,28 +115,34 @@ services:
       retries: 3
 ```
 
-#### 1.2 Environment Variables
-```bash
-# Add to .env
-CHROMADB_HOST=localhost
-CHROMADB_PORT=8000
-CHROMADB_SSL=false
-CHROMADB_USE_ASYNC=true
-CHROMADB_CONNECTION_TIMEOUT=30.0
-CHROMADB_MAX_CONNECTIONS=100
-```
+> **Ports**: Both `chroma run` and Docker use port 8000 by default. Environment variables remain identical.
+
+#### 1.2 When to Use Docker vs Native
+
+| **Scenario** | **Native (`chroma run`)** | **Docker** |
+|--------------|---------------------------|------------|
+| No sudo/Docker access | ✅ Yes | ❌ No |
+| Quick local dev | ✅ Yes | ⚠️ Optional |
+| Production deployment | ⚠️ Use systemd | ✅ Yes |
+| Team consistency | ⚠️ Version pinning | ✅ Yes |
+| Health monitoring | ⚠️ Manual | ✅ Built-in |
+| Multiple services | ❌ Complex | ✅ Easy |
+
+---
 
 ### **Phase 2: Code Migration** ⏱️ 2-3 hours
 
 #### 2.1 Configuration Updates
 ```python
 # rag_engine/config/settings.py - Add these settings
-chromadb_host: str = "localhost"
-chromadb_port: int = 8000
-chromadb_ssl: bool = False
-chromadb_use_async: bool = True
-chromadb_connection_timeout: float = 30.0
-chromadb_max_connections: int = 100
+from pydantic import Field
+
+chromadb_host: str = Field(default="localhost", env="CHROMADB_HOST")
+chromadb_port: int = Field(default=8000, env="CHROMADB_PORT")
+chromadb_ssl: bool = Field(default=False, env="CHROMADB_SSL")
+chromadb_use_http: bool = Field(default=True, env="CHROMADB_USE_HTTP")
+chromadb_connection_timeout: float = Field(default=30.0, env="CHROMADB_CONNECTION_TIMEOUT")
+chromadb_max_connections: int = Field(default=100, env="CHROMADB_MAX_CONNECTIONS")
 ```
 
 #### 2.2 Vector Store Refactoring
@@ -133,6 +187,13 @@ class ChromaStore:
         )
         return self._process_results(results)
 ```
+
+> **Coverage**: All scripts using `ChromaStore` (build_index.py, maintain_chroma.py, search_kbid.py, etc.) will auto-update. Only `check_chroma.py` needs manual migration (uses direct chromadb client).
+
+> **12-Factor Admin Scripts**: All admin/utility scripts must read configuration from environment variables (via `.env`), not hardcoded values or command-line arguments as primary config. Examples:
+> - `test_chroma_connection.py` - reads `CHROMADB_HOST`, `CHROMADB_PORT` from `.env`
+> - `check_chroma.py` - should read from `.env` instead of using `os.getenv()` with hardcoded defaults
+> - `build_index.py`, `maintain_chroma.py` - already use `settings.py` which loads from `.env` ✓
 
 #### 2.3 Retriever Integration
 ```python
@@ -182,24 +243,68 @@ async def check_chromadb_health():
 
 ## 🚀 **Deployment Strategy**
 
-### **Step 1: Zero-Downtime Migration**
+### **Step 1: Start ChromaDB Server**
+
+Choose **ONE** of these approaches:
+
+**Option A: Native (No Docker Required)**
 ```bash
-# 1. Start ChromaDB container (parallel to existing setup)
-docker-compose up -d chromadb
+# 1. Start ChromaDB server
+chroma run --host localhost --port 8000 --path ./data/chromadb_data
 
-# 2. Sync data to new container (one-time migration)
-python scripts/migrate_to_http_chroma.py
-
-# 3. Update .env configuration
-# CHROMADB_HOST=localhost
-# CHROMADB_PORT=8000
-# CHROMADB_USE_ASYNC=true
-
-# 4. Restart application (uses HTTP client now)
-# Existing embedded database still available as backup
+# 2. In another terminal, verify
+python rag_engine/scripts/test_chroma_connection.py
 ```
 
-### **Step 2: Performance Monitoring**
+**Option B: Docker (If Available)**
+```bash
+# 1. Start ChromaDB container
+docker-compose up -d chromadb
+
+# 2. Verify health
+docker-compose ps
+```
+
+### **Step 2: Update Application**
+```bash
+# 3. Update .env configuration (already done in Phase 0/1)
+# CHROMADB_HOST=localhost
+# CHROMADB_PORT=8000
+# CHROMADB_USE_HTTP=true
+
+# 4. Restart application (uses HTTP client now)
+python rag_engine/api/app.py
+```
+
+### **Step 3: Production Deployment**
+
+**For machines without Docker/sudo:**
+```bash
+# Use systemd service or process manager
+# Example systemd service file:
+# /etc/systemd/system/chromadb.service
+[Unit]
+Description=ChromaDB HTTP Server
+After=network.target
+
+[Service]
+Type=simple
+User=appuser
+WorkingDirectory=/opt/app
+ExecStart=/opt/app/.venv/bin/chroma run --host 0.0.0.0 --port 8000 --path ./data/chromadb_data
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**For machines with Docker:**
+```bash
+# Use docker-compose as shown in Phase 1
+docker-compose up -d chromadb
+```
+
+### **Step 4: Performance Monitoring**
 ```python
 # Add these metrics to your logging
 async def monitored_vector_search(query, k=5):
@@ -243,33 +348,42 @@ Concurrent → Scales with HTTP server capacity
 | Network connectivity issues | Low | Medium | Retry logic + health checks |
 | Data migration issues | Low | High | Backup existing data + test migration |
 | Performance regression | Low | Medium | Performance testing + rollback plan |
-| Docker resource constraints | Medium | Low | Monitor resource usage + limits |
+| Deployment environment constraints | Medium | Low | Native `chroma run` fallback |
 
 ## 💡 **Key Questions for Final Decision**
 
 1. **Timeline**: Can you afford 2-3 hours of migration time now for immediate performance gains?
 
 2. **Infrastructure**: Do you have Docker available in your deployment environment?
+   - **Yes**: Use Phase 1 (Docker) for better management
+   - **No**: Use Phase 0 (`chroma run`) - works everywhere
 
-3. **Backup Strategy**: Should we keep the embedded ChromaDB as a fallback during initial testing?
+3. **Data Migration**: The HTTP server will use the same data files (`chroma.sqlite3`, `index/`). Ensure your app is stopped before switching to avoid SQLite locks. After migration, the embedded Python Chroma path will be completely removed.
 
 4. **Monitoring**: Would you like detailed performance metrics during the migration phase?
 
 ## ✅ **My Recommendation**
 
-**Proceed with Phase 1 immediately** (Docker ChromaDB setup) - it's low-risk and will eliminate the 21-second delay. The code migration (Phase 2) can then be done incrementally with the embedded version as a safety net.
+**Proceed with Phase 0 immediately** (`chroma run`) - it works on all machines without Docker/sudo requirements. You can add Docker (Phase 1) later when available.
 
-The combination of Docker deployment + HTTP client + async integration perfectly addresses your performance, stability, and concurrency requirements without complex architectural changes.
+The combination of native HTTP server + async integration perfectly addresses your performance requirements and works on every deployment target.
 
 ---
 
 ## 📋 **Implementation Checklist**
 
-### **Phase 1: Docker Setup (30 mins)**
-- [ ] Create `docker-compose.yml` with ChromaDB service
+### **Phase 0: Native Server (10 mins)** ⭐ **START HERE**
+- [ ] Install ChromaDB: `pip install chromadb`
+- [ ] Start server: `chroma run --host localhost --port 8000 --path ./chroma_data`
 - [ ] Add environment variables to `.env`
+- [ ] Test connectivity with `test_chroma_connection.py`
+- [ ] Verify application connects successfully
+
+### **Phase 1: Docker Setup (30 mins)** (Optional)
+- [ ] Create `docker-compose.yml` with ChromaDB service
 - [ ] Start Docker container and verify health
 - [ ] Test basic connectivity from app
+- [ ] Document for team/production use
 
 ### **Phase 2: Code Migration (2-3 hours)**
 - [ ] Update `settings.py` with HTTP client configuration
@@ -278,6 +392,7 @@ The combination of Docker deployment + HTTP client + async integration perfectly
 - [ ] Update `retriever.py` to use async methods
 - [ ] Implement health check in main app
 - [ ] Add error handling and retry logic
+- [ ] Update `check_chroma.py` to use HttpClient with env configuration
 
 ### **Phase 3: Testing & Optimization (1-2 hours)**
 - [ ] Create performance testing script
@@ -288,7 +403,7 @@ The combination of Docker deployment + HTTP client + async integration perfectly
 
 ### **Phase 4: Production Deployment**
 - [ ] Backup existing ChromaDB data
-- [ ] Deploy to production with zero downtime
+- [ ] Deploy with native server OR Docker (environment-dependent)
 - [ ] Monitor performance metrics
 - [ ] Validate user experience improvements
 
@@ -303,5 +418,5 @@ The combination of Docker deployment + HTTP client + async integration perfectly
 
 ---
 
-*Last Updated: 2025-01-31*
+*Last Updated: 2025-02-02*
 *Author: OpenCode Agent*
