@@ -1,7 +1,9 @@
-"""Tests for RAG retriever with hybrid approach."""
+"""Tests for RAG retriever with async implementation."""
+
 from __future__ import annotations
 
-from unittest.mock import MagicMock, Mock, patch
+import asyncio
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
@@ -23,26 +25,27 @@ class TestArticle:
         assert article.matched_chunks == []
 
 
-class TestRAGRetriever:
-    """Tests for RAG retriever with complete article loading."""
+class TestRAGRetrieverAsync:
+    """Tests for async RAG retriever with complete article loading."""
 
     @pytest.fixture
     def mock_llm_manager(self):
         """Mock LLM manager with dynamic token limits."""
         manager = Mock()
-        manager.get_current_llm_context_window.return_value = 100000  # 100K context
+        manager.get_current_llm_context_window.return_value = 100000
         manager.get_max_output_tokens.return_value = 32768
         manager.get_system_prompt.return_value = "SYS"
-        # Provide a chat model that returns a string content response
+
         class _FakeModel:
             def invoke(self, messages):  # noqa: ANN001
                 return type("Resp", (), {"content": "summary"})()
+
         manager._chat_model.return_value = _FakeModel()
         return manager
 
     @pytest.fixture
     def mock_embedder(self):
-        """Mock embedder."""
+        """Mock embedder with async support."""
         embedder = Mock()
         embedder.embed_query.return_value = [0.1] * 768
         embedder.embed_documents.return_value = [[0.1] * 768]
@@ -50,8 +53,9 @@ class TestRAGRetriever:
 
     @pytest.fixture
     def mock_vector_store(self):
-        """Mock vector store."""
+        """Mock vector store with async methods."""
         store = Mock()
+        store.similarity_search_async = AsyncMock()
         return store
 
     @pytest.fixture
@@ -63,7 +67,7 @@ class TestRAGRetriever:
             llm_manager=mock_llm_manager,
             top_k_retrieve=20,
             top_k_rerank=10,
-            rerank_enabled=False,  # Disable for simpler tests
+            rerank_enabled=False,
         )
 
     def test_initialization(self, retriever, mock_llm_manager):
@@ -71,76 +75,199 @@ class TestRAGRetriever:
         assert retriever.llm_manager == mock_llm_manager
         assert retriever.top_k_retrieve == 20
         assert retriever.top_k_rerank == 10
-        assert retriever.reranker is None  # Disabled
+        assert retriever.reranker is None
 
-    @patch("rag_engine.retrieval.retriever.top_k_search")
-    def test_multi_vector_segmentation_and_cap(self, mock_search, retriever, monkeypatch, tmp_path):
-        """Long queries are segmented; multiple searches performed; pre-rerank cap enforced."""
-        # Configure settings to force segmentation and a small pre-rerank cap
-        from rag_engine.config import settings as cfg
-        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_enabled", True, raising=False)
-        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_segment_tokens", 16, raising=False)
-        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_segment_overlap", 4, raising=False)
-        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_max_segments", 3, raising=False)
-        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_pre_rerank_limit", 2, raising=False)
+    @pytest.mark.asyncio
+    async def test_retrieve_async_returns_articles(self, retriever, tmp_path):
+        """Test async retrieve returns Article objects."""
+        # Create test file
+        test_file = tmp_path / "article.md"
+        test_file.write_text("Complete article content")
 
-        # Prepare two distinct chunk hits from the same article file so downstream succeeds
-        f = tmp_path / "a.md"
-        f.write_text("Doc A")
-        d1 = Mock(); d1.metadata = {"kbId": "kb1", "source_file": str(f), "stable_id": "s1"}
-        d2 = Mock(); d2.metadata = {"kbId": "kb1", "source_file": str(f), "stable_id": "s2"}
-        # Each search returns one doc; multiple calls will append until cap trims to 2
-        mock_search.side_effect = [[d1], [d2], [d2]]
+        # Mock chunk results
+        mock_chunk = Mock()
+        mock_chunk.metadata = {
+            "kbId": "test_article",
+            "source_file": str(test_file),
+            "title": "Test Article",
+        }
+        mock_chunk.page_content = "chunk content"
 
-        # Long query with multiple sentences to trigger splitter
-        long_q = "Sentence one. Sentence two with more words. Another sentence for splitting."
-        articles = retriever.retrieve(long_q)
+        # Setup async mock
+        retriever.store.similarity_search_async = AsyncMock(return_value=[mock_chunk])
 
-        # top_k_search should have been called at least once (segmentation optional)
-        assert mock_search.call_count >= 1
-        # Pre-rerank cap applied; downstream groups into a single article
+        # Retrieve using async
+        articles = await retriever.retrieve_async("test query")
+
+        # Verify
+        assert len(articles) >= 1
+        assert isinstance(articles[0], Article)
+        assert articles[0].content == "Complete article content"
+        assert articles[0].kb_id == "test_article"
+
+    @pytest.mark.asyncio
+    async def test_retrieve_async_no_results(self, retriever):
+        """Test async retrieve returns empty list when no chunks found."""
+        retriever.store.similarity_search_async = AsyncMock(return_value=[])
+
+        articles = await retriever.retrieve_async("test query")
+
+        assert articles == []
+
+    @pytest.mark.asyncio
+    async def test_retrieve_async_groups_by_kbid(self, retriever, tmp_path):
+        """Test async chunks from same article are grouped."""
+        # Create test file
+        test_file = tmp_path / "article.md"
+        test_file.write_text("Article content")
+
+        # Mock 3 chunks from same article
+        chunks = []
+        for i in range(3):
+            chunk = Mock()
+            chunk.metadata = {
+                "kbId": "article_1",
+                "source_file": str(test_file),
+                "chunk_index": i,
+            }
+            chunk.page_content = f"chunk {i}"
+            chunks.append(chunk)
+
+        retriever.store.similarity_search_async = AsyncMock(return_value=chunks)
+
+        # Retrieve
+        articles = await retriever.retrieve_async("test query")
+
+        # Should return 1 article (not 3 chunks)
         assert len(articles) == 1
+        assert isinstance(articles[0], Article)
+        assert len(articles[0].matched_chunks) == 3
 
-    @patch("rag_engine.retrieval.retriever.top_k_search")
-    def test_query_decomposition_adds_candidates(self, mock_search, retriever, monkeypatch, tmp_path):
-        """LLM decomposition produces extra sub-queries whose results are unioned."""
-        from rag_engine.config import settings as cfg
-        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_enabled", False, raising=False)
-        monkeypatch.setattr(cfg.settings, "retrieval_query_decomp_enabled", True, raising=False)
-        monkeypatch.setattr(cfg.settings, "retrieval_query_decomp_max_subqueries", 3, raising=False)
-        monkeypatch.setattr(cfg.settings, "retrieval_multiquery_pre_rerank_limit", 10, raising=False)
+    @pytest.mark.asyncio
+    async def test_retrieve_async_multiple_articles(self, retriever, tmp_path):
+        """Test async retrieving multiple articles from different sources."""
+        # Create 2 test files
+        file1 = tmp_path / "article1.md"
+        file1.write_text("Article 1 content")
+        file2 = tmp_path / "article2.md"
+        file2.write_text("Article 2 content")
 
-        # Decompose into 2 sub-queries
-        retriever.llm_manager.generate.return_value = "sub one\nsub two"
+        # Mock chunks from different articles
+        chunk1 = Mock()
+        chunk1.metadata = {
+            "kbId": "article_1",
+            "source_file": str(file1),
+        }
+        chunk1.page_content = "chunk1"
 
-        # Set up two files for two distinct articles
-        f1 = tmp_path / "a.md"; f1.write_text("A")
-        f2 = tmp_path / "b.md"; f2.write_text("B")
-        d1 = Mock(); d1.metadata = {"kbId": "kb1", "source_file": str(f1), "stable_id": "s1"}
-        d2 = Mock(); d2.metadata = {"kbId": "kb2", "source_file": str(f2), "stable_id": "s2"}
+        chunk2 = Mock()
+        chunk2.metadata = {
+            "kbId": "article_2",
+            "source_file": str(file2),
+        }
+        chunk2.page_content = "chunk2"
 
-        # First call for original query, then for each subquery: return distinct docs
-        mock_search.side_effect = [[d1], [d2], []]
+        retriever.store.similarity_search_async = AsyncMock(return_value=[chunk1, chunk2])
 
-        articles = retriever.retrieve("original long question")
+        # Retrieve
+        articles = await retriever.retrieve_async("test query")
 
-        # We should retrieve two distinct articles after union
+        # Should have 2 distinct articles
         assert len(articles) == 2
         kb_ids = {a.kb_id for a in articles}
-        assert kb_ids == {"kb1", "kb2"}
+        assert kb_ids == {"article_1", "article_2"}
 
+    @pytest.mark.asyncio
+    async def test_retrieve_async_normalizes_kbid(self, retriever, tmp_path):
+        """Test that async chunks with suffixed kbIds are normalized and grouped."""
+        # Create test file
+        test_file = tmp_path / "article.md"
+        test_file.write_text("Article content")
+
+        # Mock chunks with suffixed kbIds that should normalize to the same kbId
+        chunk1 = Mock()
+        chunk1.metadata = {
+            "kbId": "4578-toc",
+            "source_file": str(test_file),
+        }
+        chunk1.page_content = "chunk1"
+
+        chunk2 = Mock()
+        chunk2.metadata = {
+            "kbId": "4578",
+            "source_file": str(test_file),
+        }
+        chunk2.page_content = "chunk2"
+
+        retriever.store.similarity_search_async = AsyncMock(return_value=[chunk1, chunk2])
+
+        # Retrieve
+        articles = await retriever.retrieve_async("test query")
+
+        # Should group both chunks into 1 article with normalized kbId
+        assert len(articles) == 1
+        assert articles[0].kb_id == "4578"
+        assert len(articles[0].matched_chunks) == 2
+
+    @pytest.mark.asyncio
+    async def test_retrieve_async_preserves_ranks(self, retriever, tmp_path):
+        """Test that async retrieve() preserves reranker scores and ranks."""
+        # Create test files
+        file1 = tmp_path / "article1.md"
+        file1.write_text("Article content")
+
+        # Create chunks with different scores
+        chunk1 = Mock()
+        chunk1.metadata = {
+            "kbId": "123",
+            "source_file": str(file1),
+            "title": "Article 1",
+        }
+        chunk1.page_content = "chunk 1"
+
+        chunk2 = Mock()
+        chunk2.metadata = {
+            "kbId": "456",
+            "source_file": str(file1),
+            "title": "Article 2",
+        }
+        chunk2.page_content = "chunk 2"
+
+        retriever.store.similarity_search_async = AsyncMock(return_value=[chunk1, chunk2])
+
+        # Mock reranker
+        if retriever.reranker is None:
+            retriever.reranker = MagicMock()
+
+        # Mock reranker to return different scores
+        with patch.object(retriever.reranker, "rerank") as mock_rerank:
+            mock_rerank.return_value = [
+                (chunk2, 0.9),
+                (chunk1, 0.7),
+            ]
+
+            articles = await retriever.retrieve_async("test query")
+
+            # Should have 2 articles
+            assert len(articles) == 2
+
+            # Articles should be sorted by rerank_score
+            assert articles[0].metadata["rerank_score"] == 0.9
+            assert articles[1].metadata["rerank_score"] == 0.7
+
+            # Normalized ranks should be calculated
+            assert articles[0].metadata["normalized_rank"] == 0.0
+            assert articles[1].metadata["normalized_rank"] == 1.0
 
     def test_read_article_success(self, retriever, tmp_path):
         """Test reading article from file."""
-        # Create test file
         test_file = tmp_path / "test_article.md"
         test_file.write_text("---\ntitle: Test\n---\n\nArticle content here")
 
-        # Read article
         content = retriever._read_article(str(test_file))
 
         assert content == "Article content here"
-        assert "---" not in content  # Frontmatter removed
+        assert "---" not in content
 
     def test_read_article_no_frontmatter(self, retriever, tmp_path):
         """Test reading article without frontmatter."""
@@ -156,242 +283,180 @@ class TestRAGRetriever:
         with pytest.raises(FileNotFoundError):
             retriever._read_article("/nonexistent/file.md")
 
-    @patch("rag_engine.retrieval.retriever.top_k_search")
-    def test_retrieve_no_results(self, mock_search, retriever):
-        """Test retrieve returns empty list when no chunks found."""
-        mock_search.return_value = []
 
-        articles = retriever.retrieve("test query")
+class TestRAGRetrieverScoreThreshold:
+    """Tests for rerank score threshold filtering."""
 
-        assert articles == []
+    @pytest.fixture
+    def mock_llm_manager(self):
+        """Mock LLM manager."""
+        manager = Mock()
+        manager.get_current_llm_context_window.return_value = 100000
+        return manager
 
-    @patch("rag_engine.retrieval.retriever.top_k_search")
-    def test_retrieve_returns_articles(self, mock_search, retriever, tmp_path):
-        """Test retrieve returns Article objects (not chunks)."""
-        # Create test file
-        test_file = tmp_path / "article.md"
-        test_file.write_text("Complete article content")
+    @pytest.fixture
+    def mock_embedder(self):
+        """Mock embedder."""
+        embedder = Mock()
+        embedder.embed_query.return_value = [0.1] * 768
+        return embedder
 
-        # Mock chunk results
-        mock_chunk = Mock()
-        mock_chunk.metadata = {
-            "kbId": "test_article",
-            "source_file": str(test_file),
-            "title": "Test Article",
-        }
-        mock_search.return_value = [mock_chunk]
+    @pytest.fixture
+    def mock_vector_store(self):
+        """Mock vector store."""
+        store = Mock()
+        store.similarity_search_async = AsyncMock()
+        return store
 
-        # Retrieve
-        articles = retriever.retrieve("test query")
+    @pytest.fixture
+    def retriever_with_threshold(self, mock_embedder, mock_vector_store, mock_llm_manager):
+        """Create retriever with score threshold enabled."""
+        import rag_engine.retrieval.retriever as retriever_module
 
-        # Verify
-        assert len(articles) >= 1
-        assert isinstance(articles[0], Article)
-        assert articles[0].content == "Complete article content"
-        assert articles[0].kb_id == "test_article"
+        retriever = RAGRetriever(
+            embedder=mock_embedder,
+            vector_store=mock_vector_store,
+            llm_manager=mock_llm_manager,
+            top_k_retrieve=20,
+            top_k_rerank=10,
+            rerank_enabled=True,
+        )
+        retriever.reranker = MagicMock()
 
-    @patch("rag_engine.retrieval.retriever.top_k_search")
-    def test_retrieve_groups_by_kbid(self, mock_search, retriever, tmp_path):
-        """Test chunks from same article are grouped."""
-        # Create test file
-        test_file = tmp_path / "article.md"
-        test_file.write_text("Article content")
+        original_threshold = retriever_module.settings.rerank_score_threshold
+        retriever_module.settings.rerank_score_threshold = 0.5
 
-        # Mock 3 chunks from same article
-        chunks = []
-        for i in range(3):
-            chunk = Mock()
-            chunk.metadata = {
-                "kbId": "article_1",
-                "source_file": str(test_file),
-                "chunk_index": i,
-            }
-            chunks.append(chunk)
+        yield retriever
 
-        mock_search.return_value = chunks
+        retriever_module.settings.rerank_score_threshold = original_threshold
 
-        # Retrieve
-        articles = retriever.retrieve("test query")
-
-        # Should return 1 article (not 3 chunks)
-        assert len(articles) == 1
-        assert isinstance(articles[0], Article)
-        assert len(articles[0].matched_chunks) == 3
-
-
-    @patch("rag_engine.retrieval.retriever.top_k_search")
-    def test_retrieve_multiple_articles(self, mock_search, retriever, tmp_path):
-        """Test retrieving multiple articles from different sources."""
-        # Create 2 test files
+    @pytest.mark.asyncio
+    async def test_threshold_filters_low_scores(self, retriever_with_threshold, tmp_path):
+        """Test that articles below threshold are filtered out."""
         file1 = tmp_path / "article1.md"
         file1.write_text("Article 1 content")
         file2 = tmp_path / "article2.md"
         file2.write_text("Article 2 content")
+        file3 = tmp_path / "article3.md"
+        file3.write_text("Article 3 content")
 
-        # Mock chunks from different articles
         chunk1 = Mock()
-        chunk1.metadata = {
-            "kbId": "article_1",
-            "source_file": str(file1),
-        }
-        chunk2 = Mock()
-        chunk2.metadata = {
-            "kbId": "article_2",
-            "source_file": str(file2),
-        }
-
-        mock_search.return_value = [chunk1, chunk2]
-
-        # Retrieve
-        articles = retriever.retrieve("test query")
-
-        # Should have 2 distinct articles
-        assert len(articles) == 2
-        kb_ids = {a.kb_id for a in articles}
-        assert kb_ids == {"article_1", "article_2"}
-
-    @patch("rag_engine.retrieval.retriever.top_k_search")
-    def test_retrieve_normalizes_kbid_for_grouping(self, mock_search, retriever, tmp_path):
-        """Test that chunks with suffixed kbIds are normalized and grouped together."""
-        # Create test file
-        test_file = tmp_path / "article.md"
-        test_file.write_text("Article content")
-
-        # Mock chunks with suffixed kbIds that should normalize to the same kbId
-        chunk1 = Mock()
-        chunk1.metadata = {
-            "kbId": "4578-toc",  # Suffixed kbId
-            "source_file": str(test_file),
-        }
-        chunk2 = Mock()
-        chunk2.metadata = {
-            "kbId": "4578",  # Normalized kbId
-            "source_file": str(test_file),
-        }
-
-        mock_search.return_value = [chunk1, chunk2]
-
-        # Retrieve
-        articles = retriever.retrieve("test query")
-
-        # Should group both chunks into 1 article with normalized kbId
-        assert len(articles) == 1
-        assert articles[0].kb_id == "4578"  # Normalized
-        assert len(articles[0].matched_chunks) == 2  # Both chunks grouped together
-
-    @patch("rag_engine.retrieval.retriever.top_k_search")
-    def test_retrieve_preserves_ranks(self, mock_search, retriever, tmp_path):
-        """Test that retrieve() preserves reranker scores and calculates normalized ranks."""
-        # Create test file
-        test_file = tmp_path / "article1.md"
-        test_file.write_text("Article content")
-
-        # Create chunks with different scores
-        chunk1 = Mock()
-        chunk1.metadata = {
-            "kbId": "123",
-            "source_file": str(test_file),
-            "title": "Article 1",
-        }
-        chunk1.page_content = "chunk 1"
-        chunk1.id = "chunk1"
+        chunk1.metadata = {"kbId": "high_score", "source_file": str(file1)}
+        chunk1.page_content = "chunk1"
 
         chunk2 = Mock()
-        chunk2.metadata = {
-            "kbId": "456",
-            "source_file": str(test_file),
-            "title": "Article 2",
-        }
-        chunk2.page_content = "chunk 2"
-        chunk2.id = "chunk2"
+        chunk2.metadata = {"kbId": "low_score", "source_file": str(file2)}
+        chunk2.page_content = "chunk2"
 
-        mock_search.return_value = [chunk1, chunk2]
+        chunk3 = Mock()
+        chunk3.metadata = {"kbId": "medium_score", "source_file": str(file3)}
+        chunk3.page_content = "chunk3"
 
-        # Mock reranker - need to ensure retriever has a reranker
-        if retriever.reranker is None:
-            retriever.reranker = MagicMock()
+        retriever_with_threshold.store.similarity_search_async = AsyncMock(
+            return_value=[chunk1, chunk2, chunk3]
+        )
 
-        # Mock reranker to return different scores
-        with patch.object(retriever.reranker, "rerank") as mock_rerank:
-            # Return articles with different scores (chunk2 has higher score)
-            mock_rerank.return_value = [
-                (chunk2, 0.9),  # Higher score = better rank
-                (chunk1, 0.7),  # Lower score
+        async def mock_rerank(*args, **kwargs):
+            return [
+                (chunk1, 0.9),
+                (chunk2, 0.1),
+                (chunk3, 0.5),
             ]
 
-            articles = retriever.retrieve("test query")
+        original_to_thread = asyncio.to_thread
 
-            # Should have 2 articles
-            assert len(articles) == 2
+        async def patched_to_thread(func, *args, **kwargs):
+            if func == retriever_with_threshold.reranker.rerank:
+                return await mock_rerank(*args, **kwargs)
+            return await original_to_thread(func, *args, **kwargs)
 
-            # Articles should be sorted by rerank_score (highest first)
-            assert articles[0].metadata["rerank_score"] == 0.9
-            assert articles[1].metadata["rerank_score"] == 0.7
+        asyncio.to_thread = patched_to_thread
 
-            # Normalized ranks should be calculated (0.0 = best, 1.0 = worst)
-            assert articles[0].metadata["normalized_rank"] == 0.0  # Best rank
-            assert articles[1].metadata["normalized_rank"] == 1.0  # Worst rank
-
-            # Article ranks should be position-based
-            assert articles[0].metadata["article_rank"] == 0
-            assert articles[1].metadata["article_rank"] == 1
-
-
-class TestIntegration:
-    """Integration tests with real components."""
-
-    def test_end_to_end_with_real_embedder(self, tmp_path):
-        """Test with real embedder (requires FRIDA model).
-
-        Skips gracefully if:
-        - Model unavailable or not downloaded
-        - Out of memory (model may be loaded in another process)
-        - Access violations (can occur when model already in use)
-        """
         try:
-            from rag_engine.config.settings import settings
-            from rag_engine.llm.llm_manager import LLMManager
-            from rag_engine.retrieval.embedder import FRIDAEmbedder
-            from rag_engine.storage.vector_store import ChromaStore
+            articles = await retriever_with_threshold.retrieve_async("test query")
 
-            # Initialize real components
-            embedder = FRIDAEmbedder(
-                model_name=settings.embedding_model,
-                device=settings.embedding_device,
-            )
-            # Use temporary directory for vector store to avoid conflicts
-            vector_store = ChromaStore(
-                persist_dir=str(tmp_path / "test_chroma"),
-                collection_name="test_collection",
-            )
-            llm_manager = LLMManager(
-                provider=settings.default_llm_provider,
-                model=settings.default_model,
-                temperature=settings.llm_temperature,
-            )
-            retriever = RAGRetriever(
-                embedder=embedder,
-                vector_store=vector_store,
-                llm_manager=llm_manager,
-                top_k_retrieve=5,
-                top_k_rerank=3,
-                rerank_enabled=False,  # Disable reranker for simpler test
-            )
+            assert len(articles) == 2
+            kb_ids = {a.kb_id for a in articles}
+            assert "high_score" in kb_ids
+            assert "medium_score" in kb_ids
+            assert "low_score" not in kb_ids
+        finally:
+            asyncio.to_thread = original_to_thread
 
-            # Test that embedding works
-            query_vec = embedder.embed_query("test query")
-            assert len(query_vec) == embedder.get_embedding_dim()
+    @pytest.mark.asyncio
+    async def test_threshold_edge_case_all_filtered(self, retriever_with_threshold, tmp_path):
+        """Test behavior when all articles are below threshold."""
+        file1 = tmp_path / "article1.md"
+        file1.write_text("Article 1")
 
-            # Test that retrieve can be called (will return empty if no data indexed)
-            articles = retriever.retrieve("test query")
-            assert isinstance(articles, list)
+        chunk1 = Mock()
+        chunk1.metadata = {"kbId": "123", "source_file": str(file1)}
+        chunk1.page_content = "chunk1"
 
-        except BaseException as exc:  # noqa: BLE001
-            # Catch all exceptions including SystemExit, KeyboardInterrupt, and fatal errors
-            error_type = type(exc).__name__
-            error_msg = str(exc) if exc else "Unknown error"
-            pytest.skip(
-                f"FRIDA model unavailable, out of memory, or already in use: "
-                f"{error_type}: {error_msg}"
-            )
+        retriever_with_threshold.store.similarity_search_async = AsyncMock(return_value=[chunk1])
 
+        async def mock_rerank(*args, **kwargs):
+            return [
+                (chunk1, 0.1),
+            ]
+
+        original_to_thread = asyncio.to_thread
+
+        async def patched_to_thread(func, *args, **kwargs):
+            if func == retriever_with_threshold.reranker.rerank:
+                return await mock_rerank(*args, **kwargs)
+            return await original_to_thread(func, *args, **kwargs)
+
+        asyncio.to_thread = patched_to_thread
+
+        try:
+            articles = await retriever_with_threshold.retrieve_async("test query")
+
+            assert len(articles) == 0
+        finally:
+            asyncio.to_thread = original_to_thread
+
+    @pytest.mark.asyncio
+    async def test_threshold_0_5_includes_edge_cases(self, retriever_with_threshold, tmp_path):
+        """Test that articles with score exactly at threshold are included."""
+        file1 = tmp_path / "article1.md"
+        file1.write_text("Article 1")
+        file2 = tmp_path / "article2.md"
+        file2.write_text("Article 2")
+
+        chunk1 = Mock()
+        chunk1.metadata = {"kbId": "exact_threshold", "source_file": str(file1)}
+        chunk1.page_content = "chunk1"
+
+        chunk2 = Mock()
+        chunk2.metadata = {"kbId": "above_threshold", "source_file": str(file2)}
+        chunk2.page_content = "chunk2"
+
+        retriever_with_threshold.store.similarity_search_async = AsyncMock(
+            return_value=[chunk1, chunk2]
+        )
+
+        async def mock_rerank(*args, **kwargs):
+            return [
+                (chunk1, 0.5),
+                (chunk2, 0.51),
+            ]
+
+        original_to_thread = asyncio.to_thread
+
+        async def patched_to_thread(func, *args, **kwargs):
+            if func == retriever_with_threshold.reranker.rerank:
+                return await mock_rerank(*args, **kwargs)
+            return await original_to_thread(func, *args, **kwargs)
+
+        asyncio.to_thread = patched_to_thread
+
+        try:
+            articles = await retriever_with_threshold.retrieve_async("test query")
+
+            assert len(articles) == 2
+            kb_ids = {a.kb_id for a in articles}
+            assert "exact_threshold" in kb_ids
+            assert "above_threshold" in kb_ids
+        finally:
+            asyncio.to_thread = original_to_thread

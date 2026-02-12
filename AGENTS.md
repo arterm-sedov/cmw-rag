@@ -30,21 +30,69 @@ Use `pytest` for testing. Configuration is in `pyproject.toml`.
   pytest --cov=rag_engine --cov-report=term-missing
   ```
 
-### 3. Linting & Formatting
-The project uses `ruff` for linting and import sorting. Configuration is in `pyproject.toml`.
-- **Check all files:**
-  ```bash
-  ruff check rag_engine/
-  ```
-- **Check a specific file:**
-  ```bash
-  ruff check path/to/file.py
-  ```
-- **Fix issues (safe fixes):**
-  ```bash
-  ruff check --fix path/to/file.py
-  ```
-- **Note:** Only lint the files that were modified, not the entire codebase. Be critical about Ruff reports; implement only necessary changes.
+### 5. Test Practices
+
+Following industry best practices from Google Test Primer and IBM Unit Testing Guidelines:
+
+#### Test Behavior, Not Implementation
+
+**Core Principle:** Tests should validate what code **does**, not **how** it does it.
+
+**❌ BAD - Testing implementation details:**
+```python
+# Testing hardcoded ports or specific paths
+def test_config_loads_infinity():
+    config = load_embedding_config("infinity_qwen3_8b")
+    assert config.endpoint == "http://localhost:8000/v1"  # Fragile!
+    mock_post.assert_called_once_with("/v1/embeddings")  # Implementation detail!
+```
+
+**✅ GOOD - Testing behavior:**
+```python
+# Testing valid configuration and functionality
+def test_config_loads_infinity():
+    config = load_embedding_config("infinity_qwen3_8b")
+    assert config.endpoint.startswith("http://localhost:")  # Valid URL pattern
+    assert "/v1" in config.endpoint  # Functional requirement
+    assert config.type == "server"
+```
+
+**Key Guidelines:**
+
+1. **Test Outcomes, Not Mechanisms**
+   - Test that a feature works correctly
+   - Don't test internal function calls or implementation paths
+   - Example: Test that config returns a valid server endpoint, not which port is used
+
+2. **Avoid Hardcoded Values**
+   - Don't assert on specific ports, paths, or internal states
+   - Assert on functional requirements and valid patterns
+   - Example: Assert endpoint is a valid URL, not "http://localhost:8000"
+
+3. **Test Behavior Contracts**
+   - Define what the function should do (inputs → outputs)
+   - Test the contract, not the implementation
+   - Example: "Given a query, return relevant articles" not "call vector_search()"
+
+4. **Use Mocks Judiciously**
+   - Mock external dependencies (databases, APIs)
+   - Don't mock internal implementation details
+   - Example: Mock ChromaDB client, not internal collection.get()
+
+5. **Test Real Scenarios**
+   - Test user-facing behavior
+   - Test edge cases and error handling
+   - Example: Test "no results found" scenario, not "empty list returned"
+
+**Benefits of Testing Behavior:**
+- ✅ Tests remain valid when implementation changes
+- ✅ Tests document intended functionality
+- ✅ Easier to refactor code without breaking tests
+- ✅ Tests serve as specifications
+
+**References:**
+- [Google Test Primer](https://google.github.io/googletest/primer.html)
+- [IBM Unit Testing Best Practices](https://www.ibm.com/think/insights/unit-testing-best-practices)
 
 ### 4. Running the Application
 - **Start App (Bash):** `bash rag_engine/scripts/start_app.sh`
@@ -107,11 +155,13 @@ The project uses `ruff` for linting and import sorting. Configuration is in `pyp
     - Run relevant tests after changes.
     - Reanalyze changes twice for introduced issues.
 - **Secrets:** NEVER hardcode secrets. Use environment variables.
+- **.env Files:** NEVER commit `.env` files to version control. Use `.env-example` as a template with placeholder values only. The `.env` file contains sensitive credentials and deployment-specific settings.
 - **No Breakage:** Never break existing code.
 - **Git Commits:** Do NOT create or push commits unless explicitly asked by the user.
 
 ### 12-Factor App Principles
-Following twelve-factor methodology for SaaS apps:
+
+Follow the twelve-factor methodology:
 
 - **Codebase:** One codebase tracked in revision control, many deploys.
 - **Dependencies:** Declare all dependencies explicitly in `requirements.txt` (and `pyproject.toml` for build metadata). See Environment Setup section for isolation commands.
