@@ -127,7 +127,7 @@ def format_guard_badge(guard_info: dict | None) -> str:
         guard_info: Dict with safety_level, categories, is_safe, refusal
 
     Returns:
-        HTML badge string showing safety level and categories
+        HTML badge string showing safety level and localized categories
     """
     if not guard_info:
         return ""
@@ -147,11 +147,36 @@ def format_guard_badge(guard_info: dict | None) -> str:
         color = "#F44336"  # red
         level_text = i18n_resolve("guard_level_unsafe")
 
+    # Map English category names to i18n keys
+    category_mapping = {
+        "Violence": "cat_violence",
+        "Sexual": "cat_sexual",
+        "PII": "cat_pii",
+        "Self-Harm": "cat_self_harm",
+        "Harassment": "cat_harassment",
+        "Hate Speech": "cat_hate",
+        "Illegal Acts": "cat_illegal",
+        "Non-violent Illegal Acts": "cat_illegal",
+        "Unethical Acts": "cat_unethical",
+        "Politically Sensitive": "cat_politically",
+        "Copyright": "cat_copyright",
+        "Copyright Violation": "cat_copyright",
+        "Jailbreak": "cat_jailbreak",
+        "Spam": "cat_spam",
+    }
+
+    # Localize categories
+    localized_cats = []
+    for cat in categories:
+        i18n_key = category_mapping.get(cat, "cat_other")
+        localized_cat = i18n_resolve(i18n_key)
+        localized_cats.append(localized_cat)
+
     # Format categories (show first 2, truncate if too long)
-    if categories:
-        cats_str = ", ".join(categories[:2])
-        if len(categories) > 2:
-            cats_str += f" +{len(categories) - 2}"
+    if localized_cats:
+        cats_str = ", ".join(localized_cats[:2])
+        if len(localized_cats) > 2:
+            cats_str += f" +{len(localized_cats) - 2}"
         content = f"{level_text} | {cats_str}"
     else:
         content = level_text
