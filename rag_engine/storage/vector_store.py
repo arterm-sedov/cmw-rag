@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import chromadb
-from chromadb.config import Settings as ChromaSettings
 
 from rag_engine.config.settings import settings
 
@@ -27,7 +26,7 @@ class ChromaStore:
         port: int | None = None,
     ):
         self.collection_name = collection_name
-        self.host = host or settings.chromadb_host
+        self.host = host or settings.chroma_client_host
         self.port = port or settings.chromadb_port
         self._async_client: chromadb.AsyncHttpClient | None = None
         self._async_collection = None
@@ -35,15 +34,10 @@ class ChromaStore:
     async def _get_async_client(self) -> chromadb.AsyncHttpClient:
         """Lazy initialization of async HTTP client."""
         if self._async_client is None:
-            chroma_settings = ChromaSettings(
-                chroma_http_keepalive_secs=settings.chromadb_http_keepalive_secs,
-                chroma_http_max_connections=settings.chromadb_max_connections,
-            )
             self._async_client = await chromadb.AsyncHttpClient(
                 host=self.host,
                 port=self.port,
                 ssl=settings.chromadb_ssl,
-                settings=chroma_settings,
             )
         return self._async_client
 

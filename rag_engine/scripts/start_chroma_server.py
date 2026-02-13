@@ -90,7 +90,7 @@ def read_env_file(env_path: Path) -> dict[str, str]:
 def get_chroma_config(env_vars: dict[str, str]) -> dict[str, str | int]:
     """Extract ChromaDB configuration from env vars."""
     config = {
-        "host": env_vars.get("CHROMADB_HOST", "localhost"),
+        "host": env_vars.get("CHROMA_SERVER_BIND", "0.0.0.0"),
         "port": int(env_vars.get("CHROMADB_PORT", "8000")),
         "persist_dir": env_vars.get("CHROMADB_PERSIST_DIR", "./data/chromadb_data"),
     }
@@ -257,7 +257,7 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
     env_vars = read_env_file(env_path)
 
     # Check if required vars are present
-    required_vars = ["CHROMADB_HOST", "CHROMADB_PORT", "CHROMADB_PERSIST_DIR"]
+    required_vars = ["CHROMA_SERVER_BIND", "CHROMADB_PORT", "CHROMADB_PERSIST_DIR"]
     missing = [var for var in required_vars if var not in env_vars]
     if missing:
         print(f"⚠️  Warning: Missing required variables in .env: {', '.join(missing)}")
