@@ -77,7 +77,7 @@ def test_connection(url: str) -> bool:
 
 def get_default_url() -> str:
     """Construct URL from environment variables per 12-Factor principles."""
-    host = os.getenv("CHROMADB_HOST", "localhost")
+    host = os.getenv("CHROMA_CLIENT_HOST", "localhost")
     port = os.getenv("CHROMADB_PORT", "8000")
     ssl = os.getenv("CHROMADB_SSL", "false").lower() == "true"
     protocol = "https" if ssl else "http"
@@ -98,7 +98,7 @@ Examples:
   python test_chroma_connection.py --url http://localhost:8000
 
 Environment Variables (from .env):
-  CHROMADB_HOST (default: localhost)
+  CHROMA_CLIENT_HOST (default: localhost)
   CHROMADB_PORT (default: 8000)
   CHROMADB_SSL (default: false)
 

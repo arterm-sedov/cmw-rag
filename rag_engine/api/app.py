@@ -152,24 +152,24 @@ try:
     import chromadb
 
     health_client = chromadb.HttpClient(
-        host=settings.chromadb_host,
+        host=settings.chroma_client_host,
         port=settings.chromadb_port,
     )
     health_client.heartbeat()
     logger.info(
         "✅ ChromaDB HTTP server healthy at %s:%d",
-        settings.chromadb_host,
+        settings.chroma_client_host,
         settings.chromadb_port,
     )
 except Exception as e:
     logger.error(
         "❌ ChromaDB HTTP server unreachable at %s:%d - %s",
-        settings.chromadb_host,
+        settings.chroma_client_host,
         settings.chromadb_port,
         str(e),
     )
     raise RuntimeError(
-        f"Cannot connect to ChromaDB server at {settings.chromadb_host}:{settings.chromadb_port}. "
+        f"Cannot connect to ChromaDB server at {settings.chroma_client_host}:{settings.chromadb_port}. "
         "Ensure 'chroma run' is started or Docker container is running."
     ) from e
 

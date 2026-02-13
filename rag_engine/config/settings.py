@@ -38,16 +38,18 @@ class Settings(BaseSettings):
     chromadb_persist_dir: str
     chromadb_collection: str
     # ChromaDB HTTP client configuration
-    # Must be set in .env - no defaults to ensure single source of truth
-    chromadb_host: str
+    # chroma_client_host: RAG agent connects to this address
+    # chroma_server_bind: ChromaDB server binds to this address (0.0.0.0 = all interfaces)
+    chroma_client_host: str
+    chroma_server_bind: str
     chromadb_port: int
     chromadb_ssl: bool
     # How long to keep HTTP connections alive (prevents premature disconnects, e.g., 60.0 seconds)
-    # Maps to ChromaDB's chroma_http_keepalive_secs setting
-    chromadb_http_keepalive_secs: float
+    # Maps to ChromaDB's CHROMA_HTTP_KEEPALIVE_SECS environment variable
+    chroma_http_keepalive_secs: float
     # Maximum number of connections in the pool
-    # Maps to ChromaDB's chroma_http_max_connections setting
-    chromadb_max_connections: int
+    # Maps to ChromaDB's CHROMA_HTTP_MAX_CONNECTIONS environment variable
+    chroma_http_max_connections: int
 
     # Retrieval
     top_k_retrieve: int
