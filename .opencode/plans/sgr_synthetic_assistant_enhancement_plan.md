@@ -212,6 +212,8 @@ Based on research of LangChain, Anthropic, 12-Factor Agents, and Microsoft Seman
 
 ### Template Catalog (All Include ## Response Section)
 
+**Important:** UI response texts use i18n keys for internationalization, following the existing pattern in `rag_engine/api/i18n.py`.
+
 #### 1. Normal Template (High Confidence, Safe)
 
 ```markdown
@@ -232,12 +234,18 @@ Proceed with this plan to answer the user request:
 
 ## Response
 
-I'll help you with {user_intent}. Let me search our knowledge base for the most relevant information.
+{i18n_sgr_normal_response}
 ```
 
 **UI Output:**
 - User Intent (already shown)
-- Response: "I'll help you with [user intent]..."
+- Response: i18n text from `sgr_normal_response` key
+
+**i18n Keys:**
+```python
+"sgr_normal_response": "I'll help you with {user_intent}. Let me search our knowledge base for the most relevant information."
+"sgr_normal_response": "Я помогу вам с {user_intent}. Позвольте мне найти наиболее релевантную информацию в базе знаний."
+```
 
 #### 2. Uncertain Template (Low Confidence)
 
@@ -254,16 +262,25 @@ I'll help you with {user_intent}. Let me search our knowledge base for the most 
 
 ## Response
 
-I want to make sure I understand your request correctly. You mentioned {user_intent}, but I need some clarification:
+{i18n_sgr_clarify_intro}
 
 {clarification_question}
 
-Could you please provide more details so I can assist you better?
+{i18n_sgr_clarify_outro}
 ```
 
 **UI Output:**
 - User Intent (already shown)
-- Response: Clarification question
+- Response: i18n text + generated clarification question
+
+**i18n Keys:**
+```python
+"sgr_clarify_intro": "I want to make sure I understand your request correctly. You mentioned {user_intent}, but I need some clarification:"
+"sgr_clarify_intro": "Я хочу убедиться, что правильно понял ваш запрос. Вы упомянули {user_intent}, но мне нужно уточнение:"
+
+"sgr_clarify_outro": "Could you please provide more details so I can assist you better?"
+"sgr_clarify_outro": "Не могли бы вы предоставить больше деталей, чтобы я мог лучше помочь?"
+```
 
 #### 3. Spam Template (High Spam Score)
 
@@ -276,14 +293,18 @@ Could you please provide more details so I can assist you better?
 
 ## Response
 
-I notice this request doesn't appear to be related to Comindware Platform support. 
-
-I'm designed to help with Comindware Platform configuration, troubleshooting, and features. Please let me know if you'd like assistance with any of these topics.
+{i18n_sgr_spam_response}
 ```
 
 **UI Output:**
 - User Intent (already shown)
-- Response: Refusal message
+- Response: i18n text from `sgr_spam_response` key
+
+**i18n Keys:**
+```python
+"sgr_spam_response": "I notice this request doesn't appear to be related to Comindware Platform support.\n\nI'm designed to help with Comindware Platform configuration, troubleshooting, and features. Please let me know if you'd like assistance with any of these topics."
+"sgr_spam_response": "Я заметил, что этот запрос, похоже, не связан с поддержкой Comindware Platform.\n\nЯ предназначен для помощи с настройкой, устранением неполадок и функциями Comindware Platform. Пожалуйста, дайте мне знать, если вам нужна помощь с любой из этих тем."
+```
 
 #### 4. Guardian Blocked Template (Danger Score)
 
@@ -296,14 +317,18 @@ I'm designed to help with Comindware Platform configuration, troubleshooting, an
 
 ## Response
 
-I can't process this request as it may involve potentially harmful actions or content that could affect system security or stability.
-
-If you need assistance with this type of request, please contact your system administrator or Comindware support directly.
+{i18n_sgr_guardian_response}
 ```
 
 **UI Output:**
 - User Intent (already shown)
-- Response: Safety refusal
+- Response: i18n text from `sgr_guardian_response` key
+
+**i18n Keys:**
+```python
+"sgr_guardian_response": "I can't process this request as it may involve potentially harmful actions or content that could affect system security or stability.\n\nIf you need assistance with this type of request, please contact your system administrator or Comindware support directly."
+"sgr_guardian_response": "Я не могу обработать этот запрос, так как он может включать потенциально вредоносные действия или контент, который может повлиять на безопасность или стабильность системы.\n\nЕсли вам нужна помощь с таким типом запроса, пожалуйста, свяжитесь с системным администратором или службой поддержки Comindware напрямую."
+```
 
 ### Template Variables
 
@@ -321,10 +346,13 @@ TEMPLATE_VARIABLES = {
     "clarification_question": "Generated question",
     "action": "Enum: normal, clarify, block, guardian_block (ALSO template name)"
     # Note: guard_categories passed via prompt context from guardian call
+    # Note: i18n_* variables resolved via get_text() from rag_engine.api.i18n
 }
 ```
 
-**Key Design:** `action` enum values ARE the template names (normal, clarify, block, guardian_block). No mapping needed.
+**Key Design:** 
+- `action` enum values ARE the template names (normal, clarify, block, guardian_block). No mapping needed.
+- UI response texts use i18n keys resolved via existing `get_text()` function.
 
 ---
 
@@ -541,6 +569,8 @@ async def analyse_user_request(
 ### Handler Responsibility (Orchestration with Three Outputs)
 
 ```python
+from rag_engine.api.i18n import get_text
+
 # In agent_chat_handler:
 
 # 0. Pre-step: Guardian assessment (if enabled)
@@ -571,22 +601,36 @@ messages.append({
     "content": synthetic_analysis  # OUTPUT 1: Synthetic Analysis → Context only
 })
 
-# 5. Extract and inject response section (all templates have ## Response)
-response_text = extract_response_section(synthetic_analysis)
+# 5. Build UI response using i18n (following existing pattern)
+user_intent_prefix = get_text("user_intent_prefix")  # "How I understood your request:"
+
+# Get template-specific response text from i18n
+if sgr_plan["action"] == "normal":
+    response_text = get_text("sgr_normal_response", user_intent=sgr_plan['user_intent'])
+elif sgr_plan["action"] == "clarify":
+    intro = get_text("sgr_clarify_intro", user_intent=sgr_plan['user_intent'])
+    outro = get_text("sgr_clarify_outro")
+    response_text = f"{intro}\n\n{sgr_plan['clarification_question']}\n\n{outro}"
+elif sgr_plan["action"] == "block":
+    response_text = get_text("sgr_spam_response")
+elif sgr_plan["action"] == "guardian_block":
+    response_text = get_text("sgr_guardian_response")
+
+# 6. Inject response to agent context (model sees this as its own response)
 messages.append({
     "role": "assistant",
     "content": response_text  # Part of OUTPUT 2: Synthetic Response → Context
 })
 
-# 6. UI emission: User intent + Response
-ui_message = f"**User Intent**\n\n{sgr_plan['user_intent']}\n\n{response_text}"
+# 7. UI emission: User intent + Response
+ui_message = f"**{user_intent_prefix}**\n\n{sgr_plan['user_intent']}\n\n{response_text}"
 gradio_history.append({
     "role": "assistant",
     "content": ui_message,  # OUTPUT 2: Synthetic Response → UI
     "metadata": {"ui_type": "sgr_response_with_intent"}
 })
 
-# 7. Route based on action enum
+# 8. Route based on action enum
 if sgr_plan["action"] in ["block", "guardian_block"]:
     # Skip further tool calls for blocking cases
     yield gradio_history
@@ -656,9 +700,14 @@ template = SGR_TEMPLATES[template_name]
 - [ ] Add new fields: `action` enum (values: normal, clarify, block, guardian_block), `intent_confidence`, `uncertainties`
 - [ ] **Remove from schema**: `template_hint` (derived from action), `guard_categories` (from prompt context)
 - [ ] Define template catalog (normal, clarify, block, guardian_block - all with ## Response)
+- [ ] **Add i18n keys** to `rag_engine/api/i18n.py`:
+  - `sgr_normal_response`
+  - `sgr_clarify_intro`, `sgr_clarify_outro`
+  - `sgr_spam_response`
+  - `sgr_guardian_response`
 - [ ] Implement template rendering functions in handler
 - [ ] Update `analyse_user_request` to return new schema fields
-- [ ] Modify `agent_chat_handler` to implement three-output architecture
+- [ ] Modify `agent_chat_handler` to implement three-output architecture with i18n
 - [ ] Add guardian context passing via prompt (separate from SGR tool schema)
 - [ ] Keep existing structured output flow for external use
 
@@ -760,6 +809,7 @@ template = SGR_TEMPLATES[template_name]
 | **Action IS template name** | 2026-02-13 | Simplify: action enum values match template names directly, no mapping needed |
 | **Guardian categories in prompt** | 2026-02-13 | Pass guardian assessment via prompt context, not as LLM-generated field |
 | **Remove template_hint** | 2026-02-13 | Handler derives template from action directly, no separate field needed |
+| **UI responses use i18n** | 2026-02-13 | Follow existing pattern: all user-facing texts go through i18n system |
 
 ---
 
