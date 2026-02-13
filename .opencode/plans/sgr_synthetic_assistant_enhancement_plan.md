@@ -2,6 +2,7 @@
 
 **Status:** DRAFT  
 **Created:** 2026-02-13  
+**Updated:** 2026-02-13 (Handler Rendering & Three-Output Architecture)  
 **Based on:** Analysis of current SGR implementation, novelty research, and conversation about synthetic message injection patterns
 
 ---
@@ -18,6 +19,15 @@
 Inject **synthetic assistant message** (natural language + structured sections) into model context as `role: "assistant"`, while keeping structured data for external processing.
 
 **Key Innovation:** Model believes it performed the analysis, eliminating cognitive dissonance between raw tool output and creative generation phase.
+
+### Three-Output Architecture (Simplified)
+Based on deep research into industry best practices (LangChain, Anthropic, 12-Factor Agents), we adopt a **clean separation** where:
+1. **Tool** returns pure structured data (`action` IS template name - no mapping)
+2. **Handler** renders templates and orchestrates flow
+3. **Guardian assessment** passed via prompt context (not LLM-generated)
+4. **Three outputs** are generated: synthetic analysis (context only), synthetic response (context + UI), structured metadata (downstream)
+
+**Key Simplification:** `action` enum values (normal, clarify, block, guardian_block) ARE the template names - no separate `template_hint` field needed.
 
 ---
 
@@ -58,46 +68,131 @@ Inject **synthetic assistant message** (natural language + structured sections) 
 
 ---
 
-## 3. Recommended Approach: Hybrid Structured Assistant Message
+## 3. Three-Output Architecture
 
-### Rationale
-User preference confirmed: **Option 3 (Hybrid)** - markdown with headers, not pure JSON, not pure natural language.
+### Overview
 
-**Why This Wins:**
-1. **Not overengineered** - Just markdown with headers
-2. **Sophisticated** - Model gets structured guidance, thinks naturally
-3. **Spam score handled** - Internal sections never shown to user
-4. **Best of both worlds** - Structure for system, flow for model
-5. **Template-friendly** - Deterministic, testable, maintainable
+Based on deep research of industry best practices (Anthropic's "Building Effective Agents", LangChain patterns, 12-Factor Agents principles), we adopt a **clean three-output architecture**:
 
-### Message Structure
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SGR TOOL (Pure Function)                  │
+│  Returns: Structured JSON with all metadata                 │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    HANDLER (Orchestrator)                    │
+│  Renders templates, decides routing, manages outputs        │
+└─────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          ▼                   ▼                   ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ Output 1:       │  │ Output 2:       │  │ Output 3:       │
+│ Synthetic       │  │ Synthetic       │  │ Structured      │
+│ Analysis        │  │ Response        │  │ Metadata        │
+│ (Agent Context) │  │ (Context + UI)  │  │ (Downstream)    │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+```
 
+### Output 1: Synthetic Analysis → Agent Context ONLY
+
+**Purpose:** Give model "its own" structured reasoning to continue from
+
+**Content:** Full template with all sections including `## Internal Assessment`
+
+**Recipients:**
+- ✅ Agent context (model sees this)
+- ❌ NOT shown in UI
+
+**Example:**
 ```markdown
 ## Request Analysis
 - **Topic**: Comindware Platform configuration
 - **Intent**: Set up Single Sign-On (SSO) integration
-- **Context**: Infrastructure/authentication setup
+- **Validity**: Legitimate support request [spam_score: 0.1]
+- **Confidence**: High (0.92)
 
 ## Internal Assessment
-- Validity: Legitimate support request [spam_score: 0.1, proceed: true]
-- Confidence: High (0.92)
 - Category: Technical configuration
-- Action: Provide detailed guidance
+- Action: proceed
 
 ## Approach
-1. Retrieve SSO configuration documentation
-2. Search for SAML and OAuth setup guides
-3. Identify prerequisites and requirements
-4. Provide step-by-step configuration steps
-5. Include common troubleshooting scenarios
+1. Retrieve SSO documentation
+2. Search for SAML guides
+3. Provide step-by-step instructions
 
 Proceeding with knowledge base search...
 ```
 
-**Key Sections:**
-- `Request Analysis` - User-facing, professional tone
-- `Internal Assessment` - System metadata (spam, confidence, danger scores)
-- `Approach` - Actionable plan for model to follow
+### Output 2: Synthetic Response → BOTH Context and UI
+
+**Purpose:** Immediate user-facing response for blocking/clarification cases
+
+**Content:** `## Response` section from template
+
+**Recipients:**
+- ✅ Agent context (model sees this as its own response)
+- ✅ UI (user sees this immediately)
+
+**When Generated:** All templates now include a response section
+
+**Template-Specific Responses:**
+
+| Template | Response Content |
+|----------|------------------|
+| **normal** | "I'll help you with [user intent]..." |
+| **uncertain** | "Please clarify the following..." |
+| **spam** | "Can't proceed, request unrelated..." |
+| **guardian** | "Can't process this request..." |
+
+### Output 3: Structured Metadata → Downstream Processing
+
+**Purpose:** Analytics, metrics, debugging, future tool inputs
+
+**Content:** Complete SGR plan with all fields
+
+**Recipients:**
+- ✅ `agent_context.sgr_plan` for structured end-of-turn output
+- ✅ Logging, metrics, A/B testing
+- ✅ Future downstream tools
+
+**Fields Included:**
+```python
+{
+  "spam_score": 0.1,
+  "spam_reason": "...",
+  "user_intent": "...",
+  "intent_confidence": 0.92,
+  "subqueries": [...],
+  "action_plan": [...],
+  "uncertainties": [...],
+  "action": "normal",           # Enum: normal, clarify, block, guardian_block
+  "clarification_question": "..."  # When action=clarify
+}
+```
+
+**Note:** `guard_categories` comes from preceding guardian call and is passed in the prompt context, not generated by the SGR tool.
+
+### Why Handler Rendering? (Deep Research Summary)
+
+Based on research of LangChain, Anthropic, 12-Factor Agents, and Microsoft Semantic Kernel:
+
+| Aspect | Tool Rendering | Handler Rendering |
+|--------|---------------|-------------------|
+| **Separation of Concerns** | ❌ Tool does too much | ✅ Tool = data, Handler = presentation |
+| **Reusability** | ❌ Locked to one template | ✅ Same tool, different presentations |
+| **Testability** | ❌ Hard to test variations | ✅ Test templates independently |
+| **Flexibility** | ❌ Must modify tool to change UI | ✅ Swap templates without touching tool |
+| **A/B Testing** | ❌ Tool changes needed | ✅ Just change handler config |
+| **Debugging** | ❌ Can't see raw data easily | ✅ Raw data always available |
+| **Future-proof** | ❌ Template logic in tool | ✅ Easy to add new templates |
+
+**Industry Consensus:**
+- **Anthropic:** "Simple, composable patterns... separate data extraction from orchestration"
+- **12-Factor Agents:** "Tools should be stateless and portable... orchestration logic belongs in the workflow layer"
+- **LangChain:** Tools return structured data, handlers decide presentation
 
 ---
 
@@ -115,9 +210,10 @@ Proceeding with knowledge base search...
 
 **Decision:** Templates for SGR reasoning (deterministic), model handles creative answer generation.
 
-### Template Catalog
+### Template Catalog (All Include ## Response Section)
 
 #### 1. Normal Template (High Confidence, Safe)
+
 ```markdown
 ## Request Analysis
 - **Topic**: {topic}
@@ -126,16 +222,25 @@ Proceeding with knowledge base search...
 - **Context**: {context}
 - **Validity**: Legitimate support request [spam_score: {spam_score}]
 - **Confidence**: High ({intent_confidence})
-- **Action**: Proceed with the next steps
+- **Action**: {action}
 
-## Next Steps
+## Approach
 
 Proceed with this plan to answer the user request:
 
 {action_plan_numbered}
+
+## Response
+
+I'll help you with {user_intent}. Let me search our knowledge base for the most relevant information.
 ```
 
+**UI Output:**
+- User Intent (already shown)
+- Response: "I'll help you with [user intent]..."
+
 #### 2. Uncertain Template (Low Confidence)
+
 ```markdown
 ## Request Analysis
 - **Topic**: {topic}
@@ -145,39 +250,60 @@ Proceed with this plan to answer the user request:
 - **Confidence**: Low ({intent_confidence})
 - **Uncertainties**:
     {uncertainties_bullets}
-- **Action**: Clarify the request, decline to proceed
+- **Action**: {action}
 
 ## Response
 
-Please clarify the following, so that I can proceed further:
+I want to make sure I understand your request correctly. You mentioned {user_intent}, but I need some clarification:
 
 {clarification_question}
+
+Could you please provide more details so I can assist you better?
 ```
 
+**UI Output:**
+- User Intent (already shown)
+- Response: Clarification question
+
 #### 3. Spam Template (High Spam Score)
+
 ```markdown
 ## Request Analysis
 - **Assessment**: Off-topic or spam request
 - **Validity**: Request unrelated to Comindware Platform [spam_score: {spam_score}]
 - **Reason**: {spam_reason}
-- **Action**: Request clarification, decline to proceed
+- **Action**: {action}
 
 ## Response
-Can't proceed, because the request does not seem to be related to Comindware Platform support.
-Please let me know if you'd like help with Comindware Platform configuration, troubleshooting, or features.
+
+I notice this request doesn't appear to be related to Comindware Platform support. 
+
+I'm designed to help with Comindware Platform configuration, troubleshooting, and features. Please let me know if you'd like assistance with any of these topics.
 ```
 
+**UI Output:**
+- User Intent (already shown)
+- Response: Refusal message
+
 #### 4. Guardian Blocked Template (Danger Score)
+
 ```markdown
 ## Request Analysis
 - **Assessment**: Request blocked by safety policy
 - **Validity**: Potentially harmful [guard_categories: {guard_categories}]
 - **Category**: Unsafe request
-- **Action**: Decline to proceed
+- **Action**: {action}
 
 ## Response
-Can't process this request as it does not seem to be safe.
+
+I can't process this request as it may involve potentially harmful actions or content that could affect system security or stability.
+
+If you need assistance with this type of request, please contact your system administrator or Comindware support directly.
 ```
+
+**UI Output:**
+- User Intent (already shown)
+- Response: Safety refusal
 
 ### Template Variables
 
@@ -189,18 +315,188 @@ TEMPLATE_VARIABLES = {
     "spam_score": "0.0-1.0",
     "spam_reason": "Explanation if spam",
     "intent_confidence": "0.0-1.0",
-    "guard_categories": {"object from guardian"},
     "category": "Request classification",
     "action_plan": "List of steps",
     "uncertainties": "List if confidence low",
     "clarification_question": "Generated question",
-    "guardian_reason": "Safety category if blocked"
+    "action": "Enum: normal, clarify, block, guardian_block (ALSO template name)"
+    # Note: guard_categories passed via prompt context from guardian call
 }
 ```
 
+**Key Design:** `action` enum values ARE the template names (normal, clarify, block, guardian_block). No mapping needed.
+
 ---
 
-## 5. Architecture: Clean Separation
+## 5. Architecture: Clean Separation (Handler Rendering)
+
+### Enhanced Pydantic Schema with Reasoning Descriptions
+
+The schema descriptions are **critical** - they enforce structured reasoning by guiding the model on how to think through each field:
+
+```python
+from enum import Enum
+from pydantic import BaseModel, Field
+
+class SGRAction(str, Enum):
+    """Action names ARE template names - no mapping needed."""
+    NORMAL = "normal"           # Proceed with normal assistance
+    CLARIFY = "clarify"         # Need clarification from user
+    BLOCK = "block"             # Spam/off-topic
+    GUARDIAN_BLOCK = "guardian_block"  # Safety concern from guardian
+
+class SGRPlanResult(BaseModel):
+    """Schema-Guided Reasoning (SGR) for Comindware Platform support requests.
+    
+    This schema enforces structured reasoning by requiring the model to:
+    1. Analyze request validity (spam assessment)
+    2. Extract and articulate user intent
+    3. Plan search strategy (subqueries)
+    4. Determine confidence and routing action
+    
+    Each field description guides the model through a specific reasoning step.
+    
+    Note: guard_categories comes from preceding guardian call (in prompt context),
+    not generated by this tool.
+    """
+
+    # STEP 1: Validity Assessment
+    spam_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "REASONING STEP 1 - Validity Assessment: "
+            "Evaluate if this request is appropriate for Comindware Platform support. "
+            "Think: Is this about Comindware configuration, troubleshooting, or features? "
+            "Scoring guide: "
+            "0.0-0.2: Clearly relevant to Comindware; "
+            "0.3-0.5: Ambiguous or partially related; "
+            "0.6-0.8: Likely irrelevant (general IT, unrelated software); "
+            "0.9-1.0: Obviously spam (ads, gibberish, malicious). "
+            "Provide your calculated score based on this analysis."
+        ),
+    )
+    
+    spam_reason: str = Field(
+        ...,
+        max_length=150,
+        description=(
+            "REASONING STEP 1b - Justification: "
+            "Explain your spam_score classification in 10-20 words. "
+            "If score < 0.5: explain why it's relevant; "
+            "If score >= 0.5: explain what's wrong with the request. "
+            "Write in Russian."
+        ),
+    )
+    
+    # STEP 2: Intent Extraction
+    user_intent: str = Field(
+        ...,
+        max_length=300,
+        description=(
+            "REASONING STEP 2 - Intent Understanding: "
+            "Synthesize what the user actually wants to achieve. "
+            "Think beyond keywords: What is their underlying goal? "
+            "What business problem are they trying to solve? "
+            "Write 1-2 clear sentences in Russian, as if explaining to a colleague."
+        ),
+    )
+    
+    # STEP 3: Search Strategy
+    subqueries: list[str] = Field(
+        ...,
+        min_length=1,
+        max_length=10,
+        description=(
+            "REASONING STEP 3 - Search Strategy: "
+            "Break down the user intent into 1-10 specific search queries. "
+            "Think: What specific terms would find relevant documentation? "
+            "Include: feature names, technical terms, error messages, synonyms. "
+            "Each query should be focused and specific. "
+            "Write in Russian, avoid duplicates."
+        ),
+    )
+    
+    action_plan: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description=(
+            "REASONING STEP 4 - Execution Plan: "
+            "Plan concrete steps to answer this request. "
+            "Think: What information do I need? In what order? "
+            "Consider: search docs → evaluate results → search more OR ask clarification → synthesize answer. "
+            "List up to 10 steps in Russian, as actionable instructions to yourself."
+        ),
+    )
+    
+    # STEP 5: Confidence Assessment
+    intent_confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "REASONING STEP 5 - Confidence Assessment: "
+            "How confident are you in your understanding of the user intent? "
+            "Think: Is the request clear? Do I understand the context? Are there ambiguities? "
+            "0.0-0.4: Very unclear, major uncertainties; "
+            "0.5-0.7: Somewhat clear but some gaps; "
+            "0.8-1.0: Clear and well-understood. "
+            "This affects whether you'll ask for clarification."
+        ),
+    )
+    
+    uncertainties: list[str] = Field(
+        default_factory=list,
+        max_length=5,
+        description=(
+            "REASONING STEP 5b - Uncertainty Analysis: "
+            "If intent_confidence < 0.7, list specific uncertainties. "
+            "Think: What don't I understand? What information is missing? "
+            "List up to 5 specific questions or gaps in Russian. "
+            "Empty list if confidence >= 0.7."
+        ),
+    )
+    
+    # STEP 6: Routing Decision (Action = Template Name)
+    action: SGRAction = Field(
+        ...,
+        description=(
+            "REASONING STEP 6 - Routing Decision (ALSO Template Selection): "
+            "Based on ALL previous reasoning steps, decide how to proceed. "
+            "NOTE: This value IS the template name - choose carefully: "
+            "'normal': spam_score < 0.7 AND intent_confidence >= 0.6 AND no safety issues from guardian; "
+            "'clarify': intent_confidence < 0.6 AND spam_score < 0.7; "
+            "'block': spam_score >= 0.7; "
+            "'guardian_block': safety issues detected (from prompt context). "
+            "Consider guardian assessment provided in prompt context."
+        ),
+    )
+    
+    # STEP 7: Clarification (if needed)
+    clarification_question: str | None = Field(
+        default=None,
+        max_length=300,
+        description=(
+            "REASONING STEP 7 - Clarification Strategy: "
+            "If action='clarify', formulate a specific helpful question. "
+            "Think: What information would most help me understand this request? "
+            "Ask about: missing context, ambiguous terms, specific use case, etc. "
+            "Write in Russian, be polite and specific. "
+            "None if action != 'clarify'."
+        ),
+    )
+```
+
+### Why Detailed Descriptions Matter
+
+The descriptions enforce **step-by-step structured reasoning**:
+
+1. **Sequential thinking:** Each field builds on previous ones
+2. **Explicit criteria:** Clear rubrics for scoring (spam_score, confidence)
+3. **Contextual guidance:** "Think beyond keywords", "as if explaining to a colleague"
+4. **Decision logic:** Clear rules for routing decisions
+5. **Self-consistency:** Later fields reference earlier reasoning
 
 ### Tool Responsibility (Pure Function)
 
@@ -212,15 +508,19 @@ async def analyse_user_request(
     user_intent: str,
     subqueries: list[str],
     action_plan: list[str],
-    intent_confidence: float,  # NEW
-    guard_categories: {"object from guardian"},  # NEW (from guardian)
-    ask_for_clarification: bool,
+    intent_confidence: float,
+    uncertainties: list[str],
+    action: SGRAction,
     clarification_question: str | None,
     runtime: ToolRuntime,
 ) -> str:
     """
     Pure function - returns analysis results only.
-    No side effects, no context mutation.
+    
+    Note: guard_categories comes from preceding guardian call (in prompt context),
+    not generated by this tool.
+    
+    The detailed schema descriptions guide the model through structured reasoning.
     Handler decides how to use results.
     """
     plan = {
@@ -230,118 +530,148 @@ async def analyse_user_request(
         "subqueries": subqueries,
         "action_plan": action_plan,
         "intent_confidence": intent_confidence,
-        "guard_categories": guard_categories,
-        "ask_for_clarification": ask_for_clarification,
+        "uncertainties": uncertainties,
+        "action": action,
         "clarification_question": clarification_question,
-        "template_hint": select_template_hint(
-            spam_score, intent_confidence, guard_categories
-        ),
     }
     
     return json.dumps(plan, ensure_ascii=False)
 ```
 
-### Handler Responsibility (Orchestration)
+### Handler Responsibility (Orchestration with Three Outputs)
 
 ```python
 # In agent_chat_handler:
 
+# 0. Pre-step: Guardian assessment (if enabled)
+guardian_result = await guardian.assess(message) if guardian_enabled else None
+guard_categories = guardian_result.categories if guardian_result else {}
+
+# Include guardian context in SGR tool prompt
+sgr_prompt_context = f"""
+Guardian Safety Assessment: {guard_categories}
+Use this information for routing decisions.
+"""
+
 # 1. Execute SGR tool (returns JSON)
-sgr_result_json = await execute_sgr_tool(messages)
+sgr_result_json = await execute_sgr_tool(messages, context=sgr_prompt_context)
 sgr_plan = json.loads(sgr_result_json)
 
-# 2. Store structured data for external use (UI, metrics)
-agent_context.sgr_plan = sgr_plan
+# 2. Store structured data for downstream processing
+agent_context.sgr_plan = sgr_plan  # OUTPUT 3: Structured Metadata
 
-# 3. Select and render template
-template_name = sgr_plan["template_hint"]
-synthetic_message = render_template(template_name, sgr_plan)
+# 3. Render synthetic analysis template
+# action IS the template name (normal, clarify, block, guardian_block)
+template_name = sgr_plan["action"]  # No mapping needed!
+synthetic_analysis = render_template(template_name, sgr_plan)
 
-# 4. Inject synthetic assistant message for MODEL
+# 4. Inject synthetic analysis to agent context
 messages.append({
     "role": "assistant",
-    "content": synthetic_message
+    "content": synthetic_analysis  # OUTPUT 1: Synthetic Analysis → Context only
 })
 
-# 5. UI message (excludes sensitive fields like spam_score)
-ui_message = render_ui_template(template_name, sgr_plan)
+# 5. Extract and inject response section (all templates have ## Response)
+response_text = extract_response_section(synthetic_analysis)
+messages.append({
+    "role": "assistant",
+    "content": response_text  # Part of OUTPUT 2: Synthetic Response → Context
+})
+
+# 6. UI emission: User intent + Response
+ui_message = f"**User Intent**\n\n{sgr_plan['user_intent']}\n\n{response_text}"
 gradio_history.append({
     "role": "assistant",
-    "content": ui_message,
-    "metadata": {"ui_type": "sgr_analysis"}
+    "content": ui_message,  # OUTPUT 2: Synthetic Response → UI
+    "metadata": {"ui_type": "sgr_response_with_intent"}
 })
+
+# 7. Route based on action enum
+if sgr_plan["action"] in ["block", "guardian_block"]:
+    # Skip further tool calls for blocking cases
+    yield gradio_history
+    return
+elif sgr_plan["action"] == "clarify":
+    # Continue but wait for user clarification
+    yield gradio_history
+    return
+else:
+    # Proceed with normal agent flow
+    pass
 ```
 
-### Template Selection Logic
+### SGRAction Enum (Action = Template Name)
 
 ```python
-def select_template_hint(spam_score: float, 
-                         confidence: float, 
-                         guard_categories: {"object from guardian"}) -> str:
-    """Deterministic template selection."""
-    
-    if guard_categories > unsafe or harmful:
-        return "guardian_blocked"
-    
-    if spam_score > 0.7:
-        return "spam"
-    
-    if confidence < 0.6:
-        return "uncertain"
-    
-    return "normal"
+from enum import Enum
+
+class SGRAction(str, Enum):
+    """Action enum values ARE template names - no mapping dictionary needed."""
+    NORMAL = "normal"           # Proceed with normal assistance (template: normal)
+    CLARIFY = "clarify"         # Need clarification (template: clarify)
+    BLOCK = "block"             # Spam/off-topic (template: block)
+    GUARDIAN_BLOCK = "guardian_block"  # Safety concern (template: guardian_block)
+
+# Handler usage:
+template_name = sgr_plan["action"]  # "normal", "clarify", "block", or "guardian_block"
+template = SGR_TEMPLATES[template_name]
 ```
+
+**Key Design Decision:** No mapping dictionary needed - action values are semantic AND match template names directly.
 
 ---
 
 ## 6. Handling Sensitive Data
 
-### Spam Score Constraint
-
-**Requirement:** Model must see spam score from the templated assistant message, UI must NOT display it.
-
-See the templates above 
-
-# UI message for USER (excludes internal data):
-ui_msg = """**User Intent**
-
-The user wants help with SSO configuration...
-"""
-```
-
 ### Data Visibility Matrix
 
-| Field | Synthetic Message (Model) | UI Message (User) | Context (External) |
-|-------|---------------------------|-------------------|-------------------|
-| user_intent | ✅ Yes | ✅ Yes | ✅ Yes |
+| Field | Synthetic Analysis (Model) | Synthetic Response (Context + UI) | Structured Metadata |
+|-------|---------------------------|-----------------------------------|---------------------|
+| user_intent | ✅ Yes | ✅ Yes (in UI) | ✅ Yes |
 | action_plan | ✅ Yes | ❌ No | ✅ Yes |
 | spam_score | ✅ Yes (bracketed) | ❌ No | ✅ Yes |
 | spam_reason | ✅ Yes | ❌ No | ✅ Yes |
 | intent_confidence | ✅ Yes | ❌ No | ✅ Yes |
-| guard_categories | ✅ Yes | ❌ No | ✅ Yes |
+| uncertainties | ✅ Yes | ❌ No | ✅ Yes |
 | subqueries | ✅ Yes | ❌ No | ✅ Yes |
+| action | ✅ Yes | ❌ No | ✅ Yes |
+
+**Note:** `guard_categories` comes from preceding guardian call (prompt context), not from SGR tool.
+
+### Spam Score Constraint
+
+**Requirement:** Model must see spam score from the templated assistant message, UI must NOT display it.
+
+**Solution:** 
+- Spam score appears in `## Internal Assessment` section (synthetic analysis only)
+- UI only sees `## Response` section which excludes internal scores
+- Structured metadata captures all fields for downstream processing
 
 ---
 
 ## 7. Implementation Phases
 
 ### Phase 1: Core Template System
-- [ ] Define template catalog (normal, uncertain, spam)
-- [ ] Implement template rendering functions
-- [ ] Add template selection logic
-- [ ] Update `analyse_user_request` to return template_hint
-- [ ] Modify `agent_chat_handler` to inject synthetic message
+- [ ] **Update SGRPlanResult schema** with enhanced field descriptions (REASONING STEP N pattern)
+- [ ] Add new fields: `action` enum (values: normal, clarify, block, guardian_block), `intent_confidence`, `uncertainties`
+- [ ] **Remove from schema**: `template_hint` (derived from action), `guard_categories` (from prompt context)
+- [ ] Define template catalog (normal, clarify, block, guardian_block - all with ## Response)
+- [ ] Implement template rendering functions in handler
+- [ ] Update `analyse_user_request` to return new schema fields
+- [ ] Modify `agent_chat_handler` to implement three-output architecture
+- [ ] Add guardian context passing via prompt (separate from SGR tool schema)
 - [ ] Keep existing structured output flow for external use
 
-### Phase 2: Enhanced Schema
-- [ ] Add `intent_confidence` field to SGRPlanResult
-- [ ] Integrate guardian model `guard_categories`
-- [ ] Update prompt to populate new fields
-- [ ] Add guardian template
+### Phase 2: Guardian Integration
+- [ ] Integrate guardian model call in handler (before SGR tool)
+- [ ] Pass guardian assessment via prompt context to SGR tool
+- [ ] Update SGR tool system prompt to reference guardian context
+- [ ] Add fallback logic when guardian is unavailable
+- [ ] Test guardian routing in staging environment
 
 ### Phase 3: Testing & Refinement
 - [ ] Unit tests for template rendering
-- [ ] Integration tests for full flow
+- [ ] Integration tests for full three-output flow
 - [ ] A/B test: synthetic message vs standard tool result
 - [ ] Measure: plan-to-answer consistency, user satisfaction
 
@@ -360,16 +690,21 @@ The user wants help with SSO configuration...
    - [ ] Both (guardian enriches the plan)
 
 2. **Template Language:**
-   - [ ] Python `.format()` (simple)
+   - [x] Python `.format()` (simple, chosen)
    - [ ] Jinja2 (more powerful, conditionals)
-   - [ ] Custom templating (overkill?)
+   - [ ] Custom templating (overkill)
 
 3. **Template Storage:**
-   - [ ] Hardcoded in Python (current draft)
+   - [x] Hardcoded in Python (current draft)
    - [ ] External YAML/JSON config
    - [ ] Database (admin-editable)
 
-4. **A/B Testing:**
+4. **Schema Field Descriptions:**
+   - [x] Enhanced with REASONING STEP N pattern (chosen)
+   - [ ] Standard descriptions
+   - [ ] Minimal descriptions (rely on examples)
+
+5. **A/B Testing:**
    - [ ] Feature flag to toggle synthetic message
    - [ ] Compare metrics between approaches
    - [ ] Gradual rollout
@@ -398,10 +733,12 @@ The user wants help with SSO configuration...
 2. Meng, W., et al. (2025). Dialogue Injection Attack. arXiv:2503.08195.
 3. Instructor Library - https://python.useinstructor.com/
 4. sgr-agent-core - https://github.com/vamplabAI/sgr-agent-core
+5. Anthropic. (2024). Building Effective Agents. https://www.anthropic.com/research/building-effective-agents
+6. 12-Factor Agents. https://github.com/humanlayer/12-factor-agents
 
 ### From Prior Analysis
-5. Kimi Report 1-4 - Novelty analysis and sgr-agent-core comparison
-6. Current codebase analysis - rag_engine/tools/analyse_user_request.py
+7. Kimi Report 1-5 - Novelty analysis and deep verification
+8. Current codebase analysis - rag_engine/tools/analyse_user_request.py
 
 ---
 
@@ -415,13 +752,21 @@ The user wants help with SSO configuration...
 | Tool remains pure function | 2026-02-13 | Clean architecture, handler controls orchestration |
 | 4-template system | 2026-02-13 | Covers main scenarios: normal, uncertain, spam, guardian-blocked |
 | Spam score in synthetic, not UI | 2026-02-13 | Model needs it for routing, users shouldn't see internal scores |
+| **Handler renders templates** | 2026-02-13 | Industry best practice (LangChain, Anthropic, 12-Factor Agents) - separation of concerns |
+| **Three-output architecture** | 2026-02-13 | Clean separation: analysis (context), response (context+UI), metadata (downstream) |
+| **All templates have ## Response** | 2026-02-13 | UI always gets meaningful response preceded by user intent |
+| **Include action enum** | 2026-02-13 | Explicit routing decision separate from presentation hint |
+| **Enhanced schema descriptions** | 2026-02-13 | Field descriptions enforce step-by-step structured reasoning (REASONING STEP N) |
+| **Action IS template name** | 2026-02-13 | Simplify: action enum values match template names directly, no mapping needed |
+| **Guardian categories in prompt** | 2026-02-13 | Pass guardian assessment via prompt context, not as LLM-generated field |
+| **Remove template_hint** | 2026-02-13 | Handler derives template from action directly, no separate field needed |
 
 ---
 
 **Next Steps:**
 1. Review and approve plan
-2. Decide on Phase 1 implementation details
-3. Draft PR with template system
+2. Implement Phase 1: Template system with three-output architecture
+3. Draft PR with handler-based rendering
 4. Set up A/B testing framework
 
 **Contact:** [Your name/team]
