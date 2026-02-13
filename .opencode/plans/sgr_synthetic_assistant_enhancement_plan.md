@@ -442,7 +442,7 @@ class SGRPlanResult(BaseModel):
             "Think: What specific terms would find relevant documentation? "
             "Include: feature names, technical terms, error messages, synonyms. "
             "Each query should be focused and specific. "
-            "Write in Russian, avoid duplicates."
+            "Write in Russian, avoid duplicates and semantically close queries."
         ),
     )
     
