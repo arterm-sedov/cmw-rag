@@ -169,25 +169,26 @@ class Settings(BaseSettings):
     default_timezone: str
 
     # Guardian (Content Moderation)
-    # Optional content moderation layer for user queries
-    guard_enabled: bool = True
-    guard_mode: str = "enforce"  # enforce | report
-    guard_provider_type: str = "mosec"  # mosec (currently only supported option)
+    # All guardian settings must be defined in .env file
+    # No hard-coded defaults - .env is single source of truth
+    guard_enabled: bool
+    guard_mode: str
+    guard_provider_type: str
 
-    # MOSEC provider (remote HTTP server) - CURRENTLY USED
-    guard_mosec_url: str = "http://localhost"
-    guard_mosec_port: int = 7999
-    guard_mosec_path: str = "/api/v1/guard"
+    # MOSEC provider settings (required when guardian enabled)
+    guard_mosec_url: str
+    guard_mosec_port: int
+    guard_mosec_path: str
 
     # Future provider settings (reserved for vLLM support)
-    # Currently not used - keep for backward compatibility
-    guard_model: str = ""  # For future vLLM support
-    guard_device: str = "auto"  # For future local support
-    guard_openrouter_model: str = ""  # Reserved
+    # Currently not used but must be defined in .env
+    guard_model: str
+    guard_device: str
+    guard_openrouter_model: str
 
     # Common settings
-    guard_timeout: float = 60.0
-    guard_max_retries: int = 3
+    guard_timeout: float
+    guard_max_retries: int
 
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
