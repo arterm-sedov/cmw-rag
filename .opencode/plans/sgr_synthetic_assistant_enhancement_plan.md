@@ -1032,8 +1032,6 @@ User Request
 - [ ] Update architecture documentation
 - [ ] Document clean injection pattern for team
 - [ ] Add inline code comments explaining tool trace removal
-- [ ] Consider provisional patent application for clean injection pattern
-- [ ] Gradual rollout with feature flag
 
 ---
 
