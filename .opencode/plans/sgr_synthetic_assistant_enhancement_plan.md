@@ -1043,19 +1043,91 @@ User Request
 
 ---
 
-## 12. Decision Log
+## 12. DMN: Decision Model and Notation
 
-| Decision | Date | Rationale |
-|----------|------|-----------|
-| Use `role: "assistant"` | 2026-02-13 | No API support for reasoning role |
-| Single combined message | 2026-02-14 | Avoid ambiguity from dual messages |
-| Remove tool trace entirely | 2026-02-14 | Clean injection, model sees "own" reasoning |
-| Unbind SGR after first call | 2026-02-14 | Prevent mid-turn re-planning, single analysis per turn |
-| Guardian already merged | 2026-02-14 | Aligned with existing implementation |
-| Handler renders templates | 2026-02-13 | Separation of concerns |
-| Action IS template name | 2026-02-13 | Simplify routing, no mapping needed |
-| Enhanced schema descriptions | 2026-02-13 | Enforce step-by-step reasoning |
-| UI responses use i18n | 2026-02-13 | Follow existing pattern |
+Decision tables for SGR routing, Guardian enforcement, and tool binding logic.
+
+### DT-001: Guardian Enforcement Decision
+
+Determines whether to block request before SGR processing based on Guardian safety assessment.
+
+| guardian_level | guard_mode | Decision | Action |
+|----------------|------------|----------|--------|
+| Unsafe | enforce | Block | Immediate refusal, no SGR call |
+| Unsafe | report | Continue | Proceed to SGR with guardian context |
+| Controversial | enforce | Continue | Proceed to SGR with guardian context |
+| Controversial | report | Continue | Proceed to SGR with guardian context |
+| Safe | enforce | Continue | Proceed to SGR normally |
+| Safe | report | Continue | Proceed to SGR normally |
+
+**Inputs:**
+- `guardian_level`: Enum [Unsafe, Controversial, Safe]
+- `guard_mode`: Enum [enforce, report]
+
+**Output:**
+- `Decision`: Block | Continue
+- `Action`: Refusal message | Proceed to SGR
+
+---
+
+### DT-002: SGR Routing Decision
+
+Determines action and template based on SGR analysis results and Guardian context.
+
+| spam_score | intent_confidence | guardian_level | action | template | Flow |
+|------------|-------------------|----------------|--------|----------|------|
+| < 0.7 | >= 0.6 | Safe/Controversial/N/A | normal | normal | Continue with agent tools |
+| < 0.7 | < 0.6 | Safe/Controversial/N/A | clarify | clarify | Wait for user clarification |
+| >= 0.7 | Any | Safe/Controversial/N/A | block | block | Stop, show refusal |
+| Any | Any | Unsafe (via context) | guardian_block | guardian_block | Stop, show safety refusal |
+
+**Inputs:**
+- `spam_score`: Float [0.0-1.0]
+- `intent_confidence`: Float [0.0-1.0]
+- `guardian_level`: Enum [Safe, Controversial, Unsafe, N/A]
+
+**Output:**
+- `action`: Enum [normal, clarify, block, guardian_block]
+- `template`: String (matches action)
+- `Flow`: Continue | Wait | Stop
+
+**Hit Policy:** First match (priority order: guardian_block > block > clarify > normal)
+
+---
+
+### DT-003: SGR Tool Binding Decision
+
+Determines whether SGR tool is available for calling based on turn state.
+
+| turn_state | sgr_call_count | sgr_tool_available | Action |
+|------------|----------------|---------------------|--------|
+| New user message | 0 | Yes | Bind SGR tool, force call |
+| New user message | > 0 | Yes | Reset counter, bind SGR tool, force call |
+| After SGR execution | 1 | No | Unbind SGR tool, continue with remaining tools |
+| Mid-turn | 1 | No | SGR unavailable (prevent re-planning) |
+| Next user message | 0 | Yes | Re-bind SGR tool for new turn |
+
+**Inputs:**
+- `turn_state`: Enum [new_user_msg, after_sgr, mid_turn]
+- `sgr_call_count`: Integer [0, 1, >1]
+
+**Output:**
+- `sgr_tool_available`: Boolean
+- `Action`: Bind | Unbind | Force call
+
+---
+
+### DT-004: Output Routing Decision
+
+Determines what gets emitted to each output channel.
+
+| Output Channel | Analysis Section | Response Section | Tool Trace | Structured Data |
+|----------------|------------------|------------------|------------|-----------------|
+| Context Synthetics (Model) | Yes | Yes | No | No |
+| UI Synthetics (User) | No | Yes | No | No |
+| Structured Metadata (System) | Yes | Yes | Yes | Yes |
+
+**Note:** Tool trace includes raw JSON result and tool call metadata. Only stored in `agent_context.sgr_plan` for downstream processing, not visible to model or user.
 
 ---
 
