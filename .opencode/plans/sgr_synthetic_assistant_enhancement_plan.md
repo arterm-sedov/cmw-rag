@@ -255,6 +255,8 @@ All templates now produce a **single message** with two sections:
 1. `## Analysis` - Model's "internal reasoning" (hidden from UI)
 2. `## Response` - User-facing text (shown in UI)
 
+**Templating Engine:** Python built-in `str.format()` - no external dependencies (e.g., Jinja2) required.
+
 #### Template 1: Normal (High Confidence, Safe)
 
 ```markdown
