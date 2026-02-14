@@ -120,6 +120,108 @@ def format_queries_badge(query_traces: list[dict]) -> str:
     return _badge_html(label=label, value=str(count), color=color)
 
 
+def format_guard_badge(guard_info: dict | None) -> str:
+    """Format guard/safety info as colored HTML badge (localized).
+
+    Args:
+        guard_info: Dict with safety_level, categories, is_safe, refusal
+
+    Returns:
+        HTML badge string showing safety level and localized categories
+    """
+    if not guard_info:
+        return ""
+
+    label = i18n_resolve("guard_badge_label")
+    safety_level = guard_info.get("safety_level", "Unknown")
+    categories = guard_info.get("categories", [])
+
+    # Color based on safety level
+    if safety_level == "Safe":
+        color = "#4CAF50"  # green
+        level_text = i18n_resolve("guard_level_safe")
+    elif safety_level == "Controversial":
+        color = "#FF9800"  # orange
+        level_text = i18n_resolve("guard_level_controversial")
+    else:  # Unsafe or Unknown
+        color = "#F44336"  # red
+        level_text = i18n_resolve("guard_level_unsafe")
+
+    # Map English category names to i18n keys (case-insensitive, handles variations)
+    category_mapping = {
+        # Violence variations
+        "Violence": "cat_violence",
+        "Violent": "cat_violence",
+        "Violent Content": "cat_violence",
+        "Violent Behavior": "cat_violence",
+        # Sexual variations
+        "Sexual": "cat_sexual",
+        "Sexual Content": "cat_sexual",
+        "Sexually Explicit": "cat_sexual",
+        # PII variations
+        "PII": "cat_pii",
+        "Personal Data": "cat_pii",
+        "Personally Identifiable": "cat_pii",
+        # Self-Harm variations
+        "Self-Harm": "cat_self_harm",
+        "Self Harm": "cat_self_harm",
+        "Suicide": "cat_self_harm",
+        # Harassment
+        "Harassment": "cat_harassment",
+        "Harassment/Threats": "cat_harassment",
+        # Hate Speech
+        "Hate Speech": "cat_hate",
+        "Hate": "cat_hate",
+        # Illegal variations
+        "Illegal Acts": "cat_illegal",
+        "Illegal": "cat_illegal",
+        "Non-violent Illegal Acts": "cat_illegal",
+        # Unethical
+        "Unethical Acts": "cat_unethical",
+        "Unethical": "cat_unethical",
+        # Politically Sensitive
+        "Politically Sensitive": "cat_politically",
+        "Political": "cat_politically",
+        # Copyright
+        "Copyright": "cat_copyright",
+        "Copyright Violation": "cat_copyright",
+        # Jailbreak
+        "Jailbreak": "cat_jailbreak",
+        # Spam
+        "Spam": "cat_spam",
+    }
+
+    # Localize categories (case-insensitive)
+    localized_cats = []
+    for cat in categories:
+        # Try exact match first, then case-insensitive search
+        i18n_key = category_mapping.get(cat)
+        if not i18n_key:
+            # Try case-insensitive search
+            cat_lower = cat.lower()
+            for key, value in category_mapping.items():
+                if key.lower() == cat_lower:
+                    i18n_key = value
+                    break
+        
+        if not i18n_key:
+            i18n_key = "cat_other"
+        
+        localized_cat = i18n_resolve(i18n_key)
+        localized_cats.append(localized_cat)
+
+    # Format categories (show first 2, truncate if too long)
+    if localized_cats:
+        cats_str = ", ".join(localized_cats[:2])
+        if len(localized_cats) > 2:
+            cats_str += f" +{len(localized_cats) - 2}"
+        content = f"{level_text} | {cats_str}"
+    else:
+        content = level_text
+
+    return _badge_html(label=label, value=content, color=color)
+
+
 def format_articles_dataframe(articles: list[dict]) -> list[list]:
     """Format final articles list for gr.Dataframe."""
     rows: list[list] = []
@@ -829,6 +931,92 @@ async def agent_chat_handler(
     selected_model = None
     if settings.llm_fallback_enabled:
         selected_model = _check_context_fallback(messages)
+
+    # --- Guardian (Content Moderation) ---
+    # Check user message with guardian BEFORE any processing
+    from rag_engine.core.guard_client import guard_client
+
+    moderation_result: dict | None = None
+    moderation_context: str | None = None
+    guard_debug_info: dict | None = None
+
+    # Skip if guardian is disabled
+    if not settings.guard_enabled:
+        logger.info("Guardian is disabled, skipping moderation")
+    else:
+        try:
+            moderation_result = await guard_client.classify(message)
+            logger.info(
+                "Guardian result: safety_level=%s, categories=%s",
+                moderation_result.get("safety_level") if moderation_result else None,
+                moderation_result.get("categories") if moderation_result else None,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Guardian API call failed: %s", exc, exc_info=True)
+            moderation_result = None
+
+    # Prepare debug info (for both enforce and report modes)
+    if moderation_result:
+        guard_debug_info = {
+            "safety_level": moderation_result.get("safety_level", "Unknown"),
+            "categories": moderation_result.get("categories", []),
+            "is_safe": moderation_result.get("is_safe", True),
+            "refusal": moderation_result.get("refusal", "No"),
+        }
+
+    # Handle based on guard mode
+    guard_mode = getattr(settings, "guard_mode", "enforce")
+    should_block = guard_client.should_block(moderation_result) if moderation_result else False
+
+    if should_block and guard_mode == "enforce":
+        # Enforce mode: Block unsafe content immediately
+        categories = moderation_result.get("categories", [])
+        categories_str = ", ".join(categories) if categories else "Unknown"
+        error_message = (
+            f"❌ **Сообщение заблокировано по соображениям безопасности.**\n\n"
+            f"**Категории:** {categories_str}"
+        )
+        gradio_history.append({
+            "role": "assistant",
+            "content": error_message,
+            "metadata": {"ui_type": "error"},
+        })
+        yield list(gradio_history)
+        return
+
+    # Build moderation context for SGR (only for Safe/Controversial, or always for report mode)
+    if moderation_result:
+        safety_level = moderation_result.get("safety_level", "Safe")
+        categories = moderation_result.get("categories", [])
+        guard_mode = getattr(settings, "guard_mode", "enforce")
+
+        if safety_level == "Safe":
+            # Safe: only pass category (no safety level needed)
+            if categories:
+                moderation_context = f"[GUARD] Category: {categories[0]}"
+        elif safety_level == "Controversial":
+            # Controversial: pass level and categories
+            if categories:
+                moderation_context = f"[GUARD] Safety: Controversial, Categories: {', '.join(categories)}"
+            else:
+                moderation_context = "[GUARD] Safety: Controversial"
+        elif safety_level == "Unsafe":
+            if guard_mode == "report":
+                # Report mode with unsafe: always pass context (even if no categories)
+                if categories:
+                    moderation_context = f"[GUARD] Safety: Unsafe, Categories: {', '.join(categories)}"
+                else:
+                    moderation_context = "[GUARD] Safety: Unsafe"
+            # In enforce mode, we already returned early, so no need to handle
+
+        # Inject moderation context into messages as system message
+        if moderation_context:
+            system_msg = {
+                "role": "system",
+                "content": f"{moderation_context}\n\nИспользуйте эти данные модерации для классификации спама.",
+            }
+            messages = [system_msg] + messages
+            logger.debug("Injected guard context into messages: %s", moderation_context)
 
     # --- Forced user request analysis as tool call (per-turn) ---
     # We force an "analyse_user_request" tool call once per user turn, capture the plan, and
@@ -1940,6 +2128,7 @@ async def agent_chat_handler(
                 "tool_results_count": len(tool_results),
                 "conversation_tokens": agent_context.conversation_tokens,
                 "accumulated_tool_tokens": agent_context.accumulated_tool_tokens,
+                "guard": guard_debug_info,
             }
             logger.info(
                 f"agent_chat_handler: yielding AgentContext - "
@@ -2150,6 +2339,7 @@ async def agent_chat_handler(
                             "model": current_model,
                             "fallback_retry": True,
                             "tool_results_count": len(tool_results),
+                            "guard": guard_debug_info,
                         }
                         if sgr_plan_dict and not getattr(agent_context, "sgr_plan", None):
                             agent_context.sgr_plan = sgr_plan_dict
@@ -2195,7 +2385,7 @@ async def agent_chat_handler(
         try:
             agent_context.final_answer = error_msg
             agent_context.final_articles = []
-            agent_context.diagnostics = {"model": current_model, "error": str(e)}
+            agent_context.diagnostics = {"model": current_model, "error": str(e), "guard": guard_debug_info}
         except Exception:
             pass
         yield agent_context
@@ -2496,6 +2686,7 @@ async def chat_with_metadata(
         str | gr.HTML,
         str | gr.HTML,
         str | gr.HTML,
+        str | gr.HTML,  # guard_badge
         str | gr.Textbox,
         list | gr.JSON,
         list | gr.JSON,
@@ -2527,6 +2718,7 @@ async def chat_with_metadata(
                 gr.update(visible=False),
                 gr.update(visible=False),
                 gr.update(visible=False),
+                gr.update(visible=False),  # guard_badge - hidden during streaming
                 gr.update(visible=False, value=""),
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
@@ -2650,6 +2842,17 @@ async def chat_with_metadata(
             f"queries_count={len(query_traces)}"
         )
 
+        # Format guard/safety badge
+        guard_start = time.perf_counter()
+        try:
+            guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
+            guard_badge_html = format_guard_badge(guard_info)
+        except Exception as exc:
+            logger.error("Failed to format guard badge: %s", exc, exc_info=True)
+            guard_badge_html = ""
+        guard_elapsed = (time.perf_counter() - guard_start) * 1000
+        logger.info(f"chat_with_metadata: guard badge formatting took {guard_elapsed:.2f}ms")
+
         final_start = time.perf_counter()
         try:
             # format_articles_dataframe is disabled, returns empty list
@@ -2708,6 +2911,7 @@ async def chat_with_metadata(
                 gr.update(visible=badge_visible, value=spam_badge_html),
                 gr.update(visible=badge_visible, value=confidence_badge_html),
                 gr.update(visible=badge_visible, value=queries_badge_html),
+                gr.update(visible=badge_visible, value=guard_badge_html),
                 gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
                 gr.update(
                     visible=False, value=[]
@@ -2740,6 +2944,7 @@ async def chat_with_metadata(
             gr.update(visible=False),
             gr.update(visible=False),
             gr.update(visible=False),
+            gr.update(visible=False),  # guard_badge
             gr.update(visible=False, value=""),
             gr.update(visible=False, value=[]),
             gr.update(visible=False, value=[]),
@@ -2804,6 +3009,7 @@ with gr.Blocks(
 
     # --- Metadata badges (populated after streaming completes, shown below chat) ---
     with gr.Row():
+        guard_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         spam_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         confidence_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         queries_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
@@ -2994,6 +3200,7 @@ with gr.Blocks(
                 spam_badge,
                 confidence_badge,
                 queries_badge,
+                guard_badge,
                 intent_text,
                 subqueries_json,
                 action_plan_json,

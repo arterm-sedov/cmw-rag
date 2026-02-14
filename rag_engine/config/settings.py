@@ -168,6 +168,28 @@ class Settings(BaseSettings):
     # Default timezone for datetime operations (IANA timezone name, e.g., 'Europe/Moscow', 'UTC')
     default_timezone: str
 
+    # Guardian (Content Moderation)
+    # Optional content moderation layer for user queries
+    guard_enabled: bool = True
+    guard_mode: str = "enforce"  # enforce | report
+    guard_provider_type: str = "direct"  # direct | mosec | openrouter
+
+    # Direct provider (local model)
+    guard_model: str = ""
+    guard_device: str = "auto"
+
+    # Mosec provider (remote HTTP server)
+    guard_mosec_url: str = "http://localhost"
+    guard_mosec_port: int = 7999
+    guard_mosec_path: str = "/api/v1/guard"
+
+    # OpenRouter provider (cloud API)
+    guard_openrouter_model: str = ""
+
+    # Common settings
+    guard_timeout: float = 60.0
+    guard_max_retries: int = 3
+
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
         env_file=".env",
