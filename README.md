@@ -23,6 +23,7 @@ Chat with DeepWiki to get answers about this repo:
 - **Consistent token accounting**: Shared `token_utils` for system + question + context + output budgeting
 - **Web interface**: Gradio ChatInterface with citations and chat history
 - **Embeddable widget**: Floating chat widget for embedding on external websites (kb.comindware.ru)
+- **Content moderation**: Guardian support via MOSEC or VLLM with Qwen3Guard models for safety classification
 - **REST API**: Programmatic access for integration
 - **Context-aware**: Complete article context with citation support
   - **Per-session memory**: LangChain-backed conversation memory (scoped by Gradio session hash) with optional compression near context limits
@@ -457,6 +458,33 @@ GRADIO_DEFAULT_CONCURRENCY_LIMIT=3         # Max concurrent requests
 GRADIO_EMBEDDED_WIDGET=false               # Use compact widget layout
 GRADIO_LOCALE=ru                           # UI language (ru/en)
 ```
+
+#### Guardian (Content Moderation)
+
+Optional content moderation layer for classifying user queries:
+
+```
+GUARD_ENABLED=true                          # Enable/disable guardian
+GUARD_MODE=enforce                          # enforce (block unsafe) | report (log only)
+GUARD_PROVIDER_TYPE=mosec                   # mosec | vllm
+```
+
+**Provider Options:**
+
+**MOSEC** (returns JSON directly):
+```
+GUARD_MOSEC_URL=http://localhost            # MOSEC server URL
+GUARD_MOSEC_PORT=7999                       # MOSEC server port
+GUARD_MOSEC_PATH=/api/v1/guard              # API endpoint path
+```
+
+**VLLM** (OpenAI-compatible API, parses raw text):
+```
+GUARD_VLLM_URL=http://localhost:8000/v1     # VLLM base URL
+GUARD_VLLM_MODEL=Qwen/Qwen3Guard-Gen-0.6B   # Guard model name
+```
+
+Both providers use [Qwen3Guard](https://huggingface.co/Qwen/Qwen3Guard-Gen-0.6B) models and return identical JSON structure for seamless interchangeability.
 
 ## Project Structure
 
