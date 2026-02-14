@@ -199,8 +199,8 @@ Based on the architectural decisions, we maintain a **three-output architecture*
 │  4. SKIP adding tool call/result to messages                │
 │  5. Render single synthetic message (analysis + response)   │
 │  6. Inject synthetic message to agent context               │
-│  6. Unbind SGR tool for remainder of turn                   │
-│  7. Route based on action                                   │
+│  7. Unbind SGR tool for remainder of turn                   │
+│  8. Route based on action                                   │
 └─────────────────────────────────────────────────────────────┘
                                │
            ┌───────────────────┼───────────────────┐
@@ -944,6 +944,11 @@ User Request
   - `user_intent_prefix`
 - [ ] Implement `render_sgr_template()` function
 - [ ] Implement `extract_response_section()` function
+- [ ] Implement helper functions for template rendering:
+  - `infer_topic(user_intent: str) -> str` - Infer topic from user intent
+  - `infer_category(user_intent: str) -> str` - Infer category from user intent
+  - `format_bullets(items: list) -> str` - Format list as markdown bullets
+  - `format_numbered(items: list) -> str` - Format list as numbered markdown
 - [ ] **Modify handler flow**:
   - Execute SGR tool internally
   - Store result in `agent_context.sgr_plan`
