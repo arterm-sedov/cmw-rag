@@ -169,24 +169,16 @@ class Settings(BaseSettings):
     default_timezone: str
 
     # Guardian (Content Moderation)
-    # Optional content moderation layer for user queries
+    # HTTP-based content moderation via Mosec server
     guard_enabled: bool = True
     guard_mode: str = "enforce"  # enforce | report
-    guard_provider_type: str = "direct"  # direct | mosec | openrouter
 
-    # Direct provider (local model)
-    guard_model: str = ""
-    guard_device: str = "auto"
-
-    # Mosec provider (remote HTTP server)
+    # Mosec server configuration
     guard_mosec_url: str = "http://localhost"
     guard_mosec_port: int = 7999
     guard_mosec_path: str = "/api/v1/guard"
 
-    # OpenRouter provider (cloud API)
-    guard_openrouter_model: str = ""
-
-    # Common settings
+    # Request settings
     guard_timeout: float = 60.0
     guard_max_retries: int = 3
 
