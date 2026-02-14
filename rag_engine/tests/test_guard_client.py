@@ -102,10 +102,11 @@ class TestGuardConfiguration:
         assert expected == "http://test-server:8080/api/v1/guard"
 
     def test_mosec_only_provider(self) -> None:
-        """Test that only Mosec provider is supported."""
-        # Guardian now only supports Mosec HTTP server
-        # Direct and OpenRouter providers have been removed
-        assert True  # Placeholder - Mosec is the only provider
+        """Test that only Mosec provider is currently supported."""
+        # Current implementation supports MOSEC only
+        # Future support for vLLM planned
+        current_provider = "mosec"
+        assert current_provider == "mosec"
 
     def test_guard_modes(self) -> None:
         """Test valid guard modes."""

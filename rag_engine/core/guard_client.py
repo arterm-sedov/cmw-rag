@@ -1,8 +1,7 @@
 """Guardian client for content moderation.
 
-Provides HTTP-based content moderation via Mosec server.
-This is the production-ready implementation using async HTTP calls
-to a dedicated safety model server.
+Provides unified interface for content moderation using MOSEC HTTP server.
+Current implementation supports MOSEC only. Future support for vLLM planned.
 """
 
 from __future__ import annotations
@@ -20,29 +19,41 @@ logger = logging.getLogger(__name__)
 
 
 class GuardClient:
-    """Content moderation client using Mosec HTTP server.
+    """Content moderation client using MOSEC HTTP server.
 
     Attributes:
+        provider_type: Type of provider (currently only "mosec" supported)
         timeout: Request timeout in seconds
         max_retries: Maximum retry attempts on failure
     """
 
     def __init__(
         self,
+        provider_type: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> None:
         """Initialize the guard client.
 
         Args:
+            provider_type: Override for provider type (defaults to settings)
             timeout: Override for timeout (defaults to settings)
-            max_retries: Override for retries (defaults to settings)
+            max_retries: Override for max retries (defaults to settings)
         """
+        self._provider_type = provider_type or settings.guard_provider_type
         self._timeout = timeout or settings.guard_timeout
         self._max_retries = max_retries or settings.guard_max_retries
         self._executor = ThreadPoolExecutor(max_workers=2)
 
-    def _classify(self, content: str) -> dict[str, Any]:
+        # Validate provider type
+        if self._provider_type != "mosec":
+            logger.warning(
+                "Guard provider '%s' not yet implemented. Using 'mosec' as fallback.",
+                self._provider_type,
+            )
+            self._provider_type = "mosec"
+
+    def _classify_mosec(self, content: str) -> dict[str, Any]:
         """Classify content via Mosec HTTP server.
 
         Args:
@@ -63,21 +74,16 @@ class GuardClient:
             except requests.RequestException as exc:
                 last_error = exc
                 logger.warning(
-                    "Guardian classification attempt %d/%d failed: %s",
+                    "Mosec classification attempt %d/%d failed: %s",
                     attempt + 1,
                     self._max_retries,
                     exc,
                 )
-                if attempt < self._max_retries - 1:
-                    import time
 
-                    time.sleep(0.5 * (attempt + 1))  # Exponential backoff
-
-        logger.error("Guardian classification failed after %d attempts", self._max_retries)
         raise last_error
 
     async def classify(self, content: str) -> dict[str, Any]:
-        """Classify content for safety using Mosec HTTP server.
+        """Classify content for safety using MOSEC provider.
 
         Args:
             content: User message to classify
@@ -90,8 +96,12 @@ class GuardClient:
             - refusal: "Yes" | "No"
             - raw_output: str (original response)
         """
+        # Currently only MOSEC is supported
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self._executor, lambda: self._classify(content))
+        return await loop.run_in_executor(
+            self._executor,
+            lambda: self._classify_mosec(content),
+        )
 
     def is_safe(self, result: dict[str, Any]) -> bool:
         """Check if content is safe based on moderation result.
