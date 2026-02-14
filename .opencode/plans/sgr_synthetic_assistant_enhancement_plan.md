@@ -669,9 +669,11 @@ template = SGR_TEMPLATES[template_name]
 
 ### Overview
 
-The guardian assessment runs **BEFORE** the SGR tool, with two operational modes:
-- **GUARD_ENFORCE**: Hard stop on unsafe content (chat agent mode)
-- **GUARD_REPORT**: Process all content with audit trail (batch/API mode)
+The guardian assessment runs **BEFORE** the SGR tool. **Default mode is ENFORCE** - we don't waste tokens or time on unsafe content.
+
+**Two operational modes:**
+- **GUARD_ENFORCE** (Default): Hard stop on unsafe content, skip SGR entirely
+- **GUARD_REPORT** (Opt-in): Process all content for audit trail (analytics/compliance only)
 
 ### Flow Diagram
 
@@ -686,8 +688,10 @@ User Request
 └─────────────────────────────────────┘
     │
     ├─► Level = "Unsafe"
-    │   ├─► GUARD_ENFORCE: Skip SGR, immediate refusal
-    │   └─► GUARD_REPORT: Continue to SGR with context
+    │   ├─► [DEFAULT] GUARD_ENFORCE: Skip SGR, immediate refusal
+    │   │   └── No tokens wasted, no harmful content processed
+    │   └─► [OPT-IN] GUARD_REPORT: Continue to SGR with context
+    │       └── For analytics/compliance audit trails only
     │
     ├─► Level = "Controversial"
     │   └─► Continue to SGR (may route to clarify or guardian_block)
@@ -696,19 +700,20 @@ User Request
         └─► Continue to SGR with context
 ```
 
-### Mode 1: GUARD_ENFORCE (Safety-First)
+### Mode 1: GUARD_ENFORCE (Default - Safety-First)
 
-For chat agents where we never want to process harmful content:
+**This is the DEFAULT mode.** We never process harmful content - no tokens wasted.
 
 ```python
 async def handle_request_with_guardian(user_message):
     # 1. Guardian runs FIRST
     guard_result = await guardian.assess(user_message)
     
-    # 2. ENFORCE: Hard stop on Unsafe
+    # 2. DEFAULT BEHAVIOR: ENFORCE - Hard stop on Unsafe
     if guard_result.level == "Unsafe":
         # Skip SGR entirely - don't process harmful content
         # Don't store in agent context (no memory of harmful request)
+        # Save tokens and time
         
         refusal_msg = get_text("guardian_refusal_unsafe")
         gradio_history.append({"role": "assistant", "content": refusal_msg})
@@ -730,15 +735,16 @@ async def handle_request_with_guardian(user_message):
     # ... continue normal flow
 ```
 
-**Benefits:**
+**Why Default:**
+- ✅ Never waste tokens on harmful content
 - ✅ Never process harmful content through LLM
-- ✅ No tokens spent on harmful requests
 - ✅ No harmful content in agent memory
 - ✅ Immediate user feedback
+- ✅ Cost-efficient
 
-### Mode 2: GUARD_REPORT (Audit Trail)
+### Mode 2: GUARD_REPORT (Opt-in - Audit Trail)
 
-For batch processing where we need full analysis:
+**Only use this for specific analytics/compliance use cases.** Processes all content including Unsafe:
 
 ```python
 async def handle_request_with_guardian(user_message):
@@ -799,7 +805,7 @@ GuardianResult = {
 
 # Settings
 GUARD_ENABLED = True
-GUARD_MODE = "enforce" | "report"
+GUARD_MODE = "enforce"  # Default: "enforce" (safety-first), optional: "report" (audit)
 GUARD_PROVIDER_TYPE = "direct" | "mosec" | "openrouter"
 ```
 
@@ -986,8 +992,8 @@ All modes include guardian metadata in downstream output:
 | **Remove template_hint** | 2026-02-13 | Handler derives template from action directly, no separate field needed |
 | **UI responses use i18n** | 2026-02-13 | Follow existing pattern: all user-facing texts go through i18n system |
 | **Guardian runs BEFORE SGR** | 2026-02-13 | Safety assessment must happen before any LLM processing of potentially harmful content |
-| **GUARD_ENFORCE mode** | 2026-02-13 | Hard stop on Unsafe: skip SGR, no harmful content in context, immediate refusal |
-| **GUARD_REPORT mode** | 2026-02-13 | Audit trail mode: process all requests but with full guardian metadata for downstream |
+| **GUARD_ENFORCE is DEFAULT** | 2026-02-13 | Never waste tokens on unsafe content. Skip SGR entirely for Unsafe requests |
+| **GUARD_REPORT is OPT-IN** | 2026-02-13 | Only for specific analytics/compliance use cases where audit trail of unsafe content is needed |
 | **Single system message** | 2026-02-13 | Web research confirms: append guardian context to base prompt, don't use multiple system messages |
 | **get_sgr_system_prompt()** | 2026-02-13 | Function to build SGR-specific system prompt with guardian context appended |
 
