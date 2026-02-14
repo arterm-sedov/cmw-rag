@@ -718,17 +718,33 @@ async def handle_request_with_guardian(user_message):
         refusal_msg = get_text("guardian_refusal_unsafe")
         gradio_history.append({"role": "assistant", "content": refusal_msg})
         
-        # Pass structured metadata downstream (without SGR fields)
+        # Pass ALL collected structured data downstream (analytics/compliance)
+        # Even when blocking, we preserve the guardian assessment for audit trail
         structured_output = {
+            # Request metadata
+            "user_message": user_message,
+            "timestamp": datetime.now().isoformat(),
+            
+            # Guardian assessment (what we collected before stopping)
+            "guardian_enabled": True,
+            "guardian_level": guard_result.level,
+            "guardian_categories": guard_result.categories,
+            "guardian_reasoning": guard_result.reasoning if hasattr(guard_result, 'reasoning') else None,
+            
+            # Blocking info
             "blocked": True,
             "block_reason": "guardian_unsafe",
-            "guardian_categories": guard_result.categories,
-            "guardian_level": guard_result.level,
-            # No SGR fields - tool never called
+            "block_stage": "pre_sgr",  # Blocked before SGR tool
+            
+            # SGR fields are NULL - tool never called
+            "sgr_action": None,
+            "spam_score": None,
+            "user_intent": None,
+            "subqueries": None,
         }
         
         yield gradio_history, structured_output
-        return  # Early exit
+        return  # Early exit - no SGR processing
     
     # 3. Safe/Controversial: Proceed with SGR
     sgr_result = await execute_sgr_with_guardian(user_message, guard_result)
@@ -818,25 +834,61 @@ GUARD_PROVIDER_TYPE = "direct" | "mosec" | "openrouter"
 
 ### Structured Output with Guardian
 
-All modes include guardian metadata in downstream output:
+**In ALL modes (including ENFORCE when blocked), we pass ALL collected data downstream:**
 
+#### Case 1: ENFORCE Mode - Blocked at Guardian (Unsafe)
 ```python
 {
-    # Guardian fields (always present)
+    # Request metadata
+    "user_message": "...",
+    "timestamp": "2026-02-13T10:30:00",
+    
+    # Guardian assessment (collected before stopping)
     "guardian_enabled": True,
-    "guardian_level": "Safe" | "Controversial" | "Unsafe",
-    "guardian_categories": ["Violence", "PII"],
+    "guardian_level": "Unsafe",
+    "guardian_categories": ["Violence", "Hate Speech"],
+    "guardian_reasoning": "Detected harmful content",
     
-    # SGR fields (if SGR called)
-    "spam_score": 0.1,
-    "user_intent": "...",
-    "action": "normal" | "clarify" | "block" | "guardian_block",
+    # Blocking info
+    "blocked": True,
+    "block_reason": "guardian_unsafe",
+    "block_stage": "pre_sgr",
     
-    # Blocking info (if blocked)
-    "blocked": False | True,
-    "block_reason": None | "guardian_unsafe" | "guardian_block" | ...
+    # SGR fields: NULL (tool never called)
+    "sgr_action": None,
+    "spam_score": None,
+    "user_intent": None,
+    "subqueries": None,
 }
 ```
+
+#### Case 2: ENFORCE/REPORT Mode - SGR Executed Successfully
+```python
+{
+    # Request metadata
+    "user_message": "...",
+    "timestamp": "2026-02-13T10:30:00",
+    
+    # Guardian assessment
+    "guardian_enabled": True,
+    "guardian_level": "Safe" | "Controversial",
+    "guardian_categories": [],
+    
+    # SGR fields (populated)
+    "sgr_action": "normal" | "clarify" | "block" | "guardian_block",
+    "spam_score": 0.1,
+    "user_intent": "Configure SSO integration",
+    "subqueries": ["sso setup", "saml configuration"],
+    "intent_confidence": 0.92,
+    "action_plan": [...],
+    
+    # Blocking info (if routed to block by SGR)
+    "blocked": False | True,
+    "block_reason": None | "sgr_spam" | "sgr_guardian_block",
+}
+```
+
+**Key Principle:** Always pass collected data downstream for analytics, debugging, and compliance - even when stopping early.
 
 ---
 
