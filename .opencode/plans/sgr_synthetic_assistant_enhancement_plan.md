@@ -665,7 +665,176 @@ template = SGR_TEMPLATES[template_name]
 
 ---
 
-## 6. Handling Sensitive Data
+## 6. Guardian Integration Architecture
+
+### Overview
+
+The guardian assessment runs **BEFORE** the SGR tool, with two operational modes:
+- **GUARD_ENFORCE**: Hard stop on unsafe content (chat agent mode)
+- **GUARD_REPORT**: Process all content with audit trail (batch/API mode)
+
+### Flow Diagram
+
+```
+User Request
+    │
+    ▼
+┌─────────────────────────────────────┐
+│        GUARDIAN ASSESSMENT          │
+│   (Always runs first)               │
+│   Returns: level + categories       │
+└─────────────────────────────────────┘
+    │
+    ├─► Level = "Unsafe"
+    │   ├─► GUARD_ENFORCE: Skip SGR, immediate refusal
+    │   └─► GUARD_REPORT: Continue to SGR with context
+    │
+    ├─► Level = "Controversial"
+    │   └─► Continue to SGR (may route to clarify or guardian_block)
+    │
+    └─► Level = "Safe"
+        └─► Continue to SGR with context
+```
+
+### Mode 1: GUARD_ENFORCE (Safety-First)
+
+For chat agents where we never want to process harmful content:
+
+```python
+async def handle_request_with_guardian(user_message):
+    # 1. Guardian runs FIRST
+    guard_result = await guardian.assess(user_message)
+    
+    # 2. ENFORCE: Hard stop on Unsafe
+    if guard_result.level == "Unsafe":
+        # Skip SGR entirely - don't process harmful content
+        # Don't store in agent context (no memory of harmful request)
+        
+        refusal_msg = get_text("guardian_refusal_unsafe")
+        gradio_history.append({"role": "assistant", "content": refusal_msg})
+        
+        # Pass structured metadata downstream (without SGR fields)
+        structured_output = {
+            "blocked": True,
+            "block_reason": "guardian_unsafe",
+            "guardian_categories": guard_result.categories,
+            "guardian_level": guard_result.level,
+            # No SGR fields - tool never called
+        }
+        
+        yield gradio_history, structured_output
+        return  # Early exit
+    
+    # 3. Safe/Controversial: Proceed with SGR
+    sgr_result = await execute_sgr_with_guardian(user_message, guard_result)
+    # ... continue normal flow
+```
+
+**Benefits:**
+- ✅ Never process harmful content through LLM
+- ✅ No tokens spent on harmful requests
+- ✅ No harmful content in agent memory
+- ✅ Immediate user feedback
+
+### Mode 2: GUARD_REPORT (Audit Trail)
+
+For batch processing where we need full analysis:
+
+```python
+async def handle_request_with_guardian(user_message):
+    # 1. Guardian runs FIRST
+    guard_result = await guardian.assess(user_message)
+    
+    # 2. REPORT: Always call SGR, even for Unsafe
+    # (for audit trail and complete metadata)
+    
+    sgr_system_prompt = get_sgr_system_prompt(guard_result)
+    sgr_result = await sgr_tool.ainvoke(sgr_system_prompt, user_message)
+    
+    # SGR may route to guardian_block based on context
+    # Full metadata available downstream
+```
+
+**Use Case:** Batch processing, analytics, compliance logging
+
+### SGR System Prompt with Guardian Context
+
+```python
+def get_sgr_system_prompt(guardian_result, base_prompt=None):
+    """Build SGR system prompt with guardian assessment."""
+    
+    base = base_prompt or get_system_prompt()
+    
+    guardian_context = f"""
+<guardian_assessment>
+Safety Assessment from Guardian Model:
+- Risk Level: {guardian_result.level}
+- Categories: {guardian_result.categories}
+- Decision Guidance:
+  * If level='Unsafe': action SHOULD be 'guardian_block'
+  * If level='Controversial': CONSIDER 'guardian_block' or 'clarify'
+  * If level='Safe': Use normal SGR routing (spam_score + confidence)
+</guardian_assessment>
+"""
+    
+    return base + guardian_context
+```
+
+**Key Points:**
+- Single system message (best practice)
+- Guardian context appended to base prompt
+- SGR tool sees guardian results when making routing decision
+
+### Integration with cmw-rag-guard-test Branch
+
+The guardian implementation from `cmw-rag-guard-test` provides:
+
+```python
+# Guardian result structure
+GuardianResult = {
+    "level": "Safe" | "Controversial" | "Unsafe",
+    "categories": ["Violence", "PII", ...],
+    "reasoning": "..."  # Optional
+}
+
+# Settings
+GUARD_ENABLED = True
+GUARD_MODE = "enforce" | "report"
+GUARD_PROVIDER_TYPE = "direct" | "mosec" | "openrouter"
+```
+
+**Integration Flow:**
+1. Check `GUARD_ENABLED` setting
+2. If enabled, call guardian before SGR
+3. Use `GUARD_MODE` to determine ENFORCE vs REPORT behavior
+4. Pass guardian result to SGR via `get_sgr_system_prompt()`
+5. Include guardian metadata in structured output (always)
+
+### Structured Output with Guardian
+
+All modes include guardian metadata in downstream output:
+
+```python
+{
+    # Guardian fields (always present)
+    "guardian_enabled": True,
+    "guardian_level": "Safe" | "Controversial" | "Unsafe",
+    "guardian_categories": ["Violence", "PII"],
+    
+    # SGR fields (if SGR called)
+    "spam_score": 0.1,
+    "user_intent": "...",
+    "action": "normal" | "clarify" | "block" | "guardian_block",
+    
+    # Blocking info (if blocked)
+    "blocked": False | True,
+    "block_reason": None | "guardian_unsafe" | "guardian_block" | ...
+}
+```
+
+---
+
+## 7. Handling Sensitive Data
 
 ### Data Visibility Matrix
 
@@ -712,10 +881,15 @@ template = SGR_TEMPLATES[template_name]
 - [ ] Keep existing structured output flow for external use
 
 ### Phase 2: Guardian Integration
-- [ ] Integrate guardian model call in handler (before SGR tool)
-- [ ] Pass guardian assessment via prompt context to SGR tool
-- [ ] Update SGR tool system prompt to reference guardian context
+- [ ] Integrate guardian from `cmw-rag-guard-test` branch
+- [ ] Implement `get_sgr_system_prompt(guardian_result)` function
+- [ ] Add GUARD_ENFORCE mode: Skip SGR for Unsafe, immediate refusal
+- [ ] Add GUARD_REPORT mode: Call SGR with guardian context for audit trail
+- [ ] Update handler to run guardian BEFORE SGR tool
+- [ ] Ensure guardian metadata always passes to downstream output
+- [ ] Add i18n keys for guardian refusal messages
 - [ ] Add fallback logic when guardian is unavailable
+- [ ] Test both ENFORCE and REPORT modes
 - [ ] Test guardian routing in staging environment
 
 ### Phase 3: Testing & Refinement
@@ -733,10 +907,11 @@ template = SGR_TEMPLATES[template_name]
 
 ## 8. Open Questions
 
-1. **Guardian Integration:** Should guard_categories come from:
-   - [ ] Separate guardian tool call (current branch)
-   - [ ] Integrated into analyse_user_request
-   - [ ] Both (guardian enriches the plan)
+1. **Guardian Integration:** ✅ RESOLVED
+   - Guardian runs BEFORE SGR tool (separate call)
+   - Guardian context passed via system prompt
+   - Two modes: ENFORCE (hard stop) and REPORT (audit trail)
+   - See Section 6: Guardian Integration Architecture
 
 2. **Template Language:**
    - [x] Python `.format()` (simple, chosen)
@@ -810,6 +985,11 @@ template = SGR_TEMPLATES[template_name]
 | **Guardian categories in prompt** | 2026-02-13 | Pass guardian assessment via prompt context, not as LLM-generated field |
 | **Remove template_hint** | 2026-02-13 | Handler derives template from action directly, no separate field needed |
 | **UI responses use i18n** | 2026-02-13 | Follow existing pattern: all user-facing texts go through i18n system |
+| **Guardian runs BEFORE SGR** | 2026-02-13 | Safety assessment must happen before any LLM processing of potentially harmful content |
+| **GUARD_ENFORCE mode** | 2026-02-13 | Hard stop on Unsafe: skip SGR, no harmful content in context, immediate refusal |
+| **GUARD_REPORT mode** | 2026-02-13 | Audit trail mode: process all requests but with full guardian metadata for downstream |
+| **Single system message** | 2026-02-13 | Web research confirms: append guardian context to base prompt, don't use multiple system messages |
+| **get_sgr_system_prompt()** | 2026-02-13 | Function to build SGR-specific system prompt with guardian context appended |
 
 ---
 
