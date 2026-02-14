@@ -1,4 +1,5 @@
 """Tests for guardian (guard_client) content moderation - logic tests."""
+
 from __future__ import annotations
 
 
@@ -100,19 +101,11 @@ class TestGuardConfiguration:
 
         assert expected == "http://test-server:8080/api/v1/guard"
 
-    def test_direct_provider_configuration(self) -> None:
-        """Test direct provider model and device settings."""
-        model = "ai-forever/FRIDA"
-        device = "cuda"
-
-        assert model == "ai-forever/FRIDA"
-        assert device in ["auto", "cpu", "cuda", "cuda:0"]
-
-    def test_provider_types(self) -> None:
-        """Test valid provider types."""
-        valid_providers = ["direct", "mosec", "openrouter"]
-        for provider in valid_providers:
-            assert provider in valid_providers
+    def test_mosec_only_provider(self) -> None:
+        """Test that only Mosec provider is supported."""
+        # Guardian now only supports Mosec HTTP server
+        # Direct and OpenRouter providers have been removed
+        assert True  # Placeholder - Mosec is the only provider
 
     def test_guard_modes(self) -> None:
         """Test valid guard modes."""
