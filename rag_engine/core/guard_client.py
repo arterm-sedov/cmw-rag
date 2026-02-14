@@ -45,13 +45,13 @@ class GuardClient:
         self._max_retries = max_retries or settings.guard_max_retries
         self._executor = ThreadPoolExecutor(max_workers=2)
 
-        # Validate provider type
+        # Validate provider type - fail explicitly on invalid configuration
         if self._provider_type != "mosec":
-            logger.warning(
-                "Guard provider '%s' not yet implemented. Using 'mosec' as fallback.",
-                self._provider_type,
+            raise ValueError(
+                f"Invalid GUARD_PROVIDER_TYPE: '{self._provider_type}'. "
+                f"Only 'mosec' is currently supported. "
+                f"Please check your .env configuration."
             )
-            self._provider_type = "mosec"
 
     def _classify_mosec(self, content: str) -> dict[str, Any]:
         """Classify content via Mosec HTTP server.
