@@ -264,9 +264,9 @@ All templates now produce a **single message** with two sections:
 **Category**: {category}
 **Validity**: Legitimate support request [spam_score: {spam_score}]
 **Confidence**: High ({intent_confidence})
-**Subqueries**: {subqueries_formatted}
+**Subqueries**: {subqueries}
 **Action Plan**:
-{action_plan_numbered}
+{action_plan}
 
 ## Response
 {i18n_sgr_normal_response}
@@ -291,8 +291,8 @@ How I understood your request:
 **Validity**: Request needs clarification [spam_score: {spam_score}]
 **Confidence**: Low ({intent_confidence})
 **Uncertainties**:
-{uncertainties_bullets}
-**Subqueries**: {subqueries_formatted}
+{uncertainties}
+**Subqueries**: {subqueries}
 
 ## Response
 {i18n_sgr_clarify_intro}
@@ -366,16 +366,16 @@ TEMPLATE_VARIABLES = {
     "spam_reason": "Explanation if spam",
     "intent_confidence": "0.0-1.0",
     "uncertainties": "List if confidence low",
-    "subqueries": "List of search queries",
-    "subqueries_formatted": "Comma-separated or bulleted",
-    "action_plan": "List of steps",
-    "action_plan_numbered": "Numbered list",
+    "subqueries": "Comma-separated list of search queries (formatted in render function)",
+    "action_plan": "List of steps (formatted as numbered list in render function)",
     "guard_categories": "From guardian result (prompt context)",
     "action": "Enum: normal, clarify, block, guardian_block",
     "clarification_question": "Generated question if clarify",
     "i18n_*": "Resolved via get_text() from rag_engine.api.i18n"
 }
 ```
+
+**Note:** Formatting (comma-separated, numbered lists) happens inside `render_sgr_template()`, not passed as separate variables.
 
 **Key Design:**
 - `action` enum values ARE the template names (normal, clarify, block, guardian_block)
@@ -725,7 +725,7 @@ def render_sgr_template(
     # Get template
     template = SGR_TEMPLATES[template_name]
     
-    # Prepare variables
+    # Prepare variables - format lists inside, not as separate variables
     variables = {
         "topic": infer_topic(sgr_plan["user_intent"]),
         "user_intent": sgr_plan["user_intent"],
@@ -733,12 +733,10 @@ def render_sgr_template(
         "spam_score": sgr_plan["spam_score"],
         "spam_reason": sgr_plan["spam_reason"],
         "intent_confidence": sgr_plan["intent_confidence"],
-        "uncertainties": sgr_plan.get("uncertainties", []),
-        "uncertainties_bullets": format_bullets(sgr_plan.get("uncertainties", [])),
-        "subqueries": sgr_plan["subqueries"],
-        "subqueries_formatted": ", ".join(sgr_plan["subqueries"]),
-        "action_plan": sgr_plan.get("action_plan", []),
-        "action_plan_numbered": format_numbered(sgr_plan.get("action_plan", [])),
+        # Format lists internally
+        "uncertainties": _format_list(sgr_plan.get("uncertainties", [])),
+        "subqueries": ", ".join(sgr_plan["subqueries"]),
+        "action_plan": _format_numbered_list(sgr_plan.get("action_plan", [])),
         "action": sgr_plan["action"],
         "clarification_question": sgr_plan.get("clarification_question"),
         "guard_categories": moderation_result.get("categories", []) if moderation_result else [],
@@ -751,6 +749,20 @@ def render_sgr_template(
     }
     
     return template.format(**variables)
+
+
+def _format_list(items: list) -> str:
+    """Format list as markdown bullets."""
+    if not items:
+        return ""
+    return "\n".join(f"- {item}" for item in items)
+
+
+def _format_numbered_list(items: list) -> str:
+    """Format list as numbered markdown."""
+    if not items:
+        return ""
+    return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
 
 
 def extract_response_section(synthetic_content: str) -> str:
