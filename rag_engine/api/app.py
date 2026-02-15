@@ -2264,14 +2264,12 @@ async def agent_chat_handler(
                 # Hide and remove SRP bubble after completion
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
                 remove_message_by_ui_type(gradio_history, "srp_planning")
-                yield list(gradio_history)
 
             except Exception as exc:
                 logger.error("SRP tool failed: %s", exc)
                 agent_context.resolution_plan_error = str(exc)
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
                 remove_message_by_ui_type(gradio_history, "srp_planning")
-                yield list(gradio_history)
 
         # ========== TOC Generation - if enabled ==========
         toc = ""
