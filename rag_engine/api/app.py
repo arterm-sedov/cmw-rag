@@ -2138,6 +2138,120 @@ async def agent_chat_handler(
         update_message_status_in_history(gradio_history, "sgr_planning", "done")
         logger.info("Marked all pending UI spinners as done before final yield")
 
+        # ========== SRP (Support Resolution Plan) - if enabled ==========
+        resolution_plan = None
+        if getattr(settings, "srp_enabled", False):
+            try:
+                from rag_engine.api.stream_helpers import yield_srp_planning_started
+                from rag_engine.llm.prompts import get_system_prompt
+                from rag_engine.tools import generate_resolution_plan
+
+                # Show SRP planning bubble
+                gradio_history.append(yield_srp_planning_started())
+                yield list(gradio_history)
+
+                # Build SRP context
+                srp_system_prompt = get_system_prompt()
+
+                # Append sources if available
+                sources_compiled = getattr(agent_context, "sources_compiled", None)
+                if sources_compiled:
+                    srp_system_prompt += "\n\n" + sources_compiled
+
+                # Append SRP instruction
+                srp_system_prompt += "\n\n" + (
+                    "After answering the user's question, analyze the conversation and call the "
+                    "generate_resolution_plan tool to create a support engineer resolution plan. "
+                    "The plan should summarize the issue and recommend next steps if human intervention is needed."
+                )
+
+                # Build messages for SRP LLM call
+                srp_messages = [{"role": "system", "content": srp_system_prompt}]
+                srp_messages.extend(messages)
+
+                # Call SRP tool (only bind the SRP tool)
+                srp_llm = LLMManager(
+                    provider=settings.default_llm_provider,
+                    model=current_model or settings.default_model,
+                    temperature=settings.llm_temperature,
+                )._chat_model()
+
+                srp_model = srp_llm.bind_tools(
+                    [generate_resolution_plan],
+                    tool_choice={
+                        "type": "function",
+                        "function": {"name": "generate_resolution_plan"},
+                    },
+                )
+
+                srp_response = await srp_model.ainvoke(srp_messages)
+                tool_calls = getattr(srp_response, "tool_calls", None) or []
+                tool_call = tool_calls[0] if isinstance(tool_calls, list) and tool_calls else None
+
+                if isinstance(tool_call, dict):
+                    args = tool_call.get("args")
+                    if isinstance(args, dict):
+                        resolution_plan = args
+                        agent_context.resolution_plan = resolution_plan
+                        logger.info(
+                            "SRP plan generated: engineer_intervention_needed=%s",
+                            resolution_plan.get("engineer_intervention_needed"),
+                        )
+
+                # Hide SRP bubble
+                update_message_status_in_history(gradio_history, "srp_planning", "done")
+
+            except Exception as exc:
+                logger.error("SRP tool failed: %s", exc)
+                agent_context.resolution_plan_error = str(exc)
+                update_message_status_in_history(gradio_history, "srp_planning", "done")
+
+        # ========== TOC Generation - if enabled ==========
+        toc = ""
+        if getattr(settings, "toc_enabled", False) and resolution_plan:
+            try:
+                from rag_engine.api.stream_helpers import build_toc, extract_markdown_headers
+
+                answer_headers = extract_markdown_headers(final_text)
+                has_content_for_toc = len(answer_headers) > 0 or resolution_plan.get(
+                    "engineer_intervention_needed", False
+                )
+
+                if has_content_for_toc:
+                    include_plan = (
+                        resolution_plan.get("engineer_intervention_needed", False)
+                        if resolution_plan
+                        else False
+                    )
+                    toc = build_toc(answer_headers, include_plan=include_plan)
+                    if toc:
+                        toc = toc + "\n\n---\n\n"
+                        logger.info("TOC generated with %d headers", len(answer_headers))
+            except Exception as exc:
+                logger.warning("TOC generation failed: %s", exc)
+
+        # ========== Render Plan Section ==========
+        plan_section = ""
+        if resolution_plan and resolution_plan.get("engineer_intervention_needed", False):
+            try:
+                from rag_engine.tools.generate_resolution_plan import _render_plan_markdown
+
+                plan_section = "\n\n---\n\n" + _render_plan_markdown(resolution_plan)
+                logger.info("Plan section rendered")
+            except Exception as exc:
+                logger.warning("Plan rendering failed: %s", exc)
+
+        # ========== Assemble Final Message ==========
+        # Structure: [TOC] + Answer + [Plan] + [Sources at end]
+        if toc or plan_section:
+            complete_content = f"{toc}{final_text}{plan_section}"
+            # Update the answer in gradio_history
+            _update_or_append_assistant_message(gradio_history, complete_content)
+            # Update final_response and final_text for consistency
+            final_response = complete_content
+            final_text = complete_content
+            logger.info("Assembled final message with TOC and/or plan")
+
         # Log final history state for debugging
         logger.info(
             "Final history yield: total_messages=%d (user=%d, assistant=%d, ui_metadata=%d)",

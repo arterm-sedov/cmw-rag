@@ -1,4 +1,5 @@
 """Streaming and UI metadata helpers for agent chat interface."""
+
 from __future__ import annotations
 
 import json
@@ -151,6 +152,7 @@ class ToolCallAccumulator:
                 # Try to extract from partial/accumulated JSON
                 # Look for "query": "..." pattern
                 import re
+
                 match = re.search(r'"query"\s*:\s*"([^"]*)"', args)
                 if match:
                     raw_query = match.group(1)
@@ -375,6 +377,39 @@ def yield_sgr_planning_started() -> dict:
         "metadata": {
             "title": title,
             "ui_type": "sgr_planning",
+            "status": "pending",
+            "id": short_uid(),
+        },
+    }
+
+
+def yield_srp_planning_started() -> dict:
+    """Yield metadata message for SRP (Support Resolution Plan) planning phase.
+
+    This indicates the agent is generating the resolution plan after answer completion.
+
+    Returns:
+        Gradio message dict with metadata for SRP planning indicator.
+        Content and title are resolved i18n strings.
+        Includes status="pending" to show native Gradio spinner.
+
+    Example:
+        >>> from rag_engine.api.stream_helpers import yield_srp_planning_started
+        >>> msg = yield_srp_planning_started()
+        >>> "support" in msg["metadata"]["title"].lower() or "поддерж" in msg["metadata"]["title"].lower()
+        True
+        >>> msg["metadata"]["status"]
+        'pending'
+    """
+    title = get_text("srp_planning_title")
+    content = get_text("srp_planning_content")
+
+    return {
+        "role": "assistant",
+        "content": content,
+        "metadata": {
+            "title": title,
+            "ui_type": "srp_planning",
             "status": "pending",
             "id": short_uid(),
         },
@@ -608,7 +643,10 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
         # If we find a search_completed, stop searching backwards
         # Any search_started before this point is already completed
         if ui_type == "search_completed":
-            logger.debug("update_search_started_in_history: found search_completed at index %d, stopping search", i)
+            logger.debug(
+                "update_search_started_in_history: found search_completed at index %d, stopping search",
+                i,
+            )
             break
 
         # Track the most recent pending search_started
@@ -618,19 +656,30 @@ def update_search_started_in_history(gradio_history: list[dict], query: str) -> 
             empty_query_content = get_text("search_started_content", query="").strip()
             if content.strip() != empty_query_content:
                 # This search_started already has a query, skip update (will append new bubble)
-                logger.debug("update_search_started_in_history: pending search_started at index %d already has query, skip update (append new bubble)", i)
+                logger.debug(
+                    "update_search_started_in_history: pending search_started at index %d already has query, skip update (append new bubble)",
+                    i,
+                )
                 break
             last_pending_search_started_idx = i
-            logger.debug("update_search_started_in_history: found pending search_started at index %d", i)
+            logger.debug(
+                "update_search_started_in_history: found pending search_started at index %d", i
+            )
 
     # Update the found pending search_started message
     if last_pending_search_started_idx is not None:
         updated_msg = yield_search_started(query)
         gradio_history[last_pending_search_started_idx] = updated_msg
-        logger.info("update_search_started_in_history: updated search_started block at index %d with query='%s'", last_pending_search_started_idx, query[:50])
+        logger.info(
+            "update_search_started_in_history: updated search_started block at index %d with query='%s'",
+            last_pending_search_started_idx,
+            query[:50],
+        )
         return True
 
-    logger.debug("update_search_started_in_history: no pending search_started block found to update")
+    logger.debug(
+        "update_search_started_in_history: no pending search_started block found to update"
+    )
     return False
 
 
@@ -831,10 +880,7 @@ def update_search_started_by_id(
         if metadata.get("search_id") == search_id:
             metadata["status"] = new_status
             logger.info(
-                "Marked search_started as %s for search_id=%s (index %d)",
-                new_status,
-                search_id,
-                i
+                "Marked search_started as %s for search_id=%s (index %d)", new_status, search_id, i
             )
             return True
 
@@ -911,7 +957,7 @@ def update_search_bubble_by_id(
             "Updated search bubble to complete: search_id=%s, count=%d (index %d)",
             search_id,
             count,
-            i
+            i,
         )
         return True
 
@@ -927,3 +973,77 @@ def drain_pending_ui_messages(gradio_history: list[dict], agent_context: object)
     gradio_history.extend(pending)
     pending.clear()
     return True
+
+
+def extract_markdown_headers(text: str) -> list[tuple[int, str, str]]:
+    """Extract H1-H6 headers from markdown text.
+
+    Returns:
+        List of (level, text, anchor) tuples
+
+    Handles:
+        - Standard headers: # Header
+        - Headers with inline code: ## `code` example
+        - Headers with links: ### [Link](url)
+        - Escaped characters
+        - Skips headers inside code blocks
+    """
+    import re
+
+    headers = []
+    in_code_block = False
+    code_block_fence = None
+
+    for line in text.split("\n"):
+        stripped = line.lstrip()
+
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            fence = stripped[:3]
+            if not in_code_block:
+                in_code_block = True
+                code_block_fence = fence
+            elif code_block_fence and stripped.startswith(code_block_fence):
+                in_code_block = False
+                code_block_fence = None
+            continue
+
+        if in_code_block:
+            continue
+
+        match = re.match(r"^(#{1,6})\s+(.+?)\s*$", stripped)
+        if match:
+            level = len(match.group(1))
+            header_text = match.group(2).strip()
+
+            clean_text = re.sub(r"`([^`]+)`", r"\1", header_text)
+            clean_text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", clean_text)
+            clean_text = clean_text.strip()
+
+            anchor = clean_text.lower()
+            anchor = re.sub(r"[^\w\s-]", "", anchor)
+            anchor = re.sub(r"[\s]+", "-", anchor)
+            anchor = anchor.strip("-")[:50]
+
+            if anchor:
+                headers.append((level, clean_text, anchor))
+
+    return headers
+
+
+def build_toc(
+    answer_headers: list[tuple[int, str, str]],
+    include_plan: bool = True,
+) -> str:
+    """Build TOC markdown from answer headers and optional plan section."""
+    lines = [get_text("srp_toc_title") + ":", ""]
+
+    for level, text, anchor in answer_headers:
+        indent = "  " * (level - 1)
+        lines.append(f"{indent}- [{text}](#{anchor})")
+
+    if include_plan:
+        plan_title = get_text("srp_section_title")
+        plan_anchor = "plan-resheniya-inzhenera"
+        lines.append(f"- [{plan_title}](#{plan_anchor})")
+
+    return "\n".join(lines)

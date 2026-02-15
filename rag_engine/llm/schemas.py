@@ -161,6 +161,109 @@ class SGRPlanResult(BaseModel):
     )
 
 
+class ResolutionOutcome(str, Enum):
+    """Resolution status for support engineer plan."""
+
+    RESOLVED = "resolved"
+    PARTIALLY_RESOLVED = "partially_resolved"
+    ESCALATION_REQUIRED = "escalation_required"
+    USER_FOLLOWUP_NEEDED = "user_followup_needed"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class ResolutionPriority(str, Enum):
+    """Ticket priority for support engineer plan."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class ResolutionPlanResult(BaseModel):
+    """Support Resolution Plan - generates actionable plan for human engineers.
+
+    Called at final answer generation to provide structured guidance.
+    The LLM decides if a plan is actually needed via engineer_intervention_needed field.
+
+    NOTE: Fill text fields in Russian for human readability.
+    Enum values remain in English for token efficiency.
+    """
+
+    engineer_intervention_needed: bool = Field(
+        ...,
+        description=(
+            "Is support engineer intervention or escalation needed for this issue? "
+            "Set to FALSE for: version queries, simple how-tos with complete KB answers, "
+            "factual lookups that are fully resolved, self-service queries. "
+            "Set to TRUE for: errors, bugs, configuration issues, incomplete solutions, "
+            "troubleshooting required, or any issue requiring human investigation/action. "
+            "This field is REQUIRED - the LLM must explicitly decide."
+        ),
+    )
+
+    issue_summary: str = Field(
+        default="",
+        max_length=500,
+        description=(
+            "Brief summary of the user's issue in 2-3 sentences. "
+            "Write in Russian for the support engineer. "
+            "Only meaningful when engineer_intervention_needed=True."
+        ),
+    )
+
+    steps_completed: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description=(
+            "List of steps already taken by the system. "
+            "Include: KB search, documentation analysis, solutions provided. "
+            "Write in Russian, be concise and informative. "
+            "Only meaningful when engineer_intervention_needed=True."
+        ),
+    )
+
+    next_steps: list[str] = Field(
+        default_factory=list,
+        max_length=8,
+        description=(
+            "Recommended next steps for the support engineer. "
+            "What does the human need to do after this response? "
+            "Examples: 'Check user permissions', 'Update documentation', 'Create dev ticket'. "
+            "Write in Russian. "
+            "Only meaningful when engineer_intervention_needed=True."
+        ),
+    )
+
+    outcome: ResolutionOutcome | None = Field(
+        default=None,
+        description=(
+            "Resolution status based on the answer provided. "
+            "Use English enum value: "
+            "'resolved': Fully resolved; "
+            "'partially_resolved': Partially resolved, additional actions needed; "
+            "'escalation_required': Requires escalation; "
+            "'user_followup_needed': User follow-up required; "
+            "'not_applicable': Plan not needed (use when engineer_intervention_needed=False)."
+        ),
+    )
+
+    additional_notes: str | None = Field(
+        default=None,
+        max_length=300,
+        description=(
+            "Additional notes for the engineer. "
+            "Warnings, important context, caveats. "
+            "Write in Russian."
+        ),
+    )
+
+    priority: ResolutionPriority | None = Field(
+        default=None,
+        description=("Ticket priority (if applicable): low / medium / high / critical"),
+    )
+
+
 class StructuredAgentResult(BaseModel):
     """Structured output from `ask_comindware_structured()`.
 

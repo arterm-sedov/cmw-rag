@@ -193,6 +193,14 @@ class Settings(BaseSettings):
     guard_timeout: float
     guard_max_retries: int
 
+    # SRP (Support Resolution Plan)
+    # Generates resolution plan for human support engineers after answer generation
+    srp_enabled: bool
+
+    # TOC (Table of Contents)
+    # Generates dynamic TOC from answer headers
+    toc_enabled: bool
+
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
         env_file=".env",
