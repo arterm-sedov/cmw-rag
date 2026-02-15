@@ -188,11 +188,19 @@ class GuardClient:
             result: Response from classify() method
 
         Returns:
-            True if content should be blocked
+            True if content should be blocked based on threshold
         """
         if not result:
             return False
-        return result.get("safety_level") == "Unsafe"
+
+        from rag_engine.config.settings import settings
+
+        threshold = getattr(settings, "guard_block_threshold", "unsafe")
+        safety_level = result.get("safety_level", "Safe")
+
+        if threshold == "controversial":
+            return safety_level in ("Unsafe", "Controversial")
+        return safety_level == "Unsafe"
 
 
 guard_client = GuardClient()
