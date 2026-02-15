@@ -2271,30 +2271,6 @@ async def agent_chat_handler(
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
                 remove_message_by_ui_type(gradio_history, "srp_planning")
 
-        # ========== TOC Generation - if enabled ==========
-        toc = ""
-        if getattr(settings, "toc_enabled", False) and resolution_plan:
-            try:
-                from rag_engine.api.stream_helpers import build_toc, extract_markdown_headers
-
-                answer_headers = extract_markdown_headers(final_text)
-                has_content_for_toc = len(answer_headers) > 0 or resolution_plan.get(
-                    "engineer_intervention_needed", False
-                )
-
-                if has_content_for_toc:
-                    include_plan = (
-                        resolution_plan.get("engineer_intervention_needed", False)
-                        if resolution_plan
-                        else False
-                    )
-                    toc = build_toc(answer_headers, include_plan=include_plan)
-                    if toc:
-                        toc = toc + "\n\n"
-                        logger.info("TOC generated with %d headers", len(answer_headers))
-            except Exception as exc:
-                logger.warning("TOC generation failed: %s", exc)
-
         # ========== Render Plan Section ==========
         plan_section = ""
         if resolution_plan and resolution_plan.get("engineer_intervention_needed", False):
@@ -2307,9 +2283,9 @@ async def agent_chat_handler(
                 logger.warning("Plan rendering failed: %s", exc)
 
         # ========== Assemble Final Message ==========
-        # Structure: [TOC] + Answer + [Plan] + [Sources at end]
-        # Always add sources at the end (regardless of TOC/plan presence)
-        complete_content = f"{toc}{final_text}{plan_section}"
+        # Structure: Answer + [Plan] + [Sources at end]
+        # Always add sources at the end (regardless of plan presence)
+        complete_content = f"{final_text}{plan_section}"
         if articles:
             complete_content += format_sources_list(articles)
         # Update the answer in gradio_history
@@ -2317,7 +2293,7 @@ async def agent_chat_handler(
         # Update final_response and final_text for consistency
         final_response = complete_content
         final_text = complete_content
-        logger.info("Assembled final message with TOC and/or plan and sources")
+        logger.info("Assembled final message with plan and sources")
 
         # Log final history state for debugging
         logger.info(
