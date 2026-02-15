@@ -68,10 +68,6 @@ class AgentContext(BaseModel):
         default=None,
         description="Error message if SRP generation failed.",
     )
-    sources_compiled: str | None = Field(
-        default=None,
-        description="Compiled sources list for SRP context injection.",
-    )
 
     # Execution trace + final results are excluded from serialization to the LLM.
     # They are used for batch output and UI debug panels.
