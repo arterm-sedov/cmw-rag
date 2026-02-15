@@ -1057,14 +1057,17 @@ async def agent_chat_handler(
                     moderation_context = "[GUARD] Safety: Unsafe"
             # In enforce mode, we already returned early, so no need to handle
 
-        # Inject moderation context into messages as system message
-        if moderation_context:
-            system_msg = {
-                "role": "system",
-                "content": f"{moderation_context}\n\nИспользуйте эти данные модерации для классификации спама.",
-            }
-            messages = [system_msg] + messages
-            logger.debug("Injected guard context into messages: %s", moderation_context)
+        # Always use base system prompt + guardian context appendage (when available)
+        from rag_engine.llm.prompts import get_system_prompt
+
+        base_prompt = get_system_prompt()
+        guardian_suffix = f"\n\n{moderation_context}" if moderation_context else ""
+        system_msg = {
+            "role": "system",
+            "content": f"{base_prompt}{guardian_suffix}\n\nMANDATORY: You MUST call analyse_user_request tool.",
+        }
+        messages = [system_msg] + messages
+        logger.debug("Injected system prompt with guardian context: %s", moderation_context)
 
     # --- Forced user request analysis as tool call (per-turn) ---
     # We force an "analyse_user_request" tool call once per user turn, capture the plan, and
