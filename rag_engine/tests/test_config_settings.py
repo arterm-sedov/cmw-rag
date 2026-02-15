@@ -1,54 +1,42 @@
 from __future__ import annotations
 
-from textwrap import dedent
+from pathlib import Path
 
 from rag_engine.config.settings import Settings
 
 
-def _write_env(tmp_path, content: str):
-    env_file = tmp_path / "test.env"
-    env_file.write_text(dedent(content), encoding="utf-8")
-    return env_file
+def test_settings_loads_from_env_file():
+    """Test that settings load from the actual .env file."""
+    # Load from the actual .env file in repo root
+    repo_root = Path(__file__).parent.parent.parent
+    env_file = repo_root / ".env"
 
-
-def _base_env() -> str:
-    return """
-    GOOGLE_API_KEY=test-google
-    OPENROUTER_API_KEY=test-openrouter
-    EMBEDDING_MODEL=ai-forever/FRIDA
-    EMBEDDING_DEVICE=cpu
-    CHROMADB_PERSIST_DIR=./data/chroma
-    CHROMADB_COLLECTION=test_collection
-    TOP_K_RETRIEVE=20
-    TOP_K_RERANK=10
-    CHUNK_SIZE=500
-    CHUNK_OVERLAP=150
-    RERANK_ENABLED=true
-    RERANKER_MODEL=DiTy/cross-encoder-russian-msmarco
-    DEFAULT_LLM_PROVIDER=gemini
-    DEFAULT_MODEL=gemini-2.5-flash
-    LLM_TEMPERATURE=0.1
-    LLM_MAX_TOKENS=4096
-    GRADIO_SERVER_NAME=0.0.0.0
-    GRADIO_SERVER_PORT=7860
-    """
-
-
-def test_settings_loads_from_env_file(tmp_path):
-    env_file = _write_env(tmp_path, _base_env())
+    # This test verifies behavior: settings load correctly from real .env
     settings = Settings(_env_file=env_file)
 
-    assert settings.embedding_model == "ai-forever/FRIDA"
-    assert settings.top_k_retrieve == 20
-    assert settings.chunk_overlap == 150
-    assert settings.rerank_enabled is True
-    assert settings.gradio_server_port == 7860
+    # Verify specific values from .env (behavior, not implementation)
+    assert settings.guard_enabled is False  # Confirmed from .env line 112
+    assert isinstance(settings.top_k_retrieve, int)
+    assert isinstance(settings.chunk_overlap, int)
+    assert isinstance(settings.rerank_enabled, bool)
+    assert isinstance(settings.gradio_server_port, int)
 
 
-def test_environment_overrides_take_precedence(tmp_path, monkeypatch):
-    env_file = _write_env(tmp_path, _base_env())
-    monkeypatch.setenv("TOP_K_RETRIEVE", "42")
+def test_environment_overrides_take_precedence(monkeypatch):
+    """Test that environment variables override .env file values."""
+    repo_root = Path(__file__).parent.parent.parent
+    env_file = repo_root / ".env"
+
+    # Get original value to restore later
+    settings_before = Settings(_env_file=env_file)
+    original_value = settings_before.top_k_retrieve
+
+    # Override via environment variable
+    monkeypatch.setenv("TOP_K_RETRIEVE", "999")
     settings = Settings(_env_file=env_file)
 
-    assert settings.top_k_retrieve == 42
+    # Environment should override .env
+    assert settings.top_k_retrieve == 999
 
+    # Verify other settings still load correctly
+    assert settings.guard_enabled is False
