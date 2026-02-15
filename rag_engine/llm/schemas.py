@@ -70,8 +70,8 @@ class SGRPlanResult(BaseModel):
         ),
     )
 
-    intent_confidence: float = Field(
-        ...,
+    intent_confidence: float | None = Field(
+        default=None,
         ge=0.0,
         le=1.0,
         description=(
@@ -96,8 +96,8 @@ class SGRPlanResult(BaseModel):
         ),
     )
 
-    spam_score: float = Field(
-        ...,
+    spam_score: float | None = Field(
+        default=None,
         ge=0.0,
         le=1.0,
         description=(
