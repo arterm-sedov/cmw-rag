@@ -552,6 +552,10 @@ def _is_ui_only_message(msg: dict) -> bool:
             "disclaimer_display",  # AI disclaimer (UI only, not for agent context)
         }:
             return True
+        # Check title field (survives Gradio round-trips, used by guardian_block)
+        title = metadata.get("title")
+        if title == "guardian_block":
+            return True
 
     return False
 
@@ -673,12 +677,13 @@ def _build_agent_messages_from_gradio_history(
         msg_content = msg.get("content", "")
 
         # Check if user message is followed by guardian_block (indicates blocked message)
+        # Uses title field which survives Gradio round-trips (same as UI bubbles)
         if msg_role == "user" and idx + 1 < len(gradio_history):
             next_msg = gradio_history[idx + 1]
-            next_metadata = next_msg.get("metadata", {})
+            next_metadata = next_msg.get("metadata") or {}
             if (
                 next_msg.get("role") == "assistant"
-                and next_metadata.get("ui_type") == "guardian_block"
+                and next_metadata.get("title") == "guardian_block"
             ):
                 locale = os.getenv("GRADIO_LOCALE", "ru")
                 placeholder = i18n_resolve("guard_blocked", locale)
@@ -988,13 +993,20 @@ async def agent_chat_handler(
         }
 
         # Generic error message - no hints
+        # Use title field (survives Gradio round-trips, same pattern as UI bubbles)
+        from rag_engine.api.stream_helpers import short_uid
+
         locale = os.getenv("GRADIO_LOCALE", "ru")
         error_message = f"❌ {i18n_resolve('guard_blocked', locale)}"
         gradio_history.append(
             {
                 "role": "assistant",
                 "content": error_message,
-                "metadata": {"ui_type": "guardian_block"},
+                "metadata": {
+                    "title": "guardian_block",
+                    "id": short_uid(),
+                    "status": "done",
+                },
             }
         )
         yield list(gradio_history)
