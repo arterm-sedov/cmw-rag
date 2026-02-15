@@ -2098,9 +2098,14 @@ async def agent_chat_handler(
         # Handle no results case
         if not articles:
             final_text = answer
+            agent_context.sources_compiled = None
             logger.info("Agent completed with no retrieved articles")
         else:
             final_text = format_with_citations(answer, articles)
+            # Store compiled sources for SRP context injection
+            from rag_engine.utils.formatters import format_sources_only
+
+            agent_context.sources_compiled = format_sources_only(articles)
             logger.info("Agent completed with %d articles", len(articles))
 
         # Only update/append if we have actual content (don't overwrite with empty)

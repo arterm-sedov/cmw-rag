@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List
+from collections.abc import Iterable
+from typing import Any
 
 from rag_engine.utils.metadata_utils import extract_numeric_kbid
 
@@ -33,10 +34,10 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
     """
     # Disclaimer already prepended during streaming
     # Deduplicate by kbId to avoid citing the same article multiple times
-    seen_kbids: Dict[str, Dict[str, Any]] = {}
+    seen_kbids: dict[str, dict[str, Any]] = {}
     seen_urls: set[str] = set()
     for d in docs:
-        meta: Dict[str, Any] = getattr(d, "metadata", {}) or {}
+        meta: dict[str, Any] = getattr(d, "metadata", {}) or {}
         kbid = meta.get("kbId") or getattr(d, "kb_id", None)
         url = meta.get("url") or meta.get("article_url")
         norm_url = _normalize_url(url)
@@ -58,7 +59,7 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
                 if norm_url not in seen_kbids:
                     seen_kbids[norm_url] = meta
 
-    citations: List[str] = []
+    citations: list[str] = []
     for i, (kbid, meta) in enumerate(seen_kbids.items(), 1):
         title = meta.get("title") or kbid or f"Source {i}"
 
@@ -84,3 +85,51 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
     return answer
 
 
+def format_sources_only(docs: Iterable[Any]) -> str | None:
+    """Format just the sources section (without answer) for SRP context injection.
+
+    Returns None if no articles.
+    """
+    seen_kbids: dict[str, dict[str, Any]] = {}
+    seen_urls: set[str] = set()
+    for d in docs:
+        meta: dict[str, Any] = getattr(d, "metadata", {}) or {}
+        kbid = meta.get("kbId") or getattr(d, "kb_id", None)
+        url = meta.get("url") or meta.get("article_url")
+        norm_url = _normalize_url(url)
+
+        if norm_url:
+            if norm_url in seen_urls:
+                continue
+            seen_urls.add(norm_url)
+
+        if kbid:
+            normalized_kbid = extract_numeric_kbid(str(kbid)) or str(kbid)
+            if normalized_kbid not in seen_kbids:
+                seen_kbids[normalized_kbid] = meta
+        else:
+            if norm_url:
+                if norm_url not in seen_kbids:
+                    seen_kbids[norm_url] = meta
+
+    citations: list[str] = []
+    for i, (kbid, meta) in enumerate(seen_kbids.items(), 1):
+        title = meta.get("title") or kbid or f"Source {i}"
+
+        url = meta.get("url")
+        if not url:
+            url = meta.get("article_url")
+        if not url and kbid:
+            normalized_kbid = extract_numeric_kbid(str(kbid))
+            if normalized_kbid:
+                url = f"https://kb.comindware.ru/article.php?id={normalized_kbid}"
+
+        anchor = meta.get("section_anchor") or ""
+        full_url = f"{url}{anchor}" if (url and ("#" not in str(url))) else (url or "")
+
+        link = f"[{title}]({full_url})" if full_url else title
+        citations.append(f"{i}. {link}")
+
+    if citations:
+        return "## Источники:\n\n" + "\n".join(citations)
+    return None
