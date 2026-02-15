@@ -35,6 +35,7 @@ from rag_engine.utils.context_tracker import (
     compute_context_tokens,
     estimate_accumulated_context,
     estimate_accumulated_tokens,
+    get_current_context,
 )
 from rag_engine.utils.conversation_store import salt_session_id
 from rag_engine.utils.formatters import format_with_citations
@@ -432,8 +433,6 @@ class ToolBudgetMiddleware(AgentMiddleware):
             # Ensure runtime.context exists for every tool invocation.
             # Prefer the thread-local AgentContext created by the stream loop (set_current_context()).
             if runtime is not None and (not hasattr(runtime, "context") or runtime.context is None):
-                from rag_engine.utils.context_tracker import AgentContext, get_current_context
-
                 runtime.context = get_current_context() or AgentContext()
                 logger.debug("[ToolBudget] Initialized runtime.context (was missing)")
 
@@ -1007,6 +1006,17 @@ async def agent_chat_handler(
             }
         )
         yield list(gradio_history)
+
+        # Yield AgentContext with guard_debug_info for debug pane and metadata updates
+        agent_context = AgentContext(
+            conversation_tokens=0,
+            accumulated_tool_tokens=0,
+            diagnostics={
+                "guard": guard_debug_info,
+                "guard_mode": guard_mode,
+            },
+        )
+        yield agent_context
         return
     elif moderation_result:
         # Not blocked - still create guard_debug_info for analytics/reporting
