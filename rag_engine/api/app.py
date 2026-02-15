@@ -979,7 +979,7 @@ async def agent_chat_handler(
         for i in range(len(gradio_history) - 1, -1, -1):
             msg = gradio_history[i]
             if isinstance(msg, dict) and msg.get("role") == "user":
-                msg["metadata"] = {**(msg.get("metadata", {})), "blocked": True}
+                msg["metadata"] = {**(msg.get("metadata") or {}), "blocked": True}
                 break
 
         # Build comprehensive guard_debug_info structure
