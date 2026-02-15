@@ -674,6 +674,17 @@ def _build_agent_messages_from_gradio_history(
         msg_content = msg.get("content", "")
         has_metadata = "metadata" in msg
 
+        # Check for blocked messages - replace with generic placeholder
+        metadata = msg.get("metadata") or {}
+        if msg_role == "user" and metadata.get("blocked", False):
+            locale = os.getenv("GRADIO_LOCALE", "ru")
+            placeholder = i18n_resolve("guard_blocked", locale)
+            messages.append({"role": "user", "content": placeholder})
+            logger.info(
+                "Replaced blocked message [%d] with placeholder: %s", idx, placeholder[:100]
+            )
+            continue
+
         # Skip UI-only messages
         if _is_ui_only_message(msg):
             logger.debug(
@@ -957,36 +968,56 @@ async def agent_chat_handler(
             logger.error("Guardian API call failed: %s", exc, exc_info=True)
             moderation_result = None
 
-    # Prepare debug info (for both enforce and report modes)
-    if moderation_result:
-        guard_debug_info = {
-            "safety_level": moderation_result.get("safety_level", "Unknown"),
-            "categories": moderation_result.get("categories", []),
-            "is_safe": moderation_result.get("is_safe", True),
-            "refusal": moderation_result.get("refusal", "No"),
-        }
-
     # Handle based on guard mode
     guard_mode = getattr(settings, "guard_mode", "enforce")
     should_block = guard_client.should_block(moderation_result) if moderation_result else False
 
     if should_block and guard_mode == "enforce":
         # Enforce mode: Block unsafe content immediately
-        categories = moderation_result.get("categories", [])
-        categories_str = ", ".join(categories) if categories else "Unknown"
-        error_message = (
-            f"❌ **Сообщение заблокировано по соображениям безопасности.**\n\n"
-            f"**Категории:** {categories_str}"
-        )
+
+        # Mark user message with blocking metadata (preserve existing metadata)
+        for i in range(len(gradio_history) - 1, -1, -1):
+            msg = gradio_history[i]
+            if isinstance(msg, dict) and msg.get("role") == "user":
+                msg["metadata"] = {**(msg.get("metadata", {})), "blocked": True}
+                break
+
+        # Build comprehensive guard_debug_info structure
+        guard_debug_info = {
+            "safety_level": moderation_result.get("safety_level", "Unknown")
+            if moderation_result
+            else "Unknown",
+            "categories": moderation_result.get("categories", []) if moderation_result else [],
+            "is_safe": moderation_result.get("is_safe", True) if moderation_result else True,
+            "refusal": moderation_result.get("refusal", "No") if moderation_result else "No",
+            "provider": moderation_result.get("provider", "unknown")
+            if moderation_result
+            else "unknown",
+            "blocked": True,
+        }
+
+        # Generic error message - no hints
+        locale = os.getenv("GRADIO_LOCALE", "ru")
+        error_message = f"❌ {i18n_resolve('guard_blocked', locale)}"
         gradio_history.append(
             {
                 "role": "assistant",
                 "content": error_message,
-                "metadata": {"ui_type": "error"},
+                "metadata": {"ui_type": "guardian_block"},
             }
         )
         yield list(gradio_history)
         return
+    elif moderation_result:
+        # Not blocked - still create guard_debug_info for analytics/reporting
+        guard_debug_info = {
+            "safety_level": moderation_result.get("safety_level", "Unknown"),
+            "categories": moderation_result.get("categories", []),
+            "is_safe": moderation_result.get("is_safe", True),
+            "refusal": moderation_result.get("refusal", "No"),
+            "provider": moderation_result.get("provider", "unknown"),
+            "blocked": False,
+        }
 
     # Build moderation context for SGR (only for Safe/Controversial, or always for report mode)
     if moderation_result:

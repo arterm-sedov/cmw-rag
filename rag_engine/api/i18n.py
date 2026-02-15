@@ -39,6 +39,7 @@ i18n = gr.I18n(
         "sgr_spam_response": "Sorry, I cannot help with this request.",
         "sgr_spam_refusal": "Sorry, I cannot help with this request. It is not related to the Comindware platform.",
         "sgr_guardian_refusal": "Sorry, I cannot process this request for security reasons.",
+        "guard_blocked": "Message blocked for security reasons.",
         # Debug metadata UI
         "spam_badge_label": "Spam",
         "spam_level_na": "N/A",
@@ -111,6 +112,7 @@ i18n = gr.I18n(
         "sgr_spam_response": "Извините, я не могу помочь с этим запросом.",
         "sgr_spam_refusal": "Извините, я не могу помочь с этим запросом. Он не относится к Comindware Platform.",
         "sgr_guardian_refusal": "Извините, я не могу обработать этот запрос в целях безопасности.",
+        "guard_blocked": "Сообщение заблокировано по соображениям безопасности.",
         # Debug metadata UI
         "spam_badge_label": "Спам",
         "spam_level_na": "Н/Д",
