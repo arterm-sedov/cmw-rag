@@ -38,7 +38,7 @@ from rag_engine.utils.context_tracker import (
     get_current_context,
 )
 from rag_engine.utils.conversation_store import salt_session_id
-from rag_engine.utils.formatters import format_with_citations
+from rag_engine.utils.formatters import format_sources_list, format_with_citations
 from rag_engine.utils.logging_manager import setup_logging
 from rag_engine.utils.vllm_fallback import (
     check_stream_completion,
@@ -2095,17 +2095,11 @@ async def agent_chat_handler(
             disclaimer_prepended = True
             logger.info("Injected disclaimer message (was missing from stream)")
 
-        # Handle no results case
+        # Set final text - sources will be added later at the end of the answer
+        final_text = answer
         if not articles:
-            final_text = answer
-            agent_context.sources_compiled = None
             logger.info("Agent completed with no retrieved articles")
         else:
-            final_text = format_with_citations(answer, articles)
-            # Store compiled sources for SRP context injection
-            from rag_engine.utils.formatters import format_sources_only
-
-            agent_context.sources_compiled = format_sources_only(articles)
             logger.info("Agent completed with %d articles", len(articles))
 
         # Only update/append if we have actual content (don't overwrite with empty)
@@ -2146,31 +2140,26 @@ async def agent_chat_handler(
         # ========== SRP (Support Resolution Plan) - if enabled ==========
         resolution_plan = None
         if getattr(settings, "srp_enabled", False):
-            try:
-                from rag_engine.api.stream_helpers import yield_srp_planning_started
-                from rag_engine.llm.prompts import get_system_prompt
-                from rag_engine.tools import generate_resolution_plan
+            from rag_engine.api.stream_helpers import (
+                remove_message_by_ui_type,
+                update_message_status_in_history,
+                yield_srp_planning_started,
+            )
+            from rag_engine.llm.prompts import get_system_prompt
+            from rag_engine.tools import generate_resolution_plan
 
+            try:
                 # Show SRP planning bubble
                 gradio_history.append(yield_srp_planning_started())
                 yield list(gradio_history)
 
-                # Build SRP context
+                # Build SRP system prompt: base + sources list (grounding) + SRP instruction
                 srp_system_prompt = get_system_prompt()
+                if articles:
+                    srp_system_prompt += "\n\n" + format_sources_list(articles)
+                srp_system_prompt += "\n\nUse generate_resolution_plan tool to create a support engineer resolution plan based on the conversation."
 
-                # Append sources if available
-                sources_compiled = getattr(agent_context, "sources_compiled", None)
-                if sources_compiled:
-                    srp_system_prompt += "\n\n" + sources_compiled
-
-                # Append SRP instruction
-                srp_system_prompt += "\n\n" + (
-                    "After answering the user's question, analyze the conversation and call the "
-                    "generate_resolution_plan tool to create a support engineer resolution plan. "
-                    "The plan should summarize the issue and recommend next steps if human intervention is needed."
-                )
-
-                # Build messages for SRP LLM call
+                # Build messages for SRP LLM call (same pattern as SGR: custom system prompt + messages)
                 srp_messages = [{"role": "system", "content": srp_system_prompt}]
                 srp_messages.extend(messages)
 
@@ -2203,13 +2192,17 @@ async def agent_chat_handler(
                             resolution_plan.get("engineer_intervention_needed"),
                         )
 
-                # Hide SRP bubble
+                # Hide and remove SRP bubble after completion
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
+                remove_message_by_ui_type(gradio_history, "srp_planning")
+                yield list(gradio_history)
 
             except Exception as exc:
                 logger.error("SRP tool failed: %s", exc)
                 agent_context.resolution_plan_error = str(exc)
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
+                remove_message_by_ui_type(gradio_history, "srp_planning")
+                yield list(gradio_history)
 
         # ========== TOC Generation - if enabled ==========
         toc = ""
@@ -2248,14 +2241,16 @@ async def agent_chat_handler(
 
         # ========== Assemble Final Message ==========
         # Structure: [TOC] + Answer + [Plan] + [Sources at end]
-        if toc or plan_section:
-            complete_content = f"{toc}{final_text}{plan_section}"
-            # Update the answer in gradio_history
-            _update_or_append_assistant_message(gradio_history, complete_content)
-            # Update final_response and final_text for consistency
-            final_response = complete_content
-            final_text = complete_content
-            logger.info("Assembled final message with TOC and/or plan")
+        # Always add sources at the end (regardless of TOC/plan presence)
+        complete_content = f"{toc}{final_text}{plan_section}"
+        if articles:
+            complete_content += format_sources_list(articles)
+        # Update the answer in gradio_history
+        _update_or_append_assistant_message(gradio_history, complete_content)
+        # Update final_response and final_text for consistency
+        final_response = complete_content
+        final_text = complete_content
+        logger.info("Assembled final message with TOC and/or plan and sources")
 
         # Log final history state for debugging
         logger.info(
