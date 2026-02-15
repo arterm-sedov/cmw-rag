@@ -79,9 +79,11 @@ def _badge_html(*, label: str, value: str, color: str) -> str:
     )
 
 
-def format_spam_badge(score: float) -> str:
+def format_spam_badge(score: float | None) -> str:
     """Format spam score as colored HTML badge (localized)."""
     label = i18n_resolve("spam_badge_label")
+    if score is None:
+        return _badge_html(label=label, value=i18n_resolve("spam_level_na"), color="gray")
     if score < 0.3:
         color, level = "green", i18n_resolve("spam_level_low")
     elif score < 0.6:
@@ -2654,12 +2656,12 @@ async def ask_comindware_structured(
         from rag_engine.llm.schemas import SGRPlanResult
 
         empty_plan = SGRPlanResult(
-            spam_score=0.0,
-            spam_reason="",
+            spam_score=None,  # None when SGR didn't run
+            spam_reason="SGR planning did not execute",
             user_intent="",
             topic="",
             category="",
-            intent_confidence=0.0,
+            intent_confidence=None,  # None when SGR didn't run
             knowledge_base_search_queries=[""],
             action="proceed",
         )
@@ -2674,12 +2676,12 @@ async def ask_comindware_structured(
         plan = SGRPlanResult.model_validate(plan_dict)
     except ValidationError:
         plan = SGRPlanResult(
-            spam_score=0.0,
-            spam_reason="",
+            spam_score=None,  # None when SGR validation failed
+            spam_reason="SGR plan validation failed",
             user_intent="",
             topic="",
             category="",
-            intent_confidence=0.0,
+            intent_confidence=None,  # None when SGR validation failed
             knowledge_base_search_queries=[""],
             action="proceed",
         )
@@ -2776,10 +2778,13 @@ async def chat_with_metadata(
             f"action_plan_present={'action_plan' in plan}, "
             f"user_message='{user_message[:50] if user_message else 'None'}...'"
         )
-        spam_score = float(plan.get("spam_score", 0.0) or 0.0)
+        spam_score = plan.get("spam_score")
         user_intent = (
             plan.get("user_intent", "") if isinstance(plan.get("user_intent"), str) else ""
         )
+        topic = plan.get("topic", "")
+        category = plan.get("category", "")
+        intent_confidence = plan.get("intent_confidence")
         knowledge_base_search_queries = plan.get("knowledge_base_search_queries", [])
         action_plan = plan.get("action_plan", [])
 
@@ -2888,6 +2893,11 @@ async def chat_with_metadata(
         # Prepare metadata for state storage
         # Ensure we always show SGR metadata when plan exists
         has_user_intent = bool(user_intent and isinstance(user_intent, str) and user_intent.strip())
+        has_topic = bool(topic and isinstance(topic, str) and topic.strip())
+        has_category = bool(category and isinstance(category, str) and category.strip())
+        has_intent_confidence = intent_confidence is not None and isinstance(
+            intent_confidence, (int, float)
+        )
         has_queries = bool(
             isinstance(knowledge_base_search_queries, list)
             and len(knowledge_base_search_queries) > 0
@@ -2905,6 +2915,10 @@ async def chat_with_metadata(
                 f"sgr_plan_present={ctx.sgr_plan is not None}, user_intent_len={len(user_intent)}"
             )
 
+        # Extract guard info for metadata
+        guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
+        has_guard = guard_info is not None
+
         # Store metadata in state for later UI update (after input is unlocked)
         queries_list = (
             knowledge_base_search_queries if isinstance(knowledge_base_search_queries, list) else []
@@ -2912,6 +2926,14 @@ async def chat_with_metadata(
         metadata_dict = {
             "user_intent": user_intent if has_user_intent else "",
             "has_user_intent": has_user_intent,
+            "topic": topic if has_topic else "",
+            "has_topic": has_topic,
+            "category": category if has_category else "",
+            "has_category": has_category,
+            "intent_confidence": intent_confidence if has_intent_confidence else None,
+            "has_intent_confidence": has_intent_confidence,
+            "guardian_info": guard_info,
+            "has_guardian": has_guard,
             "knowledge_base_search_queries": queries_list,
             "has_queries": has_queries,
             "action_plan": action_plan if isinstance(action_plan, list) else [],
@@ -2923,6 +2945,8 @@ async def chat_with_metadata(
         logger.info(
             "chat_with_metadata: storing metadata in state - "
             f"user_intent={user_intent[:50] if user_intent else 'empty'}, "
+            f"topic={topic}, category={category}, intent_confidence={intent_confidence}, "
+            f"has_guardian={has_guard}, "
             f"queries_count={len(knowledge_base_search_queries) if isinstance(knowledge_base_search_queries, list) else 0}, "
             f"action_plan_count={len(action_plan) if isinstance(action_plan, list) else 0}, "
             f"articles_df_rows={len(articles_df_data) if isinstance(articles_df_data, list) else 0}"
@@ -2937,6 +2961,16 @@ async def chat_with_metadata(
                 gr.update(visible=badge_visible, value=queries_badge_html),
                 gr.update(visible=badge_visible, value=guard_badge_html),
                 gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
+                gr.update(visible=False, value=""),  # topic_text - hide for now, will update later
+                gr.update(
+                    visible=False, value=""
+                ),  # category_text - hide for now, will update later
+                gr.update(
+                    visible=False, value=0
+                ),  # intent_confidence_number - hide for now, will update later
+                gr.update(
+                    visible=False, value={}
+                ),  # guardian_json - hide for now, will update later
                 gr.update(
                     visible=False, value=[]
                 ),  # subqueries_json - hide for now, will update later
@@ -3046,6 +3080,14 @@ with gr.Blocks(
     intent_text = gr.Textbox(
         label=i18n_resolve("user_intent_label"), interactive=False, visible=False
     )
+    topic_text = gr.Textbox(label=i18n_resolve("topic_label"), interactive=False, visible=False)
+    category_text = gr.Textbox(
+        label=i18n_resolve("category_label"), interactive=False, visible=False
+    )
+    intent_confidence_number = gr.Number(
+        label=i18n_resolve("intent_confidence_label"), interactive=False, visible=False
+    )
+    guardian_json = gr.JSON(label=i18n_resolve("guardian_badge_label"), visible=False)
     subqueries_json = gr.JSON(label=i18n_resolve("subqueries_label"), visible=False)
     action_plan_json = gr.JSON(label=i18n_resolve("action_plan_label"), visible=False)
 
@@ -3178,12 +3220,16 @@ with gr.Blocks(
         Called after input is unlocked to populate SGR metadata.
         """
         if settings.gradio_embedded_widget:
-            return (gr.update(), gr.update(), gr.update(), gr.update())
+            return tuple(gr.update() for _ in range(8))
 
         if not metadata:
             logger.info("update_metadata_ui: no metadata to display")
             return (
                 gr.update(visible=False, value=""),
+                gr.update(visible=False, value=""),
+                gr.update(visible=False, value=""),
+                gr.update(visible=False, value=0),
+                gr.update(visible=False, value={}),
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
@@ -3192,6 +3238,10 @@ with gr.Blocks(
         logger.info(
             f"update_metadata_ui: updating UI with metadata - "
             f"has_user_intent={metadata.get('has_user_intent', False)}, "
+            f"has_topic={metadata.get('has_topic', False)}, "
+            f"has_category={metadata.get('has_category', False)}, "
+            f"has_intent_confidence={metadata.get('has_intent_confidence', False)}, "
+            f"has_guardian={metadata.get('has_guardian', False)}, "
             f"has_queries={metadata.get('has_queries', False)}, "
             f"has_action_plan={metadata.get('has_action_plan', False)}, "
             f"has_articles={metadata.get('has_articles', False)}"
@@ -3201,6 +3251,22 @@ with gr.Blocks(
             gr.update(
                 visible=metadata.get("has_user_intent", False),
                 value=metadata.get("user_intent", ""),
+            ),
+            gr.update(
+                visible=metadata.get("has_topic", False),
+                value=metadata.get("topic", ""),
+            ),
+            gr.update(
+                visible=metadata.get("has_category", False),
+                value=metadata.get("category", ""),
+            ),
+            gr.update(
+                visible=metadata.get("has_intent_confidence", False),
+                value=metadata.get("intent_confidence"),
+            ),
+            gr.update(
+                visible=metadata.get("has_guardian", False),
+                value=metadata.get("guardian_info", {}),
             ),
             gr.update(
                 visible=metadata.get("has_queries", False),
@@ -3227,6 +3293,10 @@ with gr.Blocks(
                 queries_badge,
                 guard_badge,
                 intent_text,
+                topic_text,
+                category_text,
+                intent_confidence_number,
+                guardian_json,
                 subqueries_json,
                 action_plan_json,
                 articles_df,
@@ -3246,7 +3316,16 @@ with gr.Blocks(
             # Update metadata UI after input is unlocked
             fn=update_metadata_ui,
             inputs=[metadata_state],
-            outputs=[intent_text, subqueries_json, action_plan_json, articles_df],
+            outputs=[
+                intent_text,
+                topic_text,
+                category_text,
+                intent_confidence_number,
+                guardian_json,
+                subqueries_json,
+                action_plan_json,
+                articles_df,
+            ],
             api_visibility="private",
         )
     )
