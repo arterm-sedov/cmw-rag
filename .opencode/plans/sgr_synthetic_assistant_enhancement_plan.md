@@ -398,7 +398,7 @@ Confidence: 42% (низкая)
 **Tool Result (for Model Context):**
 ```markdown
 **Request Analysis**
-Assessment: Запрос не относится к платформе Comindware
+Assessment: Запрос не относится к Comindware Platform
 Reason: {spam_reason}
 Spam Score: {spam_score}
 
@@ -878,7 +878,7 @@ def _render_decline_template(plan: dict) -> str:
     """Render decline template (spam/off-topic)."""
     refusal = get_text("sgr_spam_refusal")
     return f"""**Request Analysis**
-Assessment: Запрос не относится к платформе Comindware
+Assessment: Запрос не относится к Comindware Platform
 Reason: {plan['spam_reason']}
 Spam Score: {plan['spam_score']}
 

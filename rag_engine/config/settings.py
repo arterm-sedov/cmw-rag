@@ -172,7 +172,7 @@ class Settings(BaseSettings):
     # All guardian settings must be defined in .env file
     # No hard-coded defaults - .env is single source of truth
     guard_enabled: bool
-    guard_mode: str
+    guard_block_threshold: str
     guard_provider_type: str
 
     # MOSEC provider settings (required when provider_type="mosec")

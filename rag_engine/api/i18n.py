@@ -5,6 +5,7 @@ Locale is determined from GRADIO_LOCALE environment variable (defaults to "ru").
 For details, see the Gradio i18n guide:
 https://www.gradio.app/guides/internationalization
 """
+
 from __future__ import annotations
 
 import os
@@ -32,6 +33,12 @@ i18n = gr.I18n(
         "cancelled_title": "⏹️ Cancelled",
         "cancelled_message": "⚠️ Response cancelled by user.",
         "user_intent_prefix": "How I understood your request:",
+        # SGR response templates
+        "sgr_proceed_response": "Proceeding to search the knowledge base.",
+        "sgr_clarify_response": "{clarification_question}",
+        "sgr_spam_response": "Sorry, I cannot help with this request.",
+        "sgr_spam_refusal": "Sorry, I cannot help with this request. It is not related to the Comindware platform.",
+        "sgr_guardian_refusal": "Sorry, I cannot process this request for security reasons.",
         # Debug metadata UI
         "spam_badge_label": "Spam",
         "spam_level_low": "Low",
@@ -93,6 +100,12 @@ i18n = gr.I18n(
         "cancelled_title": "⏹️ Отменено",
         "cancelled_message": "⚠️ Ответ отменён пользователем.",
         "user_intent_prefix": "Как я понял ваш запрос:",
+        # SGR response templates
+        "sgr_proceed_response": "Приступаю к поиску информации в базе знаний.",
+        "sgr_clarify_response": "{clarification_question}",
+        "sgr_spam_response": "Извините, я не могу помочь с этим запросом.",
+        "sgr_spam_refusal": "Извините, я не могу помочь с этим запросом. Он не относится к Comindware Platform.",
+        "sgr_guardian_refusal": "Извините, я не могу обработать этот запрос в целях безопасности.",
         # Debug metadata UI
         "spam_badge_label": "Спам",
         "spam_level_low": "Низкий",
@@ -135,6 +148,7 @@ i18n = gr.I18n(
         "cat_other": "Другое",
     },
 )
+
 
 def _get_current_locale() -> str:
     """Get current locale from environment variable.
@@ -194,5 +208,3 @@ def get_text(key: str, **kwargs: str | int) -> str:
     locale = _get_current_locale()
     text = i18n.translations.get(locale, {}).get(key, key)
     return text.format(**kwargs)
-
-
