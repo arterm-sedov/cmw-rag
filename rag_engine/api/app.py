@@ -3470,7 +3470,7 @@ with gr.Blocks(
         Called after input is unlocked to populate SGR metadata.
         """
         if settings.gradio_embedded_widget:
-            return tuple(gr.update() for _ in range(8))
+            return tuple(gr.update() for _ in range(9))
 
         if not metadata:
             logger.info("update_metadata_ui: no metadata to display")
@@ -3483,6 +3483,7 @@ with gr.Blocks(
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
+                gr.update(visible=False, value=""),
             )
 
         logger.info(
@@ -3530,6 +3531,7 @@ with gr.Blocks(
                 visible=metadata.get("has_articles", False),
                 value=metadata.get("articles_df_data", []),
             ),
+            gr.update(visible=False, value=""),  # srp_badge - show only when visible
         )
 
     submit_event = (
