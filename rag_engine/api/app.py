@@ -674,25 +674,24 @@ def _build_agent_messages_from_gradio_history(
         has_metadata = "metadata" in msg
 
         # Check for blocked messages - replace with generic placeholder
-        metadata = msg.get("metadata") or {}
-        has_blocked = False
+        # Gradio sets 'metadata': None, we need to check the actual value
+        metadata = msg.get("metadata")
 
-        # Handle different metadata formats
+        # Initialize metadata as dict if it's None
+        if metadata is None:
+            metadata = {}
+            msg["metadata"] = {}
+
+        has_blocked = False
         if isinstance(metadata, dict):
             has_blocked = metadata.get("blocked", False)
-        elif isinstance(metadata, (list, tuple)):
-            # Check if any metadata entry has blocked=True
-            for meta_item in metadata:
-                if isinstance(meta_item, dict) and meta_item.get("blocked", False):
-                    has_blocked = True
-                    break
 
         logger.debug(
-            "Checking message %d for blocking: role=%s, has_blocked=%s, metadata_keys=%s",
+            "Checking message %d for blocking: role=%s, has_blocked=%s, metadata=%s",
             idx,
             msg.get("role"),
             has_blocked,
-            list(metadata.keys()) if isinstance(metadata, dict) else "list",
+            metadata,
         )
 
         if msg_role == "user" and has_blocked:
