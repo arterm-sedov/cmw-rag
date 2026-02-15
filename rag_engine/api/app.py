@@ -2735,14 +2735,18 @@ async def chat_with_metadata(
             # Yield history with hidden metadata during streaming
             yield (
                 chunk,
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),  # guard_badge - hidden during streaming
-                gr.update(visible=False, value=""),
-                gr.update(visible=False, value=[]),
-                gr.update(visible=False, value=[]),
-                gr.update(visible=False, value=[]),
+                gr.update(visible=False),  # spam_badge
+                gr.update(visible=False),  # confidence_badge
+                gr.update(visible=False),  # queries_badge
+                gr.update(visible=False),  # guard_badge
+                gr.update(visible=False, value=""),  # intent_text
+                gr.update(visible=False, value=""),  # topic_text
+                gr.update(visible=False, value=""),  # category_text
+                gr.update(visible=False, value=0),  # intent_confidence_number
+                gr.update(visible=False, value={}),  # guardian_json
+                gr.update(visible=False, value=[]),  # subqueries_json
+                gr.update(visible=False, value=[]),  # action_plan_json
+                gr.update(visible=False, value=[]),  # articles_df
                 None,  # metadata_state - not updated during streaming
             )
         elif isinstance(chunk, AgentContext):
@@ -2755,13 +2759,18 @@ async def chat_with_metadata(
         logger.warning("chat_with_metadata: no AgentContext received, yielding hidden metadata")
         yield (
             last_history,
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False, value=""),
-            gr.update(visible=False, value=[]),
-            gr.update(visible=False, value=[]),
-            gr.update(visible=False, value=[]),
+            gr.update(visible=False),  # spam_badge
+            gr.update(visible=False),  # confidence_badge
+            gr.update(visible=False),  # queries_badge
+            gr.update(visible=False),  # guard_badge
+            gr.update(visible=False, value=""),  # intent_text
+            gr.update(visible=False, value=""),  # topic_text
+            gr.update(visible=False, value=""),  # category_text
+            gr.update(visible=False, value=0),  # intent_confidence_number
+            gr.update(visible=False, value={}),  # guardian_json
+            gr.update(visible=False, value=[]),  # subqueries_json
+            gr.update(visible=False, value=[]),  # action_plan_json
+            gr.update(visible=False, value=[]),  # articles_df
             None,  # metadata_state - no metadata to store
         )
         return
