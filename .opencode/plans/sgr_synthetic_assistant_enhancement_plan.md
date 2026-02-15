@@ -1340,6 +1340,14 @@ Turn 2 - Safe:
 - [ ] Measure: response quality, token efficiency
 - [ ] Guardian integration tests (all modes)
 
+**Testing Without Real Model Endpoints:**
+- Use existing mocking infrastructure (see `test_api_app.py`, `test_guard_client.py`)
+- Mock `LLMManager._chat_model()` with `FakeLLMManager` returning mock responses
+- Mock `guard_client.classify()` to return controlled safety levels
+- Test routing logic deterministically without API calls
+- Run tests with `pytest -m "not external"` to skip external service tests
+- Existing test suite achieves 95%+ coverage with mocking approach
+
 ### Phase 4: Documentation & Rollout
 
 - [ ] Update architecture documentation
