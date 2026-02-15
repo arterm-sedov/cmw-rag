@@ -21,7 +21,11 @@ def test_ask_comindware_structured_collects_context(monkeypatch):
             "spam_score": 0.1,
             "spam_reason": "ok",
             "user_intent": "intent",
-            "subqueries": ["q1"],
+            "topic": "test",
+            "category": "help",
+            "intent_confidence": 0.8,
+            "knowledge_base_search_queries": ["q1"],
+            "action": "proceed",
         }
         ctx.query_traces = [{"query": "q1", "confidence": {}, "articles": []}]
         ctx.final_answer = "answer"
@@ -35,4 +39,3 @@ def test_ask_comindware_structured_collects_context(monkeypatch):
     assert res.answer_text == "answer"
     assert res.plan.spam_score == 0.1
     assert res.per_query_results
-
