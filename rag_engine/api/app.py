@@ -550,7 +550,6 @@ def _is_ui_only_message(msg: dict) -> bool:
             "cancelled",
             "user_intent_display",  # User intent message (UI only, not for agent context)
             "disclaimer_display",  # AI disclaimer (UI only, not for agent context)
-            "blocked",  # Blocked message (UI shows original, agent gets placeholder)
         }:
             return True
 
@@ -671,21 +670,21 @@ def _build_agent_messages_from_gradio_history(
 
     for idx, msg in enumerate(gradio_history):
         msg_role = msg.get("role")
-        msg_role = msg.get("role")
         msg_content = msg.get("content", "")
-        has_metadata = "metadata" in msg
 
-        # Check for blocked messages using ui_type pattern (same as UI elements)
-        metadata = msg.get("metadata", {})
-        if isinstance(metadata, dict) and metadata.get("ui_type") == "blocked":
-            # Replace with generic placeholder for agent
-            locale = os.getenv("GRADIO_LOCALE", "ru")
-            placeholder = i18n_resolve("guard_blocked", locale)
-            messages.append({"role": "user", "content": placeholder})
-            logger.info(
-                "Replaced blocked message [%d] with placeholder: %s", idx, placeholder[:100]
-            )
-            continue
+        # Check if user message is followed by guardian_block (indicates blocked message)
+        if msg_role == "user" and idx + 1 < len(gradio_history):
+            next_msg = gradio_history[idx + 1]
+            next_metadata = next_msg.get("metadata", {})
+            if (
+                next_msg.get("role") == "assistant"
+                and next_metadata.get("ui_type") == "guardian_block"
+            ):
+                locale = os.getenv("GRADIO_LOCALE", "ru")
+                placeholder = i18n_resolve("guard_blocked", locale)
+                messages.append({"role": "user", "content": placeholder})
+                logger.info("Replaced blocked message [%d] with placeholder", idx)
+                continue
 
         # Skip UI-only messages
         if _is_ui_only_message(msg):
@@ -845,8 +844,6 @@ async def agent_chat_handler(
         Uses reference agent pattern: always yields full working_history list.
     """
 
-    # Track blocked message content hashes (Gradio strips metadata, so we track by hash)
-
     # Helper to check if cancellation was requested
     def is_cancelled() -> bool:
         return cancel_state is not None and cancel_state.get("cancelled", False)
@@ -976,15 +973,7 @@ async def agent_chat_handler(
     if should_block and guard_mode == "enforce":
         # Enforce mode: Block unsafe content immediately
 
-        # Mark user message with ui_type="blocked" (same pattern as UI elements)
-        for i in range(len(gradio_history) - 1, -1, -1):
-            msg = gradio_history[i]
-            if isinstance(msg, dict) and msg.get("role") == "user":
-                msg["metadata"] = {"ui_type": "blocked"}
-                logger.info("Marked user message at index %d with ui_type='blocked'", i)
-                break
-
-        # Build comprehensive guard_debug_info structure
+        # Build guard_debug_info structure
         guard_debug_info = {
             "safety_level": moderation_result.get("safety_level", "Unknown")
             if moderation_result
