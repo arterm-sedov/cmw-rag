@@ -539,6 +539,12 @@ def _is_ui_only_message(msg: dict) -> bool:
     # Check for explicit UI-only metadata marker first (preferred, language-agnostic)
     metadata = msg.get("metadata", {})
     if isinstance(metadata, dict):
+        # Messages with metadata.title are Gradio "thought" messages (collapsible accordions).
+        # This includes search bubbles, thinking blocks, guardian blocks, etc.
+        # The title field survives Gradio round-trips (part of MetadataDict).
+        if metadata.get("title"):
+            return True
+        # ui_type works within the same turn (before Gradio round-trip strips it)
         ui_type = metadata.get("ui_type")
         if isinstance(ui_type, str) and ui_type in {
             "search_bubble",
@@ -548,13 +554,9 @@ def _is_ui_only_message(msg: dict) -> bool:
             "generating_answer",
             "model_switch",
             "cancelled",
-            "user_intent_display",  # User intent message (UI only, not for agent context)
-            "disclaimer_display",  # AI disclaimer (UI only, not for agent context)
+            "user_intent_display",
+            "disclaimer_display",
         }:
-            return True
-        # Check title field (survives Gradio round-trips, used by guardian_block)
-        title = metadata.get("title")
-        if title == "guardian_block":
             return True
 
     return False
@@ -676,17 +678,16 @@ def _build_agent_messages_from_gradio_history(
         msg_role = msg.get("role")
         msg_content = msg.get("content", "")
 
-        # Check if user message is followed by guardian_block (indicates blocked message)
-        # Uses title field which survives Gradio round-trips (same as UI bubbles)
+        # Check if user message is followed by a guardian_block (Gradio structured
+        # message with title containing guard_blocked text). Title field survives
+        # Gradio round-trips as part of MetadataDict.
         if msg_role == "user" and idx + 1 < len(gradio_history):
             next_msg = gradio_history[idx + 1]
             next_metadata = next_msg.get("metadata") or {}
-            if (
-                next_msg.get("role") == "assistant"
-                and next_metadata.get("title") == "guardian_block"
-            ):
-                locale = os.getenv("GRADIO_LOCALE", "ru")
-                placeholder = i18n_resolve("guard_blocked", locale)
+            next_title = next_metadata.get("title", "")
+            guard_blocked_text = i18n_resolve("guard_blocked")
+            if next_msg.get("role") == "assistant" and guard_blocked_text in str(next_title):
+                placeholder = guard_blocked_text
                 messages.append({"role": "user", "content": placeholder})
                 logger.info("Replaced blocked message [%d] with placeholder", idx)
                 continue
@@ -992,18 +993,18 @@ async def agent_chat_handler(
             "blocked": True,
         }
 
-        # Generic error message - no hints
-        # Use title field (survives Gradio round-trips, same pattern as UI bubbles)
+        # Generic error message using Gradio structured message format
+        # (same pattern as search bubbles and thinking blocks)
         from rag_engine.api.stream_helpers import short_uid
 
         locale = os.getenv("GRADIO_LOCALE", "ru")
-        error_message = f"❌ {i18n_resolve('guard_blocked', locale)}"
+        error_message = i18n_resolve("guard_blocked", locale)
         gradio_history.append(
             {
                 "role": "assistant",
                 "content": error_message,
                 "metadata": {
-                    "title": "guardian_block",
+                    "title": f"🛡️ {error_message}",
                     "id": short_uid(),
                     "status": "done",
                 },
