@@ -675,7 +675,20 @@ def _build_agent_messages_from_gradio_history(
 
         # Check for blocked messages - replace with generic placeholder
         metadata = msg.get("metadata") or {}
-        if msg_role == "user" and metadata.get("blocked", False):
+        has_blocked = False
+
+        # Handle different metadata formats
+        if isinstance(metadata, dict):
+            has_blocked = metadata.get("blocked", False)
+        elif isinstance(metadata, (list, tuple)):
+            # Check if any metadata entry has blocked=True
+            for meta_item in metadata:
+                if isinstance(meta_item, dict) and meta_item.get("blocked", False):
+                    has_blocked = True
+                    break
+
+        if msg_role == "user" and has_blocked:
+            logger.info("Detected blocked message at index %d, replacing with placeholder", idx)
             locale = os.getenv("GRADIO_LOCALE", "ru")
             placeholder = i18n_resolve("guard_blocked", locale)
             messages.append({"role": "user", "content": placeholder})
