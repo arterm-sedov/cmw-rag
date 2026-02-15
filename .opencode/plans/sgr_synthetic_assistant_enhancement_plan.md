@@ -1,9 +1,9 @@
-# SGR Synthetic Assistant Message Enhancement Plan
+# SGR Formatted Tool Result Enhancement Plan
 
-**Status:** DRAFT - REVISED ARCHITECTURE
+**Status:** DRAFT - REVISED ARCHITECTURE (FORMATTED TOOL RESULT)
 **Created:** 2026-02-13
-**Updated:** 2026-02-14 (Single-Message Injection, Tool Trace Removal, Guardian Already Merged)
-**Based on:** Analysis of current SGR implementation, novelty research, and architectural decisions
+**Updated:** 2026-02-15 (Changed from Synthetic Assistant Injection to Formatted Tool Result)
+**Based on:** Analysis of current SGR implementation, novelty research, and early termination issue identified
 
 ---
 
@@ -45,8 +45,8 @@ User Request
 └─────────────────────────┘
 ```
 
-### Proposed Enhancement (CLEAN INJECTION PATTERN)
-**Inject single synthetic assistant message** that replaces the tool call trace entirely. Model sees only its "own" reasoning—no tool artifacts, no raw JSON.
+### Proposed Enhancement (FORMATTED TOOL RESULT)
+**Format SGR tool result** as human-readable markdown instead of raw JSON. Model sees actionable instructions in the tool result—maintains natural ReAct flow without early termination risk.
 
 ```
 User Request
@@ -59,37 +59,31 @@ User Request
     │
     ▼
 ┌─────────────────────────┐
-│ Forced SGR Tool Call    │ (INTERNAL ONLY)
-│ Returns: Raw JSON       │ → Stored in agent_context.sgr_plan
-└─────────────────────────┘
-    │
-    ▼ (CLEANUP)
-┌─────────────────────────┐
-│ REMOVE from context:    │
-│ - Tool call message     │
-│ - role: "tool" result   │
-└─────────────────────────┘
-    │
-    ▼ (INJECTION)
-┌─────────────────────────┐
-│ ADD to context:         │
-│ Single synthetic        │
-│ assistant message       │
-│ (analysis + response)   │
+│ Forced SGR Tool Call    │
+│ Returns: Formatted      │
+│ markdown analysis       │ → Stored in agent_context.sgr_plan (JSON)
 └─────────────────────────┘
     │
     ▼
 ┌─────────────────────────┐
-│ Agent continues from    │
-│ "its own" reasoning     │
+│ Tool Call in History    │
+│ + role: "tool" result  │ (formatted, not raw JSON)
+└─────────────────────────┘
+    │
+    ▼
+┌─────────────────────────┐
+│ Agent continues with    │
+│ formatted analysis      │
+│ in context             │
 └─────────────────────────┘
 ```
 
-**Key Innovation:** 
-- Model believes it performed the analysis
-- No cognitive dissonance between tool output and generation
-- Clean state: tool trace completely removed from visible history
-- Structured data preserved for downstream (UI, metrics, debugging)
+**Key Advantages:** 
+- No early termination risk (model continues naturally after tool result)
+- Maintains existing ReAct flow (no architectural changes)
+- Minimal implementation effort (change only tool return format)
+- Structured JSON preserved for downstream (UI, metrics, debugging)
+- Model receives actionable directives, not confusing raw data
 
 ---
 
@@ -147,89 +141,107 @@ agent = create_react_agent(
 5. Agent continues with remaining tools (search_kb, answer_user, etc.)
 6. Next user message → SGR tool re-enabled for new turn
 
-### Decision 3: Clean Tool Call Trace from Model Context
-**Status:** ✅ CONFIRMED
+### Decision 3: Format Tool Result (NOT Remove It)
+**Status:** ✅ CONFIRMED (REVISED)
 
-**Rationale:** The tool call + JSON result must be completely removed from the message history visible to the model. The model should see only the synthetic reasoning as its "own" thought process.
+**Rationale:** Tool result (Observation) is a core part of ReAct pattern. Removing it causes early termination issues. Instead, we format the tool result to be human-readable and actionable—model continues naturally after processing it.
 
 **Implementation:**
 ```python
-# 1. Execute SGR tool (returns JSON)
-sgr_result = await execute_sgr_tool(messages)
-sgr_plan = json.loads(sgr_result)
+# 1. Execute SGR tool (returns formatted string instead of JSON)
+sgr_result = await execute_sgr_tool(messages)  # Returns formatted markdown
 
-# 2. Store structured data for downstream
+# 2. Parse for storage (extract JSON fields)
+sgr_plan = extract_plan_from_result(sgr_result)  # Parse back to dict
+
+# 3. Store structured data for downstream (JSON)
 agent_context.sgr_plan = sgr_plan
 
-# 3. DO NOT add tool call or result to message history
-# (skip: messages.append({"role": "assistant", "content": None, "tool_calls": [...]}))
-# (skip: messages.append({"role": "tool", "content": sgr_result}))
-
-# 4. Render synthetic message (replaces tool trace entirely)
-synthetic_message = render_synthetic_template(sgr_plan)
-
-# 5. Inject single synthetic message
+# 4. Tool call + formatted result stay in message history
 messages.append({
     "role": "assistant",
-    "content": synthetic_message,
-    "metadata": {"sgr_injected": True}  # For tracking/debugging
+    "content": None,
+    "tool_calls": [...]
+})
+
+messages.append({
+    "role": "tool",
+    "content": sgr_result,  # Formatted markdown (not raw JSON)
+    "tool_call_id": call_id
 })
 ```
 
-**Result:** Model context contains clean narrative flow—user message → synthetic reasoning → agent continues.
+**Result:** Model sees formatted, actionable analysis in tool result and continues naturally via ReAct cycle.
+
+### Decision 4: Directive Template Language
+**Status:** ✅ CONFIRMED
+
+**Rationale:** Tool result must instruct the model what to do next—not pretend to be the model's own thinking. Use imperative language like "Call retrieve_context tool with:" not "I will search the knowledge base".
+
+**Implementation:**
+```python
+# BAD (confusing - pretends to be LLM):
+"I will search the knowledge base using these queries..."
+
+# GOOD (directive - instructs LLM):
+"Call retrieve_context tool with these queries:
+- query1
+- query2"
+
+# Model processes this as: "I need to call this tool next"
+```
 
 ---
 
-## 3. Three-Output Architecture (Revised)
+## 3. Three-Output Architecture (FORMATTED TOOL RESULT)
 
-Based on the architectural decisions, we maintain a **three-output architecture** with **tool trace removal**:
+Based on the architectural decisions, we maintain a **three-output architecture** with **formatted tool result** (NOT removed):
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    SGR TOOL (Pure Function)                  │
-│  Returns: Structured JSON with all metadata                 │
+│  Returns: Formatted markdown for model + JSON for downstream │
 └─────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
+                                │
+                                ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    HANDLER (Orchestrator)                    │
 │  1. Guardian check → add classification to system message   │
 │  2. Execute SGR tool internally                              │
-│  3. Store structured data → agent_context.sgr_plan          │
-│  4. SKIP adding tool call/result to messages                │
-│  5. Render single synthetic message (analysis + response)   │
-│  6. Inject synthetic message to agent context               │
-│  7. Unbind SGR tool for remainder of turn                   │
-│  8. Route based on action                                   │
+│  3. Store structured data → agent_context.sgr_plan (JSON)  │
+│  4. Return formatted string from tool (for model)           │
+│  5. Tool call + formatted result in messages (ReAct flow)   │
+│  6. Unbind SGR tool for remainder of turn                  │
+│  7. Route based on action                                   │
 └─────────────────────────────────────────────────────────────┘
-                               │
-           ┌───────────────────┼───────────────────┐
-           ▼                   ▼                   ▼
+                                │
+            ┌───────────────────┼───────────────────┐
+            ▼                   ▼                   ▼
 ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
 │ Output 1:       │  │ Output 2:       │  │ Output 3:       │
 │ Context         │  │ UI Response     │  │ Structured      │
-│ Synthetics      │  │ Synthetics      │  │ Metadata        │
+│ Tool Result     │  │ Synthetics      │  │ Metadata        │
 │ (Agent Context) │  │ (User Display)  │  │ (Downstream)    │
 ├─────────────────┤  ├─────────────────┤  ├─────────────────┤
-│ - Full message  │  │ - Response only │  │ - agent_context │
-│ - Analysis      │  │ - No reasoning  │  │   .sgr_plan     │
-│ - Response      │  │ - Preceded by   │  │ - Guardian      │
-│ - No tool trace │  │   user_intent   │  │   result        │
+│ - Formatted     │  │ - Response only │  │ - agent_context │
+│   analysis      │  │ - No reasoning  │  │   .sgr_plan     │
+│ - Actionable    │  │ - Preceded by   │  │ - Guardian      │
+│ - Tool call in  │  │   user_intent   │  │   result        │
+│   history       │  │                 │  │                 │
 └─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
 
 **Three Outputs Explained:**
 
-1. **Context Synthetics** (Output 1) → Model's view
-   - Single assistant message with `## Analysis` + `## Response` sections
-   - Injected to message history as model's "own reasoning"
-   - Tool trace completely removed
-   - Model continues from this point
+1. **Context Tool Result** (Output 1) → Model's view
+   - Formatted markdown with directive instructions
+   - Stays in message history as standard ReAct tool result
+   - Model processes and continues naturally
 
 2. **UI Response Synthetics** (Output 2) → User's view
-   - Only the `## Response` section (extracted)
+   - Only the response text (extracted from structured data)
    - Preceded by user_intent display
-   - No internal reasoning shown (spam_score, uncertainties, etc.)
+    - No internal reasoning shown (spam_score, clarification_questions_to_ask, etc.)
    - Rendered via Gradio history
 
 3. **Structured Metadata** (Output 3) → System/downstream
@@ -238,45 +250,64 @@ Based on the architectural decisions, we maintain a **three-output architecture*
    - Available for: metrics, analytics, debugging, future tools
    - Not visible to model or user
 
-**Key Changes from Original Plan:**
-- ✅ Single assistant message (analysis + response combined)
-- ✅ Tool call and JSON result NOT added to message history
-- ✅ SGR tool unbind after first call per turn
-- ✅ Clean injection: model sees only its "own" reasoning
-- ✅ Guardian classification glued to system message pre-SGR
+**Key Differences from Original Plan:**
+- ✅ Tool result STAYS in context (formatted, not raw JSON)
+- ✅ No early termination risk (ReAct flow preserved)
+- ✅ Directive template language (not pretending to be LLM)
+- ✅ Minimal implementation changes
+- ✅ All SGR fields preserved in JSON for downstream
 
 ---
 
-## 4. Template System Design (Updated)
+## 4. Template System Design (FORMATTED TOOL RESULT)
 
-### Template Structure (Single Message with Two Sections)
+### Template Structure (Directive Tool Result)
 
-All templates now produce a **single message** with two sections:
-1. `## Analysis` - Model's "internal reasoning" (hidden from UI)
-2. `## Response` - User-facing text (shown in UI)
+All templates produce a **single tool result** formatted as directive instructions for the LLM.
+Key principles:
+- **Directive language**: "Call retrieve_context tool with:" not "I will search..."
+- **Bullet lists** for queries (easier to parse than comma-separated)
+- **Actionable next steps**: Clear instructions on what to do
+- **No persona confusion**: Tool result instructs, not pretends to be LLM
 
 **Templating Engine:** Python built-in `str.format()` - no external dependencies (e.g., Jinja2) required.
 
 #### Template 1: Normal (High Confidence, Safe)
 
+**Tool Result (for Model Context):**
 ```markdown
-## Analysis
-**Topic**: {topic}
-**Intent**: {user_intent}
-**Category**: {category}
-**Validity**: Legitimate support request [spam_score: {spam_score}]
-**Confidence**: High ({intent_confidence})
-**Subqueries**: {subqueries}
-**Action Plan**:
-{action_plan}
+**Request Analysis**
+Intent: {user_intent}
+Category: {category}
+Confidence: {intent_confidence_pct}
+<Other SGR fields where relevant>
 
-## Response
-{response}
+**Required next steps**
+1. Call retrieve_context tool with these queries:
+   - {knowledge_base_search_queries_bullet_list}
+   - [+ add any additional relevant queries if needed]
+2. Review results and provide answer based on retrieved documentation
+```
+
+**Example:**
+```markdown
+**Request Analysis**
+Intent: Пользователь хочет настроить SSO для интеграции с корпоративной системой аутентификации
+Category: Помощь в настройке
+Confidence: 92%
+
+**Required next steps**
+1. Call retrieve_context tool with these queries:
+   - настройка SSO Comindware
+   - аутентификация Active Directory
+   - интеграция LDAP
+   - [+ add any additional relevant queries if needed]
+2. Review results and provide step-by-step configuration guide
 ```
 
 **UI Display:**
 ```
-How I understood your request:
+Как я понял ваш запрос:
 
 {user_intent}
 
@@ -285,96 +316,119 @@ How I understood your request:
 
 #### Template 2: Clarify (Low Confidence)
 
+**Tool Result (for Model Context):**
 ```markdown
-## Analysis
-**Topic**: {topic}
-**Intent**: {user_intent} (not completely understood)
-**Category**: {category}
-**Validity**: Request needs clarification [spam_score: {spam_score}]
-**Confidence**: Low ({intent_confidence})
-**Uncertainties**:
-{uncertainties}
-**Subqueries**: {subqueries}
+**Request Analysis**
+Intent: {user_intent}
+Category: {category}
+Confidence: {intent_confidence_pct} (низкая)
 
-## Response
-{response}
+**Required next steps**
+1. Ask the user these clarification questions:
+   - {clarification_questions_to_ask_bullet_list}
+   - [+ add any additional questions if needed]
+2. Wait for user response before proceeding
+```
+
+**Example:**
+```markdown
+**Request Analysis**
+Intent: Пользователь сообщает о проблеме в процессе, но конкретные детали неясны
+Category: Устранение неполадок
+Confidence: 42% (низкая)
+
+**Required next steps**
+1. Ask the user these clarification questions:
+   - Какой именно процесс не работает? (название или ID)
+   - Что конкретно происходит: ошибка, зависание, или процесс не запускается?
+   - Когда проблема началась?
+   - [+ add any additional questions if needed]
+2. Wait for user response before proceeding
 ```
 
 **UI Display:**
 ```
-How I understood your request:
+Как я понял ваш запрос:
 
 {user_intent}
 
-{response}
+{first_uncertainty_from_list}
 ```
 
 #### Template 3: Block (Spam/Off-topic)
 
+**Tool Result (for Model Context):**
 ```markdown
-## Analysis
-**Assessment**: Off-topic or spam request
-**Validity**: Request unrelated to Comindware Platform [spam_score: {spam_score}]
-**Reason**: {spam_reason}
-**Action**: block
+**Request Analysis**
+Assessment: Запрос не относится к платформе Comindware
+Reason: {spam_reason}
+Spam Score: {spam_score}
 
-## Response
-{response}
+**Required next steps**
+Do not process this request. Use this refusal message:
+
+"{refusal}"
 ```
 
 **UI Display:**
 ```
-How I understood your request:
-
-{user_intent}
-
-{response}
+{refusal}
 ```
 
 #### Template 4: Guardian Blocked (Safety Concern)
 
+**Tool Result (for Model Context):**
 ```markdown
-## Analysis
-**Assessment**: Request blocked by safety policy
-**Validity**: Potentially harmful [guard_categories: {guard_categories}]
-**Category**: Unsafe request
-**Action**: guardian_block
+**Request Analysis**
+Assessment: Запрос заблокирован системой безопасности
+Reason: {guard_reason}
 
-## Response
-{response}
+**Required next steps**
+Do not process this request. Use this refusal message:
+
+"{refusal}"
 ```
 
 **UI Display:**
 ```
-{response}
+{refusal}
 ```
 
 ### Template Variables
 
 ```python
 TEMPLATE_VARIABLES = {
+    # From SGR schema
     "topic": "Inferred topic from request",
     "user_intent": "Parsed user intent from SGR",
     "category": "Request classification",
     "spam_score": "0.0-1.0",
     "spam_reason": "Explanation if spam",
     "intent_confidence": "0.0-1.0",
-    "uncertainties": "List if confidence low",
-    "subqueries": "Bullet list of search queries (formatted in render function)",
-    "action_plan": "List of steps (formatted as numbered list in render function)",
-    "guard_categories": "From guardian result (prompt context)",
+    "intent_confidence_pct": "0-100% format for display",
+    "clarification_questions_to_ask": "List of clarification questions to ask user",
+    "clarification_questions_to_ask_bullet_list": "Formatted as markdown bullets",
+    "knowledge_base_search_queries": "List of search queries for knowledge base",
+    "knowledge_base_search_queries_bullet_list": "Formatted as markdown bullets (no quotes)",
+    "action_plan": "List of steps (for reference in normal template)",
+    "guard_reason": "Guardian block reason",
     "action": "Enum: normal, clarify, block, guardian_block",
-    "clarification_question": "Generated question if clarify",
-    "i18n_*": "Resolved via get_text() from rag_engine.api.i18n"
+    
+    # From i18n (resolved via get_text())
+    "refusal": "i18n resolved refusal text (sgr_spam_refusal or sgr_guardian_refusal)",
 }
 ```
 
-**Note:** Formatting (comma-separated, numbered lists) happens inside `render_sgr_template()`, not passed as separate variables.
+**Note:** 
+- `{refusal}` is resolved via `get_text("sgr_spam_refusal")` or `get_text("sgr_guardian_refusal")` in the render functions
+- All other dynamic values come directly from the SGR schema
 
 **Key Design:**
-- `action` enum values map to template names (internal routing)
+- `action` enum values map to template functions (internal routing)
+- `{refusal}` resolved via `get_text()` for feature-proof i18n support
 - UI response texts use i18n keys resolved via existing `get_text()` function
 - Guardian categories come from prompt context (preceding guardian call), not SGR tool
+- Queries in bullets WITHOUT quotes (model parses easier)
 
 ---
 
@@ -463,16 +517,16 @@ class SGRPlanResult(BaseModel):
         ),
     )
     
-    # STEP 5: Uncertainty Analysis
-    uncertainties: list[str] = Field(
+    # STEP 5: Clarification Questions to Ask
+    clarification_questions_to_ask: list[str] = Field(
         default_factory=list,
         max_length=5,
         description=(
-            "REASONING STEP 5 - Uncertainty Analysis: "
-            "If confidence < 0.7, what specific things are unclear? "
-            "What don't you understand? What information is missing? "
-            "List up to 5 specific questions in Russian. "
-            "Empty list if confidence >= 0.7."
+            "REASONING STEP 5 - Clarification Questions to Ask: "
+            "If intent_confidence < 0.7, what specific questions would help you understand better? "
+            "Write in Russian, be polite and specific. "
+            "These questions will be shown to the user to get clarification. "
+            "Empty list if intent_confidence >= 0.7."
         ),
     )
     
@@ -502,16 +556,17 @@ class SGRPlanResult(BaseModel):
         ),
     )
     
-    # STEP 8: Search Strategy
-    subqueries: list[str] = Field(
+    # STEP 8: Knowledge Base Search Queries
+    knowledge_base_search_queries: list[str] = Field(
         ...,
         min_length=1,
         max_length=10,
         description=(
-            "REASONING STEP 8 - Search Strategy: "
-            "What specific terms would find relevant documentation? "
-            "Include: feature names, technical terms, error messages. "
-            "Write in Russian, avoid duplicates."
+            "REASONING STEP 8 - Knowledge Base Search Queries: "
+            "What specific terms should be used to search the knowledge base? "
+            "Include: feature names, technical terms, error messages, relevant keywords. "
+            "Write in Russian, avoid duplicates. "
+            "These queries will be used to retrieve relevant documentation."
         ),
     )
     
@@ -539,45 +594,34 @@ class SGRPlanResult(BaseModel):
             "'guardian_block': safety issues from guardian (in prompt context)."
         ),
     )
-    
-    # STEP 11: Clarification (if needed)
-    clarification_question: str | None = Field(
-        default=None,
-        max_length=300,
-        description=(
-            "REASONING STEP 11 - Clarification: "
-            "If action='clarify', what question would help you understand better? "
-            "Write in Russian, be polite and specific. "
-            "None if action != 'clarify'."
-        ),
-    )
 ```
 
 ---
 
-## 6. Updated Handler Architecture (Tool Trace Removal)
+## 6. Handler Architecture (FORMATTED TOOL RESULT)
 
 ### Complete Handler Flow
+
+**Key Difference from Original Plan:**
+- NO removal of tool trace from context
+- ONLY change: tool return format (formatted string instead of raw JSON)
+- Minimal code changes required
 
 ```python
 from rag_engine.api.i18n import get_text
 
-async def agent_chat_handler_with_sgr_injection(user_message, gradio_history, messages):
+async def agent_chat_handler_with_sgr(user_message, gradio_history, messages):
     """
-    Handler with clean SGR injection pattern:
+    Handler with formatted SGR tool result pattern:
     0. Guardian check (if enabled)
     1. A/B test flag check (lean feature flag)
-    2. Forced SGR tool call (internal only)
-    3. Store structured data
-    4. Branch: clean injection vs standard flow
-    5. Build response (used in both template and UI - no duplicate logic)
-    6. Render template with response
-    7. Inject to model context
-    8. Build UI message (reuse response)
-    9. Route based on action
-    10. Unbind SGR tool for remainder of turn
-    11. Create agent without SGR
-    12. Continue with normal agent flow
+    2. Forced SGR tool call (forced tool_choice)
+    3. Store structured data (JSON for downstream)
+    4. Build response text (for UI)
+    5. Tool result automatically formatted by tool return value
+    6. Route based on action
+    7. Unbind SGR tool for remainder of turn
+    8. Create agent and continue
     """
     
     # ========== 0. GUARDIAN CHECK ==========
@@ -587,7 +631,6 @@ async def agent_chat_handler_with_sgr_injection(user_message, gradio_history, me
         should_block = guard_client.should_block(moderation_result)
         
         if should_block and guard_mode == "enforce":
-            # Block immediately - no SGR processing
             refusal_msg = get_text("guardian_refusal_unsafe")
             gradio_history.append({
                 "role": "assistant",
@@ -595,7 +638,6 @@ async def agent_chat_handler_with_sgr_injection(user_message, gradio_history, me
                 "metadata": {"ui_type": "guardian_block"}
             })
             
-            # Store metadata for downstream
             agent_context.guardian_result = moderation_result
             agent_context.blocked = True
             agent_context.block_reason = "guardian_unsafe"
@@ -606,16 +648,12 @@ async def agent_chat_handler_with_sgr_injection(user_message, gradio_history, me
         moderation_result = None
     
     # ========== 1. A/B TEST FLAG ==========
-    # Lean feature flag: toggle between clean injection and standard flow
-    use_clean_injection = getattr(settings, "sgr_clean_injection_enabled", True)
+    # Toggle between formatted tool result and raw JSON
+    use_formatted_result = getattr(settings, "sgr_formatted_tool_result_enabled", True)
     
     # ========== 2. FORCED SGR TOOL CALL ==========
-    # Prepare SGR prompt with guardian context (if available)
-    # Guardian classification is GLUED to the system message BEFORE SGR call
-    # This provides safety context without being part of the tool schema
     sgr_system_prompt = build_sgr_system_prompt(moderation_result)
     
-    # Execute SGR tool (forced tool_choice)
     sgr_llm = LLMManager(...)._chat_model()
     sgr_model = sgr_llm.bind_tools(
         [analyse_user_request_tool],
@@ -626,60 +664,38 @@ async def agent_chat_handler_with_sgr_injection(user_message, gradio_history, me
     
     # Extract plan from tool call arguments
     tool_call = sgr_response.tool_calls[0]
+    call_id = tool_call["id"]
     sgr_plan = tool_call["args"]  # Already validated by schema
-    # --- After SGR execution ---
-    # ========== 3. STORE STRUCTURED DATA ==========
-    # Save to agent_context for downstream processing
+    
+    # ========== 3. STORE STRUCTURED DATA (JSON) ==========
+    # Save complete JSON for downstream (UI, metrics, integrations)
     agent_context.sgr_plan = sgr_plan
     agent_context.guardian_result = moderation_result
     
-    # ========== 3. BRANCH: Clean Injection vs Standard Flow ==========
-    if not use_clean_injection:
-        # STANDARD FLOW (current behavior):
-        # - Tool call message stays in context (visible to model)
-        # - JSON result stays in context (visible to model)
-        # - Agent continues with standard flow - no synthetic injection
-        # - This preserves existing behavior when flag is disabled
-        # TODO: Implement standard flow continuation
-        pass
+    # ========== 4. BUILD RESPONSE TEXT (for UI) ==========
+    if sgr_plan["action"] == "normal":
+        response_text = get_text("sgr_normal_response", user_intent=sgr_plan["user_intent"])
+    elif sgr_plan["action"] == "clarify":
+        # For UI, we can either show the first uncertainty or a generic message
+        clarification = sgr_plan.get("clarification_questions_to_ask", [""])[0] if sgr_plan.get("clarification_questions_to_ask") else ""
+        response_text = get_text("sgr_clarify_response", 
+            user_intent=sgr_plan["user_intent"], 
+            clarification_question=clarification)
+    elif sgr_plan["action"] == "block":
+        response_text = get_text("sgr_spam_response")
+    elif sgr_plan["action"] == "guardian_block":
+        response_text = get_text("sgr_guardian_response")
     else:
-        # CLEAN INJECTION FLOW (new): Remove tool trace, inject synthetic
-        # ========== 4. SKIP TOOL TRACE IN HISTORY ==========
-        # CRITICAL: Do NOT add tool call or tool result to messages
-        # The model should NOT see: assistant message with tool_calls
-        # The model should NOT see: tool message with JSON result
-        
-        # ========== 5. BUILD RESPONSE (used in both template and UI) ==========
-        # Construct ONCE - use in both places to avoid duplicate logic
-        if sgr_plan["action"] == "normal":
-            response_text = get_text("sgr_normal_response", user_intent=sgr_plan["user_intent"])
-        elif sgr_plan["action"] == "clarify":
-            response_text = get_text("sgr_clarify_response", user_intent=sgr_plan["user_intent"], clarification_question=sgr_plan.get("clarification_question", ""))
-        elif sgr_plan["action"] == "block":
-            response_text = get_text("sgr_spam_response")
-        elif sgr_plan["action"] == "guardian_block":
-            response_text = get_text("sgr_guardian_response")
-        else:
-            response_text = ""
-        
-        # ========== 6. RENDER TEMPLATE WITH RESPONSE ==========
-        template_name = sgr_plan["action"]  # "normal", "clarify", "block", "guardian_block"
-        synthetic_content = render_sgr_template(template_name, sgr_plan, moderation_result, response_text)
-        
-        # ========== 7. INJECT TO MODEL CONTEXT ==========
-        messages.append({
-            "role": "assistant",
-            "content": synthetic_content,
-            "metadata": {
-                "sgr_injected": True,
-                "sgr_action": sgr_plan["action"],
-                "sgr_turn": current_turn_id
-            }
-        })
-        
-        # ========== 8. BUILD UI MESSAGE (reuse same response_text) ==========
-        user_intent_prefix = get_text("user_intent_prefix")
-        ui_message = f"**{user_intent_prefix}**\n\n{sgr_plan['user_intent']}\n\n{response_text}"
+        response_text = ""
+    
+    # ========== 5. TOOL RESULT ALREADY FORMATTED ==========
+    # The tool itself returns formatted string (see Tool Implementation below)
+    # Standard ReAct flow: tool call + tool result stay in messages
+    # No need to manually inject - LangChain handles this automatically
+    
+    # ========== 6. BUILD UI MESSAGE ==========
+    user_intent_prefix = get_text("user_intent_prefix")
+    ui_message = f"**{user_intent_prefix}**\n\n{sgr_plan['user_intent']}\n\n{response_text}"
     gradio_history.append({
         "role": "assistant",
         "content": ui_message,
@@ -692,41 +708,144 @@ async def agent_chat_handler_with_sgr_injection(user_message, gradio_history, me
     
     yield gradio_history
     
-    # === END CLEAN INJECTION BRANCH ===
-    # (Standard flow would continue differently)
-    
-    # ========== 9. ROUTE BASED ON ACTION ==========
+    # ========== 7. ROUTE BASED ON ACTION ==========
     if sgr_plan["action"] in ["block", "guardian_block"]:
-        # Blocking actions - stop here, no further processing
         return
     
     elif sgr_plan["action"] == "clarify":
-        # Clarification needed - wait for user response
-        # Agent state is ready for next user message
         return
     
     else:  # action == "normal"
-        # ========== 10. UNBIND SGR TOOL ==========
-        # Remove SGR tool from available tools for this turn
+        # ========== 8. UNBIND SGR TOOL ==========
         available_tools = [t for t in all_tools if t.name != "analyse_user_request"]
         
-        # ========== 11. CREATE AGENT WITHOUT SGR ==========
+        # ========== 9. CREATE AGENT WITHOUT SGR ==========
         agent = create_react_agent(
             model=llm,
-            tools=available_tools,  # SGR tool NOT included
+            tools=available_tools,
             prompt=agent_system_prompt,
-            # ... other config
         )
         
-        # ========== 12. CONTINUE WITH NORMAL AGENT FLOW ==========
-        # Model sees: user message → synthetic analysis (as its own) → continues
+        # ========== 10. CONTINUE WITH AGENT FLOW ==========
+        # Model sees: user → wrapped message → tool call → formatted tool result → continues
         async for stream_mode, chunk in agent.astream(
             {"messages": messages},
             config={...}
         ):
-            # Handle streaming, tool calls, final answer
-            # ... (existing streaming logic)
             pass
+```
+
+### Tool Implementation (Key Change)
+
+```python
+@tool("analyse_user_request", args_schema=SGRPlanResult)
+async def analyse_user_request(
+    user_intent: str,
+    topic: str,
+    category: str,
+    intent_confidence: float,
+    clarification_questions_to_ask: list[str],
+    spam_score: float,
+    spam_reason: str,
+    knowledge_base_search_queries: list[str],
+    action_plan: list[str],
+    action: SGRAction,
+    runtime: ToolRuntime[AgentContext, None] | None = None,
+) -> str:
+    """Analyze the user request and produce the resolution plan."""
+    
+    # Build structured data for downstream (JSON)
+    plan = {
+        "user_intent": user_intent,
+        "topic": topic,
+        "category": category,
+        "intent_confidence": intent_confidence,
+        "clarification_questions_to_ask": clarification_questions_to_ask,  # These ARE the clarification questions
+        "spam_score": spam_score,
+        "spam_reason": spam_reason,
+        "knowledge_base_search_queries": knowledge_base_search_queries,
+        "action_plan": action_plan,
+        "action": action,
+    }
+    
+    # Store JSON for downstream
+    if runtime and runtime.context:
+        runtime.context.sgr_plan = plan
+    
+    # Return FORMATTED string for model context (NEW)
+    return render_sgr_template(action, plan)
+```
+
+### Helper Functions
+
+```python
+def render_sgr_template(action: str, plan: dict) -> str:
+    """Render SGR plan as directive tool result."""
+    
+    if action == "normal":
+        return _render_normal_template(plan)
+    elif action == "clarify":
+        return _render_clarify_template(plan)
+    elif action == "block":
+        return _render_block_template(plan)
+    elif action == "guardian_block":
+        return _render_guardian_template(plan)
+    return ""
+
+
+def _render_normal_template(plan: dict) -> str:
+    """Render normal (proceed) template with directive language."""
+    queries = "\n   - ".join(plan["knowledge_base_search_queries"])
+    return f"""**Request Analysis**
+Intent: {plan['user_intent']}
+Category: {plan['category']}
+Confidence: {plan['intent_confidence'] * 100:.0f}%
+
+**Required next steps**
+1. Call retrieve_context tool with these queries:
+   - {queries}
+2. Review results and provide answer based on retrieved documentation"""
+
+
+def _render_clarify_template(plan: dict) -> str:
+    """Render clarification needed template - clarification_questions_to_ask merged into required next steps."""
+    questions = "\n   - ".join(plan.get("clarification_questions_to_ask", []))
+    return f"""**Request Analysis**
+Intent: {plan['user_intent']}
+Category: {plan['category']}
+Confidence: {plan['intent_confidence'] * 100:.0f}% (низкая)
+
+**Required next steps**
+1. Ask the user these clarification questions:
+   - {questions}
+   - [+ add any additional questions if needed]
+2. Wait for user response before proceeding"""
+
+
+def _render_block_template(plan: dict) -> str:
+    """Render spam/block template."""
+    refusal = get_text("sgr_spam_refusal")
+    return f"""**Request Analysis**
+Assessment: Запрос не относится к платформе Comindware
+Reason: {plan['spam_reason']}
+Spam Score: {plan['spam_score']}
+
+**Required next steps**
+Do not process this request. Use this refusal message:
+
+"{refusal}"""
+
+
+def _render_guardian_template(plan: dict) -> str:
+    """Render guardian block template."""
+    refusal = get_text("sgr_guardian_refusal")
+    return f"""**Request Analysis**
+Assessment: Запрос заблокирован системой безопасности
+
+**Required next steps**
+Do not process this request. Use this refusal message:
+
+"{refusal}"""
 ```
 
 ### Key Implementation Details
@@ -784,11 +903,10 @@ def render_sgr_template(
         "spam_reason": sgr_plan["spam_reason"],
         "intent_confidence": sgr_plan["intent_confidence"],
         # Format lists internally
-        "uncertainties": _format_list(sgr_plan.get("uncertainties", [])),
-        "subqueries": _format_list(sgr_plan["subqueries"]),
+        "clarification_questions_to_ask": _format_list(sgr_plan.get("clarification_questions_to_ask", [])),
+        "knowledge_base_search_queries": _format_list(sgr_plan["knowledge_base_search_queries"]),
         "action_plan": _format_numbered_list(sgr_plan.get("action_plan", [])),
         "action": sgr_plan["action"],
-        "clarification_question": sgr_plan.get("clarification_question"),
         "guard_categories": moderation_result.get("categories", []) if moderation_result else [],
         # Response - passed in, used in both template and UI (no duplicate logic)
         "response": response_text,
@@ -875,7 +993,7 @@ guard_timeout: float
 guard_max_retries: int
 ```
 
-### Updated Flow with Guardian + Clean SGR Injection
+### Updated Flow with Guardian + Formatted Tool Result
 
 ```
 User Request
@@ -906,21 +1024,22 @@ User Request
                 ▼
         ┌──────────────────────┐
         │ Forced SGR Call      │
-        │ (INTERNAL ONLY)      │
+        │ Returns: Formatted    │
+        │ markdown (NOT JSON)  │
         └──────────────────────┘
                 │
                 ▼
         ┌──────────────────────┐
-        │ Remove Tool Trace    │
-        │ - No tool message    │
-        │ - No JSON in history │
+        │ Store JSON in        │
+        │ agent_context.sgr_plan│
+        │ (for downstream)     │
         └──────────────────────┘
                 │
                 ▼
         ┌──────────────────────┐
-        │ Inject Synthetic     │
-        │ Single assistant msg │
-        │ (analysis+response)  │
+        │ Tool Call + Result   │
+        │ Stay in Messages     │
+        │ (Standard ReAct)     │
         └──────────────────────┘
                 │
                 ▼
@@ -932,7 +1051,7 @@ User Request
                 ▼
         ┌──────────────────────┐
         │ Agent Continues      │
-        │ With clean context   │
+        │ (Natural ReAct flow) │
         └──────────────────────┘
 ```
 
@@ -953,85 +1072,89 @@ User Request
 
 ### What Each Component Sees (Three Outputs)
 
-| Data                   | Context Synthetics (Model) | UI Synthetics (User) | Structured Metadata (System) |
+| Data                   | Context Tool Result (Model) | UI Synthetics (User) | Structured Metadata (System) |
 | ---------------------- | -------------------------- | -------------------- | ---------------------------- |
-| user_intent            | ✅ Yes                      | ✅ Yes                | ✅ Yes                        |
+| user_intent            | ✅ Yes (in analysis)        | ✅ Yes                | ✅ Yes                        |
 | topic                  | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
 | category               | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
-| spam_score             | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
-| spam_reason            | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
+| spam_score             | ✅ Yes (if relevant)        | ❌ No                 | ✅ Yes                        |
+| spam_reason            | ✅ Yes (if block)           | ❌ No                 | ✅ Yes                        |
 | intent_confidence      | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
-| uncertainties          | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
-| subqueries             | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
-| action_plan            | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
-| action                 | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
-| clarification_question | ✅ Yes                      | ✅ Yes (if clarify)   | ✅ Yes                        |
+| clarification_questions_to_ask | ✅ Yes (as questions)       | ❌ No                 | ✅ Yes                        |
+| knowledge_base_search_queries | ✅ Yes (as bullet list)     | ❌ No                 | ✅ Yes                        |
+| action_plan            | ✅ Yes (referenced)         | ❌ No                 | ✅ Yes                        |
+| action                 | ✅ Yes (determines template)| ❌ No                 | ✅ Yes                        |
 | guard_categories       | ✅ Yes (in analysis)        | ❌ No                 | ✅ Yes                        |
-| Response section       | ✅ Yes                      | ✅ Yes                | ✅ Yes                        |
-| Tool call trace        | ❌ **NO**                   | ❌ No                 | ✅ Yes (in logs)              |
-| Raw JSON result        | ❌ **NO**                   | ❌ No                 | ✅ Yes (sgr_plan)             |
+| Tool call trace        | ✅ Yes (standard ReAct)     | ❌ No                 | ✅ Yes (in logs)              |
+| Formatted tool result  | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
+| Raw JSON result        | ❌ No                       | ❌ No                 | ✅ Yes (sgr_plan)             |
+
+**Note:** No separate `clarification_question` field - `clarification_questions_to_ask` list serves as both the questions to ask (in tool result) and is stored in JSON for downstream.
 
 **Key Principle:** Three outputs with clean separation:
-- **Context Synthetics**: Full message with analysis (model's "own" reasoning)
+- **Context Tool Result**: Formatted analysis with directive instructions (stays in ReAct flow)
 - **UI Synthetics**: Response section only (user-facing, no internal details)
 - **Structured Metadata**: Raw JSON + Guardian data (downstream processing)
 
 ---
 
-## 9. Implementation Phases (Updated)
+## 9. Implementation Phases (FORMATTED TOOL RESULT)
 
-### Phase 1: Core Clean Injection System
+### Phase 1: Formatted Tool Result Implementation
+
+**Complexity: LOW - Minimal changes required**
 
 - [ ] **Update SGRPlanResult schema** with enhanced field descriptions (REASONING STEP N pattern)
-- [ ] Add new fields: `action` enum, `intent_confidence`, `uncertainties`, `topic`, `category`
+- [ ] Add new fields: `action` enum, `intent_confidence`, `clarification_questions_to_ask`, `topic`, `category`
 - [ ] **Remove from schema**: `ask_for_clarification` (replaced by action), `template_hint`
-- [ ] Define template catalog (normal, clarify, block, guardian_block - single message format)
+- [ ] Define template functions for each action type:
+  - `_render_normal_template(plan)` 
+  - `_render_clarify_template(plan)`
+  - `_render_block_template(plan)`
+  - `_render_guardian_template(plan)`
 - [ ] **Add i18n keys** to `rag_engine/api/i18n.py`:
   - `sgr_normal_response`
   - `sgr_clarify_response`
   - `sgr_spam_response`
+  - `sgr_spam_refusal`  # Full refusal text for block template
   - `sgr_guardian_response`
+  - `sgr_guardian_refusal`  # Full refusal text for guardian template
   - `user_intent_prefix`
-- [ ] Implement `render_sgr_template()` function
-- [ ] Implement helper functions for template rendering:
-  - `_format_list(items: list) -> str` - Format list as markdown bullets
-  - `_format_numbered_list(items: list) -> str` - Format list as numbered markdown
-- [ ] **Modify handler flow**:
-  - Execute SGR tool internally
-  - Store result in `agent_context.sgr_plan`
-  - **SKIP adding tool call/result to messages**
-  - Render and inject single synthetic message
-  - **Unbind SGR tool** after first call
-- [ ] Create agent WITHOUT SGR tool for remainder of turn
-- [ ] Update UI emission to show only response section
+- [ ] **Modify analyse_user_request tool** to return formatted string:
+  ```python
+  # Instead of: return json.dumps(plan)
+  return render_sgr_template(plan["action"], plan)
+  ```
+- [ ] **Verify handler** - No changes needed! Tool result automatically in messages
+- [ ] Verify SGR tool unbound after first call (already implemented)
+- [ ] Update UI emission to show only response section (already implemented)
 
 ### Phase 2: Guardian Integration (ALREADY DONE - Verify Alignment)
 
 - [x] Guardian already merged from `cmw-rag-guard-test` branch
 - [x] `GuardClient` class in `rag_engine/core/guard_client.py`
 - [x] Settings in `rag_engine/config/settings.py`
-- [ ] **Verify integration** with clean SGR injection
-- [ ] **Update** `build_sgr_system_prompt()` to use existing guardian client
+- [ ] **Verify integration** with formatted tool result
 - [ ] **Test** ENFORCE mode: Guardian blocks → no SGR called
 - [ ] **Test** REPORT mode: Guardian runs → SGR gets context → may route to guardian_block
-- [ ] **Test** Safe flow: Guardian passes → SGR executes → clean injection
+- [ ] **Test** Safe flow: Guardian passes → SGR executes → formatted tool result
 
 ### Phase 3: Testing & Validation
 
-- [ ] Unit tests for template rendering
-- [ ] Integration test: Full flow with clean injection
-- [ ] Verify tool trace is NOT in message history
-- [ ] Verify synthetic message IS in message history
+- [ ] Unit tests for template rendering functions
+- [ ] Integration test: Full flow with formatted tool result
+- [ ] Verify tool result IS in message history (formatted, not JSON)
+- [ ] Verify model continues after tool result (no early termination)
 - [ ] Verify SGR tool unbound after first call
-- [ ] A/B test: Clean injection vs. standard tool result
-- [ ] Measure: plan-to-answer consistency, token efficiency
+- [ ] A/B test: Formatted tool result vs. raw JSON
+- [ ] Measure: response quality, token efficiency
 - [ ] Guardian integration tests (all modes)
 
 ### Phase 4: Documentation & Rollout
 
 - [ ] Update architecture documentation
-- [ ] Document clean injection pattern for team
-- [ ] Add inline code comments explaining tool trace removal
+- [ ] Document formatted tool result pattern for team
+- [ ] Add inline code comments explaining template rendering
 
 ---
 
@@ -1039,30 +1162,35 @@ User Request
 
 ### Resolved ✅
 
-1. **Single vs dual assistant messages:** ✅ Single combined message
-2. **Mid-turn SGR calls:** ✅ Unbind after first call per turn
-3. **Tool trace in context:** ✅ Remove entirely, clean injection only
-4. **Guardian integration:** ✅ Already implemented, align with SGR
+1. **Early termination risk:** ✅ Avoided by keeping tool result in ReAct flow
+2. **Synthetic injection issue:** ✅ Replaced with formatted tool result
+3. **Template language:** ✅ Directive/instructional, not pretending to be LLM
+4. **Implementation complexity:** ✅ Minimal - change only tool return format
 
-### All Resolved ✅
+### Confirmed Decisions ✅
 
-5. **Template language:** 
-   - [x] Python `.format()` - Simple, no external dependencies, consistent with existing `prompts.py`
+5. **Template format:** 
+   - [x] Bullet lists for queries (no quotes) - easier for model to parse
+   - [x] "Required next steps" section with numbered actions
+   - [x] "Call [tool] with:" pattern for tool invocation
 
-6. **Template storage:**
-   - [x] Hardcoded in Python - Consistent with `rag_engine/llm/prompts.py` pattern
+6. **Implementation approach:**
+   - [x] Tool returns formatted string (not JSON)
+   - [x] JSON stored separately in agent_context.sgr_plan for downstream
+   - [x] Standard ReAct flow preserved (tool call + result in messages)
 
-
-7. **Response construction:**
-   - [x] Direct construction from structured data (no extraction needed)
-   - UI message built from: user_intent + i18n response text
-
-8. **A/B Testing (Lean):**
-   - Simple boolean flag in settings: `SGR_CLEAN_INJECTION_ENABLED = True/False`
-   - **When disabled (False):** Current behavior preserved - tool call + JSON result stay in context
-   - **When enabled (True):** Clean injection - remove tool trace, inject synthetic message
+7. **A/B Testing (Lean):**
+   - Simple boolean flag in settings: `SGR_FORMATTED_TOOL_RESULT_ENABLED = True/False`
+   - **When disabled (False):** Current behavior - tool returns raw JSON
+   - **When enabled (True):** Formatted tool result - human-readable markdown
    - Metrics: Compare response quality, token usage, latency between modes
    - Rollout: Toggle in config, no complex percentage system (add later if needed)
+
+8. **Different templates for different cases:**
+   - [x] `normal` - proceed with retrieval and answer
+   - [x] `clarify` - ask user for clarification
+   - [x] `block` - refuse as off-topic/spam
+   - [x] `guardian_block` - refuse as unsafe
 
 ---
 
@@ -1071,18 +1199,18 @@ User Request
 ### Quantitative
 
 - **Plan-to-Action Consistency:** BLEU/ROUGE between plan and final answer
-- **Tool Trace Visibility:** Verify via logs that tool calls NOT in model context
-- **Token Efficiency:** Compare context usage (clean injection vs. tool trace)
-- **Response Latency:** Measure any impact of template rendering
+- **Early Termination Rate:** Verify model continues after formatted tool result
+- **Token Efficiency:** Compare context usage (formatted vs. raw JSON)
+- **Response Latency:** Measure impact of template rendering (minimal expected)
 - **User Satisfaction:** Blind test comparing responses
 - **Error Rate:** Fewer "apology loops" or confusion in agent responses
 
 ### Qualitative
 
-- **Response Quality:** Does model follow plan better with clean injection?
-- **Coherence:** More natural flow in multi-turn conversations?
-- **Debugging:** Easier or harder to trace with tool trace removed?
-- **Transparency:** Are we comfortable with hiding tool usage from model?
+- **Response Quality:** Does model follow directive instructions in tool result?
+- **Coherence:** Natural flow in multi-turn conversations (ReAct preserved)?
+- **Debugging:** Easy to trace with formatted tool result?
+- **Clarity:** Model correctly interprets "Call retrieve_context tool" instructions?
 
 ---
 
@@ -1162,13 +1290,16 @@ Determines whether SGR tool is available based on turn state.
 
 Determines what gets emitted to each output channel.
 
-| Output Channel               | Analysis Section | Response Section | Tool Trace | Structured Data |
-| ---------------------------- | ---------------- | ---------------- | ---------- | --------------- |
-| Context Synthetics (Model)   | Yes              | Yes              | No         | No              |
-| UI Synthetics (User)         | No               | Yes              | No         | No              |
-| Structured Metadata (System) | Yes              | Yes              | Yes        | Yes             |
+| Output Channel               | Formatted Analysis | Response Section | Tool Trace | Structured Data |
+| ---------------------------- | ------------------ | ---------------- | ---------- | --------------- |
+| Context Tool Result (Model) | Yes (directive)   | No               | Yes        | No              |
+| UI Synthetics (User)         | No                | Yes              | No         | No              |
+| Structured Metadata (System)| Yes (JSON)        | Yes (JSON)       | Yes        | Yes             |
 
-**Note:** Tool trace includes raw JSON result and tool call metadata. Only stored in `agent_context.sgr_plan` for downstream processing, not visible to model or user.
+**Note:** 
+- Tool trace stays in context (standard ReAct flow)
+- Tool result is formatted markdown (not raw JSON)
+- Raw JSON only in agent_context.sgr_plan for downstream
 
 ---
 
@@ -1191,8 +1322,8 @@ Determines what gets emitted to each output channel.
 ---
 
 **Next Steps:**
-1. Review and approve revised architecture
-2. Implement Phase 1: Clean injection with single message
+1. Review and approve revised architecture (Formatted Tool Result approach)
+2. Implement Phase 1: Formatted tool result implementation
 3. Verify Phase 2: Guardian alignment (already implemented)
 4. Begin testing Phase 3
-5. Document clean injection pattern for team
+5. Document formatted tool result pattern for team
