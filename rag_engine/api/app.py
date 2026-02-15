@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -620,6 +621,7 @@ def _build_agent_messages_from_gradio_history(
     gradio_history: list[dict],
     current_message: str,
     wrapped_message: str,
+    blocked_message_hashes: set[str] | None = None,
 ) -> list[dict]:
     """Build messages for agent from Gradio history, filtering out UI-only messages.
 
@@ -673,29 +675,48 @@ def _build_agent_messages_from_gradio_history(
         msg_content = msg.get("content", "")
         has_metadata = "metadata" in msg
 
-        # Check for blocked messages - replace with generic placeholder
-        # Gradio sets 'metadata': None, we need to check the actual value
-        metadata = msg.get("metadata")
+        # Check for blocked messages - robust check handles all Gradio metadata formats
+        msg_content = msg.get("content", "")
 
-        # Initialize metadata as dict if it's None
-        if metadata is None:
-            metadata = {}
-            msg["metadata"] = {}
+        # Extract text content for hashing (handles Gradio structured format)
+        if isinstance(msg_content, list) and len(msg_content) > 0:
+            # Gradio 6 format: list of content blocks
+            text_parts = []
+            for block in msg_content:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text_parts.append(block.get("text", ""))
+            content_str = " ".join(text_parts)
+        elif isinstance(msg_content, str):
+            content_str = msg_content
+        else:
+            content_str = str(msg_content)
 
-        has_blocked = False
-        if isinstance(metadata, dict):
-            has_blocked = metadata.get("blocked", False)
+        # Create hash for content-based tracking (Gradio strips metadata)
+        msg_hash = hashlib.sha256(content_str.encode()).hexdigest()
+        has_blocked = (
+            msg_hash in blocked_message_hashes if isinstance(blocked_message_hashes, set) else False
+        )
 
         logger.debug(
-            "Checking message %d for blocking: role=%s, has_blocked=%s, metadata=%s",
+            "Checking message %d for blocking: role=%s, has_blocked=%s, content_preview=%s",
             idx,
             msg.get("role"),
             has_blocked,
-            metadata,
+            content_str[:50],
+        )
+
+        logger.debug(
+            "Checking message %d for blocking: role=%s, has_blocked=%s, hash=%s",
+            idx,
+            msg.get("role"),
+            has_blocked,
+            msg_hash[:16],
         )
 
         if msg_role == "user" and has_blocked:
-            logger.info("Detected blocked message at index %d, replacing with placeholder", idx)
+            logger.info(
+                "Detected blocked message at index %d by hash, replacing with placeholder", idx
+            )
             locale = os.getenv("GRADIO_LOCALE", "ru")
             placeholder = i18n_resolve("guard_blocked", locale)
             messages.append({"role": "user", "content": placeholder})
@@ -863,6 +884,9 @@ async def agent_chat_handler(
         Uses reference agent pattern: always yields full working_history list.
     """
 
+    # Track blocked message content hashes (Gradio strips metadata, so we track by hash)
+    blocked_message_hashes: set[str] = set()
+
     # Helper to check if cancellation was requested
     def is_cancelled() -> bool:
         return cancel_state is not None and cancel_state.get("cancelled", False)
@@ -941,7 +965,9 @@ async def agent_chat_handler(
     # Build messages from gradio_history for agent (LangChain format)
     # This filters out UI-only messages (disclaimer, search_started, etc.)
     # and ensures the agent only sees actual conversation content
-    messages = _build_agent_messages_from_gradio_history(gradio_history, message, wrapped_message)
+    messages = _build_agent_messages_from_gradio_history(
+        gradio_history, message, wrapped_message, blocked_message_hashes
+    )
 
     # Log messages being sent to agent for debugging memory issues
     logger.info(
@@ -995,7 +1021,6 @@ async def agent_chat_handler(
         # Enforce mode: Block unsafe content immediately
 
         # Mark user message with blocking metadata (preserve existing metadata)
-        marked = False
         for i in range(len(gradio_history) - 1, -1, -1):
             msg = gradio_history[i]
             if isinstance(msg, dict) and msg.get("role") == "user":
@@ -1004,13 +1029,24 @@ async def agent_chat_handler(
                     i,
                     msg.get("metadata"),
                 )
-                msg["metadata"] = {**(msg.get("metadata") or {}), "blocked": True}
+
+                # Store message hash to track across Gradio transformations
+                msg_content = msg.get("content", "")
+                if isinstance(msg_content, list) and len(msg_content) > 0:
+                    # Gradio 6 format: extract text from content blocks
+                    text_parts = []
+                    for block in msg_content:
+                        if isinstance(block, dict) and block.get("type") == "text":
+                            text_parts.append(block.get("text", ""))
+                    content_str = " ".join(text_parts)
+                else:
+                    content_str = msg_content if isinstance(msg_content, str) else str(msg_content)
+
+                msg_hash = hashlib.sha256(content_str.encode()).hexdigest()
+                blocked_message_hashes.add(msg_hash)
+                logger.info("Marked user message at index %d, hash stored: %s", i, msg_hash[:16])
+
                 marked = True
-                logger.info(
-                    "Marked user message at index %d with blocked metadata: %s",
-                    i,
-                    msg.get("metadata"),
-                )
                 break
         if not marked:
             logger.warning("Could not find user message to mark as blocked in gradio_history")
