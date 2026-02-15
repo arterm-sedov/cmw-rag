@@ -687,6 +687,14 @@ def _build_agent_messages_from_gradio_history(
                     has_blocked = True
                     break
 
+        logger.debug(
+            "Checking message %d for blocking: role=%s, has_blocked=%s, metadata_keys=%s",
+            idx,
+            msg.get("role"),
+            has_blocked,
+            list(metadata.keys()) if isinstance(metadata, dict) else "list",
+        )
+
         if msg_role == "user" and has_blocked:
             logger.info("Detected blocked message at index %d, replacing with placeholder", idx)
             locale = os.getenv("GRADIO_LOCALE", "ru")
@@ -988,11 +996,25 @@ async def agent_chat_handler(
         # Enforce mode: Block unsafe content immediately
 
         # Mark user message with blocking metadata (preserve existing metadata)
+        marked = False
         for i in range(len(gradio_history) - 1, -1, -1):
             msg = gradio_history[i]
             if isinstance(msg, dict) and msg.get("role") == "user":
+                logger.info(
+                    "Found user message at index %d to mark as blocked, current metadata: %s",
+                    i,
+                    msg.get("metadata"),
+                )
                 msg["metadata"] = {**(msg.get("metadata") or {}), "blocked": True}
+                marked = True
+                logger.info(
+                    "Marked user message at index %d with blocked metadata: %s",
+                    i,
+                    msg.get("metadata"),
+                )
                 break
+        if not marked:
+            logger.warning("Could not find user message to mark as blocked in gradio_history")
 
         # Build comprehensive guard_debug_info structure
         guard_debug_info = {
