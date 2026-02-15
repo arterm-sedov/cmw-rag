@@ -2,8 +2,8 @@
 
 **Status:** DRAFT - REVISED ARCHITECTURE (FORMATTED TOOL RESULT)
 **Created:** 2026-02-13
-**Updated:** 2026-02-15 (Changed from Synthetic Assistant Injection to Formatted Tool Result)
-**Based on:** Analysis of current SGR implementation, novelty research, and early termination issue identified
+**Updated:** 2026-02-15 (Changed from Synthetic Assistant Injection to Formatted Tool Result + Simplified Guardian Integration)
+**Based on:** Analysis of current SGR implementation, novelty research, early termination issue identified, and guardian integration simplification
 
 ---
 
@@ -23,7 +23,7 @@ User Request
     ▼
 ┌─────────────────┐
 │ Guardian Check  │ (if enabled)
-│ - enforce/report│
+│ - enforce/report│ (TO BE SIMPLIFIED)
 └─────────────────┘
     │
     ▼
@@ -43,6 +43,44 @@ User Request
 │ Agent continues with    │
 │ raw JSON in context     │
 └─────────────────────────┘
+```
+
+### New Simplified Flow (AFTER Enhancement)
+```
+User Request
+    │
+    ▼
+┌─────────────────────────┐
+│ Guardian Check          │
+│ Returns: level + cats   │
+└─────────────────────────┘
+    │
+    ├─► Level = "Unsafe"
+    │   └─► Block immediately (no SGR)
+    │       - Placeholder message
+    │       - Store for reporting
+    │
+    ├─► Level = "Controversial" + threshold=unsafe
+    │   └─► Continue to SGR
+    │       - Single system message
+    │
+    ├─► Level = "Controversial" + threshold=controversial
+    │   └─► Block immediately
+    │
+    └─► Level = "Safe"
+        └─► Continue to SGR
+            │
+            ▼
+    ┌─────────────────────────┐
+    │ Forced SGR Tool Call    │
+    │ Returns: Formatted MD   │
+    └─────────────────────────┘
+            │
+            ▼
+    ┌─────────────────────────┐
+    │ Agent continues        │
+    │ (ReAct flow)           │
+    └─────────────────────────┘
 ```
 
 ### Proposed Enhancement (FORMATTED TOOL RESULT)
@@ -412,7 +450,7 @@ TEMPLATE_VARIABLES = {
     "knowledge_base_search_queries_bullet_list": "Formatted as markdown bullets (no quotes)",
     "action_plan": "List of steps (for reference in normal template)",
     "guard_reason": "Guardian block reason",
-    "action": "Enum: normal, clarify, block, guardian_block",
+    "action": "Enum: proceed, ask_clarification, decline",  # guardian_block removed - safety handled pre-SGR
     
     # From i18n (resolved via get_text())
     "refusal": "i18n resolved refusal text (sgr_spam_refusal or sgr_guardian_refusal)",
@@ -442,10 +480,9 @@ from pydantic import BaseModel, Field
 
 class SGRAction(str, Enum):
     """Routing actions for request handling."""
-    NORMAL = "normal"           # Proceed with normal assistance
-    CLARIFY = "clarify"         # Need clarification from user
-    BLOCK = "block"             # Spam/off-topic
-    GUARDIAN_BLOCK = "guardian_block"  # Safety concern from guardian
+    PROCEED = "proceed"         # Proceed with normal assistance
+    ASK_CLARIFICATION = "ask_clarification"  # Need clarification from user
+    DECLINE = "decline"         # Spam/off-topic (or controversial when threshold=unsafe)
 
 class SGRPlanResult(BaseModel):
     """Schema-Guided Reasoning (SGR) for Comindware Platform support requests.
@@ -588,10 +625,12 @@ class SGRPlanResult(BaseModel):
         description=(
             "REASONING STEP 10 - Routing Decision: "
             "Based on all previous reasoning, what action to take? "
-            "'normal': spam_score < 0.7 AND confidence >= 0.6; "
-            "'clarify': confidence < 0.6 AND spam_score < 0.7; "
-            "'block': spam_score >= 0.7; "
-            "'guardian_block': safety issues from guardian (in prompt context)."
+            "'proceed': request is relevant and clear - assist normally; "
+            "'ask_clarification': request needs clarification from user; "
+            "'decline': request is off-topic or inappropriate - do not assist; "
+            "Guideline: spam_score >= 0.7 suggests decline; "
+            "intent_confidence < 0.6 suggests ask_clarification; "
+            "Guardian safety levels are handled separately before this tool is called."
         ),
     )
 ```
@@ -635,7 +674,7 @@ async def agent_chat_handler_with_sgr(user_message, gradio_history, messages):
             gradio_history.append({
                 "role": "assistant",
                 "content": refusal_msg,
-                "metadata": {"ui_type": "guardian_block"}
+                "metadata": {"ui_type": "guardian_block"}  # Only for pre-SGR block
             })
             
             agent_context.guardian_result = moderation_result
@@ -673,20 +712,18 @@ async def agent_chat_handler_with_sgr(user_message, gradio_history, messages):
     agent_context.guardian_result = moderation_result
     
     # ========== 4. BUILD RESPONSE TEXT (for UI) ==========
-    if sgr_plan["action"] == "normal":
-        response_text = get_text("sgr_normal_response", user_intent=sgr_plan["user_intent"])
-    elif sgr_plan["action"] == "clarify":
+    if sgr_plan["action"] == "proceed":
+        response_text = get_text("sgr_proceed_response", user_intent=sgr_plan["user_intent"])
+    elif sgr_plan["action"] == "ask_clarification":
         # For UI, we can either show the first uncertainty or a generic message
         clarification = sgr_plan.get("clarification_questions_to_ask", [""])[0] if sgr_plan.get("clarification_questions_to_ask") else ""
         response_text = get_text("sgr_clarify_response", 
             user_intent=sgr_plan["user_intent"], 
             clarification_question=clarification)
-    elif sgr_plan["action"] == "block":
+    elif sgr_plan["action"] == "decline":
         response_text = get_text("sgr_spam_response")
-    elif sgr_plan["action"] == "guardian_block":
-        response_text = get_text("sgr_guardian_response")
-    else:
-        response_text = ""
+    # Note: guardian_block removed - safety handled pre-SGR by guardian (threshold-based)
+    # SGR actions: proceed, ask_clarification, decline
     
     # ========== 5. TOOL RESULT ALREADY FORMATTED ==========
     # The tool itself returns formatted string (see Tool Implementation below)
@@ -709,13 +746,13 @@ async def agent_chat_handler_with_sgr(user_message, gradio_history, messages):
     yield gradio_history
     
     # ========== 7. ROUTE BASED ON ACTION ==========
-    if sgr_plan["action"] in ["block", "guardian_block"]:
+    if sgr_plan["action"] == "decline":
         return
     
-    elif sgr_plan["action"] == "clarify":
+    elif sgr_plan["action"] == "ask_clarification":
         return
     
-    else:  # action == "normal"
+    else:  # action == "proceed"
         # ========== 8. UNBIND SGR TOOL ==========
         available_tools = [t for t in all_tools if t.name != "analyse_user_request"]
         
@@ -779,27 +816,42 @@ async def analyse_user_request(
 ### Helper Functions
 
 ```python
-def render_sgr_template(action: str, plan: dict) -> str:
-    """Render SGR plan as directive tool result."""
+def render_sgr_template(action: str, plan: dict, guardian_result: dict | None = None) -> str:
+    """Render SGR plan as directive tool result.
     
-    if action == "normal":
-        return _render_normal_template(plan)
-    elif action == "clarify":
+    Args:
+        action: Action from SGR analysis (proceed, ask_clarification, decline)
+        plan: SGR analysis plan
+        guardian_result: Optional guardian classification for advisory note
+    """
+    
+    if action == "proceed":
+        return _render_proceed_template(plan, guardian_result)
+    elif action == "ask_clarification":
         return _render_clarify_template(plan)
-    elif action == "block":
-        return _render_block_template(plan)
-    elif action == "guardian_block":
-        return _render_guardian_template(plan)
+    elif action == "decline":
+        return _render_decline_template(plan)
+    # NOTE: guardian_block removed - safety handled by guardian pre-SGR (threshold-based)
     return ""
 
 
-def _render_normal_template(plan: dict) -> str:
-    """Render normal (proceed) template with directive language."""
+def _render_proceed_template(plan: dict, guardian_result: dict | None = None) -> str:
+    """Render proceed template with optional content advisory."""
     queries = "\n   - ".join(plan["knowledge_base_search_queries"])
+    
+    # Add advisory only for Controversial content
+    advisory = ""
+    if guardian_result and guardian_result.get('safety_level') == 'Controversial':
+        categories = ', '.join(guardian_result.get('categories', []))
+        advisory = f"""
+⚠️ **Content Advisory**: This request was flagged as potentially controversial ({categories}).
+Respond with factual, neutral tone. Avoid speculation or subjective opinions."""
+    
     return f"""**Request Analysis**
 Intent: {plan['user_intent']}
 Category: {plan['category']}
 Confidence: {plan['intent_confidence'] * 100:.0f}%
+{advisory}
 
 **Required next steps**
 1. Call retrieve_context tool with these queries:
@@ -822,8 +874,8 @@ Confidence: {plan['intent_confidence'] * 100:.0f}% (низкая)
 2. Wait for user response before proceeding"""
 
 
-def _render_block_template(plan: dict) -> str:
-    """Render spam/block template."""
+def _render_decline_template(plan: dict) -> str:
+    """Render decline template (spam/off-topic)."""
     refusal = get_text("sgr_spam_refusal")
     return f"""**Request Analysis**
 Assessment: Запрос не относится к платформе Comindware
@@ -862,11 +914,13 @@ def build_sgr_system_prompt(moderation_result: dict | None) -> SystemMessage:
 <guardian_assessment>
 Safety Assessment from Guardian Model:
 - Risk Level: {moderation_result.get('safety_level', 'Safe')}
-- Categories: {moderation_result.get('categories', [])}
-- Decision Guidance:
-  * If level='Unsafe': action SHOULD be 'guardian_block'
-  * If level='Controversial': CONSIDER 'guardian_block' or 'clarify'
-  * If level='Safe': Use normal SGR routing (spam_score + confidence)
+- Categories: {', '.join(moderation_result.get('categories', []))}
+
+Fill the analyse_user_request tool fields:
+- For 'Controversial' content: Set spam_score to 0.6-0.9.
+- For 'Safe' content: Proceed with normal retrieval and assistance
+
+When handling controversial topics, prioritize accuracy and neutrality 
 </guardian_assessment>
 """
         content = base_prompt + "\n\n" + guardian_context
@@ -885,7 +939,7 @@ def render_sgr_template(
     """Render SGR template with all variables.
     
     Args:
-        template_name: Which template to use (normal, clarify, block, guardian_block)
+        template_name: Which template to use (proceed, ask_clarification, decline)
         sgr_plan: Structured plan from SGR tool
         moderation_result: Guardian classification result
         response_text: Pre-constructed response text (used in both template and UI)
@@ -931,54 +985,35 @@ def _format_numbered_list(items: list) -> str:
 
 ---
 
-## 7. Guardian Integration (ALREADY IMPLEMENTED)
+## 7. Guardian Integration (REVISED ARCHITECTURE)
 
-### Current State (Already Merged)
+### Updated: Simplified Design (2026-02-15)
 
-Guardian implementation is **already in the repository** at:
-- `rag_engine/core/guard_client.py` - Main guard client
-- `rag_engine/core/vllm_guard_adapter.py` - VLLM adapter
-- Integrated in `rag_engine/api/app.py` - Agent chat handler
+Based on analysis, we simplified the guardian integration to:
+1. **Single system message** - No separate guardian system message
+2. **Single threshold setting** - Remove ENFORCE/REPORT modes
+3. **Deterministic unsafe handling** - No LLM call for unsafe content
+4. **Placeholder message pattern** - Prevent context contamination
 
-### Guardian Flow (Current Implementation)
+### Configuration
 
-```python
-# From rag_engine/api/app.py (lines 935-1018)
-
-if not settings.guard_enabled:
-    logger.info("Guardian is disabled, skipping moderation")
-else:
-    moderation_result = await guard_client.classify(message)
-
-# Handle based on guard mode
-guard_mode = getattr(settings, "guard_mode", "enforce")
-should_block = guard_client.should_block(moderation_result) if moderation_result else False
-
-if should_block and guard_mode == "enforce":
-    # Block unsafe content immediately
-    error_message = f"❌ **Сообщение заблокировано...**"
-    ...
-
-# Build moderation context for SGR
-if moderation_result:
-    safety_level = moderation_result.get("safety_level", "Safe")
-    categories = moderation_result.get("categories", [])
-    # Inject as system message
-    system_msg = {
-        "role": "system",
-        "content": f"{moderation_context}\n\nИспользуйте эти данные модерации...",
-    }
-    messages = [system_msg] + messages
+```bash
+# .env file - Single unified setting
+GUARD_BLOCK_THRESHOLD=unsafe        # Block only Unsafe (default)
+# or
+GUARD_BLOCK_THRESHOLD=controversial # Block both Unsafe and Controversial
 ```
 
-### Guardian Settings (Already Implemented)
+**Migration:** Remove `GUARD_MODE` (enforce/report), use `GUARD_BLOCK_THRESHOLD` instead.
+
+### Guardian Settings (Updated)
 
 ```python
-# From rag_engine/config/settings.py (lines 171-194)
+# From rag_engine/config/settings.py (UPDATED)
 
 guard_enabled: bool
-guard_mode: str           # "enforce" or "report"
-guard_provider_type: str  # "mosec" or "vllm"
+guard_block_threshold: str  # "unsafe" (default) or "controversial"
+guard_provider_type: str   # "mosec" or "vllm"
 
 # MOSEC provider settings
 guard_mosec_url: str
@@ -993,7 +1028,7 @@ guard_timeout: float
 guard_max_retries: int
 ```
 
-### Updated Flow with Guardian + Formatted Tool Result
+### Revised Flow with Guardian + Formatted Tool Result
 
 ```
 User Request
@@ -1001,25 +1036,24 @@ User Request
     ▼
 ┌──────────────────────────────────┐
 │ Guardian Check                   │
-│ (Already implemented)            │
-│ - Returns: level + categories    │
+│ Returns: level + categories       │
 └──────────────────────────────────┘
     │
-    ├─► Level = "Unsafe" + ENFORCE mode
+    ├─► Level = "Unsafe"
     │   └─► Block immediately, no SGR
     │       - Refusal message to UI
     │       - Structured metadata saved
+    │       - Placeholder in agent messages
     │
-    ├─► Level = "Unsafe" + REPORT mode
+    ├─► Level = "Controversial" + threshold=unsafe
     │   └─► Continue to SGR with guardian context
-    │       - SGR may route to guardian_block
+    │       - SGR considers decline or ask_clarification
     │
-    ├─► Level = "Controversial"
-    │   └─► Continue to SGR with guardian context
-    │       - SGR considers block or clarify
+    ├─► Level = "Controversial" + threshold=controversial
+    │   └─► Block immediately (like Unsafe)
     │
     └─► Level = "Safe"
-        └─► Continue to SGR (no guardian context needed)
+        └─► Continue to SGR (normal flow)
                 │
                 ▼
         ┌──────────────────────┐
@@ -1055,16 +1089,168 @@ User Request
         └──────────────────────┘
 ```
 
-### Guardian + SGR Integration Points
+### Guardian + SGR Integration Points (REVISED)
 
-1. **Guardian runs FIRST** (already implemented)
-2. **Guardian classification is GLUED to system message** before SGR call (already implemented)
-   - Guardian result added via `build_sgr_system_prompt()` 
-   - Provides safety context without being part of SGR tool schema
-   - Single system message pattern (best practice)
-3. **SGR uses guardian data** for routing decisions (action enum)
-4. **SGR schema does NOT generate** guard_categories (already correct - comes from prompt context)
-5. **Structured output includes both** guardian and SGR data (enhanced in this plan)
+1. **Guardian runs FIRST** - Classifies message as Unsafe/Controversial/Safe
+2. **Deterministic blocking for Unsafe** - No SGR LLM call needed
+    - Immediate refusal without LLM invocation
+    - Prevents context contamination
+3. **Placeholder message pattern for Unsafe**:
+    - UI History: Contains actual unsafe message (for reporting)
+    - Agent Messages: Contains `[Message blocked by safety filter]`
+    - This keeps message flow logical without contamination
+4. **SGR receives guardian context** via system message (only for Controversial/Safe):
+    - Built via `build_sgr_system_prompt()` 
+    - Single system message with base prompt + guardian XML
+    - SGR tool uses this for nuanced routing decisions
+5. **Main Agent sees guardian info via SGR tool result** (Option C - Lean):
+    - When SGR routes to `proceed` action with Controversial content
+    - Template includes advisory note: "⚠️ Content Advisory: flagged as Controversial"
+    - Main agent does NOT receive guardian context via system prompt (avoids bias)
+    - Guardian info arrives naturally through tool result
+6. **Controversial handling depends on threshold**:
+    - If `block_threshold=unsafe`: Controversial → SGR → advisory in tool result
+    - If `block_threshold=controversial`: Controversial → immediate block (no SGR)
+7. **Structured data stored in agent_context** for reporting:
+    - `guardian_result`: Full classification result
+    - `blocked`: Boolean flag
+    - `block_reason`: Reason string
+    - `original_message`: Original text (for admin review)
+
+---
+
+## 7b. Single System Message & Placeholder Pattern
+
+### Key Architectural Decision
+
+**Problem:** Guardian context was being injected as a separate system message, creating multiple system messages which can confuse LLMs.
+
+**Solution:** 
+1. Single system message for SGR (base prompt + guardian XML)
+2. Placeholder message pattern for Unsafe content
+
+### Single System Message Design
+
+For SGR calls (Controversial/Safe only):
+
+```python
+def build_sgr_system_prompt(moderation_result=None) -> str:
+    """Build SGR system prompt with guardian context."""
+    base = get_sgr_system_prompt_base()
+    
+    if moderation_result:
+        guardian_xml = f"""
+<guardian_assessment>
+Safety Level: {moderation_result.get('safety_level', 'Safe')}
+Categories: {', '.join(moderation_result.get('categories', []))}
+
+When filling analyse_user_request tool fields:
+- For 'Controversial' content: Set spam_score to 0.6-0.9; produce factual, neutral responses
+- For 'Safe' content: Proceed with normal retrieval and assistance
+- Prioritize accuracy and neutrality when handling controversial topics
+</guardian_assessment>
+"""
+        return base + guardian_xml
+    return base
+
+# In app.py - create single system message
+system_content = build_sgr_system_prompt(moderation_result)
+messages = [{"role": "system", "content": system_content}] + messages
+```
+
+### Main Agent Sees Guardian Info via Tool Result (Option C - Lean)
+
+**Rationale:** Main agent doesn't need guardian info in system prompt (avoids bias), but should know when content is controversial to adapt tone appropriately.
+
+**Implementation:** Pass guardian context to template renderer, include advisory note conditionally:
+
+```python
+def _render_proceed_template(plan: dict, guardian_result: dict | None = None) -> str:
+    """Render proceed template (assist user normally) with optional content advisory."""
+    queries = "\n   - ".join(plan["knowledge_base_search_queries"])
+    
+    # Add advisory only for Controversial content
+    advisory = ""
+    if guardian_result and guardian_result.get('safety_level') == 'Controversial':
+        categories = ', '.join(guardian_result.get('categories', []))
+        advisory = f"""
+⚠️ **Content Advisory**: This request was flagged as potentially controversial ({categories}).
+Respond with factual, neutral tone. Avoid speculation or subjective opinions."""
+    
+    return f"""**Request Analysis**
+Intent: {plan['user_intent']}
+Category: {plan['category']}
+Confidence: {plan['intent_confidence'] * 100:.0f}%
+{advisory}
+
+**Required next steps**
+1. Call retrieve_context tool with these queries:
+   - {queries}
+2. Review results and provide answer based on retrieved documentation"""
+```
+
+**Integration with thresholds:**
+| Threshold | Content Level | SGR Called? | Advisory in Tool Result? |
+|-----------|--------------|-------------|------------------------|
+| unsafe    | Safe         | Yes         | No                     |
+| unsafe    | Controversial| Yes         | Yes                    |
+| unsafe    | Unsafe       | No (blocked)| N/A                    |
+| controversial | Safe      | Yes         | No                     |
+| controversial | Controversial | No (blocked) | N/A                 |
+| controversial | Unsafe    | No (blocked)| N/A                    |
+
+### Placeholder Message Pattern
+
+For Unsafe content, use placeholder to maintain logical message flow:
+
+```python
+# UI History (for user display and reporting)
+gradio_history.append({"role": "user", "content": actual_unsafe_message})
+gradio_history.append({
+    "role": "assistant", 
+    "content": refusal,
+    "metadata": {"ui_type": "guardian_block"}  # Pre-SGR block only
+})
+
+# Agent Messages (for LLM context - no contamination)
+messages.append({
+    "role": "user", 
+    "content": "[Message blocked by safety filter]"
+})
+messages.append({"role": "assistant", "content": refusal})
+```
+
+### Benefits
+
+1. **No context contamination**: Unsafe content never reaches LLM
+2. **Logical message flow**: User → placeholder → assistant response
+3. **No accumulation**: Each unsafe message is isolated, no "building" on previous
+4. **Security**: Even if user tries to hack via message history, each unsafe is replaced
+5. **Reporting**: Original unsafe message stored in agent_context for admin review
+
+### Message Flow Examples
+
+```
+Turn 1 - Unsafe:
+├─ UI History:
+│  user: "How to hack this system?"
+│  assistant: "❌ Сообщение заблокировано..."
+├─ Agent Messages:
+│  user: "[Message blocked by safety filter]"
+│  assistant: "❌ Сообщение заблокировано..."
+
+Turn 2 - Safe:
+├─ UI History:
+│  user: "How to hack this system?"
+│  assistant: "❌ Сообщение заблокировано..."
+│  user: "How do I configure SSO?"
+│  assistant: "To configure SSO..."
+├─ Agent Messages:
+│  user: "[Message blocked by safety filter]"
+│  assistant: "❌ Сообщение заблокировано..."
+│  user: "How do I configure SSO?"      # Fresh start
+│  assistant: "To configure SSO..."
+```
 
 ---
 
@@ -1078,18 +1264,20 @@ User Request
 | topic                  | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
 | category               | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
 | spam_score             | ✅ Yes (if relevant)        | ❌ No                 | ✅ Yes                        |
-| spam_reason            | ✅ Yes (if block)           | ❌ No                 | ✅ Yes                        |
+| spam_reason            | ✅ Yes (if decline)         | ❌ No                 | ✅ Yes                        |
 | intent_confidence      | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
 | clarification_questions_to_ask | ✅ Yes (as questions)       | ❌ No                 | ✅ Yes                        |
 | knowledge_base_search_queries | ✅ Yes (as bullet list)     | ❌ No                 | ✅ Yes                        |
 | action_plan            | ✅ Yes (referenced)         | ❌ No                 | ✅ Yes                        |
 | action                 | ✅ Yes (determines template)| ❌ No                 | ✅ Yes                        |
-| guard_categories       | ✅ Yes (in analysis)        | ❌ No                 | ✅ Yes                        |
+| guard_categories       | ✅ Yes (in advisory if Controversial) | ❌ No  | ✅ Yes                        |
 | Tool call trace        | ✅ Yes (standard ReAct)     | ❌ No                 | ✅ Yes (in logs)              |
 | Formatted tool result  | ✅ Yes                      | ❌ No                 | ✅ Yes                        |
 | Raw JSON result        | ❌ No                       | ❌ No                 | ✅ Yes (sgr_plan)             |
 
 **Note:** No separate `clarification_question` field - `clarification_questions_to_ask` list serves as both the questions to ask (in tool result) and is stored in JSON for downstream.
+
+**Guardian Advisory Note (Option C):** When SGR routes to `proceed` with Controversial content, the tool result includes an advisory note with categories. This is the lean way to inform the main agent about content sensitivity without modifying system prompts.
 
 **Key Principle:** Three outputs with clean separation:
 - **Context Tool Result**: Formatted analysis with directive instructions (stays in ReAct flow)
@@ -1108,12 +1296,12 @@ User Request
 - [ ] Add new fields: `action` enum, `intent_confidence`, `clarification_questions_to_ask`, `topic`, `category`
 - [ ] **Remove from schema**: `ask_for_clarification` (replaced by action), `template_hint`
 - [ ] Define template functions for each action type:
-  - `_render_normal_template(plan)` 
+  - `_render_proceed_template(plan, guardian_result)` 
   - `_render_clarify_template(plan)`
-  - `_render_block_template(plan)`
-  - `_render_guardian_template(plan)`
+  - `_render_decline_template(plan)`
+  - NOTE: `_render_guardian_template` removed - safety handled pre-SGR
 - [ ] **Add i18n keys** to `rag_engine/api/i18n.py`:
-  - `sgr_normal_response`
+   - `sgr_proceed_response`
   - `sgr_clarify_response`
   - `sgr_spam_response`
   - `sgr_spam_refusal`  # Full refusal text for block template
@@ -1135,9 +1323,11 @@ User Request
 - [x] `GuardClient` class in `rag_engine/core/guard_client.py`
 - [x] Settings in `rag_engine/config/settings.py`
 - [ ] **Verify integration** with formatted tool result
-- [ ] **Test** ENFORCE mode: Guardian blocks → no SGR called
-- [ ] **Test** REPORT mode: Guardian runs → SGR gets context → may route to guardian_block
+- [ ] **Test** GUARD_BLOCK_THRESHOLD=unsafe: Unsafe blocked, Controversial → SGR
+- [ ] **Test** GUARD_BLOCK_THRESHOLD=controversial: Unsafe + Controversial blocked
 - [ ] **Test** Safe flow: Guardian passes → SGR executes → formatted tool result
+- [ ] **Test** Placeholder message: Verify "[Message blocked by safety filter]" in agent messages
+- [ ] **Test** No accumulation: Multiple unsafe messages don't build context
 
 ### Phase 3: Testing & Validation
 
@@ -1166,6 +1356,9 @@ User Request
 2. **Synthetic injection issue:** ✅ Replaced with formatted tool result
 3. **Template language:** ✅ Directive/instructional, not pretending to be LLM
 4. **Implementation complexity:** ✅ Minimal - change only tool return format
+5. **Guardian modes redundancy:** ✅ Replaced with single `GUARD_BLOCK_THRESHOLD` setting
+6. **Context contamination:** ✅ Placeholder message pattern prevents unsafe content accumulation
+7. **System message duplication:** ✅ Single system message with base + guardian XML
 
 ### Confirmed Decisions ✅
 
@@ -1180,17 +1373,26 @@ User Request
    - [x] Standard ReAct flow preserved (tool call + result in messages)
 
 7. **A/B Testing (Lean):**
-   - Simple boolean flag in settings: `SGR_FORMATTED_TOOL_RESULT_ENABLED = True/False`
-   - **When disabled (False):** Current behavior - tool returns raw JSON
-   - **When enabled (True):** Formatted tool result - human-readable markdown
-   - Metrics: Compare response quality, token usage, latency between modes
-   - Rollout: Toggle in config, no complex percentage system (add later if needed)
+    - Simple boolean flag in settings: `SGR_FORMATTED_TOOL_RESULT_ENABLED = True/False`
+    - **When disabled (False):** Current behavior - tool returns raw JSON
+    - **When enabled (True):** Formatted tool result - human-readable markdown
+    - Metrics: Compare response quality, token usage, latency between modes
+    - Rollout: Toggle in config, no complex percentage system (add later if needed)
+
+8. **Guardian Simplification:**
+   - [x] Single setting: `GUARD_BLOCK_THRESHOLD` (unsafe | controversial)
+   - [x] Unsafe always blocked (zero tolerance)
+   - [x] Controversial: Blocked if threshold=controversial, else SGR decides
+   - [x] Placeholder pattern: `[Message blocked by safety filter]` in agent messages
+   - [x] No LLM call for blocked content (deterministic)
+   - [x] Structured data stored in agent_context for reporting
+   - [x] **Main Agent sees guardian info via tool result (Option C)**: Advisory note in normal template for Controversial content
 
 8. **Different templates for different cases:**
-   - [x] `normal` - proceed with retrieval and answer
-   - [x] `clarify` - ask user for clarification
-   - [x] `block` - refuse as off-topic/spam
-   - [x] `guardian_block` - refuse as unsafe
+   - [x] `proceed` - assist user with retrieval and answer
+   - [x] `ask_clarification` - ask user for clarification
+   - [x] `decline` - refuse as off-topic/spam (or controversial when threshold=unsafe)
+   - NOTE: `guardian_block` removed - safety handled by guardian pre-SGR
 
 ---
 
@@ -1218,51 +1420,58 @@ User Request
 
 Decision tables for SGR routing, Guardian enforcement, and tool binding logic.
 
-### DT-001: Guardian Enforcement Decision
+### DT-001: Guardian Enforcement Decision (REVISED)
 
-Determines whether to block request before SGR processing based on Guardian safety assessment.
+Determines whether to block request before SGR processing based on Guardian safety assessment and threshold setting.
 
-| guardian_level | guard_mode | Decision | Action                               |
-| -------------- | ---------- | -------- | ------------------------------------ |
-| Unsafe         | enforce    | Block    | Immediate refusal, no SGR call       |
-| Unsafe         | report     | Continue | Proceed to SGR with guardian context |
-| Controversial  | enforce    | Continue | Proceed to SGR with guardian context |
-| Controversial  | report     | Continue | Proceed to SGR with guardian context |
-| Safe           | enforce    | Continue | Proceed to SGR normally              |
-| Safe           | report     | Continue | Proceed to SGR normally              |
+| guardian_level   | block_threshold  | Decision | Action                                                       |
+| ---------------  | --------------- | -------- | ------------------------------------------------------------ |
+| Unsafe          | unsafe          | Block    | Immediate refusal, no SGR call, placeholder in messages    |
+| Unsafe          | controversial   | Block    | Immediate refusal, no SGR call, placeholder in messages    |
+| Controversial   | unsafe          | Continue | Proceed to SGR with guardian context (nuanced handling)    |
+| Controversial   | controversial   | Block    | Immediate refusal, no SGR call, placeholder in messages    |
+| Safe            | unsafe          | Continue | Proceed to SGR normally                                     |
+| Safe            | controversial   | Continue | Proceed to SGR normally                                     |
 
 **Inputs:**
 - `guardian_level`: Enum [Unsafe, Controversial, Safe]
-- `guard_mode`: Enum [enforce, report]
+- `block_threshold`: Enum [unsafe, controversial] (from `GUARD_BLOCK_THRESHOLD`)
 
 **Output:**
 - `Decision`: Block | Continue
 - `Action`: Refusal message | Proceed to SGR
 
+**Key Changes:**
+- Single setting replaces dual mode (enforce/report)
+- Controversial routing depends on threshold setting
+- Always blocks Unsafe regardless of setting (zero tolerance)
+
 ---
 
 ### DT-002: SGR Routing Decision
 
-Determines action and template based on SGR analysis results and Guardian context.
+> **Note:** This table shows **descriptive guidance** for expected behavior based on pydantic field descriptions. The LLM fills the action field using its reasoning - this table documents the patterns from the docstring guidance.
 
-| spam_score | intent_confidence | guardian_level         | action         | template       | Flow                        |
-| ---------- | ----------------- | ---------------------- | -------------- | -------------- | --------------------------- |
-| < 0.7      | >= 0.6            | Safe/Controversial/N/A | normal         | normal         | Continue with agent tools   |
-| < 0.7      | < 0.6             | Safe/Controversial/N/A | clarify        | clarify        | Wait for user clarification |
-| >= 0.7     | Any               | Safe/Controversial/N/A | block          | block          | Stop, show refusal          |
-| Any        | Any               | Unsafe (via context)   | guardian_block | guardian_block | Stop, show safety refusal   |
+| spam_score | intent_confidence | guardian_level | action           | template     | Flow                        |
+| ---------- | ----------------- | ------------- | ---------------- | ------------ | --------------------------- |
+| < 0.7      | >= 0.6            | Safe          | proceed          | proceed      | Continue with agent tools   |
+| < 0.7      | >= 0.6            | Controversial | proceed          | proceed      | Continue with advisory      |
+| < 0.7      | < 0.6             | Any           | ask_clarification| clarify      | Wait for user clarification |
+| >= 0.7     | Any               | Any           | decline          | decline      | Stop, show refusal          |
+
+**Note:** guardian_block removed - Unsafe/Controversial handled by guardian pre-SGR (threshold-based).
 
 **Inputs:**
 - `spam_score`: Float [0.0-1.0]
 - `intent_confidence`: Float [0.0-1.0]
-- `guardian_level`: Enum [Safe, Controversial, Unsafe, N/A]
+- `guardian_level`: Enum [Safe, Controversial] (Unsafe blocked before SGR)
 
 **Output:**
-- `action`: Enum [normal, clarify, block, guardian_block]
+- `action`: Enum [proceed, ask_clarification, decline]
 - `template`: String (matches action)
 - `Flow`: Continue | Wait | Stop
 
-**Hit Policy:** First match (priority order: guardian_block > block > clarify > normal)
+**Hit Policy:** First match (priority order: decline > ask_clarification > proceed)
 
 ---
 
