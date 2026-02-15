@@ -16,9 +16,10 @@ Copy from `C:\Repos\cmw-platform-agent\`:
 ## Architecture
 
 ### Session Strategy
-- **Per-request login**: Login → API call → close connection
-- No session pool needed - Comindware platform handles concurrent API calls
-- Each API request is independent
+- **Basic Authentication**: Each request uses `Authorization: Basic <base64(login:password)>` header
+- No session pool, no login endpoint
+- Each request is independent and authenticated via Basic Auth
+- No need for session management - just add auth header to every request
 
 ### Directory Structure
 
@@ -27,7 +28,7 @@ rag_engine/integrations/
 └── comindware/
     ├── __init__.py       # exports: create_record, read_record
     ├── models.py         # HTTPResponse, APIResponse
-    ├── api.py            # _login, _get_request, _post_request
+    ├── api.py            # _load_server_config, _basic_headers, _get_request, _post_request
     └── records.py        # create_record(), read_record()
 ```
 
@@ -45,14 +46,14 @@ Adapted from `C:\Repos\cmw-platform-agent\tools\requests_.py`:
 | Function | Description |
 |----------|-------------|
 | `_load_server_config()` | Reads `.env` for CMW_BASE_URL, CMW_LOGIN, CMW_PASSWORD, CMW_TIMEOUT |
-| `_login()` | POST login, returns session cookie |
-| `_get_request(endpoint)` | GET with session cookie, closes after |
-| `_post_request(body, endpoint)` | POST with session cookie, closes after |
+| `_basic_headers()` | Creates `Authorization: Basic <base64(login:password)>` header |
+| `_get_request(endpoint)` | GET with Basic Auth header |
+| `_post_request(body, endpoint)` | POST with Basic Auth header |
 
 **Key changes from reference:**
-- Remove session manager / session pool
+- Remove session manager / session pool dependencies
 - Remove `CMW_USE_DOTENV` logic (always use `.env`)
-- Each request does fresh login
+- Keep Basic Auth on every request (already how it works in reference)
 
 ### 3. rag_engine/integrations/comindware/records.py
 
@@ -129,11 +130,10 @@ if result["success"]:
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/auth/login` | POST | Authenticate, get session cookie |
 | `/webapi/Record/{recordId}` | GET | Read single record |
 | `/webapi/Records/{templateGlobalAlias}` | POST | Create new record(s) |
 
-Note: API returns full record - filtering happens client-side in `read_record()`.
+Note: All requests use Basic Authentication header. No login endpoint required.
 
 ## Implementation Order
 
