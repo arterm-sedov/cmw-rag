@@ -923,7 +923,7 @@ async def agent_chat_handler(
     # Build messages from gradio_history for agent (LangChain format)
     # This filters out UI-only messages (disclaimer, search_started, etc.)
     # and ensures the agent only sees actual conversation content
-    messages = _build_agent_messages_from_gradio_history()
+    messages = _build_agent_messages_from_gradio_history(gradio_history, message, wrapped_message)
 
     # Log messages being sent to agent for debugging memory issues
     logger.info(
@@ -980,8 +980,7 @@ async def agent_chat_handler(
         for i in range(len(gradio_history) - 1, -1, -1):
             msg = gradio_history[i]
             if isinstance(msg, dict) and msg.get("role") == "user":
-                metadata = msg.get("metadata") or {}
-                metadata["ui_type"] = "blocked"
+                msg["metadata"] = {"ui_type": "blocked"}
                 logger.info("Marked user message at index %d with ui_type='blocked'", i)
                 break
 
