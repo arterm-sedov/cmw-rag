@@ -3578,6 +3578,7 @@ with gr.Blocks(
                 subqueries_json,
                 action_plan_json,
                 articles_df,
+                srp_badge,
             ],
             api_visibility="private",
         )
