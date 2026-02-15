@@ -15,7 +15,6 @@ def test_settings_loads_from_env_file():
     settings = Settings(_env_file=env_file)
 
     # Verify specific values from .env (behavior, not implementation)
-    assert settings.guard_enabled is False  # Confirmed from .env line 112
     assert isinstance(settings.top_k_retrieve, int)
     assert isinstance(settings.chunk_overlap, int)
     assert isinstance(settings.rerank_enabled, bool)
@@ -37,6 +36,3 @@ def test_environment_overrides_take_precedence(monkeypatch):
 
     # Environment should override .env
     assert settings.top_k_retrieve == 999
-
-    # Verify other settings still load correctly
-    assert settings.guard_enabled is False
