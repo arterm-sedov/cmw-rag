@@ -70,8 +70,8 @@ class SGRPlanResult(BaseModel):
         ),
     )
 
-    intent_confidence: float | None = Field(
-        default=None,
+    intent_confidence: float = Field(
+        ...,
         ge=0.0,
         le=1.0,
         description=(
@@ -96,8 +96,8 @@ class SGRPlanResult(BaseModel):
         ),
     )
 
-    spam_score: float | None = Field(
-        default=None,
+    spam_score: float = Field(
+        default=0.0,
         ge=0.0,
         le=1.0,
         description=(
@@ -111,25 +111,27 @@ class SGRPlanResult(BaseModel):
     )
 
     spam_reason: str = Field(
-        ...,
+        default="",
         max_length=150,
         description=(
             "REASONING STEP 7 - Spam Justification: "
             "Briefly explain your spam_score in 10-20 words. "
-            "Write in Russian."
+            "Write in Russian. "
+            "Leave empty if spam_score < 0.3 (clearly not spam)."
         ),
     )
 
     knowledge_base_search_queries: list[str] = Field(
-        ...,
-        min_length=1,
+        default_factory=list,
         max_length=10,
         description=(
             "REASONING STEP 8 - Knowledge Base Search Queries: "
             "What specific terms should be used to search the knowledge base? "
             "Include: feature names, technical terms, error messages, relevant keywords. "
             "Write in Russian, avoid duplicates. "
-            "These queries will be used to retrieve relevant documentation."
+            "These queries will be used to retrieve relevant documentation. "
+            "Leave EMPTY if no search needed (e.g., simple greetings, time/date questions, "
+            "or direct answers not requiring documentation lookup)."
         ),
     )
 

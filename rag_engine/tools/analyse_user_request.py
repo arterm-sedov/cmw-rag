@@ -116,6 +116,11 @@ async def analyse_user_request(
     - Do NOT echo the plan to the user
     - This tool returns a formatted directive for the LLM context
 
+    Edge cases:
+    - Simple greetings (привет, спасибо): Set queries=[], action=proceed, spam_score=0
+    - Time/date questions (сколько времени?): Set queries=[], action=proceed
+    - General knowledge (2+2=?): Set queries=[], action=proceed
+
     Returns:
         Formatted markdown directive for the LLM to continue with:
         - proceed: instructions to search and answer

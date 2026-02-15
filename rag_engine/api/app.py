@@ -2719,13 +2719,13 @@ async def ask_comindware_structured(
         plan = SGRPlanResult.model_validate(plan_dict)
     except ValidationError:
         plan = SGRPlanResult(
-            spam_score=None,  # None when SGR validation failed
+            spam_score=0.0,
             spam_reason="SGR plan validation failed",
             user_intent="",
             topic="",
             category="",
-            intent_confidence=None,  # None when SGR validation failed
-            knowledge_base_search_queries=[""],
+            intent_confidence=0.5,
+            knowledge_base_search_queries=[],
             action="proceed",
         )
 
