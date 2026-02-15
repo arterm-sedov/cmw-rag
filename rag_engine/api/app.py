@@ -203,10 +203,10 @@ def format_guard_badge(guard_info: dict | None) -> str:
                 if key.lower() == cat_lower:
                     i18n_key = value
                     break
-        
+
         if not i18n_key:
             i18n_key = "cat_other"
-        
+
         localized_cat = i18n_resolve(i18n_key)
         localized_cats.append(localized_cat)
 
@@ -976,11 +976,13 @@ async def agent_chat_handler(
             f"❌ **Сообщение заблокировано по соображениям безопасности.**\n\n"
             f"**Категории:** {categories_str}"
         )
-        gradio_history.append({
-            "role": "assistant",
-            "content": error_message,
-            "metadata": {"ui_type": "error"},
-        })
+        gradio_history.append(
+            {
+                "role": "assistant",
+                "content": error_message,
+                "metadata": {"ui_type": "error"},
+            }
+        )
         yield list(gradio_history)
         return
 
@@ -997,14 +999,18 @@ async def agent_chat_handler(
         elif safety_level == "Controversial":
             # Controversial: pass level and categories
             if categories:
-                moderation_context = f"[GUARD] Safety: Controversial, Categories: {', '.join(categories)}"
+                moderation_context = (
+                    f"[GUARD] Safety: Controversial, Categories: {', '.join(categories)}"
+                )
             else:
                 moderation_context = "[GUARD] Safety: Controversial"
         elif safety_level == "Unsafe":
             if guard_mode == "report":
                 # Report mode with unsafe: always pass context (even if no categories)
                 if categories:
-                    moderation_context = f"[GUARD] Safety: Unsafe, Categories: {', '.join(categories)}"
+                    moderation_context = (
+                        f"[GUARD] Safety: Unsafe, Categories: {', '.join(categories)}"
+                    )
                 else:
                     moderation_context = "[GUARD] Safety: Unsafe"
             # In enforce mode, we already returned early, so no need to handle
@@ -1062,10 +1068,10 @@ async def agent_chat_handler(
                     plan = SGRPlanResult.model_validate(args)
                     sgr_plan_dict = plan.model_dump()
                     logger.info(
-                        "SGR plan extracted from tool_call.args: spam_score=%.2f, user_intent_len=%d, subqueries_count=%d",
+                        "SGR plan extracted from tool_call.args: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
                         sgr_plan_dict.get("spam_score", 0.0),
                         len(sgr_plan_dict.get("user_intent", "")),
-                        len(sgr_plan_dict.get("subqueries", [])),
+                        len(sgr_plan_dict.get("knowledge_base_search_queries", [])),
                     )
                 else:
                     fn = (
@@ -1078,10 +1084,10 @@ async def agent_chat_handler(
                         plan = SGRPlanResult.model_validate_json(arg_str)
                         sgr_plan_dict = plan.model_dump()
                         logger.info(
-                            "SGR plan extracted from tool_call.function.arguments: spam_score=%.2f, user_intent_len=%d, subqueries_count=%d",
+                            "SGR plan extracted from tool_call.function.arguments: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
                             sgr_plan_dict.get("spam_score", 0.0),
                             len(sgr_plan_dict.get("user_intent", "")),
-                            len(sgr_plan_dict.get("subqueries", [])),
+                            len(sgr_plan_dict.get("knowledge_base_search_queries", [])),
                         )
                     else:
                         logger.warning(
@@ -2385,7 +2391,11 @@ async def agent_chat_handler(
         try:
             agent_context.final_answer = error_msg
             agent_context.final_articles = []
-            agent_context.diagnostics = {"model": current_model, "error": str(e), "guard": guard_debug_info}
+            agent_context.diagnostics = {
+                "model": current_model,
+                "error": str(e),
+                "guard": guard_debug_info,
+            }
         except Exception:
             pass
         yield agent_context
@@ -2647,7 +2657,11 @@ async def ask_comindware_structured(
             spam_score=0.0,
             spam_reason="",
             user_intent="",
-            subqueries=[""],
+            topic="",
+            category="",
+            intent_confidence=0.0,
+            knowledge_base_search_queries=[""],
+            action="proceed",
         )
         return StructuredAgentResult(plan=empty_plan, answer_text="")
 
@@ -2663,7 +2677,11 @@ async def ask_comindware_structured(
             spam_score=0.0,
             spam_reason="",
             user_intent="",
-            subqueries=[""],
+            topic="",
+            category="",
+            intent_confidence=0.0,
+            knowledge_base_search_queries=[""],
+            action="proceed",
         )
 
     return StructuredAgentResult(
@@ -2754,7 +2772,7 @@ async def chat_with_metadata(
             f"chat_with_metadata: sgr_plan present={ctx.sgr_plan is not None}, "
             f"plan_keys={list(plan.keys()) if plan else []}, "
             f"user_intent_present={'user_intent' in plan}, "
-            f"subqueries_present={'subqueries' in plan}, "
+            f"queries_present={'knowledge_base_search_queries' in plan}, "
             f"action_plan_present={'action_plan' in plan}, "
             f"user_message='{user_message[:50] if user_message else 'None'}...'"
         )
@@ -2762,7 +2780,7 @@ async def chat_with_metadata(
         user_intent = (
             plan.get("user_intent", "") if isinstance(plan.get("user_intent"), str) else ""
         )
-        subqueries = plan.get("subqueries", [])
+        knowledge_base_search_queries = plan.get("knowledge_base_search_queries", [])
         action_plan = plan.get("action_plan", [])
 
         # Log if sgr_plan is missing (shouldn't happen if SGR planning executed)
@@ -2781,9 +2799,9 @@ async def chat_with_metadata(
                 f"chat_with_metadata: using fallback user_intent from message (len={len(user_intent)})"
             )
 
-        # Ensure subqueries is a list (even if empty)
-        if not isinstance(subqueries, list):
-            subqueries = []
+        # Ensure knowledge_base_search_queries is a list (even if empty)
+        if not isinstance(knowledge_base_search_queries, list):
+            knowledge_base_search_queries = []
 
         # Ensure action_plan is a list (even if empty)
         if not isinstance(action_plan, list):
@@ -2792,7 +2810,7 @@ async def chat_with_metadata(
         logger.info(
             f"chat_with_metadata: plan extraction took {plan_elapsed:.2f}ms - "
             f"spam_score={spam_score}, user_intent_len={len(user_intent)}, "
-            f"subqueries_count={len(subqueries) if isinstance(subqueries, list) else 0}, "
+            f"queries_count={len(knowledge_base_search_queries) if isinstance(knowledge_base_search_queries, list) else 0}, "
             f"action_plan_count={len(action_plan) if isinstance(action_plan, list) else 0}"
         )
 
@@ -2870,7 +2888,10 @@ async def chat_with_metadata(
         # Prepare metadata for state storage
         # Ensure we always show SGR metadata when plan exists
         has_user_intent = bool(user_intent and isinstance(user_intent, str) and user_intent.strip())
-        has_subqueries = bool(isinstance(subqueries, list) and len(subqueries) > 0)
+        has_queries = bool(
+            isinstance(knowledge_base_search_queries, list)
+            and len(knowledge_base_search_queries) > 0
+        )
         has_action_plan = bool(isinstance(action_plan, list) and len(action_plan) > 0)
         has_articles = bool(isinstance(articles_df_data, list) and len(articles_df_data) > 0)
 
@@ -2885,11 +2906,14 @@ async def chat_with_metadata(
             )
 
         # Store metadata in state for later UI update (after input is unlocked)
+        queries_list = (
+            knowledge_base_search_queries if isinstance(knowledge_base_search_queries, list) else []
+        )
         metadata_dict = {
             "user_intent": user_intent if has_user_intent else "",
             "has_user_intent": has_user_intent,
-            "subqueries": subqueries if isinstance(subqueries, list) else [],
-            "has_subqueries": has_subqueries,
+            "knowledge_base_search_queries": queries_list,
+            "has_queries": has_queries,
             "action_plan": action_plan if isinstance(action_plan, list) else [],
             "has_action_plan": has_action_plan,
             "articles_df_data": articles_df_data,
@@ -2899,7 +2923,7 @@ async def chat_with_metadata(
         logger.info(
             "chat_with_metadata: storing metadata in state - "
             f"user_intent={user_intent[:50] if user_intent else 'empty'}, "
-            f"subqueries_count={len(subqueries) if isinstance(subqueries, list) else 0}, "
+            f"queries_count={len(knowledge_base_search_queries) if isinstance(knowledge_base_search_queries, list) else 0}, "
             f"action_plan_count={len(action_plan) if isinstance(action_plan, list) else 0}, "
             f"articles_df_rows={len(articles_df_data) if isinstance(articles_df_data, list) else 0}"
         )
@@ -3168,7 +3192,7 @@ with gr.Blocks(
         logger.info(
             f"update_metadata_ui: updating UI with metadata - "
             f"has_user_intent={metadata.get('has_user_intent', False)}, "
-            f"has_subqueries={metadata.get('has_subqueries', False)}, "
+            f"has_queries={metadata.get('has_queries', False)}, "
             f"has_action_plan={metadata.get('has_action_plan', False)}, "
             f"has_articles={metadata.get('has_articles', False)}"
         )
@@ -3179,7 +3203,8 @@ with gr.Blocks(
                 value=metadata.get("user_intent", ""),
             ),
             gr.update(
-                visible=metadata.get("has_subqueries", False), value=metadata.get("subqueries", [])
+                visible=metadata.get("has_queries", False),
+                value=metadata.get("knowledge_base_search_queries", []),
             ),
             gr.update(
                 visible=metadata.get("has_action_plan", False),

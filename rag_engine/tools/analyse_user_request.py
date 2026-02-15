@@ -3,77 +3,142 @@
 This is a lightweight LangChain tool whose *arguments* are the plan itself.
 We force the model to call this tool first, so the plan is emitted as a tool call
 (structured args), and then stored into `AgentContext` for UI/batch use.
+
+The tool returns a formatted markdown directive for the LLM context, not raw JSON.
 """
 
 from __future__ import annotations
 
-import json
 import logging
 
 from langchain.tools import ToolRuntime, tool
 
-from rag_engine.llm.schemas import SGRPlanResult
+from rag_engine.llm.schemas import SGRAction, SGRPlanResult
 from rag_engine.utils.context_tracker import AgentContext
 
 logger = logging.getLogger(__name__)
 
 
+def _render_proceed_template(plan: dict, guardian_result: dict | None = None) -> str:
+    """Render proceed template with optional content advisory."""
+    queries = "\n   - ".join(plan.get("knowledge_base_search_queries", []))
+
+    advisory = ""
+    if guardian_result and guardian_result.get("safety_level") == "Controversial":
+        categories = ", ".join(guardian_result.get("categories", []))
+        advisory = f"""
+⚠️ **Content Advisory**: This request was flagged as potentially controversial ({categories}).
+Respond with factual, neutral tone. Avoid speculation or subjective opinions."""
+
+    return f"""**Request Analysis**
+Intent: {plan["user_intent"]}
+Category: {plan["category"]}
+Confidence: {plan["intent_confidence"] * 100:.0f}%
+{advisory}
+
+**Required next steps**
+1. Call retrieve_context tool with these queries:
+   - {queries}
+2. Review results and provide answer based on retrieved documentation"""
+
+
+def _render_clarify_template(plan: dict) -> str:
+    """Render clarification needed template."""
+    questions = "\n   - ".join(plan.get("clarification_questions_to_ask", []))
+    return f"""**Request Analysis**
+Intent: {plan["user_intent"]}
+Category: {plan["category"]}
+Confidence: {plan["intent_confidence"] * 100:.0f}% (низкая)
+
+**Required next steps**
+1. Ask the user these clarification questions:
+   - {questions}
+   - [+ add any additional questions if needed]
+2. Wait for user response before proceeding"""
+
+
+def _render_decline_template(plan: dict) -> str:
+    """Render decline template (spam/off-topic)."""
+    refusal = "Извините, я не могу помочь с этим запросом. Он не относится к Comindware Platform."
+    return f"""**Request Analysis**
+Assessment: Запрос не относится к Comindware Platform
+Reason: {plan["spam_reason"]}
+Spam Score: {plan["spam_score"]}
+
+**Required next steps**
+Do not process this request. Use this refusal message:
+
+"{refusal}"""
+
+
+def render_sgr_template(
+    action: str,
+    plan: dict,
+    guardian_result: dict | None = None,
+) -> str:
+    """Render SGR plan as directive tool result.
+
+    Args:
+        action: Action from SGR analysis (proceed, ask_clarification, decline)
+        plan: SGR analysis plan dict
+        guardian_result: Optional guardian classification for advisory note
+
+    Returns:
+        Formatted markdown string for LLM context
+    """
+    if action == SGRAction.PROCEED:
+        return _render_proceed_template(plan, guardian_result)
+    elif action == SGRAction.ASK_CLARIFICATION:
+        return _render_clarify_template(plan)
+    elif action == SGRAction.DECLINE:
+        return _render_decline_template(plan)
+    return ""
+
+
 @tool("analyse_user_request", args_schema=SGRPlanResult)
 async def analyse_user_request(
+    user_intent: str,
+    topic: str,
+    category: str,
+    intent_confidence: float,
+    clarification_questions_to_ask: list[str],
     spam_score: float,
     spam_reason: str,
-    user_intent: str,
-    subqueries: list[str],
-    action_plan: list[str] | None = None,
-    ask_for_clarification: bool = False,
-    clarification_question: str | None = None,
+    knowledge_base_search_queries: list[str],
+    action_plan: list[str],
+    action: SGRAction,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     """Analyze the user request and produce the user question resolution plan.
 
-    Spam Classification Criteria:
-    - 0.0-0.2: Clearly related to Comindware Platform support/development. The request is relevant to
-      Comindware Platform, KB, processes, apps, configuration, integrations, or platform features.
-    - 0.3-0.5: Ambiguous but could be IT/business/support related. Allow and proceed with
-      retrieval. May need paraphrasing to Comindware Platform context.
-    - 0.6-0.8: Likely irrelevant but has some technical keywords. Try to paraphrase the search queries. Ask the user for clarification.
-    - 0.9-1.0: Obviously spam (e.g., marketing, personal, random email thread, other product,
-      completely off-topic). Ask for clarification. Do not retrieve articles.
-    - Strategy: We prefer to allow ~2% spam requests rather than block a single valid request.
-
     Important:
     - Fill all the args in Russian
     - Do NOT echo the plan to the user
+    - This tool returns a formatted directive for the LLM context
 
     Returns:
-        JSON dictionary with the action plan:
-        {
-            "spam_score": float,  # Spam classification per criteria above
-            "spam_reason": str,  # Brief explanation of spam classification
-            "user_intent": str,  # Brief explanation of the user request intent
-            "subqueries": list[str],  # Use these suggested subqueries to gather relevant articles
-            "action_plan": list[str] | None,  # Follow these steps sequentially to resolve the user's request
-            "ask_for_clarification": bool,  # True if spam_score >= 0.6 OR request is vague/harmful/off-topic
-            "clarification_question": str | None,  # Helpful question when ask_for_clarification=True
-        }
-
-        Note: This plan is for internal use only. Do NOT quote, restate, or output this plan/JSON in your final answer to the user.
-
+        Formatted markdown directive for the LLM to continue with:
+        - proceed: instructions to search and answer
+        - ask_clarification: questions to ask the user
+        - decline: refusal message to return
     """
     plan = {
-        "spam_score": float(spam_score),
-        "spam_reason": spam_reason,
         "user_intent": user_intent,
-        "subqueries": list(subqueries),
-        "action_plan": list(action_plan) if action_plan else [],
-        "ask_for_clarification": bool(ask_for_clarification),
-        "clarification_question": clarification_question,
+        "topic": topic,
+        "category": category,
+        "intent_confidence": intent_confidence,
+        "clarification_questions_to_ask": clarification_questions_to_ask,
+        "spam_score": spam_score,
+        "spam_reason": spam_reason,
+        "knowledge_base_search_queries": knowledge_base_search_queries,
+        "action_plan": action_plan,
+        "action": action,
     }
 
     if runtime and hasattr(runtime, "context") and runtime.context is not None:
         try:
             runtime.context.sgr_plan = plan
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("Failed to store sgr_plan into AgentContext: %s", exc)
 
-    return json.dumps(plan, ensure_ascii=False, separators=(",", ":"))
+    return render_sgr_template(action.value, plan)
