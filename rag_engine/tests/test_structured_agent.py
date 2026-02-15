@@ -37,7 +37,6 @@ def test_ask_comindware_structured_collects_context(monkeypatch):
     # Mock settings to avoid requiring .env for tests
     mock_settings = MagicMock()
     mock_settings.srp_enabled = False
-    mock_settings.toc_enabled = False
     monkeypatch.setattr(api_app, "settings", mock_settings)
 
     monkeypatch.setattr(api_app, "agent_chat_handler", fake_handler)
@@ -73,7 +72,6 @@ def test_ask_comindware_structured_with_srp_enabled(monkeypatch):
     # Mock settings with SRP enabled
     mock_settings = MagicMock()
     mock_settings.srp_enabled = True
-    mock_settings.toc_enabled = True
     monkeypatch.setattr(api_app, "settings", mock_settings)
 
     monkeypatch.setattr(api_app, "agent_chat_handler", fake_handler)
