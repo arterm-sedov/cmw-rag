@@ -225,6 +225,53 @@ def format_guard_badge(guard_info: dict | None) -> str:
     return _badge_html(label=label, value=content, color=color)
 
 
+def format_srp_badge(
+    srp_enabled: bool,
+    resolution_plan: dict | None,
+    resolution_plan_error: str | None,
+) -> str:
+    """Format SRP status as colored HTML badge (localized).
+
+    Args:
+        srp_enabled: Whether SRP is enabled in settings
+        resolution_plan: The SRP plan dict (if generated)
+        resolution_plan_error: Error message if SRP failed
+
+    Returns:
+        HTML badge string showing SRP status
+    """
+    label = i18n_resolve("srp_badge_label")
+
+    if not srp_enabled:
+        return _badge_html(label=label, value=i18n_resolve("srp_disabled_label"), color="gray")
+
+    if resolution_plan_error:
+        return _badge_html(label=label, value=i18n_resolve("srp_error_label"), color="red")
+
+    if not resolution_plan:
+        return _badge_html(label=label, value=i18n_resolve("srp_enabled_label"), color="blue")
+
+    intervention_needed = resolution_plan.get("engineer_intervention_needed", False)
+    outcome = resolution_plan.get("outcome", "")
+    priority = resolution_plan.get("priority", "")
+
+    if intervention_needed:
+        color = "orange"
+        intervention_text = i18n_resolve("srp_intervention_needed_label")
+    else:
+        color = "green"
+        intervention_text = "No"
+
+    parts = [intervention_text]
+    if outcome:
+        parts.append(str(outcome))
+    if priority:
+        parts.append(str(priority))
+
+    value = " | ".join(parts)
+    return _badge_html(label=label, value=value, color=color)
+
+
 def format_articles_dataframe(articles: list[dict]) -> list[list]:
     """Format final articles list for gr.Dataframe."""
     rows: list[list] = []
@@ -2191,6 +2238,28 @@ async def agent_chat_handler(
                             "SRP plan generated: engineer_intervention_needed=%s",
                             resolution_plan.get("engineer_intervention_needed"),
                         )
+                    else:
+                        # Try to get arguments from function as JSON string
+                        fn = (
+                            tool_call.get("function")
+                            if isinstance(tool_call.get("function"), dict)
+                            else {}
+                        )
+                        arg_str = fn.get("arguments") if isinstance(fn, dict) else None
+                        if isinstance(arg_str, str) and arg_str.strip():
+                            from rag_engine.llm.schemas import ResolutionPlanResult
+
+                            plan = ResolutionPlanResult.model_validate_json(arg_str)
+                            resolution_plan = plan.model_dump()
+                            agent_context.resolution_plan = resolution_plan
+                            logger.info(
+                                "SRP plan generated from JSON: engineer_intervention_needed=%s",
+                                resolution_plan.get("engineer_intervention_needed"),
+                            )
+                        else:
+                            logger.warning(
+                                "SRP tool_call missing arguments: tool_call=%s", tool_call
+                            )
 
                 # Hide and remove SRP bubble after completion
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
@@ -2223,7 +2292,7 @@ async def agent_chat_handler(
                     )
                     toc = build_toc(answer_headers, include_plan=include_plan)
                     if toc:
-                        toc = toc + "\n\n---\n\n"
+                        toc = toc + "\n\n"
                         logger.info("TOC generated with %d headers", len(answer_headers))
             except Exception as exc:
                 logger.warning("TOC generation failed: %s", exc)
@@ -2896,6 +2965,7 @@ async def chat_with_metadata(
                 gr.update(visible=False),  # confidence_badge
                 gr.update(visible=False),  # queries_badge
                 gr.update(visible=False),  # guard_badge
+                gr.update(visible=False),  # srp_badge
                 gr.update(visible=False, value=""),  # intent_text
                 gr.update(visible=False, value=""),  # topic_text
                 gr.update(visible=False, value=""),  # category_text
@@ -2920,6 +2990,7 @@ async def chat_with_metadata(
             gr.update(visible=False),  # confidence_badge
             gr.update(visible=False),  # queries_badge
             gr.update(visible=False),  # guard_badge
+            gr.update(visible=False),  # srp_badge
             gr.update(visible=False, value=""),  # intent_text
             gr.update(visible=False, value=""),  # topic_text
             gr.update(visible=False, value=""),  # category_text
@@ -3042,6 +3113,19 @@ async def chat_with_metadata(
         guard_elapsed = (time.perf_counter() - guard_start) * 1000
         logger.info(f"chat_with_metadata: guard badge formatting took {guard_elapsed:.2f}ms")
 
+        # Format SRP badge
+        srp_start = time.perf_counter()
+        try:
+            srp_enabled = getattr(settings, "srp_enabled", False)
+            resolution_plan = ctx.resolution_plan
+            resolution_plan_error = ctx.resolution_plan_error
+            srp_badge_html = format_srp_badge(srp_enabled, resolution_plan, resolution_plan_error)
+        except Exception as exc:
+            logger.error("Failed to format SRP badge: %s", exc, exc_info=True)
+            srp_badge_html = ""
+        srp_elapsed = (time.perf_counter() - srp_start) * 1000
+        logger.info(f"chat_with_metadata: SRP badge formatting took {srp_elapsed:.2f}ms")
+
         final_start = time.perf_counter()
         try:
             # format_articles_dataframe is disabled, returns empty list
@@ -3126,6 +3210,7 @@ async def chat_with_metadata(
                 gr.update(visible=badge_visible, value=confidence_badge_html),
                 gr.update(visible=badge_visible, value=queries_badge_html),
                 gr.update(visible=badge_visible, value=guard_badge_html),
+                gr.update(visible=badge_visible, value=srp_badge_html),
                 gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
                 gr.update(visible=False, value=""),  # topic_text - hide for now, will update later
                 gr.update(
@@ -3237,6 +3322,7 @@ with gr.Blocks(
         spam_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         confidence_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         queries_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
+        srp_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
 
     # Metadata panels (populated after streaming completes)
     gr.Markdown(
@@ -3467,6 +3553,7 @@ with gr.Blocks(
                 action_plan_json,
                 articles_df,
                 metadata_state,  # Store metadata for later UI update
+                srp_badge,
             ],
             concurrency_limit=settings.gradio_default_concurrency_limit,
             api_visibility="private",  # Hide agent_chat_handler from MCP tools
