@@ -60,7 +60,20 @@ Adapted from `C:\Repos\cmw-platform-agent\tools\requests_.py`:
 | Function | Description |
 |----------|-------------|
 | `create_record(application_alias, template_alias, values)` | POST to `/webapi/Records/{templateGlobalAlias}` |
-| `read_record(record_id, fields=None)` | GET from `/webapi/Record/{recordId}`, optional field filter |
+| `read_record(record_id, fields=None)` | POST to `api/public/system/TeamNetwork/ObjectService/GetPropertyValues` with server-side filtering |
+
+**Why GetPropertyValues?**
+- Accepts list of record IDs and field aliases
+- Returns only requested fields (server-side filtering)
+- Much more efficient than fetching full records via `/webapi/Record/{recordId}`
+
+**Input format:**
+```python
+{
+    "objects": ["record-id-1"],
+    "propertiesByAlias": ["field_alias_1", "field_alias_2"]
+}
+```
 
 **Return structure:**
 ```python
@@ -107,10 +120,11 @@ requests>=2.28.0
 ```python
 from rag_engine.integrations.comindware import create_record, read_record
 
-# Read record with specific fields
+# Read record with specific fields (server-side filtering via GetPropertyValues)
 result = read_record("record-uuid-123", fields=["user_question", "title"])
 if result["success"]:
     data = result["data"]
+    # Returns: {"record-uuid-123": {"user_question": "...", "title": "..."}}
 
 # Create new record linked to original
 result = create_record(
@@ -130,7 +144,7 @@ if result["success"]:
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/webapi/Record/{recordId}` | GET | Read single record |
+| `api/public/system/TeamNetwork/ObjectService/GetPropertyValues` | POST | Read specific fields from records (server-side filtering) |
 | `/webapi/Records/{templateGlobalAlias}` | POST | Create new record(s) |
 
 Note: All requests use Basic Authentication header. No login endpoint required.
@@ -144,6 +158,8 @@ Note: All requests use Basic Authentication header. No login endpoint required.
 5. Create `__init__.py` with exports
 6. Add `requests` to `requirements.txt`
 7. Update `.env-example` with new variables
+8. Create unit tests `rag_engine/tests/test_comindware_api.py`
+9. (Optional) Create integration test script
 
 ## Verification
 
@@ -153,6 +169,62 @@ python -c "from rag_engine.integrations.comindware import create_record, read_re
 
 # Run tests (if any created)
 pytest rag_engine/tests/ -v
+```
+
+## Testing Strategy
+
+Following AGENTS.md best practices: test behavior, not implementation.
+
+### Unit Tests (`rag_engine/tests/test_comindware_api.py`)
+
+**Test behavior, not implementation details:**
+
+| Test | What it tests |
+|------|---------------|
+| `test_load_server_config_missing_env_vars` | Fails gracefully when CMW_BASE_URL/LOGIN/PASSWORD missing |
+| `test_load_server_config_valid_env` | Returns valid RequestConfig with correct values |
+| `test_basic_headers_creates_valid_auth` | Header contains valid base64 encoded credentials |
+| `test_get_property_values_request_format` | Request body has correct structure (`objects`, `propertiesByAlias`) |
+| `test_create_record_request_format` | Request body contains values with correct structure |
+| `test_read_record_filters_fields` | Correctly filters response to requested fields |
+| `test_api_response_success_structure` | Success response has expected keys |
+| `test_api_response_error_structure` | Error response has expected keys |
+
+**DO NOT test:**
+- Specific ports or URLs (use patterns)
+- Internal function calls
+- Mock internal implementation details
+
+### Integration Test Script (`rag_engine/scripts/test_comindware_integration.py`)
+
+Optional script for manual testing against real API:
+
+```python
+if __name__ == "__main__":
+    # Test read with specific fields
+    result = read_record("test-record-id", fields=["user_question", "title"])
+    print(result)
+    
+    # Test create
+    result = create_record("app_alias", "template_alias", {"field": "value"})
+    print(result)
+```
+
+### Mock Strategy
+
+For unit tests, mock the `requests` library:
+```python
+from unittest.mock import patch, Mock
+
+@patch('rag_engine.integrations.comindware.api.requests.post')
+def test_create_record_success(mock_post):
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"success": True, "data": "new-record-id"}
+    mock_post.return_value = mock_response
+    
+    result = create_record("app", "template", {"field": "value"})
+    assert result["success"] is True
 ```
 
 ## Dependent Features
