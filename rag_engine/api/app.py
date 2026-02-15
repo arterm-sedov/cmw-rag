@@ -672,17 +672,10 @@ def _build_agent_messages_from_gradio_history(
         msg_role = msg.get("role")
         msg_content = msg.get("content", "")
 
-        # Check if user message is followed by guardian_block assistant message.
-        # Guardian block uses id with "guard_" prefix (survives Gradio round-trips).
-        if msg_role == "user" and idx + 1 < len(gradio_history):
-            next_msg = gradio_history[idx + 1]
-            next_metadata = next_msg.get("metadata") or {}
-            next_id = next_metadata.get("id", "")
-            if (
-                next_msg.get("role") == "assistant"
-                and isinstance(next_id, str)
-                and next_id.startswith("guard_")
-            ):
+        # Check if user message is blocked (log field survives Gradio round-trips)
+        if msg_role == "user":
+            metadata = msg.get("metadata") or {}
+            if metadata.get("log") == "blocked_by_guardian":
                 locale = os.getenv("GRADIO_LOCALE", "ru")
                 placeholder = i18n_resolve("guard_blocked", locale)
                 messages.append({"role": "user", "content": placeholder})
@@ -976,6 +969,17 @@ async def agent_chat_handler(
     if should_block and guard_mode == "enforce":
         # Enforce mode: Block unsafe content immediately
 
+        # Mark user message with log field (survives Gradio round-trips)
+        # log is part of MetadataDict and persists across turns
+        for i in range(len(gradio_history) - 1, -1, -1):
+            msg = gradio_history[i]
+            if isinstance(msg, dict) and msg.get("role") == "user":
+                metadata = msg.get("metadata") or {}
+                metadata["log"] = "blocked_by_guardian"
+                msg["metadata"] = metadata
+                logger.info("Marked user message at index %d as blocked", i)
+                break
+
         # Build guard_debug_info structure
         guard_debug_info = {
             "safety_level": moderation_result.get("safety_level", "Unknown")
@@ -991,18 +995,13 @@ async def agent_chat_handler(
         }
 
         # Generic error message - no hints
-        # Use id with "guard_" prefix to identify guardian blocks (survives Gradio round-trips)
-        from rag_engine.api.stream_helpers import short_uid
-
         locale = os.getenv("GRADIO_LOCALE", "ru")
         error_message = f"❌ {i18n_resolve('guard_blocked', locale)}"
         gradio_history.append(
             {
                 "role": "assistant",
                 "content": error_message,
-                "metadata": {
-                    "id": f"guard_{short_uid()}",
-                },
+                "metadata": {},
             }
         )
         yield list(gradio_history)
