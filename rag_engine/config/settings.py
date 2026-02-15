@@ -199,7 +199,8 @@ class Settings(BaseSettings):
 
     # TOC (Table of Contents)
     # Generates dynamic TOC from answer headers
-    toc_enabled: bool
+    # DISABLED: Not working reliably - LLM doesn't generate anchors
+    toc_enabled: bool = False
 
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
