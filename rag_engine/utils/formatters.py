@@ -23,20 +23,15 @@ def _normalize_url(url: str | None) -> str:
         return str(url or "").strip()
 
 
-def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
-    """Format answer with citations using proper article URLs; never use file paths.
+def _deduplicate_articles(articles: Iterable[Any]) -> dict[str, dict[str, Any]]:
+    """Deduplicate articles by kbId/URL, preserving order.
 
-    Deduplicates by kbId to ensure each article is cited only once.
-
-    Assumptions:
-    - metadata contains numeric kbId (enforced by indexer)
-    - metadata may already contain a canonical 'url' or precomputed 'article_url'
+    Returns:
+        Dict mapping normalized kbId/URL to article metadata.
     """
-    # Disclaimer already prepended during streaming
-    # Deduplicate by kbId to avoid citing the same article multiple times
     seen_kbids: dict[str, dict[str, Any]] = {}
     seen_urls: set[str] = set()
-    for d in docs:
+    for d in articles:
         meta: dict[str, Any] = getattr(d, "metadata", {}) or {}
         kbid = meta.get("kbId") or getattr(d, "kb_id", None)
         url = meta.get("url") or meta.get("article_url")
@@ -58,6 +53,22 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
                 # Use a synthetic key to preserve ordering when kbId is missing
                 if norm_url not in seen_kbids:
                     seen_kbids[norm_url] = meta
+    return seen_kbids
+
+
+def format_sources_list(articles: Iterable[Any]) -> str:
+    """Format articles as numbered markdown list with titles and URLs.
+
+    Deduplicates by kbId to ensure each article is cited only once.
+
+    Assumptions:
+    - metadata contains numeric kbId (enforced by indexer)
+    - metadata may already contain a canonical 'url' or precomputed 'article_url'
+
+    Returns:
+        "\\n\\n## Источники:\\n\\n1. [title](url)\\n2. [title](url)..." or empty string.
+    """
+    seen_kbids = _deduplicate_articles(articles)
 
     citations: list[str] = []
     for i, (kbid, meta) in enumerate(seen_kbids.items(), 1):
@@ -80,56 +91,16 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
 
         link = f"[{title}]({full_url})" if full_url else title
         citations.append(f"{i}. {link}")
+
     if citations:
-        return answer + "\n\n## Источники:\n\n" + "\n".join(citations)
-    return answer
+        return "\n\n## Источники:\n\n" + "\n".join(citations)
+    return ""
 
 
-def format_sources_only(docs: Iterable[Any]) -> str | None:
-    """Format just the sources section (without answer) for SRP context injection.
+def format_with_citations(answer: str, articles: Iterable[Any]) -> str:
+    """Format answer with sources list appended.
 
-    Returns None if no articles.
+    Returns answer with "## Источники:" section if articles exist.
     """
-    seen_kbids: dict[str, dict[str, Any]] = {}
-    seen_urls: set[str] = set()
-    for d in docs:
-        meta: dict[str, Any] = getattr(d, "metadata", {}) or {}
-        kbid = meta.get("kbId") or getattr(d, "kb_id", None)
-        url = meta.get("url") or meta.get("article_url")
-        norm_url = _normalize_url(url)
-
-        if norm_url:
-            if norm_url in seen_urls:
-                continue
-            seen_urls.add(norm_url)
-
-        if kbid:
-            normalized_kbid = extract_numeric_kbid(str(kbid)) or str(kbid)
-            if normalized_kbid not in seen_kbids:
-                seen_kbids[normalized_kbid] = meta
-        else:
-            if norm_url:
-                if norm_url not in seen_kbids:
-                    seen_kbids[norm_url] = meta
-
-    citations: list[str] = []
-    for i, (kbid, meta) in enumerate(seen_kbids.items(), 1):
-        title = meta.get("title") or kbid or f"Source {i}"
-
-        url = meta.get("url")
-        if not url:
-            url = meta.get("article_url")
-        if not url and kbid:
-            normalized_kbid = extract_numeric_kbid(str(kbid))
-            if normalized_kbid:
-                url = f"https://kb.comindware.ru/article.php?id={normalized_kbid}"
-
-        anchor = meta.get("section_anchor") or ""
-        full_url = f"{url}{anchor}" if (url and ("#" not in str(url))) else (url or "")
-
-        link = f"[{title}]({full_url})" if full_url else title
-        citations.append(f"{i}. {link}")
-
-    if citations:
-        return "## Источники:\n\n" + "\n".join(citations)
-    return None
+    sources = format_sources_list(articles)
+    return answer + sources if sources else answer
