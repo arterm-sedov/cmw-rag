@@ -58,6 +58,21 @@ class AgentContext(BaseModel):
         description="SGR plan (spam score, subqueries, action plan) injected into LLM context.",
     )
 
+    # --- SRP (Support Resolution Plan) ---
+    # Generated after answer completion for human support engineers
+    resolution_plan: dict[str, Any] | None = Field(
+        default=None,
+        description="SRP plan (engineer intervention needed, issue summary, next steps).",
+    )
+    resolution_plan_error: str | None = Field(
+        default=None,
+        description="Error message if SRP generation failed.",
+    )
+    sources_compiled: str | None = Field(
+        default=None,
+        description="Compiled sources list for SRP context injection.",
+    )
+
     # Execution trace + final results are excluded from serialization to the LLM.
     # They are used for batch output and UI debug panels.
     query_traces: list[dict[str, Any]] = Field(
@@ -160,7 +175,9 @@ def compute_context_tokens(
     if tool_results is not None:
         # Count conversation messages
         for msg in messages:
-            content = msg.get("content", "") if isinstance(msg, dict) else getattr(msg, "content", "")
+            content = (
+                msg.get("content", "") if isinstance(msg, dict) else getattr(msg, "content", "")
+            )
             if isinstance(content, str) and content:
                 conversation_tokens += count_tokens(content)
 
@@ -182,7 +199,9 @@ def compute_context_tokens(
         # Extract tool messages from messages list (LangChain state format)
         for msg in messages:
             # Handle both dict and LangChain message objects
-            content = getattr(msg, "content", "") if hasattr(msg, "content") else msg.get("content", "")
+            content = (
+                getattr(msg, "content", "") if hasattr(msg, "content") else msg.get("content", "")
+            )
             if not isinstance(content, str) or not content:
                 continue
 
@@ -352,7 +371,9 @@ def compute_overhead_tokens(
 
     # Count system prompt tokens
     if system_prompt is None:
-        system_prompt = get_system_prompt()  # Use function for consistency, no guidance needed for token counting
+        system_prompt = (
+            get_system_prompt()
+        )  # Use function for consistency, no guidance needed for token counting
     total_overhead += count_tokens(system_prompt)
 
     # Count tool schema tokens
