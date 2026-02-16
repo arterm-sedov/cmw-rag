@@ -24,15 +24,15 @@ class SGRAction(str, Enum):
 class SGRCategory(str, Enum):
     """Request categories for classification."""
 
-    SETUP_HELP = "Помощь в настройке"
-    TROUBLESHOOTING = "Устранение неполадок"
-    FEATURE_REQUEST = "Запрос функции"
-    GENERAL_QUESTION = "Общий вопрос"
-    ADMINISTRATION = "Администрирование"
-    INTEGRATION = "Интеграция"
-    TRAINING = "Обучение"
-    HOW_TO = "Как сделать"
-    OTHER = "Другое"
+    SETUP_HELP = "setup_help"
+    TROUBLESHOOTING = "troubleshooting"
+    FEATURE_REQUEST = "feature_request"
+    GENERAL_QUESTION = "general_question"
+    ADMINISTRATION = "administration"
+    INTEGRATION = "integration"
+    TRAINING = "training"
+    HOW_TO = "how_to"
+    OTHER = "other"
 
 
 class SGRPlanResult(BaseModel):
@@ -84,7 +84,7 @@ class SGRPlanResult(BaseModel):
             return v
         if isinstance(v, str):
             for cat in SGRCategory:
-                if cat.value.lower() == v.lower() or cat.name.lower() == v.lower():
+                if cat.value.lower() == v.lower():
                     return cat
         return SGRCategory.GENERAL_QUESTION
 

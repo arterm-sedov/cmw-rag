@@ -22,6 +22,7 @@ from openai import APIError as OpenAIAPIError
 
 from rag_engine.api.i18n import i18n_resolve
 from rag_engine.config.settings import get_allowed_fallback_models, settings  # noqa: F401
+from rag_engine.llm.agent_factory import create_agent
 from rag_engine.llm.fallback import check_context_fallback
 from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.llm.schemas import StructuredAgentResult
@@ -1202,65 +1203,47 @@ async def agent_chat_handler(
             logger.info("SGR planning UI bubble added to history")
 
             from rag_engine.llm.llm_manager import LLMManager
+            from rag_engine.llm.prompts import get_sgr_suffix, get_system_prompt
             from rag_engine.llm.schemas import SGRPlanResult
-            from rag_engine.tools import analyse_user_request as analyse_user_request_tool
 
+            # Build system prompt (unchanged)
+            base_prompt = get_system_prompt()
+            guardian_suffix = moderation_context if moderation_context else ""
+            sgr_suffix = get_sgr_suffix()
+            system_prompt = (
+                f"{base_prompt}\n\n{guardian_suffix}\n\n{sgr_suffix}"
+                if guardian_suffix
+                else f"{base_prompt}\n\n{sgr_suffix}"
+            )
+
+            # Initialize LLM
             sgr_llm = LLMManager(
                 provider=settings.default_llm_provider,
                 model=selected_model or settings.default_model,
                 temperature=settings.llm_temperature,
             )._chat_model()
 
-            sgr_model = sgr_llm.bind_tools(
-                [analyse_user_request_tool],
-                tool_choice={"type": "function", "function": {"name": "analyse_user_request"}},
+            # Create agent with structured output (LangChain handles tool binding, parsing, validation, retries)
+            logger.info("Calling SGR planning LLM with %d messages", len(messages))
+            sgr_agent = create_agent(
+                model=sgr_llm,
+                response_format=SGRPlanResult,
+                system_prompt=system_prompt,
             )
 
-            logger.info("Calling SGR planning LLM with %d messages", len(messages))
-            sgr_msg = await sgr_model.ainvoke(messages)
-            tool_calls = getattr(sgr_msg, "tool_calls", None) or []
-            tool_call = tool_calls[0] if isinstance(tool_calls, list) and tool_calls else None
-            logger.info("SGR planning LLM returned %d tool calls", len(tool_calls))
-
-            if isinstance(tool_call, dict):
-                call_id = tool_call.get("id") or "sgr_plan_call"
-                args = tool_call.get("args")
-                if isinstance(args, dict):
-                    plan = SGRPlanResult.model_validate(args)
-                    sgr_plan_dict = plan.model_dump()
-                    logger.info(
-                        "SGR plan extracted from tool_call.args: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
-                        sgr_plan_dict.get("spam_score", 0.0),
-                        len(sgr_plan_dict.get("user_intent", "")),
-                        len(sgr_plan_dict.get("knowledge_base_search_queries", [])),
-                    )
-                else:
-                    fn = (
-                        tool_call.get("function")
-                        if isinstance(tool_call.get("function"), dict)
-                        else {}
-                    )
-                    arg_str = fn.get("arguments") if isinstance(fn, dict) else None
-                    if isinstance(arg_str, str) and arg_str.strip():
-                        plan = SGRPlanResult.model_validate_json(arg_str)
-                        sgr_plan_dict = plan.model_dump()
-                        logger.info(
-                            "SGR plan extracted from tool_call.function.arguments: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
-                            sgr_plan_dict.get("spam_score", 0.0),
-                            len(sgr_plan_dict.get("user_intent", "")),
-                            len(sgr_plan_dict.get("knowledge_base_search_queries", [])),
-                        )
-                    else:
-                        logger.warning(
-                            "SGR planning tool_call missing arguments: tool_call=%s", tool_call
-                        )
-            else:
-                logger.warning(
-                    "SGR planning did not return valid tool_call: tool_calls=%s", tool_calls
-                )
+            result = sgr_agent.invoke({"messages": messages})
+            plan = result["structured_response"]
+            sgr_plan_dict = plan.model_dump()
+            logger.info(
+                "SGR plan extracted: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
+                sgr_plan_dict.get("spam_score", 0.0),
+                len(sgr_plan_dict.get("user_intent", "")),
+                len(sgr_plan_dict.get("knowledge_base_search_queries", [])),
+            )
 
             if sgr_plan_dict:
                 plan_json = json.dumps(sgr_plan_dict, ensure_ascii=False, separators=(",", ":"))
+                call_id = "sgr_plan_call"
 
                 messages = list(messages) + [
                     {
@@ -2262,7 +2245,6 @@ async def agent_chat_handler(
                 yield_srp_planning_started,
             )
             from rag_engine.llm.prompts import get_srp_suffix, get_system_prompt
-            from rag_engine.tools import generate_resolution_plan
 
             try:
                 # Show SRP planning bubble
@@ -2279,56 +2261,31 @@ async def agent_chat_handler(
                 srp_messages = [{"role": "system", "content": srp_system_prompt}]
                 srp_messages.extend(messages)
 
-                # Call SRP tool (only bind the SRP tool)
+                # Initialize LLM
                 srp_llm = LLMManager(
                     provider=settings.default_llm_provider,
                     model=current_model or settings.default_model,
                     temperature=settings.llm_temperature,
                 )._chat_model()
 
-                srp_model = srp_llm.bind_tools(
-                    [generate_resolution_plan],
-                    tool_choice={
-                        "type": "function",
-                        "function": {"name": "generate_resolution_plan"},
-                    },
+                # Create agent with structured output (LangChain handles tool binding, parsing, validation, retries)
+                from rag_engine.llm.agent_factory import create_agent as create_srp_agent
+                from rag_engine.llm.schemas import ResolutionPlanResult
+
+                srp_agent = create_srp_agent(
+                    model=srp_llm,
+                    response_format=ResolutionPlanResult,
+                    system_prompt=srp_system_prompt,
                 )
 
-                srp_response = await srp_model.ainvoke(srp_messages)
-                tool_calls = getattr(srp_response, "tool_calls", None) or []
-                tool_call = tool_calls[0] if isinstance(tool_calls, list) and tool_calls else None
-
-                if isinstance(tool_call, dict):
-                    args = tool_call.get("args")
-                    if isinstance(args, dict):
-                        resolution_plan = args
-                        agent_context.resolution_plan = resolution_plan
-                        logger.info(
-                            "SRP plan generated: engineer_intervention_needed=%s",
-                            resolution_plan.get("engineer_intervention_needed"),
-                        )
-                    else:
-                        # Try to get arguments from function as JSON string
-                        fn = (
-                            tool_call.get("function")
-                            if isinstance(tool_call.get("function"), dict)
-                            else {}
-                        )
-                        arg_str = fn.get("arguments") if isinstance(fn, dict) else None
-                        if isinstance(arg_str, str) and arg_str.strip():
-                            from rag_engine.llm.schemas import ResolutionPlanResult
-
-                            plan = ResolutionPlanResult.model_validate_json(arg_str)
-                            resolution_plan = plan.model_dump()
-                            agent_context.resolution_plan = resolution_plan
-                            logger.info(
-                                "SRP plan generated from JSON: engineer_intervention_needed=%s",
-                                resolution_plan.get("engineer_intervention_needed"),
-                            )
-                        else:
-                            logger.warning(
-                                "SRP tool_call missing arguments: tool_call=%s", tool_call
-                            )
+                result = srp_agent.invoke({"messages": srp_messages})
+                plan = result["structured_response"]
+                resolution_plan = plan.model_dump()
+                agent_context.resolution_plan = resolution_plan
+                logger.info(
+                    "SRP plan generated: engineer_intervention_needed=%s",
+                    resolution_plan.get("engineer_intervention_needed"),
+                )
 
                 # Hide and remove SRP bubble after completion
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
