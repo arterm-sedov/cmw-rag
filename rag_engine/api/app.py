@@ -3399,7 +3399,9 @@ with gr.Blocks(
 
         Called after input is unlocked to populate SGR metadata.
         """
+        logger.info("update_metadata_ui: starting")
         if settings.gradio_embedded_widget:
+            logger.info("update_metadata_ui: embedded widget, returning defaults")
             return tuple(gr.update() for _ in range(8))
 
         if not metadata:
@@ -3427,8 +3429,8 @@ with gr.Blocks(
             f"has_action_plan={metadata.get('has_action_plan', False)}, "
             f"has_articles={metadata.get('has_articles', False)}"
         )
-
-        return (
+        logger.info("update_metadata_ui: starting gr.update calls")
+        result = (
             gr.update(
                 visible=metadata.get("has_user_intent", False),
                 value=metadata.get("user_intent", ""),
@@ -3462,6 +3464,8 @@ with gr.Blocks(
                 value=metadata.get("articles_df_data", []),
             ),
         )
+        logger.info("update_metadata_ui: completed all gr.update calls")
+        return result
 
     submit_event = (
         submit_event.then(
