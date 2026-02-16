@@ -178,7 +178,6 @@ class SGRPlanResult(BaseModel):
     action: SGRAction = Field(
         default=SGRAction.PROCEED,
         description=(
-            "REASONING STEP 10 - Routing Decision: "
             "Based on all previous reasoning, what action to take? "
             "'proceed': request is relevant and clear - assist normally; "
             "'ask_clarification': request needs clarification from user; "
