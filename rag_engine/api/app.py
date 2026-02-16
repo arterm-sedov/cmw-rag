@@ -1138,9 +1138,9 @@ async def agent_chat_handler(
         sgr_suffix = get_sgr_suffix()
         system_msg = {
             "role": "system",
-            "content": f"{base_prompt}\n\n{guardian_suffix}\n\n{sgr_suffix}"
+            "content": f"{sgr_suffix}\n\n{guardian_suffix}\n\n{base_prompt}"
             if guardian_suffix
-            else f"{base_prompt}\n\n{sgr_suffix}",
+            else f"{sgr_suffix}\n\n{base_prompt}",
         }
         messages = [system_msg] + messages
         logger.debug("Injected system prompt with guardian context: %s", moderation_context)
@@ -2204,11 +2204,10 @@ async def agent_chat_handler(
                 gradio_history.append(yield_srp_planning_started())
                 yield list(gradio_history)
 
-                # Build SRP system prompt: base only (no guardian, no SGR suffix) + sources + SRP instruction
-                srp_system_prompt = get_system_prompt()
+                # Build SRP system prompt: SRP instruction first, then base + sources
+                srp_system_prompt = get_srp_suffix() + "\n\n" + get_system_prompt()
                 if articles:
                     srp_system_prompt += "\n\n" + format_sources_list(articles)
-                srp_system_prompt += "\n\n" + get_srp_suffix()
 
                 # Build messages from updated gradio_history (includes final answer)
                 # Filter out old system messages - start fresh with base + sources + SRP suffix

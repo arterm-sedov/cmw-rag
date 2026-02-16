@@ -213,6 +213,7 @@ class ResolutionPlanResult(BaseModel):
     engineer_intervention_needed: bool = Field(
         ...,
         description=(
+            "CRITIQUE your answer first: Did you solve the user's specific problem? "
             "Set to TRUE for: "
             "- support engineer intervention or escalation needed for this issue, "
             "- errors, bugs, configuration issues, incomplete solutions, "
