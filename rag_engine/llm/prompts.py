@@ -188,8 +188,10 @@ def get_sgr_suffix() -> str:
 
     Appended to system prompt when SGR planning is enabled.
     """
-    return """MANDATORY: Output valid JSON matching the schema below.
-Provide detailed Russian text for text fields - no short keywords or English."""
+    return """MANDATORY: Output valid JSON matching the schema.
+Provide detailed meaningful Russian text for string/text fields.
+Do your best to fill even the optional fields to the best of your understanding.
+"""
 
 
 def get_srp_suffix() -> str:
@@ -197,5 +199,7 @@ def get_srp_suffix() -> str:
 
     Appended to system prompt when SRP planning is enabled.
     """
-    return """MANDATORY: Output valid JSON matching the schema below.
-Provide detailed Russian text for text fields - no short keywords or English."""
+    return """MANDATORY: Output valid JSON matching the schema.
+Provide detailed meaningful Russian text for string/text fields.
+Do your best to fill even the optional fields to the best of your understanding.
+"""
