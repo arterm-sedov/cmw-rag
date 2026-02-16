@@ -1211,10 +1211,11 @@ async def agent_chat_handler(
                 temperature=settings.llm_temperature,
             )._chat_model()
 
-            # Use with_structured_output for single LLM call (no agent loop)
-            # Messages already include system prompt (added at line 1185)
+            # Use with_structured_output for single LLM call with forced tool calling
             logger.info("Calling SGR planning LLM with %d messages", len(messages))
-            structured_llm = sgr_llm.with_structured_output(SGRPlanResult)
+            structured_llm = sgr_llm.with_structured_output(
+                SGRPlanResult, method="function_calling"
+            )
             plan = structured_llm.invoke(messages)
             sgr_plan_dict = plan.model_dump()
             logger.info(
@@ -2254,10 +2255,12 @@ async def agent_chat_handler(
                     temperature=settings.llm_temperature,
                 )._chat_model()
 
-                # Use with_structured_output for single LLM call (no agent loop)
+                # Use with_structured_output for single LLM call with forced tool calling
                 from rag_engine.llm.schemas import ResolutionPlanResult
 
-                structured_llm = srp_llm.with_structured_output(ResolutionPlanResult)
+                structured_llm = srp_llm.with_structured_output(
+                    ResolutionPlanResult, method="function_calling"
+                )
                 plan = structured_llm.invoke(srp_messages)
                 resolution_plan = plan.model_dump()
                 agent_context.resolution_plan = resolution_plan
