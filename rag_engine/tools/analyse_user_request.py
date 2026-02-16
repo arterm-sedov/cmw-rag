@@ -13,7 +13,7 @@ import logging
 
 from langchain.tools import ToolRuntime, tool
 
-from rag_engine.llm.schemas import SGRAction, SGRPlanResult
+from rag_engine.llm.schemas import SGRAction, SGRCategory, SGRPlanResult
 from rag_engine.utils.context_tracker import AgentContext
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ def render_sgr_template(
 async def analyse_user_request(
     user_intent: str,
     topic: str,
-    category: str,
+    category: SGRCategory,
     intent_confidence: float,
     clarification_questions_to_ask: list[str],
     spam_score: float,
@@ -109,23 +109,14 @@ async def analyse_user_request(
     action: SGRAction,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
-    """Analyze the user request and produce the user question resolution plan.
+    """Analyze the user request and produce the question resolution plan.
 
-    Important:
-    - Fill all the args in Russian
-    - Do NOT echo the plan to the user
-    - This tool returns a formatted directive for the LLM context
+    Returns guidance for your further steps.
 
     Edge cases:
     - Simple greetings (привет, спасибо): Set queries=[], action=proceed, spam_score=0
     - Time/date questions (сколько времени?): Set queries=[], action=proceed
     - General knowledge (2+2=?): Set queries=[], action=proceed
-
-    Returns:
-        Formatted markdown directive for the LLM to continue with:
-        - proceed: instructions to search and answer
-        - ask_clarification: questions to ask the user
-        - decline: refusal message to return
     """
     plan = {
         "user_intent": user_intent,
