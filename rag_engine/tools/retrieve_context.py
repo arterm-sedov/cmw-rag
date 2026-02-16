@@ -132,10 +132,16 @@ class RetrieveContextSchema(BaseModel):
 
     @field_validator("top_k", mode="before")
     @classmethod
-    def validate_top_k(cls, v: int | None) -> int | None:
+    def validate_top_k(cls, v: int | str | None) -> int | None:
         """Validate that top_k is positive if provided."""
-        if v is not None and v <= 0:
-            raise ValueError("top_k must be a positive integer")
+        if v is not None:
+            if isinstance(v, str):
+                try:
+                    v = int(v)
+                except ValueError:
+                    raise ValueError("top_k must be a valid integer")
+            if v <= 0:
+                raise ValueError("top_k must be a positive integer")
         return v
 
 
