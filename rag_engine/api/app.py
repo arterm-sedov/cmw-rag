@@ -123,6 +123,95 @@ def format_queries_badge(query_traces: list[dict]) -> str:
     return _badge_html(label=label, value=str(count), color=color)
 
 
+def yield_hidden_updates(chunk: list[dict] | None = None) -> tuple:
+    """Standard hidden update for all 14 UI components during streaming.
+
+    Args:
+        chunk: Chatbot history to yield (or None to use placeholder)
+
+    Returns:
+        Tuple starting with chatbot, then 13 metadata updates
+    """
+    chatbot_update = chunk if chunk is not None else gr.update(visible=False)
+    return (
+        chatbot_update,  # chatbot
+        gr.update(visible=False),  # spam_badge
+        gr.update(visible=False),  # confidence_badge
+        gr.update(visible=False),  # queries_badge
+        gr.update(visible=False),  # guard_badge
+        gr.update(visible=False, value=""),  # intent_text
+        gr.update(visible=False, value=""),  # topic_text
+        gr.update(visible=False, value=""),  # category_text
+        gr.update(visible=False, value=0),  # intent_confidence_number
+        gr.update(visible=False, value={}),  # guardian_json
+        gr.update(visible=False, value=[]),  # subqueries_json
+        gr.update(visible=False, value=[]),  # action_plan_json
+        gr.update(visible=False, value=[]),  # articles_df
+        None,  # metadata_state - not updated during streaming
+    )
+
+
+def yield_badge_updates(
+    chatbot: list[dict],
+    spam_badge: str = "",
+    confidence_badge: str = "",
+    queries_badge: str = "",
+    guard_badge: str = "",
+    metadata_dict: dict | None = None,
+) -> tuple:
+    """Yield badge updates and hidden metadata updates.
+
+    Args:
+        chatbot: Chatbot history
+        spam_badge: HTML for spam badge
+        confidence_badge: HTML for confidence badge
+        queries_badge: HTML for queries badge
+        guard_badge: HTML for guard badge
+        metadata_dict: Metadata dictionary to store in state
+
+    Returns:
+        Tuple with 14 component updates
+    """
+    badge_visible = not settings.gradio_embedded_widget
+    spam_update = (
+        gr.update(visible=badge_visible, value=spam_badge)
+        if badge_visible
+        else gr.update(visible=False)
+    )
+    confidence_update = (
+        gr.update(visible=badge_visible, value=confidence_badge)
+        if badge_visible
+        else gr.update(visible=False)
+    )
+    queries_update = (
+        gr.update(visible=badge_visible, value=queries_badge)
+        if badge_visible
+        else gr.update(visible=False)
+    )
+    guard_update = (
+        gr.update(visible=badge_visible, value=guard_badge)
+        if badge_visible
+        else gr.update(visible=False)
+    )
+
+    return (
+        chatbot,
+        spam_update,
+        confidence_update,
+        queries_update,
+        guard_update,
+        gr.update(visible=False, value=""),  # intent_text
+        gr.update(visible=False, value=""),  # topic_text
+        gr.update(visible=False, value=""),  # category_text
+        gr.update(visible=False, value=0),  # intent_confidence_number
+        gr.update(visible=False, value={}),  # guardian_json
+        gr.update(visible=False, value=[]),  # subqueries_json
+        gr.update(visible=False, value=[]),  # action_plan_json
+        gr.update(visible=False, value=[]),  # articles_df
+        metadata_dict,  # metadata_state
+    )
+
+
 def format_guard_badge(guard_info: dict | None) -> str:
     """Format guard/safety info as colored HTML badge (localized).
 
@@ -2885,23 +2974,8 @@ async def chat_with_metadata(
     ):
         if isinstance(chunk, list):
             last_history = chunk
-            # Yield history with hidden metadata during streaming
-            yield (
-                chunk,
-                gr.update(visible=False),  # spam_badge
-                gr.update(visible=False),  # confidence_badge
-                gr.update(visible=False),  # queries_badge
-                gr.update(visible=False),  # guard_badge
-                gr.update(visible=False, value=""),  # intent_text
-                gr.update(visible=False, value=""),  # topic_text
-                gr.update(visible=False, value=""),  # category_text
-                gr.update(visible=False, value=0),  # intent_confidence_number
-                gr.update(visible=False, value={}),  # guardian_json
-                gr.update(visible=False, value=[]),  # subqueries_json
-                gr.update(visible=False, value=[]),  # action_plan_json
-                gr.update(visible=False, value=[]),  # articles_df
-                None,  # metadata_state - not updated during streaming
-            )
+            # Yield hidden updates during streaming
+            yield yield_hidden_updates(chunk)
         elif isinstance(chunk, AgentContext):
             ctx = chunk
             metadata_start_time = time.perf_counter()
@@ -2910,22 +2984,7 @@ async def chat_with_metadata(
     # After streaming completes, populate metadata components with delays
     if ctx is None:
         logger.warning("chat_with_metadata: no AgentContext received, yielding hidden metadata")
-        yield (
-            last_history,
-            gr.update(visible=False),  # spam_badge
-            gr.update(visible=False),  # confidence_badge
-            gr.update(visible=False),  # queries_badge
-            gr.update(visible=False),  # guard_badge
-            gr.update(visible=False, value=""),  # intent_text
-            gr.update(visible=False, value=""),  # topic_text
-            gr.update(visible=False, value=""),  # category_text
-            gr.update(visible=False, value=0),  # intent_confidence_number
-            gr.update(visible=False, value={}),  # guardian_json
-            gr.update(visible=False, value=[]),  # subqueries_json
-            gr.update(visible=False, value=[]),  # action_plan_json
-            gr.update(visible=False, value=[]),  # articles_df
-            None,  # metadata_state - no metadata to store
-        )
+        yield yield_hidden_updates(last_history)
         return
 
     try:
@@ -3038,8 +3097,6 @@ async def chat_with_metadata(
         guard_elapsed = (time.perf_counter() - guard_start) * 1000
         logger.info(f"chat_with_metadata: guard badge formatting took {guard_elapsed:.2f}ms")
 
-        # Format SRP badge
-        srp_start = time.perf_counter()
         final_start = time.perf_counter()
         try:
             # format_articles_dataframe is disabled, returns empty list
@@ -3116,33 +3173,14 @@ async def chat_with_metadata(
             f"articles_df_rows={len(articles_df_data) if isinstance(articles_df_data, list) else 0}"
         )
 
-        badge_visible = not settings.gradio_embedded_widget
         try:
-            yield (
+            yield yield_badge_updates(
                 last_history,
-                gr.update(visible=badge_visible, value=spam_badge_html),
-                gr.update(visible=badge_visible, value=confidence_badge_html),
-                gr.update(visible=badge_visible, value=queries_badge_html),
-                gr.update(visible=badge_visible, value=guard_badge_html),
-                gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
-                gr.update(visible=False, value=""),  # topic_text - hide for now, will update later
-                gr.update(
-                    visible=False, value=""
-                ),  # category_text - hide for now, will update later
-                gr.update(
-                    visible=False, value=0
-                ),  # intent_confidence_number - hide for now, will update later
-                gr.update(
-                    visible=False, value={}
-                ),  # guardian_json - hide for now, will update later
-                gr.update(
-                    visible=False, value=[]
-                ),  # subqueries_json - hide for now, will update later
-                gr.update(
-                    visible=False, value=[]
-                ),  # action_plan_json - hide for now, will update later
-                gr.update(visible=False, value=[]),  # articles_df - hide for now, will update later
-                metadata_dict,  # Store metadata in state
+                spam_badge_html,
+                confidence_badge_html,
+                queries_badge_html,
+                guard_badge_html,
+                metadata_dict,
             )
             yield_elapsed = (time.perf_counter() - yield_start) * 1000
             logger.info(
