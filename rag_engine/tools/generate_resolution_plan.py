@@ -73,10 +73,9 @@ async def generate_resolution_plan(
 ) -> str:
     """Generate a support engineer resolution plan.
 
-    Analyze the conversation and answer to create an actionable plan
-    for human support engineers.
-
-    Reason step by steep and fill the arguments with meaningful data.
+    Analyze the conversation and YOUR final answer.
+    Critically evaluate: did you actually solve the user's problem?
+    If not, create an actionable plan for human engineer escalation.
 
     Returns:
         Formatted markdown plan if engineer_intervention_needed=True.
