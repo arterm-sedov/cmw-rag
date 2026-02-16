@@ -1218,7 +1218,7 @@ async def agent_chat_handler(
             structured_llm = sgr_llm.with_structured_output(
                 SGRPlanResult, method="function_calling"
             )
-            plan = structured_llm.invoke(messages)
+            plan = await structured_llm.ainvoke(messages)
             logger.info("SGR LLM returned: %s", type(plan))
             if plan is not None:
                 sgr_plan_dict = plan.model_dump()
@@ -2245,8 +2245,6 @@ async def agent_chat_handler(
                 yield list(gradio_history)
 
                 # Build SRP system prompt: base only (no guardian, no SGR suffix) + sources + SRP instruction
-                # Quick yield to ensure bubble is rendered before LLM call blocks
-                yield list(gradio_history)
                 srp_system_prompt = get_system_prompt()
                 if articles:
                     srp_system_prompt += "\n\n" + format_sources_list(articles)
@@ -2271,7 +2269,7 @@ async def agent_chat_handler(
                     ResolutionPlanResult, method="function_calling"
                 )
                 logger.info("Calling SRP LLM...")
-                plan = structured_llm.invoke(srp_messages)
+                plan = await structured_llm.ainvoke(srp_messages)
                 logger.info("SRP LLM returned: %s", type(plan))
                 if plan is not None:
                     resolution_plan = plan.model_dump()
