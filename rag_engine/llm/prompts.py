@@ -9,7 +9,7 @@ You answer questions based strictly on provided context from the knowledge base 
 
 <current_date>
 Current date/time:
-{json.dumps(_get_current_datetime_dict(), ensure_ascii=False, separators=(',', ':'))}
+{json.dumps(_get_current_datetime_dict(), ensure_ascii=False, separators=(",", ":"))}
 <current_date>
 
 <source_materials>
@@ -161,16 +161,16 @@ QUERY_DECOMPOSITION_PROMPT = (
 
 # User question template for wrapping user messages
 USER_QUESTION_TEMPLATE_FIRST = (
-  "Найди информацию в базе знаний по по следующей теме:\n"
-  "{question}\n\n"
-  "Ответь на вопрос пользователя, используя эту информацию"
+    "Найди информацию в базе знаний по по следующей теме:\n"
+    "{question}\n\n"
+    "Ответь на вопрос пользователя, используя эту информацию"
 )
 
 USER_QUESTION_TEMPLATE_SUBSEQUENT = (
-  "Ответь на вопрос пользователя:\n\n"
-  "{question}\n\n"
-  "Учти предыдущие сообщения.\n"
-  "Если требуется, найди в базе знаний информацию для ответа на вопрос.\n"
+    "Ответь на вопрос пользователя:\n\n"
+    "{question}\n\n"
+    "Учти предыдущие сообщения.\n"
+    "Если требуется, найди в базе знаний информацию для ответа на вопрос.\n"
 )
 
 # AI-generated content disclaimer (prepended to all responses)
@@ -181,3 +181,22 @@ AI_DISCLAIMER = """## Сгенерированный ИИ контент
 
 -----------------
 """
+
+
+def get_sgr_suffix() -> str:
+    """Get SGR (Schema-Guided Request) suffix for forced tool call.
+
+    Appended to system prompt when SGR planning is enabled.
+    """
+    return """MANDATORY: You MUST call analyse_user_request tool first.
+Output valid JSON matching the tool schema - no extra text or commentary."""
+
+
+def get_srp_suffix() -> str:
+    """Get SRP (Support Resolution Plan) suffix for forced tool call.
+
+    Appended to system prompt when SRP planning is enabled.
+    """
+    return """Use generate_resolution_plan tool to create a 
+"support engineer resolution plan based on the conversation.
+Output valid JSON matching the tool schema - no extra text or commentary."""

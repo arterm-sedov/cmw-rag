@@ -1171,13 +1171,16 @@ async def agent_chat_handler(
             # In enforce mode, we already returned early, so no need to handle
 
         # Always use base system prompt + guardian context appendage (when available)
-        from rag_engine.llm.prompts import get_system_prompt
+        from rag_engine.llm.prompts import get_sgr_suffix, get_system_prompt
 
         base_prompt = get_system_prompt()
-        guardian_suffix = f"\n\n{moderation_context}" if moderation_context else ""
+        guardian_suffix = moderation_context if moderation_context else ""
+        sgr_suffix = get_sgr_suffix()
         system_msg = {
             "role": "system",
-            "content": f"{base_prompt}{guardian_suffix}\n\nMANDATORY: You MUST call analyse_user_request tool.",
+            "content": f"{base_prompt}\n\n{guardian_suffix}\n\n{sgr_suffix}"
+            if guardian_suffix
+            else f"{base_prompt}\n\n{sgr_suffix}",
         }
         messages = [system_msg] + messages
         logger.debug("Injected system prompt with guardian context: %s", moderation_context)
@@ -2258,7 +2261,7 @@ async def agent_chat_handler(
                 update_message_status_in_history,
                 yield_srp_planning_started,
             )
-            from rag_engine.llm.prompts import get_system_prompt
+            from rag_engine.llm.prompts import get_srp_suffix, get_system_prompt
             from rag_engine.tools import generate_resolution_plan
 
             try:
@@ -2270,7 +2273,7 @@ async def agent_chat_handler(
                 srp_system_prompt = get_system_prompt()
                 if articles:
                     srp_system_prompt += "\n\n" + format_sources_list(articles)
-                srp_system_prompt += "\n\nUse generate_resolution_plan tool to create a support engineer resolution plan based on the conversation."
+                srp_system_prompt += "\n\n" + get_srp_suffix()
 
                 # Build messages for SRP LLM call (same pattern as SGR: custom system prompt + messages)
                 srp_messages = [{"role": "system", "content": srp_system_prompt}]

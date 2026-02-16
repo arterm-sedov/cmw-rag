@@ -10,7 +10,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class SGRAction(str, Enum):
@@ -19,6 +19,20 @@ class SGRAction(str, Enum):
     PROCEED = "proceed"
     ASK_CLARIFICATION = "ask_clarification"
     DECLINE = "decline"
+
+
+class SGRCategory(str, Enum):
+    """Request categories for classification."""
+
+    SETUP_HELP = "Помощь в настройке"
+    TROUBLESHOOTING = "Устранение неполадок"
+    FEATURE_REQUEST = "Запрос функции"
+    GENERAL_QUESTION = "Общий вопрос"
+    ADMINISTRATION = "Администрирование"
+    INTEGRATION = "Интеграция"
+    TRAINING = "Обучение"
+    HOW_TO = "Как сделать"
+    OTHER = "Другое"
 
 
 class SGRPlanResult(BaseModel):
@@ -38,19 +52,17 @@ class SGRPlanResult(BaseModel):
         ...,
         max_length=300,
         description=(
-            "REASONING STEP 1 - Intent Understanding: "
             "What does the user actually want to achieve? "
             "Think beyond keywords: What is their underlying goal? "
             "What business problem are they trying to solve? "
-            "Write 1-2 clear sentences in Russian, as if explaining to a colleague."
+            "Write 1-2 clear sentences in Russian, as if explaining to support engineer."
         ),
     )
 
     topic: str = Field(
-        ...,
+        default="",
         max_length=100,
         description=(
-            "REASONING STEP 2 - Topic Identification: "
             "What is this request about? "
             "Example: 'Настройка SSO', 'Создание процесса', 'Интеграция с API'. "
             "Keep it concise (2-5 words). "
@@ -58,24 +70,29 @@ class SGRPlanResult(BaseModel):
         ),
     )
 
-    category: str = Field(
-        ...,
-        max_length=50,
+    category: SGRCategory = Field(
+        default=SGRCategory.GENERAL_QUESTION,
         description=(
-            "REASONING STEP 3 - Category Classification: "
-            "What type of request is this? "
-            "'Помощь в настройке', 'Устранение неполадок', 'Запрос функции', 'Общий вопрос'. "
-            "Choose the most appropriate category. "
-            "Write in Russian."
+            "What type of request is this? Choose the most appropriate category from the enum."
         ),
     )
 
+    @field_validator("category", mode="before")
+    @classmethod
+    def _convert_category(cls, v: Any) -> SGRCategory:
+        if isinstance(v, SGRCategory):
+            return v
+        if isinstance(v, str):
+            for cat in SGRCategory:
+                if cat.value.lower() == v.lower() or cat.name.lower() == v.lower():
+                    return cat
+        return SGRCategory.GENERAL_QUESTION
+
     intent_confidence: float | None = Field(
-        default=None,
+        default=0.0,
         ge=0.0,
         le=1.0,
         description=(
-            "REASONING STEP 4 - Confidence Assessment: "
             "How confident are you in understanding what the user wants? "
             "Think: Is the request clear? Do you understand the context? "
             "0.0-0.4: Very unclear, major uncertainties; "
@@ -88,7 +105,6 @@ class SGRPlanResult(BaseModel):
         default_factory=list,
         max_length=5,
         description=(
-            "REASONING STEP 5 - Clarification Questions to Ask: "
             "If intent_confidence < 0.7, what specific questions would help you understand better? "
             "Write in Russian, be polite and specific. "
             "These questions will be shown to the user to get clarification. "
@@ -101,7 +117,6 @@ class SGRPlanResult(BaseModel):
         ge=0.0,
         le=1.0,
         description=(
-            "REASONING STEP 6 - Validity Assessment: "
             "Is this request appropriate for Comindware Platform support? "
             "0.0-0.2: Clearly relevant; "
             "0.3-0.5: Ambiguous or partially related; "
@@ -114,7 +129,6 @@ class SGRPlanResult(BaseModel):
         default="",
         max_length=150,
         description=(
-            "REASONING STEP 7 - Spam Justification: "
             "Briefly explain your spam_score in 10-20 words. "
             "Write in Russian. "
             "Leave empty if spam_score < 0.3 (clearly not spam)."
@@ -125,29 +139,44 @@ class SGRPlanResult(BaseModel):
         default_factory=list,
         max_length=10,
         description=(
-            "REASONING STEP 8 - Knowledge Base Search Queries: "
-            "What specific terms should be used to search the knowledge base? "
+            "What specific terms should be used to search the articles the knowledge base? "
             "Include: feature names, technical terms, error messages, relevant keywords. "
             "Write in Russian, avoid duplicates. "
-            "These queries will be used to retrieve relevant documentation. "
             "Leave EMPTY if no search needed (e.g., simple greetings, time/date questions, "
             "or direct answers not requiring documentation lookup)."
         ),
     )
 
+    @field_validator("knowledge_base_search_queries", mode="before")
+    @classmethod
+    def _convert_queries(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            return [v] if v else []
+        if isinstance(v, list):
+            return [str(item) for item in v]
+        return []
+
     action_plan: list[str] = Field(
         default_factory=list,
         max_length=10,
         description=(
-            "REASONING STEP 9 - Execution Plan: "
             "How will you answer this request? "
             "Steps: search docs -> evaluate -> synthesize answer OR ask clarification. "
             "Write in Russian as actionable instructions to yourself."
         ),
     )
 
+    @field_validator("action_plan", mode="before")
+    @classmethod
+    def _convert_action_plan(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            return [v] if v else []
+        if isinstance(v, list):
+            return [str(item) for item in v]
+        return []
+
     action: SGRAction = Field(
-        ...,
+        default=SGRAction.PROCEED,
         description=(
             "REASONING STEP 10 - Routing Decision: "
             "Based on all previous reasoning, what action to take? "
