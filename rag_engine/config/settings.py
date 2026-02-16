@@ -195,7 +195,7 @@ class Settings(BaseSettings):
 
     # SRP (Support Resolution Plan)
     # Generates resolution plan for human support engineers after answer generation
-    srp_enabled: bool
+    srp_enabled: bool = False
 
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(

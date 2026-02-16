@@ -2221,7 +2221,9 @@ async def agent_chat_handler(
 
         # ========== SRP (Support Resolution Plan) - if enabled ==========
         resolution_plan = None
-        if getattr(settings, "srp_enabled", False):
+        srp_enabled = getattr(settings, "srp_enabled", False)
+        logger.info("SRP check: srp_enabled=%s", srp_enabled)
+        if srp_enabled:
             from rag_engine.api.stream_helpers import (
                 remove_message_by_ui_type,
                 update_message_status_in_history,
