@@ -184,19 +184,18 @@ AI_DISCLAIMER = """## Сгенерированный ИИ контент
 
 
 def get_sgr_suffix() -> str:
-    """Get SGR (Schema-Guided Request) suffix for forced tool call.
+    """Get SGR (Schema-Guided Request) suffix for structured output.
 
     Appended to system prompt when SGR planning is enabled.
     """
-    return """MANDATORY: You MUST call analyse_user_request tool first.
-Output valid JSON matching the tool schema - no extra text or commentary."""
+    return """MANDATORY: Output valid JSON matching the schema below.
+Provide detailed Russian text for text fields - no short keywords or English."""
 
 
 def get_srp_suffix() -> str:
-    """Get SRP (Support Resolution Plan) suffix for forced tool call.
+    """Get SRP (Support Resolution Plan) suffix for structured output.
 
     Appended to system prompt when SRP planning is enabled.
     """
-    return """Use generate_resolution_plan tool to create a 
-"support engineer resolution plan based on the conversation.
-Output valid JSON matching the tool schema - no extra text or commentary."""
+    return """MANDATORY: Output valid JSON matching the schema below.
+Provide detailed Russian text for text fields - no short keywords or English."""
