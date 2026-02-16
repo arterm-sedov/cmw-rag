@@ -226,7 +226,7 @@ class ResolutionPlanResult(BaseModel):
         default="",
         description=(
             "User's issue description in 2-3 sentences (50-150 words). Russian. "
-            "Only meaningful when engineer_intervention_needed=True."
+            "Always fill for structured trace."
         ),
     )
 
@@ -234,7 +234,7 @@ class ResolutionPlanResult(BaseModel):
         default_factory=list,
         description=(
             "Steps you took to resolve the issue (2-5 items). Russian. "
-            "Only meaningful when engineer_intervention_needed=True."
+            "Always fill for structured trace."
         ),
     )
 
@@ -242,7 +242,7 @@ class ResolutionPlanResult(BaseModel):
         default_factory=list,
         description=(
             "Recommended actions for support engineer (1-3 items). Russian. "
-            "Only meaningful when engineer_intervention_needed=True."
+            "Always fill for structured trace."
         ),
     )
 
