@@ -22,7 +22,6 @@ from openai import APIError as OpenAIAPIError
 
 from rag_engine.api.i18n import i18n_resolve
 from rag_engine.config.settings import get_allowed_fallback_models, settings  # noqa: F401
-from rag_engine.llm.agent_factory import create_agent
 from rag_engine.llm.fallback import check_context_fallback
 from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.llm.schemas import StructuredAgentResult
@@ -1203,18 +1202,7 @@ async def agent_chat_handler(
             logger.info("SGR planning UI bubble added to history")
 
             from rag_engine.llm.llm_manager import LLMManager
-            from rag_engine.llm.prompts import get_sgr_suffix, get_system_prompt
             from rag_engine.llm.schemas import SGRPlanResult
-
-            # Build system prompt (unchanged)
-            base_prompt = get_system_prompt()
-            guardian_suffix = moderation_context if moderation_context else ""
-            sgr_suffix = get_sgr_suffix()
-            system_prompt = (
-                f"{base_prompt}\n\n{guardian_suffix}\n\n{sgr_suffix}"
-                if guardian_suffix
-                else f"{base_prompt}\n\n{sgr_suffix}"
-            )
 
             # Initialize LLM
             sgr_llm = LLMManager(
@@ -1223,16 +1211,11 @@ async def agent_chat_handler(
                 temperature=settings.llm_temperature,
             )._chat_model()
 
-            # Create agent with structured output (LangChain handles tool binding, parsing, validation, retries)
+            # Use with_structured_output for single LLM call (no agent loop)
+            # Messages already include system prompt (added at line 1185)
             logger.info("Calling SGR planning LLM with %d messages", len(messages))
-            sgr_agent = create_agent(
-                model=sgr_llm,
-                response_format=SGRPlanResult,
-                system_prompt=system_prompt,
-            )
-
-            result = sgr_agent.invoke({"messages": messages})
-            plan = result["structured_response"]
+            structured_llm = sgr_llm.with_structured_output(SGRPlanResult)
+            plan = structured_llm.invoke(messages)
             sgr_plan_dict = plan.model_dump()
             logger.info(
                 "SGR plan extracted: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
@@ -2251,15 +2234,16 @@ async def agent_chat_handler(
                 gradio_history.append(yield_srp_planning_started())
                 yield list(gradio_history)
 
-                # Build SRP system prompt: base + sources list (grounding) + SRP instruction
+                # Build SRP system prompt: base only (no guardian, no SGR suffix) + sources + SRP instruction
                 srp_system_prompt = get_system_prompt()
                 if articles:
                     srp_system_prompt += "\n\n" + format_sources_list(articles)
                 srp_system_prompt += "\n\n" + get_srp_suffix()
 
-                # Build messages for SRP LLM call (same pattern as SGR: custom system prompt + messages)
-                srp_messages = [{"role": "system", "content": srp_system_prompt}]
-                srp_messages.extend(messages)
+                # Build messages: new clean system prompt + user messages only (no old system prompt)
+                # Filter out old system messages - start fresh with base + sources + SRP suffix
+                user_messages = [msg for msg in messages if msg.get("role") != "system"]
+                srp_messages = [{"role": "system", "content": srp_system_prompt}] + user_messages
 
                 # Initialize LLM
                 srp_llm = LLMManager(
@@ -2268,18 +2252,11 @@ async def agent_chat_handler(
                     temperature=settings.llm_temperature,
                 )._chat_model()
 
-                # Create agent with structured output (LangChain handles tool binding, parsing, validation, retries)
-                from rag_engine.llm.agent_factory import create_agent as create_srp_agent
+                # Use with_structured_output for single LLM call (no agent loop)
                 from rag_engine.llm.schemas import ResolutionPlanResult
 
-                srp_agent = create_srp_agent(
-                    model=srp_llm,
-                    response_format=ResolutionPlanResult,
-                    system_prompt=srp_system_prompt,
-                )
-
-                result = srp_agent.invoke({"messages": srp_messages})
-                plan = result["structured_response"]
+                structured_llm = srp_llm.with_structured_output(ResolutionPlanResult)
+                plan = structured_llm.invoke(srp_messages)
                 resolution_plan = plan.model_dump()
                 agent_context.resolution_plan = resolution_plan
                 logger.info(
