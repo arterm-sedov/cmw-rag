@@ -77,7 +77,7 @@ async def generate_resolution_plan(
     Critically evaluate: did you actually solve the user's problem?
 
     ALWAYS fill these fields (for structured trace):
-    - issue_summary: 50-150 words in Russian - describe user's issue
+    - issue_summary: 20-150 words in Russian - describe user's issue
     - steps_completed: 2-5 items in Russian - what you did
     - next_steps: 1-3 items in Russian - what engineer should do
     - outcome: resolved / partially_resolved / escalation_required / user_followup_needed / not_applicable
