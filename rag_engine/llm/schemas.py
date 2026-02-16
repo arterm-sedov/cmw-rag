@@ -50,12 +50,13 @@ class SGRPlanResult(BaseModel):
 
     user_intent: str = Field(
         ...,
-        max_length=300,
+        max_length=500,
         description=(
             "What does the user actually want to achieve? "
             "Think beyond keywords: What is their underlying goal? "
             "What business problem are they trying to solve? "
-            "Write 1-2 clear sentences in Russian, as if explaining to support engineer."
+            "Write 1-2 clear sentences in Russian, as if explaining to support engineer. "
+            "Keep it brief - about 50-70 words maximum."
         ),
     )
 

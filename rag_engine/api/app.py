@@ -12,6 +12,7 @@ import time
 import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Any
 
 # Add project root to path if not already installed
 _project_root = Path(__file__).parent.parent.parent
@@ -81,20 +82,6 @@ def _badge_html(*, label: str, value: str, color: str) -> str:
     )
 
 
-def format_spam_badge(score: float | None) -> str:
-    """Format spam score as colored HTML badge (localized)."""
-    label = i18n_resolve("spam_badge_label")
-    if score is None:
-        return _badge_html(label=label, value=i18n_resolve("spam_level_na"), color="gray")
-    if score < 0.3:
-        color, level = "green", i18n_resolve("spam_level_low")
-    elif score < 0.6:
-        color, level = "orange", i18n_resolve("spam_level_medium")
-    else:
-        color, level = "red", i18n_resolve("spam_level_high")
-    return _badge_html(label=label, value=f"{score:.2f} {level}", color=color)
-
-
 def format_confidence_badge(query_traces: list[dict]) -> str:
     """Format overall retrieval confidence as colored HTML badge (localized)."""
     from rag_engine.retrieval.confidence import compute_normalized_confidence_from_traces
@@ -140,33 +127,18 @@ def format_queries_badge_from_count(count: int) -> str:
     return _badge_html(label=label, value=str(count), color=color)
 
 
-def _empty_metadata_updates(count: int) -> tuple:
-    """Generate a tuple of empty gr.update() for metadata components.
-
-    Args:
-        count: Number of empty updates to generate
-
-    Returns:
-        Tuple of gr.update() with visible=False
-    """
-    return tuple(gr.update(visible=False) for _ in range(count))
-
-
-# Number of metadata components (excluding chatbot which is handled separately)
-METADATA_COMPONENT_COUNT = 7
-
-
 def yield_hidden_updates(chunk: list[dict] | None = None) -> tuple:
-    """Standard hidden update for all UI components during streaming.
-
-    Args:
-        chunk: Chatbot history to yield (or None to use placeholder)
-
-    Returns:
-        Tuple starting with chatbot, then metadata updates
-    """
+    """Standard hidden update for all UI components during streaming."""
     chatbot_update = chunk if chunk is not None else gr.update(visible=False)
-    return (chatbot_update,) + _empty_metadata_updates(METADATA_COMPONENT_COUNT)
+    return (
+        chatbot_update,
+        gr.update(visible=False),
+        gr.update(visible=False),
+        gr.update(visible=False, value={}),
+        gr.update(visible=False, value={}),
+        gr.update(visible=False, value={}),
+        gr.update(visible=False, value=[]),
+    )
 
 
 def yield_badge_updates(
@@ -221,7 +193,6 @@ def yield_badge_updates(
         sgr_plan_json_update,
         srp_plan_json_update,
         articles_df_update,
-        metadata_dict,  # metadata_state
     )
 
 
@@ -2278,7 +2249,7 @@ async def agent_chat_handler(
                 remove_message_by_ui_type(gradio_history, "srp_planning")
                 yield list(gradio_history)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.error("SRP LLM call timed out after 30 seconds")
                 agent_context.resolution_plan_error = "SRP LLM call timed out"
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
@@ -2920,28 +2891,10 @@ async def chat_with_metadata(
     history: list[dict],
     cancel_state: dict | None = None,
     request: gr.Request | None = None,
-) -> AsyncGenerator[
-    tuple[
-        list[dict],
-        str | gr.HTML,
-        str | gr.HTML,
-        str | gr.HTML,
-        str | gr.HTML,  # guard_badge
-        str | gr.Textbox,
-        list | gr.JSON,
-        list | gr.JSON,
-        list | gr.Dataframe,
-        dict | None,  # metadata_state
-    ],
-    None,
-]:
-    """Streaming UI handler with metadata enabled and 1s delays around culprits for debugging.
-
-    Adds 1 second delays around formatting operations to identify which causes frontend hang.
-    """
+) -> AsyncGenerator[tuple[list[dict], Any, Any, Any, Any, Any, Any], None]:
+    """Streaming UI handler with metadata - yields chatbot during streaming, metadata once at end."""
     last_history: list[dict] = history if history else []
     ctx: AgentContext | None = None
-    metadata_start_time = None
     user_message = message  # Store original message for fallback metadata
 
     async for chunk in agent_chat_handler(
@@ -2952,15 +2905,18 @@ async def chat_with_metadata(
     ):
         if isinstance(chunk, list):
             last_history = chunk
-            # During streaming: ONLY yield chatbot updates, not metadata
-            # Metadata will be updated once at the end when we have structured data
-            yield (chunk,) + _empty_metadata_updates(METADATA_COMPONENT_COUNT)
-        elif isinstance(chunk, AgentContext):
+            yield (
+                chunk,
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False, value={}),
+                gr.update(visible=False, value={}),
+                gr.update(visible=False, value={}),
+                gr.update(visible=False, value=[]),
+            )
+        else:
             ctx = chunk
-            metadata_start_time = time.perf_counter()
-            logger.info("chat_with_metadata: received AgentContext, starting metadata processing")
 
-    # After streaming completes, populate metadata components with delays
     if ctx is None:
         logger.warning("chat_with_metadata: no AgentContext received, yielding hidden metadata")
         yield yield_hidden_updates(last_history)
@@ -2978,7 +2934,6 @@ async def chat_with_metadata(
             f"action_plan_present={'action_plan' in plan}, "
             f"user_message='{user_message[:50] if user_message else 'None'}...'"
         )
-        spam_score = plan.get("spam_score")
         user_intent = (
             plan.get("user_intent", "") if isinstance(plan.get("user_intent"), str) else ""
         )
@@ -3014,20 +2969,10 @@ async def chat_with_metadata(
         plan_elapsed = (time.perf_counter() - plan_start) * 1000
         logger.info(
             f"chat_with_metadata: plan extraction took {plan_elapsed:.2f}ms - "
-            f"spam_score={spam_score}, user_intent_len={len(user_intent)}, "
+            f"user_intent_len={len(user_intent)}, "
             f"queries_count={len(knowledge_base_search_queries) if isinstance(knowledge_base_search_queries, list) else 0}, "
             f"action_plan_count={len(action_plan) if isinstance(action_plan, list) else 0}"
         )
-
-        # Format badges with timing
-        spam_start = time.perf_counter()
-        try:
-            spam_badge_html = format_spam_badge(spam_score)
-        except Exception as exc:
-            logger.error("Failed to format spam badge: %s", exc, exc_info=True)
-            spam_badge_html = ""
-        spam_elapsed = (time.perf_counter() - spam_start) * 1000
-        logger.info(f"chat_with_metadata: spam badge formatting took {spam_elapsed:.2f}ms")
 
         conf_start = time.perf_counter()
         query_traces = ctx.query_traces or []
@@ -3054,44 +2999,37 @@ async def chat_with_metadata(
         conf_elapsed = (time.perf_counter() - conf_start) * 1000
         logger.info(f"chat_with_metadata: confidence badge formatting took {conf_elapsed:.2f}ms")
 
-        queries_start = time.perf_counter()
         try:
-            # Use SGR planned queries since query_traces is not populated
-            queries_list = (
-                knowledge_base_search_queries
-                if isinstance(knowledge_base_search_queries, list)
-                else []
+            # Count actual search requests from history (search bubbles)
+            actual_search_count = sum(
+                1
+                for msg in last_history
+                if msg
+                and isinstance(msg, dict)
+                and msg.get("metadata")
+                and msg["metadata"].get("ui_type") == "search_bubble"
             )
-            queries_badge_html = format_queries_badge_from_count(len(queries_list))
+            queries_badge_html = format_queries_badge_from_count(actual_search_count)
+            logger.info(
+                f"chat_with_metadata: queries badge formatting - "
+                f"actual_search_count={actual_search_count}"
+            )
         except Exception as exc:
             logger.error("Failed to format queries badge: %s", exc, exc_info=True)
             queries_badge_html = ""
-        queries_elapsed = (time.perf_counter() - queries_start) * 1000
-        logger.info(
-            f"chat_with_metadata: queries badge formatting took {queries_elapsed:.2f}ms - "
-            f"queries_count={len(queries_list)}"
-        )
+            actual_search_count = 0
 
-        # Format guard/safety badge
-        guard_start = time.perf_counter()
-        try:
-            guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
-            guard_badge_html = format_guard_badge(guard_info)
-        except Exception as exc:
-            logger.error("Failed to format guard badge: %s", exc, exc_info=True)
-            guard_badge_html = ""
-        guard_elapsed = (time.perf_counter() - guard_start) * 1000
-        logger.info(f"chat_with_metadata: guard badge formatting took {guard_elapsed:.2f}ms")
+        # Extract guard info for metadata
+        guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
+        has_guard = guard_info is not None
 
-        final_start = time.perf_counter()
+        # Extract SGR plan for metadata
         try:
             # format_articles_dataframe is disabled, returns empty list
             articles_df_data = format_articles_dataframe(ctx.final_articles or [])
         except Exception as exc:
             logger.error("Failed to format articles dataframe: %s", exc, exc_info=True)
             articles_df_data = []
-        final_elapsed = (time.perf_counter() - final_start) * 1000
-        logger.info(f"chat_with_metadata: final formatting took {final_elapsed:.2f}ms")
 
         # Yield badges immediately, store metadata in state for later UI update
         logger.info("chat_with_metadata: yielding badges and storing metadata in state")
@@ -3187,10 +3125,6 @@ async def chat_with_metadata(
             logger.error(f"chat_with_metadata: badges yield failed: {yield_exc}", exc_info=True)
             raise
 
-        if metadata_start_time:
-            total_elapsed = (time.perf_counter() - metadata_start_time) * 1000
-            logger.info(f"chat_with_metadata: total metadata processing took {total_elapsed:.2f}ms")
-
         logger.info("chat_with_metadata: generator completing normally")
 
     except Exception as exc:
@@ -3204,7 +3138,6 @@ async def chat_with_metadata(
             gr.update(visible=False, value={}),  # sgr_plan_json
             gr.update(visible=False, value={}),  # srp_plan_json
             gr.update(visible=False, value=[]),  # articles_df
-            None,  # metadata_state - no metadata to store on error
         )
 
 
@@ -3259,8 +3192,6 @@ with gr.Blocks(
     # Cancellation state - mutable dict so changes propagate to running generator
     # Note: Using direct dict value (not lambda) for Gradio 6 compatibility
     cancellation_state = gr.State(value={"cancelled": False})
-    # State to store metadata for UI update after streaming completes
-    metadata_state = gr.State(value=None)
 
     # --- Metadata badges (populated after streaming completes, shown below chat) ---
     with gr.Row():
@@ -3482,7 +3413,6 @@ with gr.Blocks(
             sgr_plan_json,
             srp_plan_json,
             articles_df,
-            metadata_state,  # Store metadata for later UI update
         ],
         concurrency_limit=settings.gradio_default_concurrency_limit,
         api_visibility="private",  # Hide agent_chat_handler from MCP tools
