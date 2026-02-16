@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -159,7 +160,7 @@ def yield_badge_updates(
     guard_badge: str = "",
     metadata_dict: dict | None = None,
 ) -> tuple:
-    """Yield badge updates and hidden metadata updates.
+    """Yield badge updates and metadata updates.
 
     Args:
         chatbot: Chatbot history
@@ -167,24 +168,54 @@ def yield_badge_updates(
         confidence_badge: HTML for confidence badge
         queries_badge: HTML for queries badge
         guard_badge: HTML for guard badge
-        metadata_dict: Metadata dictionary to store in state
+        metadata_dict: Metadata dictionary with UI values
 
     Returns:
         Tuple with 14 component updates
     """
     badge_visible = not settings.gradio_embedded_widget
 
-    # Always provide both visible and value (Gradio needs both)
-    if badge_visible:
-        spam_update = gr.update(visible=True, value=spam_badge)
-        confidence_update = gr.update(visible=True, value=confidence_badge)
-        queries_update = gr.update(visible=True, value=queries_badge)
-        guard_update = gr.update(visible=True, value=guard_badge)
+    # Badge updates
+    spam_update = gr.update(visible=badge_visible and bool(spam_badge), value=spam_badge)
+    confidence_update = gr.update(
+        visible=badge_visible and bool(confidence_badge), value=confidence_badge
+    )
+    queries_update = gr.update(visible=badge_visible and bool(queries_badge), value=queries_badge)
+    guard_update = gr.update(visible=badge_visible and bool(guard_badge), value=guard_badge)
+
+    # Extract metadata values (with defaults for embedded widget)
+    if metadata_dict and not settings.gradio_embedded_widget:
+        intent_text_val = metadata_dict.get("user_intent", "")
+        topic_val = metadata_dict.get("topic", "")
+        category_val = metadata_dict.get("category", "")
+        intent_conf_val = metadata_dict.get("intent_confidence")
+        guard_info_val = metadata_dict.get("guardian_info", {})
+        queries_val = metadata_dict.get("knowledge_base_search_queries", [])
+        action_plan_val = metadata_dict.get("action_plan", [])
+        articles_val = metadata_dict.get("articles_df_data", [])
+
+        # Show metadata fields when they have values
+        intent_text_update = gr.update(visible=bool(intent_text_val), value=intent_text_val)
+        topic_update = gr.update(visible=bool(topic_val), value=topic_val)
+        category_update = gr.update(visible=bool(category_val), value=category_val)
+        intent_conf_update = gr.update(
+            visible=intent_conf_val is not None,
+            value=intent_conf_val if intent_conf_val is not None else 0,
+        )
+        guardian_json_update = gr.update(visible=bool(guard_info_val), value=guard_info_val)
+        subqueries_json_update = gr.update(visible=bool(queries_val), value=queries_val)
+        action_plan_json_update = gr.update(visible=bool(action_plan_val), value=action_plan_val)
+        articles_df_update = gr.update(visible=bool(articles_val), value=articles_val)
     else:
-        spam_update = gr.update(visible=False, value="")
-        confidence_update = gr.update(visible=False, value="")
-        queries_update = gr.update(visible=False, value="")
-        guard_update = gr.update(visible=False, value="")
+        # Hidden by default for embedded widget or no metadata
+        intent_text_update = gr.update(visible=False, value="")
+        topic_update = gr.update(visible=False, value="")
+        category_update = gr.update(visible=False, value="")
+        intent_conf_update = gr.update(visible=False, value=0)
+        guardian_json_update = gr.update(visible=False, value={})
+        subqueries_json_update = gr.update(visible=False, value=[])
+        action_plan_json_update = gr.update(visible=False, value=[])
+        articles_df_update = gr.update(visible=False, value=[])
 
     return (
         chatbot,
@@ -192,46 +223,14 @@ def yield_badge_updates(
         confidence_update,
         queries_update,
         guard_update,
-        gr.update(visible=False, value=""),  # intent_text
-        gr.update(visible=False, value=""),  # topic_text
-        gr.update(visible=False, value=""),  # category_text
-        gr.update(visible=False, value=0),  # intent_confidence_number
-        gr.update(visible=False, value={}),  # guardian_json
-        gr.update(visible=False, value=[]),  # subqueries_json
-        gr.update(visible=False, value=[]),  # action_plan_json
-        gr.update(visible=False, value=[]),  # articles_df
-        metadata_dict,  # metadata_state
-    )
-    confidence_update = (
-        gr.update(visible=badge_visible, value=confidence_badge)
-        if badge_visible
-        else gr.update(visible=False)
-    )
-    queries_update = (
-        gr.update(visible=badge_visible, value=queries_badge)
-        if badge_visible
-        else gr.update(visible=False)
-    )
-    guard_update = (
-        gr.update(visible=badge_visible, value=guard_badge)
-        if badge_visible
-        else gr.update(visible=False)
-    )
-
-    return (
-        chatbot,
-        spam_update,
-        confidence_update,
-        queries_update,
-        guard_update,
-        gr.update(visible=False, value=""),  # intent_text
-        gr.update(visible=False, value=""),  # topic_text
-        gr.update(visible=False, value=""),  # category_text
-        gr.update(visible=False, value=0),  # intent_confidence_number
-        gr.update(visible=False, value={}),  # guardian_json
-        gr.update(visible=False, value=[]),  # subqueries_json
-        gr.update(visible=False, value=[]),  # action_plan_json
-        gr.update(visible=False, value=[]),  # articles_df
+        intent_text_update,
+        topic_update,
+        category_update,
+        intent_conf_update,
+        guardian_json_update,
+        subqueries_json_update,
+        action_plan_json_update,
+        articles_df_update,
         metadata_dict,  # metadata_state
     )
 
@@ -2269,7 +2268,8 @@ async def agent_chat_handler(
                     ResolutionPlanResult, method="function_calling"
                 )
                 logger.info("Calling SRP LLM...")
-                plan = await structured_llm.ainvoke(srp_messages)
+                # Add timeout to prevent UI freeze (30 seconds max)
+                plan = await asyncio.wait_for(structured_llm.ainvoke(srp_messages), timeout=30.0)
                 logger.info("SRP LLM returned: %s", type(plan))
                 if plan is not None:
                     resolution_plan = plan.model_dump()
@@ -2288,6 +2288,12 @@ async def agent_chat_handler(
                 remove_message_by_ui_type(gradio_history, "srp_planning")
                 yield list(gradio_history)
 
+            except asyncio.TimeoutError:
+                logger.error("SRP LLM call timed out after 30 seconds")
+                agent_context.resolution_plan_error = "SRP LLM call timed out"
+                update_message_status_in_history(gradio_history, "srp_planning", "done")
+                remove_message_by_ui_type(gradio_history, "srp_planning")
+                yield list(gradio_history)
             except Exception as exc:
                 logger.error("SRP tool failed: %s", exc)
                 agent_context.resolution_plan_error = str(exc)
@@ -2956,8 +2962,9 @@ async def chat_with_metadata(
     ):
         if isinstance(chunk, list):
             last_history = chunk
-            # Yield hidden updates during streaming
-            yield yield_hidden_updates(chunk)
+            # During streaming: ONLY yield chatbot updates, not metadata
+            # Metadata will be updated once at the end when we have structured data
+            yield (chunk,) + (gr.update(),) * 13
         elif isinstance(chunk, AgentContext):
             ctx = chunk
             metadata_start_time = time.perf_counter()
@@ -3180,17 +3187,21 @@ async def chat_with_metadata(
 
     except Exception as exc:
         logger.error("Error in chat_with_metadata metadata processing: %s", exc, exc_info=True)
-        # Yield safe fallback
+        # Yield safe fallback (14 values to match outputs)
         yield (
             last_history,
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
+            gr.update(visible=False),  # spam_badge
+            gr.update(visible=False),  # confidence_badge
+            gr.update(visible=False),  # queries_badge
             gr.update(visible=False),  # guard_badge
-            gr.update(visible=False, value=""),
-            gr.update(visible=False, value=[]),
-            gr.update(visible=False, value=[]),
-            gr.update(visible=False, value=[]),
+            gr.update(visible=False, value=""),  # intent_text
+            gr.update(visible=False, value=""),  # topic_text
+            gr.update(visible=False, value=""),  # category_text
+            gr.update(visible=False, value=0),  # intent_confidence_number
+            gr.update(visible=False, value={}),  # guardian_json
+            gr.update(visible=False, value=[]),  # subqueries_json
+            gr.update(visible=False, value=[]),  # action_plan_json
+            gr.update(visible=False, value=[]),  # articles_df
             None,  # metadata_state - no metadata to store on error
         )
 
@@ -3419,7 +3430,6 @@ with gr.Blocks(
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
                 gr.update(visible=False, value=[]),
-                gr.update(visible=False, value=""),
             )
 
         logger.info(
@@ -3471,52 +3481,33 @@ with gr.Blocks(
         logger.info("update_metadata_ui: completed all gr.update calls")
         return result
 
-    submit_event = (
-        submit_event.then(
-            fn=handler_fn,
-            inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
-            outputs=[
-                chatbot,
-                spam_badge,
-                confidence_badge,
-                queries_badge,
-                guard_badge,
-                intent_text,
-                topic_text,
-                category_text,
-                intent_confidence_number,
-                guardian_json,
-                subqueries_json,
-                action_plan_json,
-                articles_df,
-                metadata_state,  # Store metadata for later UI update
-            ],
-            concurrency_limit=settings.gradio_default_concurrency_limit,
-            api_visibility="private",  # Hide agent_chat_handler from MCP tools
-        )
-        .then(
-            # Chain re-enable directly from handler completion
-            # .then() fires after generator completes and all yields are processed
-            fn=re_enable_textbox_and_hide_stop,
-            outputs=[msg],
-            api_visibility="private",
-        )
-        .then(
-            # Update metadata UI after input is unlocked
-            fn=update_metadata_ui,
-            inputs=[metadata_state],
-            outputs=[
-                intent_text,
-                topic_text,
-                category_text,
-                intent_confidence_number,
-                guardian_json,
-                subqueries_json,
-                action_plan_json,
-                articles_df,
-            ],
-            api_visibility="private",
-        )
+    submit_event = submit_event.then(
+        fn=handler_fn,
+        inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
+        outputs=[
+            chatbot,
+            spam_badge,
+            confidence_badge,
+            queries_badge,
+            guard_badge,
+            intent_text,
+            topic_text,
+            category_text,
+            intent_confidence_number,
+            guardian_json,
+            subqueries_json,
+            action_plan_json,
+            articles_df,
+            metadata_state,  # Store metadata for later UI update
+        ],
+        concurrency_limit=settings.gradio_default_concurrency_limit,
+        api_visibility="private",  # Hide agent_chat_handler from MCP tools
+    ).then(
+        # Chain re-enable directly from handler completion
+        # .then() fires after generator completes and all yields are processed
+        fn=re_enable_textbox_and_hide_stop,
+        outputs=[msg],
+        api_visibility="private",
     )
 
     # Built-in stop button automatically cancels submit_event when stop_btn=True
