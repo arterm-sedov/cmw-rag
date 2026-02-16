@@ -112,6 +112,8 @@ async def analyse_user_request(
     """Analyze the user request and produce the question resolution plan.
 
     Returns guidance for your further steps.
+    
+    Reason step by steep and fill the arguments with meaningful data.
 
     Edge cases:
     - Simple greetings (привет, спасибо): Set queries=[], action=proceed, spam_score=0
