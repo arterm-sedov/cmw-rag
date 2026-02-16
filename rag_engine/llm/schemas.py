@@ -50,24 +50,20 @@ class SGRPlanResult(BaseModel):
 
     user_intent: str = Field(
         ...,
-        max_length=500,
         description=(
             "What does the user actually want to achieve? "
             "Think beyond keywords: What is their underlying goal? "
             "What business problem are they trying to solve? "
-            "Write 1-2 clear sentences in Russian, as if explaining to support engineer. "
-            "Keep it brief - about 50-70 words maximum."
+            "Write in Russian, 10-100 words."
         ),
     )
 
     topic: str = Field(
         default="",
-        max_length=100,
         description=(
             "What is this request about? "
             "Example: 'Настройка SSO', 'Создание процесса', 'Интеграция с API'. "
-            "Keep it concise (2-5 words). "
-            "Write in Russian."
+            "Write in Russian, 2-5 words."
         ),
     )
 
@@ -130,11 +126,10 @@ class SGRPlanResult(BaseModel):
 
     spam_reason: str = Field(
         default="",
-        max_length=150,
         description=(
-            "Briefly explain your spam_score in 10-20 words. "
+            "Brief explanation of spam_score in 10-20 words. "
             "Write in Russian. "
-            "Leave empty if spam_score < 0.3 (clearly not spam)."
+            "Leave empty if spam_score < 0.3."
         ),
     )
 
@@ -229,33 +224,24 @@ class ResolutionPlanResult(BaseModel):
 
     issue_summary: str = Field(
         default="",
-        max_length=500,
         description=(
-            "Brief summary of the user's issue in 2-3 sentences. "
-            "Write in Russian for the support engineer. "
+            "User's issue description in 2-3 sentences (50-150 words). Russian. "
             "Only meaningful when engineer_intervention_needed=True."
         ),
     )
 
     steps_completed: list[str] = Field(
         default_factory=list,
-        max_length=10,
         description=(
-            "List of steps already taken by the system. "
-            "Include: KB search, documentation analysis, solutions provided. "
-            "Write in Russian, be concise and informative. "
+            "Steps you took to resolve the issue (2-5 items). Russian. "
             "Only meaningful when engineer_intervention_needed=True."
         ),
     )
 
     next_steps: list[str] = Field(
         default_factory=list,
-        max_length=8,
         description=(
-            "Recommended next steps for the support engineer. "
-            "What does the human need to do after this response? "
-            "Examples: 'Check user permissions', 'Update documentation', 'Create dev ticket'. "
-            "Write in Russian. "
+            "Recommended actions for support engineer (1-3 items). Russian. "
             "Only meaningful when engineer_intervention_needed=True."
         ),
     )

@@ -614,7 +614,6 @@ class ResolutionPlanResult(BaseModel):
         description=(
             "Brief summary of the user's issue in 2-3 sentences. "
             "Write in Russian for the support engineer. "
-            "Only meaningful when engineer_intervention_needed=True."
         ),
     )
     
@@ -626,7 +625,6 @@ class ResolutionPlanResult(BaseModel):
             "List of steps already taken by the system. "
             "Include: KB search, documentation analysis, solutions provided. "
             "Write in Russian, be concise and informative. "
-            "Only meaningful when engineer_intervention_needed=True."
         ),
     )
     
@@ -639,7 +637,7 @@ class ResolutionPlanResult(BaseModel):
             "What does the human need to do after this response? "
             "Examples: 'Check user permissions', 'Update documentation', 'Create dev ticket'. "
             "Write in Russian. "
-            "Only meaningful when engineer_intervention_needed=True."
+            "Fill when engineer_intervention_needed=True."
         ),
     )
     
