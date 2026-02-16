@@ -1217,13 +1217,18 @@ async def agent_chat_handler(
                 SGRPlanResult, method="function_calling"
             )
             plan = structured_llm.invoke(messages)
-            sgr_plan_dict = plan.model_dump()
-            logger.info(
-                "SGR plan extracted: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
-                sgr_plan_dict.get("spam_score", 0.0),
-                len(sgr_plan_dict.get("user_intent", "")),
-                len(sgr_plan_dict.get("knowledge_base_search_queries", [])),
-            )
+            logger.info("SGR LLM returned: %s", type(plan))
+            if plan is not None:
+                sgr_plan_dict = plan.model_dump()
+                logger.info(
+                    "SGR plan extracted: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
+                    sgr_plan_dict.get("spam_score", 0.0),
+                    len(sgr_plan_dict.get("user_intent", "")),
+                    len(sgr_plan_dict.get("knowledge_base_search_queries", [])),
+                )
+            else:
+                logger.warning("SGR LLM returned None - model may have failed to make tool call")
+                sgr_plan_dict = None
 
             if sgr_plan_dict:
                 plan_json = json.dumps(sgr_plan_dict, ensure_ascii=False, separators=(",", ":"))
@@ -2261,13 +2266,20 @@ async def agent_chat_handler(
                 structured_llm = srp_llm.with_structured_output(
                     ResolutionPlanResult, method="function_calling"
                 )
+                logger.info("Calling SRP LLM...")
                 plan = structured_llm.invoke(srp_messages)
-                resolution_plan = plan.model_dump()
-                agent_context.resolution_plan = resolution_plan
-                logger.info(
-                    "SRP plan generated: engineer_intervention_needed=%s",
-                    resolution_plan.get("engineer_intervention_needed"),
-                )
+                logger.info("SRP LLM returned: %s", type(plan))
+                if plan is not None:
+                    resolution_plan = plan.model_dump()
+                    agent_context.resolution_plan = resolution_plan
+                    logger.info(
+                        "SRP plan generated: engineer_intervention_needed=%s",
+                        resolution_plan.get("engineer_intervention_needed"),
+                    )
+                else:
+                    logger.warning(
+                        "SRP LLM returned None - model may have failed to make tool call"
+                    )
 
                 # Hide and remove SRP bubble after completion
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
