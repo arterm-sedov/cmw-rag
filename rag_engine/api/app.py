@@ -2210,10 +2210,12 @@ async def agent_chat_handler(
                     srp_system_prompt += "\n\n" + format_sources_list(articles)
                 srp_system_prompt += "\n\n" + get_srp_suffix()
 
-                # Build messages: new clean system prompt + user messages only (no old system prompt)
+                # Build messages from updated gradio_history (includes final answer)
                 # Filter out old system messages - start fresh with base + sources + SRP suffix
-                user_messages = [msg for msg in messages if msg.get("role") != "system"]
-                srp_messages = [{"role": "system", "content": srp_system_prompt}] + user_messages
+                srp_messages = _build_agent_messages_from_gradio_history(
+                    gradio_history, message, wrapped_message
+                )
+                srp_messages = [{"role": "system", "content": srp_system_prompt}] + srp_messages
 
                 # Initialize LLM
                 srp_llm = LLMManager(
