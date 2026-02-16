@@ -78,6 +78,8 @@ models:
       infinity:
         endpoint_path: "/rerank"
         # DiTy doesn't use instructions
+      mosec:
+        endpoint_path: "/v1/rerank"
       openrouter:
         # Not available on OpenRouter
         supported: false
@@ -92,6 +94,8 @@ models:
         device: auto
       infinity:
         endpoint_path: "/rerank"
+      mosec:
+        endpoint_path: "/v1/rerank"
       openrouter:
         supported: false
 
@@ -104,6 +108,9 @@ models:
         supported: false
       infinity:
         endpoint_path: "/rerank"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+      mosec:
+        endpoint_path: "/v1/rerank"
         default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
       openrouter:
         supported: false  # Not yet available
@@ -118,6 +125,9 @@ models:
       infinity:
         endpoint_path: "/rerank"
         default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+      mosec:
+        endpoint_path: "/v1/rerank"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
       openrouter:
         supported: false
 
@@ -130,6 +140,9 @@ models:
         supported: false
       infinity:
         endpoint_path: "/rerank"
+        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+      mosec:
+        endpoint_path: "/v1/rerank"
         default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
       openrouter:
         supported: false

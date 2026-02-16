@@ -72,6 +72,7 @@ class ServerRerankerConfig(BaseModel):
 
     type: Literal["server"]
     endpoint: str = Field(..., description="HTTP endpoint (e.g., http://localhost:7998)")
+    path: str = Field(default="/rerank", description="API path (e.g., /rerank or /v1/rerank)")
     default_instruction: Optional[str] = Field(None)  # Qwen3 only
 
 
