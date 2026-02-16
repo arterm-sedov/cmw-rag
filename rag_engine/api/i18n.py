@@ -55,6 +55,8 @@ i18n = gr.I18n(
         "analysis_summary_title": "Analysis Summary",
         "retrieved_articles_title": "Retrieved Articles",
         "guardian_badge_label": "Guardian",
+        "sgr_plan_label": "SGR Plan",
+        "srp_plan_label": "SRP Plan",
         # SRP badges
         "srp_badge_label": "SRP",
         "srp_intervention_needed_label": "Intervention",
@@ -154,6 +156,9 @@ i18n = gr.I18n(
         "queries_badge_label": "Запросы",
         "analysis_summary_title": "Сводка анализа",
         "retrieved_articles_title": "Найденные статьи",
+        "guardian_badge_label": "Guardian",
+        "sgr_plan_label": "SGR план",
+        "srp_plan_label": "SRP план",
         "user_intent_label": "Цель запроса",
         "topic_label": "Тема",
         "category_label": "Категория",

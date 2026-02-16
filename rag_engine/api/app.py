@@ -105,9 +105,19 @@ def format_confidence_badge(query_traces: list[dict]) -> str:
     if avg is None:
         return _badge_html(label=label, value=i18n_resolve("confidence_level_na"), color="gray")
 
-    if avg > 0.7:
+    return format_confidence_badge_from_value(avg)
+
+
+def format_confidence_badge_from_value(confidence: float | None) -> str:
+    """Format confidence from a numeric value as colored HTML badge (localized)."""
+    label = i18n_resolve("confidence_badge_label")
+
+    if confidence is None:
+        return _badge_html(label=label, value=i18n_resolve("confidence_level_na"), color="gray")
+
+    if confidence > 0.7:
         color, level = "green", i18n_resolve("confidence_level_high")
-    elif avg > 0.4:
+    elif confidence > 0.4:
         color, level = "orange", i18n_resolve("confidence_level_medium")
     else:
         color, level = "red", i18n_resolve("confidence_level_low")
@@ -119,117 +129,97 @@ def format_queries_badge(query_traces: list[dict]) -> str:
     """Format queries count as colored HTML badge (localized)."""
     label = i18n_resolve("queries_badge_label")
     count = len(query_traces) if query_traces else 0
+    return format_queries_badge_from_count(count)
+
+
+def format_queries_badge_from_count(count: int) -> str:
+    """Format queries count as colored HTML badge (localized)."""
+    label = i18n_resolve("queries_badge_label")
     # Use blue color for queries badge to distinguish from confidence/spam
     color = "#87CEEB"  # skyblue - valid CSS color
     return _badge_html(label=label, value=str(count), color=color)
 
 
+def _empty_metadata_updates(count: int) -> tuple:
+    """Generate a tuple of empty gr.update() for metadata components.
+
+    Args:
+        count: Number of empty updates to generate
+
+    Returns:
+        Tuple of gr.update() with visible=False
+    """
+    return tuple(gr.update(visible=False) for _ in range(count))
+
+
+# Number of metadata components (excluding chatbot which is handled separately)
+METADATA_COMPONENT_COUNT = 7
+
+
 def yield_hidden_updates(chunk: list[dict] | None = None) -> tuple:
-    """Standard hidden update for all 14 UI components during streaming.
+    """Standard hidden update for all UI components during streaming.
 
     Args:
         chunk: Chatbot history to yield (or None to use placeholder)
 
     Returns:
-        Tuple starting with chatbot, then 13 metadata updates
+        Tuple starting with chatbot, then metadata updates
     """
     chatbot_update = chunk if chunk is not None else gr.update(visible=False)
-    return (
-        chatbot_update,  # chatbot
-        gr.update(visible=False),  # spam_badge
-        gr.update(visible=False),  # confidence_badge
-        gr.update(visible=False),  # queries_badge
-        gr.update(visible=False),  # guard_badge
-        gr.update(visible=False, value=""),  # intent_text
-        gr.update(visible=False, value=""),  # topic_text
-        gr.update(visible=False, value=""),  # category_text
-        gr.update(visible=False, value=0),  # intent_confidence_number
-        gr.update(visible=False, value={}),  # guardian_json
-        gr.update(visible=False, value=[]),  # subqueries_json
-        gr.update(visible=False, value=[]),  # action_plan_json
-        gr.update(visible=False, value=[]),  # articles_df
-        None,  # metadata_state - not updated during streaming
-    )
+    return (chatbot_update,) + _empty_metadata_updates(METADATA_COMPONENT_COUNT)
 
 
 def yield_badge_updates(
     chatbot: list[dict],
-    spam_badge: str = "",
     confidence_badge: str = "",
     queries_badge: str = "",
-    guard_badge: str = "",
     metadata_dict: dict | None = None,
 ) -> tuple:
     """Yield badge updates and metadata updates.
 
     Args:
         chatbot: Chatbot history
-        spam_badge: HTML for spam badge
         confidence_badge: HTML for confidence badge
         queries_badge: HTML for queries badge
-        guard_badge: HTML for guard badge
         metadata_dict: Metadata dictionary with UI values
 
     Returns:
-        Tuple with 14 component updates
+        Tuple with 8 component outputs
     """
     badge_visible = not settings.gradio_embedded_widget
 
     # Badge updates
-    spam_update = gr.update(visible=badge_visible and bool(spam_badge), value=spam_badge)
     confidence_update = gr.update(
         visible=badge_visible and bool(confidence_badge), value=confidence_badge
     )
     queries_update = gr.update(visible=badge_visible and bool(queries_badge), value=queries_badge)
-    guard_update = gr.update(visible=badge_visible and bool(guard_badge), value=guard_badge)
 
     # Extract metadata values (with defaults for embedded widget)
     if metadata_dict and not settings.gradio_embedded_widget:
-        intent_text_val = metadata_dict.get("user_intent", "")
-        topic_val = metadata_dict.get("topic", "")
-        category_val = metadata_dict.get("category", "")
-        intent_conf_val = metadata_dict.get("intent_confidence")
         guard_info_val = metadata_dict.get("guardian_info", {})
-        queries_val = metadata_dict.get("knowledge_base_search_queries", [])
-        action_plan_val = metadata_dict.get("action_plan", [])
+        sgr_plan_val = metadata_dict.get("sgr_plan", {})
+        srp_plan_val = metadata_dict.get("srp_plan", {})
         articles_val = metadata_dict.get("articles_df_data", [])
 
         # Show metadata fields when they have values
-        intent_text_update = gr.update(visible=bool(intent_text_val), value=intent_text_val)
-        topic_update = gr.update(visible=bool(topic_val), value=topic_val)
-        category_update = gr.update(visible=bool(category_val), value=category_val)
-        intent_conf_update = gr.update(
-            visible=intent_conf_val is not None,
-            value=intent_conf_val if intent_conf_val is not None else 0,
-        )
         guardian_json_update = gr.update(visible=bool(guard_info_val), value=guard_info_val)
-        subqueries_json_update = gr.update(visible=bool(queries_val), value=queries_val)
-        action_plan_json_update = gr.update(visible=bool(action_plan_val), value=action_plan_val)
+        sgr_plan_json_update = gr.update(visible=bool(sgr_plan_val), value=sgr_plan_val)
+        srp_plan_json_update = gr.update(visible=bool(srp_plan_val), value=srp_plan_val)
         articles_df_update = gr.update(visible=bool(articles_val), value=articles_val)
     else:
         # Hidden by default for embedded widget or no metadata
-        intent_text_update = gr.update(visible=False, value="")
-        topic_update = gr.update(visible=False, value="")
-        category_update = gr.update(visible=False, value="")
-        intent_conf_update = gr.update(visible=False, value=0)
         guardian_json_update = gr.update(visible=False, value={})
-        subqueries_json_update = gr.update(visible=False, value=[])
-        action_plan_json_update = gr.update(visible=False, value=[])
+        sgr_plan_json_update = gr.update(visible=False, value={})
+        srp_plan_json_update = gr.update(visible=False, value={})
         articles_df_update = gr.update(visible=False, value=[])
 
     return (
         chatbot,
-        spam_update,
         confidence_update,
         queries_update,
-        guard_update,
-        intent_text_update,
-        topic_update,
-        category_update,
-        intent_conf_update,
         guardian_json_update,
-        subqueries_json_update,
-        action_plan_json_update,
+        sgr_plan_json_update,
+        srp_plan_json_update,
         articles_df_update,
         metadata_dict,  # metadata_state
     )
@@ -2964,7 +2954,7 @@ async def chat_with_metadata(
             last_history = chunk
             # During streaming: ONLY yield chatbot updates, not metadata
             # Metadata will be updated once at the end when we have structured data
-            yield (chunk,) + (gr.update(),) * 13
+            yield (chunk,) + _empty_metadata_updates(METADATA_COMPONENT_COUNT)
         elif isinstance(chunk, AgentContext):
             ctx = chunk
             metadata_start_time = time.perf_counter()
@@ -3043,7 +3033,7 @@ async def chat_with_metadata(
         query_traces = ctx.query_traces or []
         logger.info(
             f"chat_with_metadata: formatting confidence badge - query_traces_count={len(query_traces)}, "
-            f"has_traces={bool(query_traces)}"
+            f"has_traces={bool(query_traces)}, intent_confidence={intent_confidence}"
         )
         if query_traces:
             for idx, trace in enumerate(query_traces):
@@ -3056,7 +3046,8 @@ async def chat_with_metadata(
                     f"confidence_type={conf_type}, articles_count={len(trace.get('articles', [])) if isinstance(trace, dict) else 0}"
                 )
         try:
-            confidence_badge_html = format_confidence_badge(query_traces)
+            # Use SGR intent_confidence since query_traces is not populated
+            confidence_badge_html = format_confidence_badge_from_value(intent_confidence)
         except Exception as exc:
             logger.error("Failed to format confidence badge: %s", exc, exc_info=True)
             confidence_badge_html = ""
@@ -3065,14 +3056,20 @@ async def chat_with_metadata(
 
         queries_start = time.perf_counter()
         try:
-            queries_badge_html = format_queries_badge(query_traces)
+            # Use SGR planned queries since query_traces is not populated
+            queries_list = (
+                knowledge_base_search_queries
+                if isinstance(knowledge_base_search_queries, list)
+                else []
+            )
+            queries_badge_html = format_queries_badge_from_count(len(queries_list))
         except Exception as exc:
             logger.error("Failed to format queries badge: %s", exc, exc_info=True)
             queries_badge_html = ""
         queries_elapsed = (time.perf_counter() - queries_start) * 1000
         logger.info(
             f"chat_with_metadata: queries badge formatting took {queries_elapsed:.2f}ms - "
-            f"queries_count={len(query_traces)}"
+            f"queries_count={len(queries_list)}"
         )
 
         # Format guard/safety badge
@@ -3129,10 +3126,19 @@ async def chat_with_metadata(
         guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
         has_guard = guard_info is not None
 
+        # Extract SGR plan for metadata
+        sgr_plan = ctx.sgr_plan if ctx.sgr_plan else {}
+        has_sgr_plan = bool(sgr_plan)
+
         # Store metadata in state for later UI update (after input is unlocked)
         queries_list = (
             knowledge_base_search_queries if isinstance(knowledge_base_search_queries, list) else []
         )
+
+        # Extract SRP plan from context
+        srp_plan = ctx.resolution_plan if hasattr(ctx, "resolution_plan") else None
+        has_srp_plan = bool(srp_plan and srp_plan.get("engineer_intervention_needed"))
+
         metadata_dict = {
             "user_intent": user_intent if has_user_intent else "",
             "has_user_intent": has_user_intent,
@@ -3144,6 +3150,10 @@ async def chat_with_metadata(
             "has_intent_confidence": has_intent_confidence,
             "guardian_info": guard_info,
             "has_guardian": has_guard,
+            "sgr_plan": sgr_plan,
+            "has_sgr_plan": has_sgr_plan,
+            "srp_plan": srp_plan,
+            "has_srp_plan": has_srp_plan,
             "knowledge_base_search_queries": queries_list,
             "has_queries": has_queries,
             "action_plan": action_plan if isinstance(action_plan, list) else [],
@@ -3165,10 +3175,8 @@ async def chat_with_metadata(
         try:
             yield yield_badge_updates(
                 last_history,
-                spam_badge_html,
                 confidence_badge_html,
                 queries_badge_html,
-                guard_badge_html,
                 metadata_dict,
             )
             yield_elapsed = (time.perf_counter() - yield_start) * 1000
@@ -3187,20 +3195,14 @@ async def chat_with_metadata(
 
     except Exception as exc:
         logger.error("Error in chat_with_metadata metadata processing: %s", exc, exc_info=True)
-        # Yield safe fallback (14 values to match outputs)
+        # Yield safe fallback (8 values to match outputs)
         yield (
             last_history,
-            gr.update(visible=False),  # spam_badge
             gr.update(visible=False),  # confidence_badge
             gr.update(visible=False),  # queries_badge
-            gr.update(visible=False),  # guard_badge
-            gr.update(visible=False, value=""),  # intent_text
-            gr.update(visible=False, value=""),  # topic_text
-            gr.update(visible=False, value=""),  # category_text
-            gr.update(visible=False, value=0),  # intent_confidence_number
             gr.update(visible=False, value={}),  # guardian_json
-            gr.update(visible=False, value=[]),  # subqueries_json
-            gr.update(visible=False, value=[]),  # action_plan_json
+            gr.update(visible=False, value={}),  # sgr_plan_json
+            gr.update(visible=False, value={}),  # srp_plan_json
             gr.update(visible=False, value=[]),  # articles_df
             None,  # metadata_state - no metadata to store on error
         )
@@ -3262,8 +3264,6 @@ with gr.Blocks(
 
     # --- Metadata badges (populated after streaming completes, shown below chat) ---
     with gr.Row():
-        guard_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
-        spam_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         confidence_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
         queries_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
 
@@ -3272,19 +3272,9 @@ with gr.Blocks(
         f"### {i18n_resolve('analysis_summary_title')}",
         visible=not settings.gradio_embedded_widget,
     )
-    intent_text = gr.Textbox(
-        label=i18n_resolve("user_intent_label"), interactive=False, visible=False
-    )
-    topic_text = gr.Textbox(label=i18n_resolve("topic_label"), interactive=False, visible=False)
-    category_text = gr.Textbox(
-        label=i18n_resolve("category_label"), interactive=False, visible=False
-    )
-    intent_confidence_number = gr.Number(
-        label=i18n_resolve("intent_confidence_label"), interactive=False, visible=False
-    )
     guardian_json = gr.JSON(label=i18n_resolve("guardian_badge_label"), visible=False)
-    subqueries_json = gr.JSON(label=i18n_resolve("subqueries_label"), visible=False)
-    action_plan_json = gr.JSON(label=i18n_resolve("action_plan_label"), visible=False)
+    sgr_plan_json = gr.JSON(label=i18n_resolve("sgr_plan_label"), visible=False)
+    srp_plan_json = gr.JSON(label=i18n_resolve("srp_plan_label"), visible=False)
 
     gr.Markdown(
         f"### {i18n_resolve('retrieved_articles_title')}",
@@ -3486,17 +3476,11 @@ with gr.Blocks(
         inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
         outputs=[
             chatbot,
-            spam_badge,
             confidence_badge,
             queries_badge,
-            guard_badge,
-            intent_text,
-            topic_text,
-            category_text,
-            intent_confidence_number,
             guardian_json,
-            subqueries_json,
-            action_plan_json,
+            sgr_plan_json,
+            srp_plan_json,
             articles_df,
             metadata_state,  # Store metadata for later UI update
         ],

@@ -22,7 +22,13 @@ def _render_plan_markdown(plan: dict) -> str:
 
     outcome = plan.get("outcome")
     if outcome:
-        outcome_key = f"srp_outcome_{outcome}"
+        # Handle both enum value ("escalation_required") and full string ("ResolutionOutcome.ESCALATION_REQUIRED")
+        outcome_str = str(outcome)
+        if "." in outcome_str:
+            outcome_str = outcome_str.split(".")[
+                -1
+            ].lower()  # Extract "ESCALATION_REQUIRED" -> "escalation_required"
+        outcome_key = f"srp_outcome_{outcome_str}"
         outcome_text = get_text(outcome_key)
     else:
         outcome_text = get_text("srp_outcome_unknown")
@@ -70,9 +76,10 @@ async def generate_resolution_plan(
     Analyze the conversation and answer to create an actionable plan
     for human support engineers.
 
+    Reason step by steep and fill the arguments with meaningful data.
+
     Returns:
-        Formatted markdown plan if engineer_intervention_needed=True,
-        or a brief confirmation if no intervention needed.
+        Formatted markdown plan if engineer_intervention_needed=True.
     """
     plan = {
         "engineer_intervention_needed": engineer_intervention_needed,

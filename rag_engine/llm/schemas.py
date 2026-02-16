@@ -105,9 +105,11 @@ class SGRPlanResult(BaseModel):
         default_factory=list,
         max_length=5,
         description=(
-            "If intent_confidence < 0.7, what specific questions would help you understand better? "
+            "If intent_confidence < 0.7, "
+            "what specific questions would help you understand user request better? "
             "Write in Russian, be polite and specific. "
             "These questions will be shown to the user to get clarification. "
+            "Example: ['вас интересует инструкция для Linux или Windows?', 'какой именно интерфейс вас интересует?', 'какая версия платформы у вас установлена?']"
             "Empty list if intent_confidence >= 0.7."
         ),
     )
@@ -139,8 +141,9 @@ class SGRPlanResult(BaseModel):
         default_factory=list,
         max_length=10,
         description=(
-            "What specific terms should be used to search the articles the knowledge base? "
+            "What specific terms to search in the articles the knowledge base? "
             "Include: feature names, technical terms, error messages, relevant keywords. "
+            "Example: ['сведения о выпуске', 'развёртывание ПО', 'справочник по API']"
             "Write in Russian, avoid duplicates. "
             "Leave EMPTY if no search needed (e.g., simple greetings, time/date questions, "
             "or direct answers not requiring documentation lookup)."
@@ -161,7 +164,7 @@ class SGRPlanResult(BaseModel):
         max_length=10,
         description=(
             "How will you answer this request? "
-            "Steps: search docs -> evaluate -> synthesize answer OR ask clarification. "
+            "Egsample steps: ['понять запрос пользователя', 'найти статьи', 'оценить релевантность статей', 'составить ответ', 'запросить уточнение', 'составить план для инженера поддержки']. "
             "Write in Russian as actionable instructions to yourself."
         ),
     )
@@ -183,8 +186,7 @@ class SGRPlanResult(BaseModel):
             "'ask_clarification': request needs clarification from user; "
             "'decline': request is off-topic or inappropriate - do not assist; "
             "Guideline: spam_score >= 0.7 suggests decline; "
-            "intent_confidence < 0.6 suggests ask_clarification; "
-            "Guardian safety levels are handled separately before this tool is called."
+            "intent_confidence < 0.6 suggests ask_clarification. "
         ),
     )
 
@@ -205,19 +207,21 @@ class ResolutionPlanResult(BaseModel):
     Called at final answer generation to provide structured guidance.
     The LLM decides if a plan is actually needed via engineer_intervention_needed field.
 
-    NOTE: Fill text fields in Russian for human readability.
-    Enum values remain in English for token efficiency.
     """
 
     engineer_intervention_needed: bool = Field(
         ...,
         description=(
-            "Is support engineer intervention or escalation needed for this issue? "
-            "Set to FALSE for: version queries, simple how-tos with complete KB answers, "
-            "factual lookups that are fully resolved, self-service queries. "
-            "Set to TRUE for: errors, bugs, configuration issues, incomplete solutions, "
-            "troubleshooting required, or any issue requiring human investigation/action. "
-            "This field is REQUIRED - the LLM must explicitly decide."
+            "Set to TRUE for: "
+            "- support engineer intervention or escalation needed for this issue, "
+            "- errors, bugs, configuration issues, incomplete solutions, "
+            "- troubleshooting required, "
+            "- any issue requiring human investigation/action. "
+            "Set to FALSE for: "
+            "- version queries that you resolved, "
+            "- simple how-tos with complete KB answers, "
+            "- factual lookups that are fully resolved, "
+            "- self-service queries. "
         ),
     )
 
@@ -260,10 +264,10 @@ class ResolutionPlanResult(BaseModel):
             "Resolution status based on the answer provided. "
             "Use English enum value: "
             "'resolved': Fully resolved; "
-            "'partially_resolved': Partially resolved, additional actions needed; "
+            "'partially_resolved': Additional actions needed; "
             "'escalation_required': Requires escalation; "
             "'user_followup_needed': User follow-up required; "
-            "'not_applicable': Plan not needed (use when engineer_intervention_needed=False)."
+            "'not_applicable': Engineer plan not needed (engineer_intervention_needed=False)."
         ),
     )
 
