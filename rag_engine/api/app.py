@@ -173,10 +173,34 @@ def yield_badge_updates(
         Tuple with 14 component updates
     """
     badge_visible = not settings.gradio_embedded_widget
-    spam_update = (
-        gr.update(visible=badge_visible, value=spam_badge)
-        if badge_visible
-        else gr.update(visible=False)
+
+    # Always provide both visible and value (Gradio needs both)
+    if badge_visible:
+        spam_update = gr.update(visible=True, value=spam_badge)
+        confidence_update = gr.update(visible=True, value=confidence_badge)
+        queries_update = gr.update(visible=True, value=queries_badge)
+        guard_update = gr.update(visible=True, value=guard_badge)
+    else:
+        spam_update = gr.update(visible=False, value="")
+        confidence_update = gr.update(visible=False, value="")
+        queries_update = gr.update(visible=False, value="")
+        guard_update = gr.update(visible=False, value="")
+
+    return (
+        chatbot,
+        spam_update,
+        confidence_update,
+        queries_update,
+        guard_update,
+        gr.update(visible=False, value=""),  # intent_text
+        gr.update(visible=False, value=""),  # topic_text
+        gr.update(visible=False, value=""),  # category_text
+        gr.update(visible=False, value=0),  # intent_confidence_number
+        gr.update(visible=False, value={}),  # guardian_json
+        gr.update(visible=False, value=[]),  # subqueries_json
+        gr.update(visible=False, value=[]),  # action_plan_json
+        gr.update(visible=False, value=[]),  # articles_df
+        metadata_dict,  # metadata_state
     )
     confidence_update = (
         gr.update(visible=badge_visible, value=confidence_badge)
