@@ -10,7 +10,7 @@ import logging
 
 from langchain.tools import ToolRuntime, tool
 
-from rag_engine.llm.schemas import ResolutionOutcome, ResolutionPlanResult, ResolutionPriority
+from rag_engine.llm.schemas import ResolutionOutcome, ResolutionPlanResult
 from rag_engine.utils.context_tracker import AgentContext
 
 logger = logging.getLogger(__name__)
@@ -41,8 +41,6 @@ def _render_plan_markdown(plan: dict) -> str:
         else get_text("srp_no_next_steps")
     )
 
-    notes = plan.get("additional_notes") or get_text("srp_no_additional_notes")
-
     return f"""# {get_text("srp_section_title")}
 
 ## {get_text("srp_issue_summary")}
@@ -55,10 +53,7 @@ def _render_plan_markdown(plan: dict) -> str:
 {next_steps_text}
 
 ## {get_text("srp_result")}
-{outcome_text}
-
-## {get_text("srp_additional_notes")}
-{notes}"""
+{outcome_text}"""
 
 
 @tool("generate_resolution_plan", args_schema=ResolutionPlanResult)
@@ -68,8 +63,6 @@ async def generate_resolution_plan(
     steps_completed: list[str],
     next_steps: list[str],
     outcome: ResolutionOutcome | None,
-    additional_notes: str | None,
-    priority: ResolutionPriority | None,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     """Generate a support engineer resolution plan.
@@ -87,8 +80,6 @@ async def generate_resolution_plan(
         "steps_completed": steps_completed,
         "next_steps": next_steps,
         "outcome": outcome,
-        "additional_notes": additional_notes,
-        "priority": priority,
     }
 
     if runtime and hasattr(runtime, "context") and runtime.context is not None:

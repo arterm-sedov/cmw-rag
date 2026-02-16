@@ -200,15 +200,6 @@ class ResolutionOutcome(str, Enum):
     NOT_APPLICABLE = "not_applicable"
 
 
-class ResolutionPriority(str, Enum):
-    """Ticket priority for support engineer plan."""
-
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
-
-
 class ResolutionPlanResult(BaseModel):
     """Support Resolution Plan - generates actionable plan for human engineers.
 
@@ -275,21 +266,6 @@ class ResolutionPlanResult(BaseModel):
             "'user_followup_needed': User follow-up required; "
             "'not_applicable': Plan not needed (use when engineer_intervention_needed=False)."
         ),
-    )
-
-    additional_notes: str | None = Field(
-        default=None,
-        max_length=300,
-        description=(
-            "Additional notes for the engineer. "
-            "Warnings, important context, caveats. "
-            "Write in Russian."
-        ),
-    )
-
-    priority: ResolutionPriority | None = Field(
-        default=None,
-        description=("Ticket priority (if applicable): low / medium / high / critical"),
     )
 
 
