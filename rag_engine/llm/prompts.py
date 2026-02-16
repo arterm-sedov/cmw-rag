@@ -189,9 +189,14 @@ def get_sgr_suffix() -> str:
     Appended to system prompt when SGR planning is enabled.
     """
     return """MANDATORY: Call the analyse_user_request tool with arguments matching the schema.
-Provide detailed meaningful Russian text for string/text fields.
-Do your best to fill even the optional fields to the best of your understanding.
-"""
+
+ALWAYS provide all fields:
+- Text: 10-100 words in Russian
+- Lists: 2-5 items
+- spam_score, intent_confidence: 0.0-1.0
+
+For long requests: summarize briefly.
+For off-topic requests: set spam_score >= 0.6."""
 
 
 def get_srp_suffix() -> str:
@@ -199,20 +204,17 @@ def get_srp_suffix() -> str:
 
     Appended to system prompt when SRP planning is enabled.
     """
-    return """BEFORE calling the tool, analyze the conversation and YOUR answer:
+    return """BEFORE calling the tool, analyze YOUR answer:
 
 1. Did you understand the user's specific problem?
-2. Is your answer tailored to their context or generic?
-3. Is this urgent/critical (system down, data loss, etc.)?
-4. Does the user need immediate human help?
+2. Is your answer tailored or generic?
+3. Is this urgent/critical (system down, data loss)?
+4. Does user need immediate human help?
 
 Set engineer_intervention_needed=TRUE if:
-- User has a specific situation not covered by generic KB answer
-- Issue is urgent or critical (errors, system down, data problems)
-- Your answer couldn't fully resolve their problem
-- User expressed frustration or issue persists
+- Specific situation not covered by KB
+- Urgent/critical issue
+- Answer couldn't fully resolve problem
+- User frustration or issue persists
 
-Set FALSE only if: Your answer fully addresses their specific request with concrete steps.
-
-MANDATORY: Call the generate_resolution_plan tool with arguments matching the schema.
-Provide detailed meaningful Russian text for string/text fields."""
+Set FALSE if: answer fully resolves request."""

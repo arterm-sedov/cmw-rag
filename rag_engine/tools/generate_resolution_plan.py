@@ -75,7 +75,15 @@ async def generate_resolution_plan(
 
     Analyze the conversation and YOUR final answer.
     Critically evaluate: did you actually solve the user's problem?
-    If not, create an actionable plan for human engineer escalation.
+
+    If engineer_intervention_needed=TRUE:
+    - issue_summary: 50-150 words in Russian - describe user's specific issue
+    - steps_completed: 2-5 items in Russian - what you did
+    - next_steps: 1-3 items in Russian - what engineer should do
+
+    If engineer_intervention_needed=FALSE:
+    - Keep issue_summary/next_steps brief or empty
+    - Focus on outcome classification
 
     Returns:
         Formatted markdown plan if engineer_intervention_needed=True.
