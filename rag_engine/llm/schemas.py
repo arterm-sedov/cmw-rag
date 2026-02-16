@@ -212,7 +212,7 @@ class ResolutionPlanResult(BaseModel):
             "Set to TRUE for: "
             "- support engineer intervention or escalation needed for this issue, "
             "- errors, bugs, configuration issues, incomplete solutions, "
-            "- troubleshooting required, "
+            "- troubleshooting required, sofrware fails,"
             "- any issue requiring human investigation/action. "
             "Set to FALSE for: "
             "- version queries that you resolved, "
@@ -225,7 +225,7 @@ class ResolutionPlanResult(BaseModel):
     issue_summary: str = Field(
         default="",
         description=(
-            "User's issue description in 2-3 sentences (50-150 words). Russian. "
+            "User's issue description in 2-3 sentences (20-150 words). Russian. "
             "Always fill for structured trace."
         ),
     )
