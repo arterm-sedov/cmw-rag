@@ -81,6 +81,7 @@ class Settings(BaseSettings):
     # Provider Endpoints (optional, have defaults)
     infinity_embedding_endpoint: str
     infinity_reranker_endpoint: str
+    mosec_reranker_endpoint: str
     openrouter_endpoint: str
 
     # Request Configuration

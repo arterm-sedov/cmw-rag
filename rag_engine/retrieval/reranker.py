@@ -11,7 +11,7 @@ import logging
 from collections.abc import Sequence
 from typing import Any, Optional, Protocol
 
-from rag_engine.config.schemas import DirectRerankerConfig, ModelRegistry, ServerRerankerConfig
+from rag_engine.config.schemas import ModelRegistry, ServerRerankerConfig
 from rag_engine.retrieval.embedder import HTTPClientMixin
 from rag_engine.utils.device_utils import detect_device
 
@@ -149,6 +149,7 @@ class InfinityReranker(HTTPClientMixin):
             max_retries=3,
         )
         self.default_instruction = config.default_instruction
+        self.rerank_path = config.path
 
     def rerank(
         self,
@@ -174,7 +175,7 @@ class InfinityReranker(HTTPClientMixin):
         ]
 
         response = self._post(
-            "/rerank",
+            self.rerank_path,
             {"query": formatted_query, "documents": documents, "top_k": top_k},
         )
 
@@ -235,12 +236,27 @@ def create_reranker(settings) -> Reranker:
         )
 
     elif provider == "infinity":
-        # Infinity HTTP server - use endpoint from settings or default
+        # Infinity HTTP server - use endpoint from settings
         endpoint = settings.infinity_reranker_endpoint
+        endpoint_path = provider_config.get("endpoint_path", "/rerank")
 
         config = ServerRerankerConfig(
             type="server",
             endpoint=endpoint,
+            path=endpoint_path,
+            default_instruction=provider_config.get("default_instruction"),
+        )
+        return InfinityReranker(config)
+
+    elif provider == "mosec":
+        # Mosec HTTP server - uses endpoint from settings
+        endpoint = settings.mosec_reranker_endpoint
+        endpoint_path = provider_config.get("endpoint_path", "/v1/rerank")
+
+        config = ServerRerankerConfig(
+            type="server",
+            endpoint=endpoint,
+            path=endpoint_path,
             default_instruction=provider_config.get("default_instruction"),
         )
         return InfinityReranker(config)
@@ -252,7 +268,9 @@ def create_reranker(settings) -> Reranker:
         )
 
     else:
-        raise ValueError(f"Unknown reranker provider: {provider}. Supported: direct, infinity")
+        raise ValueError(
+            f"Unknown reranker provider: {provider}. Supported: direct, infinity, mosec"
+        )
 
 
 # Legacy function for backward compatibility
