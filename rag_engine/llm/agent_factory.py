@@ -1,4 +1,5 @@
 """Agent factory for creating RAG agents with consistent configuration."""
+
 from __future__ import annotations
 
 import logging
@@ -62,7 +63,6 @@ def create_rag_agent(
             multiply,
             power,
             retrieve_context,
-            analyse_user_request,
             square_root,
             subtract,
         )
@@ -103,9 +103,8 @@ def create_rag_agent(
     # On first call: force retrieve_context to ensure knowledge base search
     # On subsequent calls: allow model to choose tools freely
     all_tools = [
-        # User request analysis tool (forced externally per turn)
-        # If enable_sgr_planning is False, we won't register it at all.
-        *( [analyse_user_request] if enable_sgr_planning else [] ),
+        # SGR planning tool is called via with_structured_output before agent runs
+        # Not needed in agent tool list
         retrieve_context_tool,
         get_current_datetime,
         add,
@@ -194,4 +193,3 @@ def create_rag_agent(
             context_window,
         )
     return agent
-
