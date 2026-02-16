@@ -1213,6 +1213,8 @@ async def agent_chat_handler(
 
             # Use with_structured_output for single LLM call with forced tool calling
             logger.info("Calling SGR planning LLM with %d messages", len(messages))
+            # Yield a quick update to ensure bubble is visible before blocking LLM call
+            yield list(gradio_history)
             structured_llm = sgr_llm.with_structured_output(
                 SGRPlanResult, method="function_calling"
             )
@@ -2222,8 +2224,8 @@ async def agent_chat_handler(
             if isinstance(md, dict) and md.get("ui_type") == "generating_answer":
                 del gradio_history[i]
         update_message_status_in_history(gradio_history, "search_started", "done")
-        update_message_status_in_history(gradio_history, "sgr_planning", "done")
-        logger.info("Marked all pending UI spinners as done before final yield")
+        # Note: sgr_planning is marked done by SGR section itself, don't mark here
+        logger.info("Marked search spinner as done")
 
         # ========== SRP (Support Resolution Plan) - if enabled ==========
         resolution_plan = None
@@ -2243,6 +2245,8 @@ async def agent_chat_handler(
                 yield list(gradio_history)
 
                 # Build SRP system prompt: base only (no guardian, no SGR suffix) + sources + SRP instruction
+                # Quick yield to ensure bubble is rendered before LLM call blocks
+                yield list(gradio_history)
                 srp_system_prompt = get_system_prompt()
                 if articles:
                     srp_system_prompt += "\n\n" + format_sources_list(articles)
@@ -2284,12 +2288,14 @@ async def agent_chat_handler(
                 # Hide and remove SRP bubble after completion
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
                 remove_message_by_ui_type(gradio_history, "srp_planning")
+                yield list(gradio_history)
 
             except Exception as exc:
                 logger.error("SRP tool failed: %s", exc)
                 agent_context.resolution_plan_error = str(exc)
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
                 remove_message_by_ui_type(gradio_history, "srp_planning")
+                yield list(gradio_history)
 
         # ========== Render Plan Section ==========
         plan_section = ""
