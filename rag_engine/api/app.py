@@ -2237,10 +2237,7 @@ async def agent_chat_handler(
                 srp_llm_with_tool = srp_llm.bind_tools([generate_resolution_plan])
                 srp_llm_forced = srp_llm_with_tool.bind(tool_choice="generate_resolution_plan")
                 logger.info("Calling SRP LLM...")
-                # Add timeout to prevent UI freeze (30 seconds max)
-                response = await asyncio.wait_for(
-                    srp_llm_forced.ainvoke(srp_messages), timeout=30.0
-                )
+                response = await srp_llm_forced.ainvoke(srp_messages)
                 logger.info("SRP LLM returned: %s", type(response))
 
                 if response.tool_calls:
@@ -2262,12 +2259,6 @@ async def agent_chat_handler(
                 remove_message_by_ui_type(gradio_history, "srp_planning")
                 yield list(gradio_history)
 
-            except TimeoutError:
-                logger.error("SRP LLM call timed out after 30 seconds")
-                agent_context.resolution_plan_error = "SRP LLM call timed out"
-                update_message_status_in_history(gradio_history, "srp_planning", "done")
-                remove_message_by_ui_type(gradio_history, "srp_planning")
-                yield list(gradio_history)
             except Exception as exc:
                 logger.error("SRP tool failed: %s", exc)
                 agent_context.resolution_plan_error = str(exc)

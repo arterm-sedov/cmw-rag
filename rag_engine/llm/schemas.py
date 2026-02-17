@@ -224,7 +224,6 @@ class ResolutionPlanResult(BaseModel):
     """Generate a support engineer resolution plan for Comindware Platform.
 
     Analyze the conversation and YOUR final answer.
-    Critically evaluate: did you actually solve the user's problem?
 
     Reason step by step and fill the arguments with meaningful data:
 
