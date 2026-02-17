@@ -691,69 +691,25 @@ def _message_exists_in_history(message: dict, history: list[dict]) -> bool:
 
 def _build_agent_messages_from_gradio_history(
     gradio_history: list[dict],
-    current_message: str,
-    wrapped_message: str,
+    wrapped_user_content: str | None = None,
 ) -> list[dict]:
-    """Build messages for agent from Gradio history, filtering out UI-only messages.
-
-    Filters gradio_history to exclude UI metadata messages (disclaimer, search_started, etc.)
-    and builds a clean message list for the agent. This ensures the agent only sees
-    actual conversation content, not UI elements.
+    """Build messages from Gradio history, filtering UI-only messages.
 
     Args:
         gradio_history: Full Gradio history including UI messages
-        current_message: Current user message (unwrapped, for filtering)
-        wrapped_message: Current user message wrapped with template (for agent)
+        wrapped_user_content: If provided, replaces last user message content
+                              (for SGR/agent calls). Pass None for SRP.
 
     Returns:
-        List of message dicts in LangChain format for agent
+        List of message dicts in LangChain format.
     """
-    messages = []
-
-    # Filter gradio_history to exclude UI-only messages
-    # We need to include previous conversation messages but exclude:
-    # - Disclaimer messages
-    # - Search started/completed metadata
-    # - Model switch notices
-    # - The current user message (we'll add it wrapped below)
     from rag_engine.utils.message_utils import normalize_gradio_history_message
 
-    # Log all messages in gradio_history before filtering for debugging
-    logger.info("gradio_history contents before filtering (%d messages):", len(gradio_history))
-    for idx, msg in enumerate(gradio_history):
-        msg_role = msg.get("role", "unknown")
-        msg_content = msg.get("content", "")
-        has_metadata = "metadata" in msg
-        metadata_keys = (
-            list(msg.get("metadata", {}).keys()) if isinstance(msg.get("metadata"), dict) else []
-        )
-        content_preview = (
-            str(msg_content)[:100]
-            if isinstance(msg_content, str)
-            else f"<{type(msg_content).__name__}>"
-        )
-        logger.info(
-            "  [%d] role=%s, has_metadata=%s, metadata_keys=%s, content_preview=%s",
-            idx,
-            msg_role,
-            has_metadata,
-            metadata_keys,
-            content_preview,
-        )
+    messages = []
 
     for idx, msg in enumerate(gradio_history):
         msg_role = msg.get("role")
         msg_content = msg.get("content", "")
-
-        # Check if user message is blocked (log field survives Gradio round-trips)
-        if msg_role == "user":
-            metadata = msg.get("metadata") or {}
-            if metadata.get("log") == "blocked_by_guardian":
-                locale = os.getenv("GRADIO_LOCALE", "ru")
-                placeholder = i18n_resolve("guard_blocked", locale)
-                messages.append({"role": "user", "content": placeholder})
-                logger.info("Replaced blocked message [%d] with placeholder", idx)
-                continue
 
         # Skip UI-only messages
         if _is_ui_only_message(msg):
@@ -765,28 +721,27 @@ def _build_agent_messages_from_gradio_history(
             )
             continue
 
-        # Skip the current user message (we'll add wrapped version below)
-        if (
-            msg_role == "user"
-            and isinstance(msg_content, str)
-            and msg_content.strip() == current_message.strip()
-        ):
-            logger.debug("Skipping current user message [%d] (will add wrapped version)", idx)
-            continue
+        # Normalize message for LangChain
+        normalized = normalize_gradio_history_message(msg)
 
-        # Normalize message for LangChain (convert structured content to string)
-        normalized_msg = normalize_gradio_history_message(msg)
-        # Include actual conversation messages
-        messages.append(normalized_msg)
+        # Replace blocked message content with placeholder
+        if msg_role == "user" and msg.get("metadata", {}).get("log") == "blocked_by_guardian":
+            locale = os.getenv("GRADIO_LOCALE", "ru")
+            normalized["content"] = i18n_resolve("guard_blocked", locale)
+            logger.info("Replaced blocked message [%d] with placeholder", idx)
+
+        messages.append(normalized)
         logger.info(
-            "Included message [%d] in agent context: role=%s, content_preview=%s",
+            "Included message [%d]: role=%s, content_preview=%s",
             idx,
             msg_role,
             str(msg_content)[:100] if isinstance(msg_content, str) else "non-string",
         )
 
-    # Add wrapped current message for agent
-    messages.append({"role": "user", "content": wrapped_message})
+    # Replace last user message with wrapper if provided
+    if wrapped_user_content and messages and messages[-1]["role"] == "user":
+        messages[-1]["content"] = wrapped_user_content
+        logger.info("Replaced last user message with wrapped content")
 
     return messages
 
@@ -989,7 +944,9 @@ async def agent_chat_handler(
     # Build messages from gradio_history for agent (LangChain format)
     # This filters out UI-only messages (disclaimer, search_started, etc.)
     # and ensures the agent only sees actual conversation content
-    messages = _build_agent_messages_from_gradio_history(gradio_history, message, wrapped_message)
+    messages = _build_agent_messages_from_gradio_history(
+        gradio_history, wrapped_user_content=wrapped_message
+    )
 
     # Log messages being sent to agent for debugging memory issues
     logger.info(
@@ -2219,10 +2176,7 @@ async def agent_chat_handler(
                     srp_system_prompt += "\n\n" + format_sources_list(articles)
 
                 # Build messages from updated gradio_history (includes final answer)
-                # Filter out old system messages - start fresh with base + sources + SRP suffix
-                srp_messages = _build_agent_messages_from_gradio_history(
-                    gradio_history, message, wrapped_message
-                )
+                srp_messages = _build_agent_messages_from_gradio_history(gradio_history)
                 srp_messages = [{"role": "system", "content": srp_system_prompt}] + srp_messages
 
                 # Initialize LLM
