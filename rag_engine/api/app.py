@@ -1171,17 +1171,23 @@ async def agent_chat_handler(
                 temperature=settings.llm_temperature,
             )._chat_model()
 
-            # Use with_structured_output for single LLM call with forced tool calling
+            # Use bind_tools + tool_choice for forced tool execution (validates + returns markdown)
             logger.info("Calling SGR planning LLM with %d messages", len(messages))
-            # Yield a quick update to ensure bubble is visible before blocking LLM call
             yield list(gradio_history)
-            structured_llm = sgr_llm.with_structured_output(
-                SGRPlanResult, method="function_calling"
-            )
-            plan = await structured_llm.ainvoke(messages)
-            logger.info("SGR LLM returned: %s", type(plan))
-            if plan is not None:
-                sgr_plan_dict = plan.model_dump()
+
+            from rag_engine.tools.analyse_user_request import analyse_user_request
+
+            sgr_llm_with_tool = sgr_llm.bind_tools([analyse_user_request])
+            sgr_llm_forced = sgr_llm_with_tool.bind(tool_choice="analyse_user_request")
+            response = await sgr_llm_forced.ainvoke(messages)
+            logger.info("SGR LLM returned: %s", type(response))
+
+            if response.tool_calls:
+                tool_call = response.tool_calls[0]
+                # Execute tool - validates args via Pydantic and returns both json + markdown
+                result = await analyse_user_request.ainvoke(tool_call["args"])
+                sgr_plan_dict = result["json"]
+                sgr_markdown = result["markdown"]
                 logger.info(
                     "SGR plan extracted: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
                     sgr_plan_dict.get("spam_score", 0.0),
@@ -1189,8 +1195,9 @@ async def agent_chat_handler(
                     len(sgr_plan_dict.get("knowledge_base_search_queries", [])),
                 )
             else:
-                logger.warning("SGR LLM returned None - model may have failed to make tool call")
+                logger.warning("SGR LLM did not make tool call")
                 sgr_plan_dict = None
+                sgr_markdown = None
 
             if sgr_plan_dict:
                 plan_json = json.dumps(sgr_plan_dict, ensure_ascii=False, separators=(",", ":"))
@@ -1213,7 +1220,7 @@ async def agent_chat_handler(
                     },
                     {
                         "role": "tool",
-                        "content": plan_json,
+                        "content": sgr_markdown,  # Use markdown from tool result
                         "tool_call_id": call_id,
                     },
                 ]

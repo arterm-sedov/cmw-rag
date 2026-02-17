@@ -95,41 +95,31 @@ def render_sgr_template(
     return ""
 
 
-@tool("analyse_user_request", args_schema=SGRPlanResult)
+@tool("analyse_user_request", args_schema=SGRPlanResult, description=SGRPlanResult.__doc__)
 async def analyse_user_request(
-    user_intent: str,
-    topic: str,
-    category: SGRCategory,
-    intent_confidence: float,
-    clarification_questions_to_ask: list[str],
-    spam_score: float,
-    spam_reason: str,
-    knowledge_base_search_queries: list[str],
-    action_plan: list[str],
-    action: SGRAction,
+    user_intent: str = "",
+    topic: str = "",
+    category: SGRCategory = SGRCategory.GENERAL_QUESTION,
+    intent_confidence: float = 0.0,
+    clarification_questions_to_ask: list[str] = None,
+    spam_score: float = 0.0,
+    spam_reason: str = "",
+    knowledge_base_search_queries: list[str] = None,
+    action_plan: list[str] = None,
+    action: SGRAction = SGRAction.PROCEED,
     runtime: ToolRuntime[AgentContext, None] | None = None,
-) -> str:
-    """Analyze the user request and produce the question resolution plan.
-
-    Returns guidance for your further steps.
-    
-    Reason step by steep and fill the arguments with meaningful data.
-
-    Edge cases:
-    - Simple greetings (привет, спасибо): Set queries=[], action=proceed, spam_score=0
-    - Time/date questions (сколько времени?): Set queries=[], action=proceed
-    - General knowledge (2+2=?): Set queries=[], action=proceed
-    """
+) -> dict:
+    # LangChain passes original args, not Pydantic-validated ones; ensure lists are never None
     plan = {
         "user_intent": user_intent,
         "topic": topic,
         "category": category,
         "intent_confidence": intent_confidence,
-        "clarification_questions_to_ask": clarification_questions_to_ask,
+        "clarification_questions_to_ask": clarification_questions_to_ask or [],
         "spam_score": spam_score,
         "spam_reason": spam_reason,
-        "knowledge_base_search_queries": knowledge_base_search_queries,
-        "action_plan": action_plan,
+        "knowledge_base_search_queries": knowledge_base_search_queries or [],
+        "action_plan": action_plan or [],
         "action": action,
     }
 
@@ -139,4 +129,7 @@ async def analyse_user_request(
         except Exception as exc:
             logger.warning("Failed to store sgr_plan into AgentContext: %s", exc)
 
-    return render_sgr_template(action.value, plan)
+    return {
+        "json": plan,
+        "markdown": render_sgr_template(action.value, plan),
+    }
