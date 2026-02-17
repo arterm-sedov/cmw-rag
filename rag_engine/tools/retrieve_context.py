@@ -95,100 +95,6 @@ def _get_or_create_retriever() -> RAGRetriever:
 
 
 class RetrieveContextSchema(BaseModel):
-    """
-    Schema for retrieving context documents from the knowledge base.
-
-    This schema defines the input parameters for the retrieve_context tool,
-    following LangChain 1.0 and Pydantic best practices. Field descriptions
-    are written for LLM understanding and MCP server compatibility.
-    """
-
-    query: str = Field(
-        ...,
-        description="Ыearch query to find relevant articles from the knowledge base. "
-        "This should be unique, clear, specific, focused. ",
-        min_length=1,
-    )
-    top_k: int | None = Field(
-        default=None,
-        description="Maximum number of articles to retrieve. "
-        f"Default: {settings.top_k_rerank} articles. "
-        "Use a smaller value (e.g., 3) for focused retrieval. "
-        "Use larger value (e.g., 10) for comprehensive coverage. ",
-    )
-    exclude_kb_ids: list[str] | None = Field(
-        default=None,
-        description="Optional list of article kb_ids to exclude from results (for deduplication). "
-        "Use this to prevent retrieving articles you've already fetched in previous tool calls. ",
-    )
-
-    @field_validator("query", mode="before")
-    @classmethod
-    def validate_query(cls, v: str) -> str:
-        """Validate that query is not empty."""
-        if isinstance(v, str) and v.strip() == "":
-            raise ValueError("query must be a non-empty string")
-        return v.strip() if isinstance(v, str) else v
-
-    @field_validator("top_k", mode="before")
-    @classmethod
-    def validate_top_k(cls, v: int | str | None) -> int | None:
-        """Validate that top_k is positive if provided."""
-        if v is not None:
-            if isinstance(v, str):
-                try:
-                    v = int(v)
-                except ValueError:
-                    raise ValueError("top_k must be a valid integer")
-            if v <= 0:
-                raise ValueError("top_k must be a positive integer")
-        return v
-
-
-def _format_articles_to_json(articles: list[Article], query: str, top_k: int | None) -> str:
-    """Convert Article objects to JSON format with ranking information."""
-    articles_data = []
-    for article in articles:
-        title = article.metadata.get("title", article.kb_id)
-        url = (
-            article.metadata.get("article_url")
-            or article.metadata.get("url")
-            or f"https://kb.comindware.ru/article.php?id={article.kb_id}"
-        )
-
-        # Include all metadata including rank information for proportional compression
-        article_metadata = dict(article.metadata)
-        # Metadata already contains rerank_score and normalized_rank from retriever
-
-        articles_data.append(
-            {
-                "kb_id": article.kb_id,
-                "title": title,
-                "url": url,
-                "content": article.content,  # Uncompressed content
-                "metadata": article_metadata,  # Includes rerank_score, normalized_rank
-            }
-        )
-
-    result = {
-        "articles": articles_data,
-        "metadata": {
-            "query": query,
-            "top_k_requested": top_k,
-            "articles_count": len(articles_data),
-            "has_results": len(articles_data) > 0,
-        },
-    }
-    return json.dumps(result, ensure_ascii=False, separators=(",", ":"))
-
-
-@tool("retrieve_context", args_schema=RetrieveContextSchema)
-async def retrieve_context(
-    query: str,
-    top_k: int | None = None,
-    exclude_kb_ids: list[str] | None = None,
-    runtime: ToolRuntime[AgentContext, None] | None = None,
-) -> str:
     """Retrieve relevant context articles from the knowledge base using semantic search.
 
     This tool searches the Comindware knowledge base for articles relevant to your query.
@@ -275,6 +181,105 @@ async def retrieve_context(
     **Note**: You can call this tool multiple times in the same conversation turn to gather
     information from different angles or aspects of a topic. Each call is independent.
     """
+
+    query: str = Field(
+        ...,
+        description="Ыearch query to find relevant articles from the knowledge base. "
+        "This should be unique, clear, specific, focused. ",
+        min_length=1,
+    )
+    top_k: int | None = Field(
+        default=None,
+        description="Maximum number of articles to retrieve. "
+        f"Default: {settings.top_k_rerank} articles. "
+        "Use a smaller value (e.g., 3) for focused retrieval. "
+        "Use larger value (e.g., 10) for comprehensive coverage. ",
+    )
+    exclude_kb_ids: list[str] | None = Field(
+        default=None,
+        description="Optional list of article kb_ids to exclude from results (for deduplication). "
+        "Use this to prevent retrieving articles you've already fetched in previous tool calls. ",
+    )
+
+    @field_validator("query", mode="before")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Validate that query is not empty."""
+        if isinstance(v, str) and v.strip() == "":
+            raise ValueError("query must be a non-empty string")
+        return v.strip() if isinstance(v, str) else v
+
+    @field_validator("top_k", mode="before")
+    @classmethod
+    def validate_top_k(cls, v: int | str | None) -> int | None:
+        """Validate that top_k is positive if provided."""
+        if v is not None:
+            if isinstance(v, str):
+                try:
+                    v = int(v)
+                except ValueError:
+                    raise ValueError("top_k must be a valid integer")
+            if v <= 0:
+                raise ValueError("top_k must be a positive integer")
+        return v
+
+    @field_validator("exclude_kb_ids", mode="before")
+    @classmethod
+    def _convert_exclude_kb_ids(cls, v):
+        """Convert exclude_kb_ids to proper format."""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return [v] if v else None
+        if isinstance(v, list):
+            return [str(item) for item in v] if v else None
+        return None
+
+
+def _format_articles_to_json(articles: list[Article], query: str, top_k: int | None) -> str:
+    """Convert Article objects to JSON format with ranking information."""
+    articles_data = []
+    for article in articles:
+        title = article.metadata.get("title", article.kb_id)
+        url = (
+            article.metadata.get("article_url")
+            or article.metadata.get("url")
+            or f"https://kb.comindware.ru/article.php?id={article.kb_id}"
+        )
+
+        # Include all metadata including rank information for proportional compression
+        article_metadata = dict(article.metadata)
+        # Metadata already contains rerank_score and normalized_rank from retriever
+
+        articles_data.append(
+            {
+                "kb_id": article.kb_id,
+                "title": title,
+                "url": url,
+                "content": article.content,  # Uncompressed content
+                "metadata": article_metadata,  # Includes rerank_score, normalized_rank
+            }
+        )
+
+    result = {
+        "articles": articles_data,
+        "metadata": {
+            "query": query,
+            "top_k_requested": top_k,
+            "articles_count": len(articles_data),
+            "has_results": len(articles_data) > 0,
+        },
+    }
+    return json.dumps(result, ensure_ascii=False, separators=(",", ":"))
+
+
+@tool("retrieve_context", args_schema=RetrieveContextSchema, description=RetrieveContextSchema.__doc__)
+async def retrieve_context(
+    query: str,
+    top_k: int | None = None,
+    exclude_kb_ids: list[str] | None = None,
+    runtime: ToolRuntime[AgentContext, None] | None = None,
+) -> str:
     try:
         # Get retriever (initialization is fast, but wrap in thread pool for safety)
         retriever = await run_in_thread_pool(_get_or_create_retriever)
@@ -285,7 +290,7 @@ async def retrieve_context(
         # Determine which kb_ids to exclude (explicit argument takes precedence, then context)
         excluded_set: set[str] = set()
         if exclude_kb_ids:
-            excluded_set = set(exclude_kb_ids)
+            excluded_set = set(exclude_kb_ids or [])
         elif runtime and hasattr(runtime, "context") and runtime.context:
             excluded_set = getattr(runtime.context, "fetched_kb_ids", set())
 
