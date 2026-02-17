@@ -221,21 +221,37 @@ class ResolutionOutcome(str, Enum):
 
 
 class ResolutionPlanResult(BaseModel):
-    """Support Resolution Plan - generates actionable plan for human engineers.
+    """Generate a support engineer resolution plan for Comindware Platform.
 
-    Called at final answer generation to provide structured guidance.
-    The LLM decides if a plan is actually needed via engineer_intervention_needed field.
+    Analyze the conversation and YOUR final answer.
+    Critically evaluate: did you actually solve the user's problem?
 
+    Reason step by step and fill the arguments with meaningful data:
+
+    1. Critique your answer: Did you solve the user's specific problem?
+    2. Describe the user's issue clearly
+    3. List the steps you took to resolve it
+    4. Define next steps for the support engineer (if any)
+    5. Determine the resolution outcome
+
+    Always fill these fields (for structured trace):
+    - issue_summary: 2-3 sentences (20-150 words) in Russian
+    - steps_completed: 2-5 items in Russian - what you did
+    - next_steps: 1-3 items in Russian - what engineer should do
+    - outcome: resolved / partially_resolved / escalation_required / user_followup_needed / not_applicable
+
+    Set engineer_intervention_needed=TRUE if human help needed.
+    Set FALSE if answer fully resolves request (version queries, simple how-tos with complete KB answers, factual lookups).
     """
 
     engineer_intervention_needed: bool = Field(
-        ...,
+        default=False,
         description=(
             "CRITIQUE your answer first: Did you solve the user's specific problem? "
             "Set to TRUE for: "
             "- support engineer intervention or escalation needed for this issue, "
             "- errors, bugs, configuration issues, incomplete solutions, "
-            "- troubleshooting required, sofrware fails,"
+            "- troubleshooting required, software fails, "
             "- any issue requiring human investigation/action. "
             "Set to FALSE for: "
             "- version queries that you resolved, "
@@ -261,6 +277,17 @@ class ResolutionPlanResult(BaseModel):
         ),
     )
 
+    @field_validator("steps_completed", mode="before")
+    @classmethod
+    def _convert_steps_completed(cls, v: Any) -> list[str]:
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [v] if v else []
+        if isinstance(v, list):
+            return [str(item) for item in v]
+        return []
+
     next_steps: list[str] = Field(
         default_factory=list,
         description=(
@@ -268,6 +295,17 @@ class ResolutionPlanResult(BaseModel):
             "Always fill for structured trace."
         ),
     )
+
+    @field_validator("next_steps", mode="before")
+    @classmethod
+    def _convert_next_steps(cls, v: Any) -> list[str]:
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [v] if v else []
+        if isinstance(v, list):
+            return [str(item) for item in v]
+        return []
 
     outcome: ResolutionOutcome | None = Field(
         default=None,

@@ -62,37 +62,24 @@ def _render_plan_markdown(plan: dict) -> str:
 {outcome_text}"""
 
 
-@tool("generate_resolution_plan", args_schema=ResolutionPlanResult)
+@tool(
+    "generate_resolution_plan",
+    args_schema=ResolutionPlanResult,
+    description=ResolutionPlanResult.__doc__,
+)
 async def generate_resolution_plan(
-    engineer_intervention_needed: bool,
-    issue_summary: str,
-    steps_completed: list[str],
-    next_steps: list[str],
-    outcome: ResolutionOutcome | None,
+    engineer_intervention_needed: bool = False,
+    issue_summary: str = "",
+    steps_completed: list[str] = None,
+    next_steps: list[str] = None,
+    outcome: ResolutionOutcome | None = None,
     runtime: ToolRuntime[AgentContext, None] | None = None,
-) -> str:
-    """Generate a support engineer resolution plan.
-
-    Analyze the conversation and YOUR final answer.
-    Critically evaluate: did you actually solve the user's problem?
-
-    ALWAYS fill these fields (for structured trace):
-    - issue_summary: 20-150 words in Russian - describe user's issue
-    - steps_completed: 2-5 items in Russian - what you did
-    - next_steps: 1-3 items in Russian - what engineer should do
-    - outcome: resolved / partially_resolved / escalation_required / user_followup_needed / not_applicable
-
-    Set engineer_intervention_needed=TRUE if human help needed.
-    Set FALSE if answer fully resolves request.
-
-    Returns:
-        Formatted markdown plan if engineer_intervention_needed=True.
-    """
+) -> dict:
     plan = {
         "engineer_intervention_needed": engineer_intervention_needed,
         "issue_summary": issue_summary,
-        "steps_completed": steps_completed,
-        "next_steps": next_steps,
+        "steps_completed": steps_completed or [],
+        "next_steps": next_steps or [],
         "outcome": outcome,
     }
 
@@ -102,7 +89,7 @@ async def generate_resolution_plan(
         except Exception as exc:
             logger.warning("Failed to store resolution_plan into AgentContext: %s", exc)
 
-    if not engineer_intervention_needed:
-        return "No engineer intervention needed - issue resolved with KB answer."
-
-    return _render_plan_markdown(plan)
+    return {
+        "json": plan,
+        "markdown": _render_plan_markdown(plan) if engineer_intervention_needed else "",
+    }
