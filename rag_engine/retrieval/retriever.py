@@ -244,16 +244,22 @@ class RAGRetriever:
         logger.info("Top chunks belong to %d unique articles", len(articles_map))
 
         # Filter by score threshold before loading articles from disk
-        threshold = settings.rerank_score_threshold
-        if threshold is not None:
-            articles_map = {
-                kb_id: (chunks, score)
-                for kb_id, (chunks, score) in articles_map.items()
-                if score >= threshold
-            }
-            logger.info(
-                "Filtered to %d articles with rerank_score >= %.2f", len(articles_map), threshold
-            )
+        # Only apply threshold when reranker is enabled (scores are meaningful)
+        if self.reranker is not None:
+            threshold = settings.rerank_score_threshold
+            if threshold is not None:
+                articles_map = {
+                    kb_id: (chunks, score)
+                    for kb_id, (chunks, score) in articles_map.items()
+                    if score >= threshold
+                }
+                logger.info(
+                    "Filtered to %d articles with rerank_score >= %.2f",
+                    len(articles_map),
+                    threshold,
+                )
+        else:
+            logger.info("Reranker disabled, skipping score threshold filter")
 
         if not articles_map:
             logger.warning("No articles passed score threshold")
