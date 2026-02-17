@@ -2196,6 +2196,7 @@ async def agent_chat_handler(
 
         # ========== SRP (Support Resolution Plan) - if enabled ==========
         resolution_plan = None
+        resolution_markdown = ""
         srp_enabled = getattr(settings, "srp_enabled", False)
         logger.info("SRP check: srp_enabled=%s", srp_enabled)
         if srp_enabled:
@@ -2230,27 +2231,31 @@ async def agent_chat_handler(
                     temperature=settings.llm_temperature,
                 )._chat_model()
 
-                # Use with_structured_output for single LLM call with forced tool calling
-                from rag_engine.llm.schemas import ResolutionPlanResult
+                # Use bind_tools + tool_choice for forced tool execution
+                from rag_engine.tools.generate_resolution_plan import generate_resolution_plan
 
-                structured_llm = srp_llm.with_structured_output(
-                    ResolutionPlanResult, method="function_calling"
-                )
+                srp_llm_with_tool = srp_llm.bind_tools([generate_resolution_plan])
+                srp_llm_forced = srp_llm_with_tool.bind(tool_choice="generate_resolution_plan")
                 logger.info("Calling SRP LLM...")
                 # Add timeout to prevent UI freeze (30 seconds max)
-                plan = await asyncio.wait_for(structured_llm.ainvoke(srp_messages), timeout=30.0)
-                logger.info("SRP LLM returned: %s", type(plan))
-                if plan is not None:
-                    resolution_plan = plan.model_dump()
+                response = await asyncio.wait_for(
+                    srp_llm_forced.ainvoke(srp_messages), timeout=30.0
+                )
+                logger.info("SRP LLM returned: %s", type(response))
+
+                if response.tool_calls:
+                    tool_call = response.tool_calls[0]
+                    # Execute tool - validates args via Pydantic and returns both json + markdown
+                    result = await generate_resolution_plan.ainvoke(tool_call["args"])
+                    resolution_plan = result["json"]
+                    resolution_markdown = result["markdown"]
                     agent_context.resolution_plan = resolution_plan
                     logger.info(
                         "SRP plan generated: engineer_intervention_needed=%s",
                         resolution_plan.get("engineer_intervention_needed"),
                     )
                 else:
-                    logger.warning(
-                        "SRP LLM returned None - model may have failed to make tool call"
-                    )
+                    logger.warning("SRP LLM did not make tool call")
 
                 # Hide and remove SRP bubble after completion
                 update_message_status_in_history(gradio_history, "srp_planning", "done")
@@ -2272,14 +2277,13 @@ async def agent_chat_handler(
 
         # ========== Render Plan Section ==========
         plan_section = ""
-        if resolution_plan and resolution_plan.get("engineer_intervention_needed", False):
-            try:
-                from rag_engine.tools.generate_resolution_plan import _render_plan_markdown
-
-                plan_section = "\n\n---\n\n" + _render_plan_markdown(resolution_plan)
-                logger.info("Plan section rendered")
-            except Exception as exc:
-                logger.warning("Plan rendering failed: %s", exc)
+        if (
+            resolution_plan
+            and resolution_plan.get("engineer_intervention_needed", False)
+            and resolution_markdown
+        ):
+            plan_section = "\n\n---\n\n" + resolution_markdown
+            logger.info("Plan section rendered")
 
         # ========== Assemble Final Message ==========
         # Structure: Answer + [Plan] + [Sources at end]
