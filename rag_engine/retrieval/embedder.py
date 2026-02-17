@@ -348,6 +348,19 @@ def create_embedder(settings) -> Embedder:
         )
         return InfinityEmbedder(config)
 
+    elif provider == "mosec":
+        # Mosec HTTP server - uses same OpenAI-compatible API as Infinity
+        endpoint = settings.mosec_embedding_endpoint
+
+        config = ServerEmbeddingConfig(
+            type="server",
+            endpoint=endpoint,
+            query_prefix=provider_config.get("query_prefix"),
+            doc_prefix=provider_config.get("doc_prefix"),
+            default_instruction=provider_config.get("default_instruction"),
+        )
+        return InfinityEmbedder(config)
+
     elif provider == "openrouter":
         # OpenRouter API
         endpoint = settings.openrouter_endpoint
