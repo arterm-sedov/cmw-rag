@@ -1177,8 +1177,9 @@ async def agent_chat_handler(
 
             from rag_engine.tools.analyse_user_request import analyse_user_request
 
-            sgr_llm_with_tool = sgr_llm.bind_tools([analyse_user_request])
-            sgr_llm_forced = sgr_llm_with_tool.bind(tool_choice="analyse_user_request")
+            sgr_llm_forced = sgr_llm.bind_tools(
+                [analyse_user_request], tool_choice="analyse_user_request"
+            )
             response = await sgr_llm_forced.ainvoke(messages)
             logger.info("SGR LLM returned: %s", type(response))
 
@@ -2234,8 +2235,9 @@ async def agent_chat_handler(
                 # Use bind_tools + tool_choice for forced tool execution
                 from rag_engine.tools.generate_resolution_plan import generate_resolution_plan
 
-                srp_llm_with_tool = srp_llm.bind_tools([generate_resolution_plan])
-                srp_llm_forced = srp_llm_with_tool.bind(tool_choice="generate_resolution_plan")
+                srp_llm_forced = srp_llm.bind_tools(
+                    [generate_resolution_plan], tool_choice="generate_resolution_plan"
+                )
                 logger.info("Calling SRP LLM...")
                 response = await srp_llm_forced.ainvoke(srp_messages)
                 logger.info("SRP LLM returned: %s", type(response))
