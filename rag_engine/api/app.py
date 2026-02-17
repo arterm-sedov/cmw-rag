@@ -926,51 +926,24 @@ async def agent_chat_handler(
     session_id = salt_session_id(base_session_id, history, message)
 
     # Wrap user message in template only for the first question in the conversation
+    # Note: dynamic_context will be built after moderation check below
     from rag_engine.llm.prompts import (
         USER_QUESTION_TEMPLATE_FIRST,
         USER_QUESTION_TEMPLATE_SUBSEQUENT,
+        get_dynamic_context,
     )
 
-    if is_first_message:
-        wrapped_message = USER_QUESTION_TEMPLATE_FIRST.format(question=message)
-    else:
-        wrapped_message = USER_QUESTION_TEMPLATE_SUBSEQUENT.format(question=message)
+    # Wrap user message with template and dynamic context (built after moderation below)
+    # SGR planning is enabled by default
+    enable_sgr_planning_flag = True
 
     # Save user message to conversation store (BEFORE agent execution)
     # This ensures conversation history is tracked for memory compression
     if session_id:
         llm_manager._conversations.append(session_id, "user", message)
 
-    # Build messages from gradio_history for agent (LangChain format)
-    # This filters out UI-only messages (disclaimer, search_started, etc.)
-    # and ensures the agent only sees actual conversation content
-    messages = _build_agent_messages_from_gradio_history(
-        gradio_history, wrapped_user_content=wrapped_message
-    )
-
-    # Log messages being sent to agent for debugging memory issues
-    logger.info(
-        "Building agent messages: gradio_history_length=%d -> agent_messages_length=%d",
-        len(gradio_history),
-        len(messages),
-    )
-    if messages:
-        logger.debug(
-            "Agent messages breakdown: %d user, %d assistant",
-            sum(1 for msg in messages if isinstance(msg, dict) and msg.get("role") == "user"),
-            sum(1 for msg in messages if isinstance(msg, dict) and msg.get("role") == "assistant"),
-        )
-
-    # Note: pre-agent trimming removed by request; rely on existing middleware
-
-    # Check if we need model fallback BEFORE creating agent
-    # This matches old handler's upfront fallback check
-    selected_model = None
-    if settings.llm_fallback_enabled:
-        selected_model = _check_context_fallback(messages)
-
     # --- Guardian (Content Moderation) ---
-    # Check user message with guardian BEFORE any processing
+    # Check user message with guardian BEFORE building messages
     from rag_engine.core.guard_client import guard_client
 
     moderation_result: dict | None = None
@@ -1047,6 +1020,7 @@ async def agent_chat_handler(
         )
         yield agent_context
         return
+
     elif moderation_result:
         # Not blocked - still create guard_debug_info for analytics/reporting
         guard_debug_info = {
@@ -1087,27 +1061,62 @@ async def agent_chat_handler(
                     moderation_context = "[GUARD] Safety: Unsafe"
             # In enforce mode, we already returned early, so no need to handle
 
-        # Always use base system prompt + guardian context appendage (when available)
-        from rag_engine.llm.prompts import get_sgr_suffix, get_system_prompt
+    # Build dynamic context for user wrapper (datetime + guardian + SGR)
+    dynamic_context = get_dynamic_context(
+        moderation_context=moderation_context,
+        include_sgr=enable_sgr_planning_flag,
+    )
 
-        base_prompt = get_system_prompt()
-        guardian_suffix = moderation_context if moderation_context else ""
-        sgr_suffix = get_sgr_suffix()
-        system_msg = {
-            "role": "system",
-            "content": f"{sgr_suffix}\n\n{guardian_suffix}\n\n{base_prompt}"
-            if guardian_suffix
-            else f"{sgr_suffix}\n\n{base_prompt}",
-        }
-        messages = [system_msg] + messages
-        logger.debug("Injected system prompt with guardian context: %s", moderation_context)
+    # Build wrapped message with dynamic context
+    if is_first_message:
+        wrapped_message = USER_QUESTION_TEMPLATE_FIRST.format(
+            dynamic_context=dynamic_context, question=message
+        )
+    else:
+        wrapped_message = USER_QUESTION_TEMPLATE_SUBSEQUENT.format(
+            dynamic_context=dynamic_context, question=message
+        )
+
+    # Build messages from gradio_history for agent (LangChain format)
+    # This filters out UI-only messages (disclaimer, search_started, etc.)
+    # and ensures the agent only sees actual conversation content
+    messages = _build_agent_messages_from_gradio_history(
+        gradio_history, wrapped_user_content=wrapped_message
+    )
+
+    # Log messages being sent to agent for debugging memory issues
+    logger.info(
+        "Building agent messages: gradio_history_length=%d -> agent_messages_length=%d",
+        len(gradio_history),
+        len(messages),
+    )
+    if messages:
+        logger.debug(
+            "Agent messages breakdown: %d user, %d assistant",
+            sum(1 for msg in messages if isinstance(msg, dict) and msg.get("role") == "user"),
+            sum(1 for msg in messages if isinstance(msg, dict) and msg.get("role") == "assistant"),
+        )
+
+    # Note: pre-agent trimming removed by request; rely on existing middleware
+
+    # Check if we need model fallback BEFORE creating agent
+    # This matches old handler's upfront fallback check
+    selected_model = None
+    if settings.llm_fallback_enabled:
+        selected_model = _check_context_fallback(messages)
+
+    # Use static system prompt (cacheable)
+    from rag_engine.llm.prompts import get_system_prompt
+
+    system_msg = {"role": "system", "content": get_system_prompt()}
+    messages = [system_msg] + messages
+    logger.debug("Using static system prompt (cacheable)")
 
     # --- Forced user request analysis as tool call (per-turn) ---
     # We force an "analyse_user_request" tool call once per user turn, capture the plan, and
     # then inject the resulting tool-call transcript into the agent messages.
     # SGR planning is enabled by default (can be disabled via _create_rag_agent parameter)
     sgr_plan_dict: dict | None = None
-    enable_sgr_planning_flag = True  # Always enabled for now (matches _create_rag_agent default)
     if enable_sgr_planning_flag:
         logger.info("SGR planning enabled, executing forced analyse_user_request tool call")
         try:
@@ -2163,21 +2172,29 @@ async def agent_chat_handler(
                 update_message_status_in_history,
                 yield_srp_planning_started,
             )
-            from rag_engine.llm.prompts import get_srp_suffix, get_system_prompt
+            from rag_engine.llm.prompts import get_dynamic_context, get_system_prompt
 
             try:
                 # Show SRP planning bubble
                 gradio_history.append(yield_srp_planning_started())
                 yield list(gradio_history)
 
-                # Build SRP system prompt: SRP instruction first, then base + sources
-                srp_system_prompt = get_srp_suffix() + "\n\n" + get_system_prompt()
-                if articles:
-                    srp_system_prompt += "\n\n" + format_sources_list(articles)
-
                 # Build messages from updated gradio_history (includes final answer)
                 srp_messages = _build_agent_messages_from_gradio_history(gradio_history)
-                srp_messages = [{"role": "system", "content": srp_system_prompt}] + srp_messages
+
+                # Build ephemeral SRP context (not stored in history)
+                srp_context = get_dynamic_context(include_srp=True)
+                if articles:
+                    srp_context += format_sources_list(articles) + "\n\n"
+
+                srp_analysis_request = {
+                    "role": "user",
+                    "content": srp_context + "Analyze the above assistant answer quality.",
+                }
+                srp_messages.append(srp_analysis_request)
+
+                # Use static system prompt (cacheable)
+                srp_messages = [{"role": "system", "content": get_system_prompt()}] + srp_messages
 
                 # Initialize LLM
                 srp_llm = LLMManager(

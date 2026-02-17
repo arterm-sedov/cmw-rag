@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     vllm_api_key: str
 
     # Embedding Configuration (Model-Slug Based)
-    # Provider type: direct | infinity | openrouter
+    # Provider type: direct | infinity | mosec | openrouter
     embedding_provider_type: str
     # Model slug (e.g., "ai-forever/FRIDA", "Qwen/Qwen3-Embedding-8B")
     # Case insensitive - "qwen/qwen3-embedding-8b" works too
@@ -81,6 +81,7 @@ class Settings(BaseSettings):
     # Provider Endpoints (optional, have defaults)
     infinity_embedding_endpoint: str
     infinity_reranker_endpoint: str
+    mosec_embedding_endpoint: str
     mosec_reranker_endpoint: str
     openrouter_endpoint: str
 

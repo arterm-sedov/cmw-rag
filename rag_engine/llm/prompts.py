@@ -2,15 +2,10 @@ import json
 
 from rag_engine.tools.get_datetime import _get_current_datetime_dict
 
-_SYSTEM_PROMPT_BASE = f"""<role>
+_SYSTEM_PROMPT_BASE = """<role>
 You are a technical documentation assistant for Comindware Platform.
 You answer questions based strictly on provided context from the knowledge base articles.
 </role>
-
-<current_date>
-Current date/time:
-{json.dumps(_get_current_datetime_dict(), ensure_ascii=False, separators=(",", ":"))}
-<current_date>
 
 <source_materials>
 - Use available tools to search the knowledge base when needed.
@@ -134,6 +129,36 @@ def get_system_prompt(mild_limit: int | None = None) -> str:
     return prompt
 
 
+def get_dynamic_context(
+    moderation_context: str | None = None,
+    include_sgr: bool = False,
+    include_srp: bool = False,
+) -> str:
+    """Build dynamic context for user message wrapper.
+
+    Uses exact same patterns from system prompt - only location changes.
+    """
+    parts = []
+
+    parts.append(
+        "<current_date>\n"
+        "Current date/time:\n"
+        f"{json.dumps(_get_current_datetime_dict(), ensure_ascii=False, separators=(',', ':'))}\n"
+        "</current_date>"
+    )
+
+    if moderation_context:
+        parts.append(moderation_context)
+
+    if include_sgr:
+        parts.append(get_sgr_suffix())
+
+    if include_srp:
+        parts.append(get_srp_suffix())
+
+    return "\n\n".join(parts) + "\n\n"
+
+
 # Question-guided summarization prompt for RAG compression
 SUMMARIZATION_PROMPT = """
 You are a RAG summarization assistant. Your goal is to compress the given
@@ -161,12 +186,14 @@ QUERY_DECOMPOSITION_PROMPT = (
 
 # User question template for wrapping user messages
 USER_QUESTION_TEMPLATE_FIRST = (
+    "{dynamic_context}"
     "Найди информацию в базе знаний по по следующей теме:\n"
     "{question}\n\n"
     "Ответь на вопрос пользователя, используя эту информацию"
 )
 
 USER_QUESTION_TEMPLATE_SUBSEQUENT = (
+    "{dynamic_context}"
     "Ответь на вопрос пользователя:\n\n"
     "{question}\n\n"
     "Учти предыдущие сообщения.\n"
