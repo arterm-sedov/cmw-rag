@@ -45,11 +45,11 @@ markers = [
     "external: tests that hit real services or large model downloads",
 ]
 addopts = [
-    "-v",                 # show per-test progress [ xx% ]
-    "--tb=short",         # concise tracebacks
-    "--cov=rag_engine",   # coverage target
+    "-v",
+    "--tb=short",
+    "--cov=rag_engine",
     "--cov-report=term-missing",
-    "--cov-fail-under=95",# enforce >=95% coverage
+    "--cov-fail-under=95",
 ]
 
 
