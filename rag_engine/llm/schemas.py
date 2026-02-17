@@ -36,9 +36,12 @@ class SGRCategory(str, Enum):
 
 
 class SGRPlanResult(BaseModel):
-    """Request analyzer for Comindware Platform support.
+    """Analyze the user request and produce the resolution plan for Comindware Platform support.
 
-    Sequential reasoning like a human would think:
+    Returns guidance for your further steps.
+
+    Reason step by step, like a human would think, and fill the arguments with meaningful data:
+
     1. Understand what user wants
     2. Identify topic and category
     3. Assess confidence in understanding
@@ -46,10 +49,15 @@ class SGRPlanResult(BaseModel):
     5. Plan search strategy
     6. Decide action
     7. Prepare clarification if needed
+
+    Edge cases:
+    - Simple greetings (привет, спасибо): Set queries=[], action=proceed, spam_score=0
+    - Time/date questions (сколько времени?): Set queries=[], action=proceed
+    - General knowledge (2+2=?): Set queries=[], action=proceed
     """
 
     user_intent: str = Field(
-        ...,
+        default="",
         description=(
             "What does the user actually want to achieve? "
             "Think beyond keywords: What is their underlying goal? "
@@ -111,6 +119,17 @@ class SGRPlanResult(BaseModel):
         ),
     )
 
+    @field_validator("clarification_questions_to_ask", mode="before")
+    @classmethod
+    def _convert_clarification_questions(cls, v: Any) -> list[str]:
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [v] if v else []
+        if isinstance(v, list):
+            return [str(item) for item in v]
+        return []
+
     spam_score: float = Field(
         default=0.0,
         ge=0.0,
@@ -149,6 +168,8 @@ class SGRPlanResult(BaseModel):
     @field_validator("knowledge_base_search_queries", mode="before")
     @classmethod
     def _convert_queries(cls, v: Any) -> list[str]:
+        if v is None:
+            return []
         if isinstance(v, str):
             return [v] if v else []
         if isinstance(v, list):
@@ -168,6 +189,8 @@ class SGRPlanResult(BaseModel):
     @field_validator("action_plan", mode="before")
     @classmethod
     def _convert_action_plan(cls, v: Any) -> list[str]:
+        if v is None:
+            return []
         if isinstance(v, str):
             return [v] if v else []
         if isinstance(v, list):
