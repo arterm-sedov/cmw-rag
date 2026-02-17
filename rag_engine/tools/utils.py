@@ -29,6 +29,11 @@ def parse_tool_result_to_articles(tool_result: str) -> list[Article]:
         >>> articles = parse_tool_result_to_articles(result_json)
         >>> # Use articles with LLM or format_with_citations
     """
+    # Defensive check for empty or None tool results
+    if not tool_result or not tool_result.strip():
+        logger.debug("Empty tool result received, returning empty articles list")
+        return []
+
     try:
         result = json.loads(tool_result)
         articles = []
