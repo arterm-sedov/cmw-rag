@@ -1,13 +1,12 @@
 """Configuration package for rag_engine."""
 
 from rag_engine.config.schemas import (
-    ApiEmbeddingConfig,
     DirectEmbeddingConfig,
     DirectRerankerConfig,
     EmbeddingProviderConfig,
     ModelRegistry,
+    OpenAIEmbeddingConfig,
     RerankerProviderConfig,
-    ServerEmbeddingConfig,
     ServerRerankerConfig,
     get_model_dimension,
 )
@@ -19,8 +18,7 @@ __all__ = [
     "EmbeddingProviderConfig",
     "RerankerProviderConfig",
     "DirectEmbeddingConfig",
-    "ServerEmbeddingConfig",
-    "ApiEmbeddingConfig",
+    "OpenAIEmbeddingConfig",
     "DirectRerankerConfig",
     "ServerRerankerConfig",
     "ModelRegistry",

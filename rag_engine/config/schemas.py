@@ -25,35 +25,35 @@ class DirectEmbeddingConfig(BaseModel):
     max_seq_length: int = Field(default=512)
 
 
-class ServerEmbeddingConfig(BaseModel):
-    """HTTP server embedder (Infinity/Mosec)."""
+class OpenAIEmbeddingConfig(BaseModel):
+    """Config for any OpenAI-compatible embedding API (Infinity, Mosec, OpenRouter)."""
 
-    type: Literal["server"]
-    endpoint: str = Field(..., description="HTTP endpoint (e.g., http://localhost:7997/v1)")
-    model: str = Field(
-        default="auto", description="Model name for API requests (mosec requires exact name)"
+    type: Literal["openai_compatible"]
+    endpoint: str = Field(..., description="API endpoint URL")
+    model: str = Field(default="auto", description="Model name for API requests")
+    api_key: str | None = Field(default=None, description="API key (None for local servers)")
+
+    # FRIDA formatting (optional)
+    query_prefix: str | None = Field(
+        default=None, description="Prefix for queries (FRIDA: search_query: )"
+    )
+    doc_prefix: str | None = Field(
+        default=None, description="Prefix for documents (FRIDA: search_document: )"
     )
 
-    # Model-specific formatting
-    query_prefix: Optional[str] = Field(None)  # FRIDA: "search_query: "
-    doc_prefix: Optional[str] = Field(None)  # FRIDA: "search_document: "
-    default_instruction: Optional[str] = Field(None)  # Qwen3: instruction template
+    # Qwen3 formatting (optional)
+    default_instruction: str | None = Field(
+        default=None, description="Default instruction for Qwen3"
+    )
 
-
-class ApiEmbeddingConfig(BaseModel):
-    """Cloud API embedder (OpenRouter)."""
-
-    type: Literal["api"]
-    endpoint: str = Field(..., description="API endpoint URL")
-    model: str = Field(..., description="Model identifier (e.g., qwen/qwen3-embedding-8b)")
-    default_instruction: str = Field(..., description="Default instruction template")
+    # Request settings
     timeout: float = Field(default=60.0, description="Request timeout in seconds")
     max_retries: int = Field(default=3, description="Max retries on failure")
 
 
 # Discriminated union for type-safe config loading
 EmbeddingProviderConfig = Annotated[
-    Union[DirectEmbeddingConfig, ServerEmbeddingConfig, ApiEmbeddingConfig],
+    Union[DirectEmbeddingConfig, OpenAIEmbeddingConfig],
     Field(discriminator="type"),
 ]
 
