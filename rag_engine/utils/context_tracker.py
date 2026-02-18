@@ -86,6 +86,11 @@ class AgentContext(BaseModel):
         exclude=True,
         description="Final deduplicated articles serialized to dicts (excluded from LLM context).",
     )
+    executed_queries: list[str] = Field(
+        default_factory=list,
+        exclude=True,
+        description="Deduplicated search queries from tool results (excluded from LLM context).",
+    )
     diagnostics: dict[str, Any] = Field(
         default_factory=dict,
         exclude=True,

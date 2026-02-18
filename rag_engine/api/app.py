@@ -2286,6 +2286,15 @@ async def agent_chat_handler(
             agent_context.final_articles = (
                 [_article_to_dict(a) for a in articles] if articles else []
             )
+            from rag_engine.tools.utils import extract_metadata_from_tool_result
+
+            seen_queries: set[str] = set()
+            for result_str in tool_results:
+                meta = extract_metadata_from_tool_result(result_str)
+                query = meta.get("query")
+                if query and query not in seen_queries:
+                    seen_queries.add(query)
+                    agent_context.executed_queries.append(query)
             # Log rerank_score presence for debugging
             if articles:
                 scores = [(a.kb_id, (a.metadata or {}).get("rerank_score")) for a in articles[:5]]
@@ -2505,6 +2514,15 @@ async def agent_chat_handler(
                         agent_context.final_articles = (
                             [_article_to_dict(a) for a in articles] if articles else []
                         )
+                        from rag_engine.tools.utils import extract_metadata_from_tool_result
+
+                        seen_queries: set[str] = set()
+                        for result_str in fallback_tool_results:
+                            meta = extract_metadata_from_tool_result(result_str)
+                            query = meta.get("query")
+                            if query and query not in seen_queries:
+                                seen_queries.add(query)
+                                agent_context.executed_queries.append(query)
                         agent_context.diagnostics = {
                             "model": current_model,
                             "fallback_retry": True,
@@ -2978,15 +2996,11 @@ async def chat_with_metadata(
         conf_elapsed = (time.perf_counter() - conf_start) * 1000
         logger.info(f"chat_with_metadata: search confidence calculation took {conf_elapsed:.2f}ms")
 
-        actual_search_count = sum(
-            1
-            for msg in last_history
-            if msg
-            and isinstance(msg, dict)
-            and msg.get("metadata")
-            and msg["metadata"].get("ui_type") == "search_bubble"
+        executed_queries = ctx.executed_queries or []
+        search_count = len(executed_queries)
+        logger.info(
+            f"chat_with_metadata: queries={search_count}, executed_queries={executed_queries}"
         )
-        logger.info(f"chat_with_metadata: queries count={actual_search_count}")
 
         # Extract guard info for metadata
         guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
@@ -3083,7 +3097,8 @@ async def chat_with_metadata(
             # Build analysis data for JSON field
             analysis_data = {
                 "confidence": search_confidence,
-                "queries": actual_search_count,
+                "queries_count": search_count,
+                "queries": executed_queries,
             }
             yield yield_badge_updates(
                 last_history,
