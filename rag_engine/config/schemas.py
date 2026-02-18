@@ -72,12 +72,16 @@ class DirectRerankerConfig(BaseModel):
 
 
 class ServerRerankerConfig(BaseModel):
-    """HTTP server reranker (Infinity)."""
+    """HTTP server reranker (Infinity/Mosec). All values from models.yaml + .env."""
 
     type: Literal["server"]
-    endpoint: str = Field(..., description="HTTP endpoint (e.g., http://localhost:7998)")
-    path: str = Field(default="/rerank", description="API path (e.g., /rerank or /v1/rerank)")
-    default_instruction: Optional[str] = Field(None)  # Qwen3 only
+    provider: str = Field(..., description="Provider type: mosec or infinity")
+    endpoint: str = Field(
+        ..., description="Complete API endpoint URL (e.g., http://localhost:7998/v1/rerank)"
+    )
+    default_instruction: str | None = Field(None)  # Qwen3 only
+    timeout: float = Field(default=60.0, description="Request timeout in seconds")
+    max_retries: int = Field(default=3, description="Max retries on failure")
 
 
 RerankerProviderConfig = Annotated[

@@ -137,8 +137,8 @@ class TestInfinityReranker:
 
         config = ServerRerankerConfig(
             type="server",
-            endpoint="http://localhost:8002",
-            # No default_instruction for DiTy
+            provider="infinity",
+            endpoint="http://localhost:8002/v1/rerank",
         )
 
         reranker = InfinityReranker(config)
@@ -154,12 +154,12 @@ class TestInfinityReranker:
         # Verify API call
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        assert call_args[0][0] == "/rerank"
+        assert "query" in call_args[0][0]
 
         # For DiTy, query should NOT have instruction prefix
-        assert call_args[0][1]["query"] == "test query"
-        assert "documents" in call_args[0][1]
-        assert call_args[0][1]["top_k"] == 2
+        assert call_args[0][0]["query"] == "test query"
+        assert "documents" in call_args[0][0]
+        assert call_args[0][0]["top_k"] == 2
 
         # Verify sorted results
         assert len(result) == 2
@@ -173,7 +173,8 @@ class TestInfinityReranker:
 
         config = ServerRerankerConfig(
             type="server",
-            endpoint="http://localhost:8005",
+            provider="infinity",
+            endpoint="http://localhost:8005/v1/rerank",
             default_instruction="Given a web search query, retrieve relevant passages that answer the query",
         )
 
@@ -188,7 +189,7 @@ class TestInfinityReranker:
 
         # For Qwen3, query should have instruction format
         call_args = mock_post.call_args
-        query_text = call_args[0][1]["query"]
+        query_text = call_args[0][0]["query"]
         assert "Instruct:" in query_text
         assert "Query:" in query_text
         assert "What is AI?" in query_text
@@ -202,7 +203,8 @@ class TestInfinityReranker:
 
         config = ServerRerankerConfig(
             type="server",
-            endpoint="http://localhost:8002",
+            provider="infinity",
+            endpoint="http://localhost:8002/v1/rerank",
         )
 
         reranker = InfinityReranker(config)
@@ -223,7 +225,8 @@ class TestInfinityReranker:
 
         config = ServerRerankerConfig(
             type="server",
-            endpoint="http://localhost:8005",
+            provider="infinity",
+            endpoint="http://localhost:8005/v1/rerank",
             default_instruction="Default instruction",
         )
 
@@ -236,7 +239,7 @@ class TestInfinityReranker:
 
         # Verify custom instruction was used
         call_args = mock_post.call_args
-        query_text = call_args[0][1]["query"]
+        query_text = call_args[0][0]["query"]
         assert custom_instruction in query_text
 
 

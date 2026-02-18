@@ -44,9 +44,9 @@ class HTTPClientMixin:
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
-    def _post(self, path: str, json_data: dict) -> dict:
+    def _post(self, json_data: dict) -> dict:
         """Make POST request with error handling."""
-        url = f"{self.endpoint}{path}"
+        url = self.endpoint
         try:
             response = self.session.post(url, json=json_data, timeout=self.timeout)
             response.raise_for_status()
@@ -182,16 +182,15 @@ class CrossEncoderReranker:
 
 
 class InfinityReranker(HTTPClientMixin):
-    """DiTy/BGE/Qwen3 via Infinity HTTP server."""
+    """DiTy/BGE/Qwen3 via Infinity/Mosec HTTP server."""
 
     def __init__(self, config: ServerRerankerConfig):
         super().__init__(
             endpoint=config.endpoint,
-            timeout=60.0,
-            max_retries=3,
+            timeout=config.timeout,
+            max_retries=config.max_retries,
         )
-        self.default_instruction = config.default_instruction
-        self.rerank_path = config.path
+        self.config = config
 
     def rerank(
         self,
@@ -201,10 +200,10 @@ class InfinityReranker(HTTPClientMixin):
         metadata_boost_weights: Optional[dict[str, float]] = None,
         instruction: Optional[str] = None,
     ) -> list[tuple[Any, float]]:
-        """Rerank candidates via Infinity server."""
-        if self.default_instruction:
+        """Rerank candidates via HTTP server."""
+        if self.config.default_instruction:
             # Qwen3 format: "Instruct: {task}\nQuery: {query}"
-            task = instruction or self.default_instruction
+            task = instruction or self.config.default_instruction
             formatted_query = f"Instruct: {task}\nQuery: {query}"
         else:
             # DiTy/BGE format: raw query
@@ -217,7 +216,6 @@ class InfinityReranker(HTTPClientMixin):
         ]
 
         response = self._post(
-            self.rerank_path,
             {"query": formatted_query, "documents": documents, "top_k": top_k},
         )
 
@@ -277,42 +275,30 @@ def create_reranker(settings) -> Reranker:
             device=device,
         )
 
-    elif provider == "infinity":
-        # Infinity HTTP server - use endpoint from settings
+    # Map provider to endpoint
+    if provider == "infinity":
         endpoint = settings.infinity_reranker_endpoint
-        endpoint_path = provider_config.get("endpoint_path", "/rerank")
-
-        config = ServerRerankerConfig(
-            type="server",
-            endpoint=endpoint,
-            path=endpoint_path,
-            default_instruction=provider_config.get("default_instruction"),
-        )
-        return InfinityReranker(config)
-
     elif provider == "mosec":
-        # Mosec HTTP server - uses endpoint from settings
         endpoint = settings.mosec_reranker_endpoint
-        endpoint_path = provider_config.get("endpoint_path", "/v1/rerank")
-
-        config = ServerRerankerConfig(
-            type="server",
-            endpoint=endpoint,
-            path=endpoint_path,
-            default_instruction=provider_config.get("default_instruction"),
-        )
-        return InfinityReranker(config)
-
     elif provider == "openrouter":
         # OpenRouter reranker API (when available)
         raise NotImplementedError(
-            "OpenRouter reranker support is not yet implemented. Use infinity provider for now."
+            "OpenRouter reranker support is not yet implemented. Use infinity or mosec provider for now."
         )
-
     else:
         raise ValueError(
             f"Unknown reranker provider: {provider}. Supported: direct, infinity, mosec"
         )
+
+    config = ServerRerankerConfig(
+        type="server",
+        provider=provider,
+        endpoint=endpoint,
+        default_instruction=provider_config.get("default_instruction"),
+        timeout=settings.reranker_timeout,
+        max_retries=settings.reranker_max_retries,
+    )
+    return InfinityReranker(config)
 
 
 # Legacy function for backward compatibility
