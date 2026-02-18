@@ -11,6 +11,7 @@ import logging
 import threading
 from typing import Protocol
 
+import requests
 from openai import OpenAI
 
 from rag_engine.config.schemas import (
@@ -162,67 +163,117 @@ class FRIDAEmbedder:
 
     def get_embedding_dim(self) -> int:
         """Get embedding dimension."""
-        return self.model.get_sentence_embedding_dimension()
+        dim: int = self.model.get_sentence_embedding_dimension() or 0
+        if dim == 0:
+            raise RuntimeError("Could not determine embedding dimension")
+        return dim
 
 
 class OpenAICompatibleEmbedder:
-    """Embedder for any OpenAI-compatible API (Infinity, Mosec, OpenRouter)."""
+    """Embedder for OpenAI-compatible APIs.
+
+    Uses direct HTTP for local providers (3x faster).
+    Uses OpenAI SDK for remote providers (auth + retries).
+    """
 
     def __init__(self, config: OpenAIEmbeddingConfig):
-        self.endpoint = config.endpoint
-        self.model = config.model
-        self.client = OpenAI(
-            base_url=config.endpoint,
-            api_key=config.api_key or "dummy",
-            timeout=config.timeout,
-            max_retries=config.max_retries,
-        )
-        self.query_prefix = config.query_prefix
-        self.doc_prefix = config.doc_prefix
-        self.default_instruction = config.default_instruction
+        self.config = config
+        self._client: OpenAI | None = None  # Lazy load for remote only
 
-    def embed_query(self, query: str, instruction: str | None = None) -> list[float]:
-        if self.query_prefix:
-            # FRIDA format
+    @property
+    def client(self) -> OpenAI:
+        """Lazy-load OpenAI client for remote providers."""
+        if self._client is None:
+            self._client = OpenAI(
+                base_url=self.config.endpoint,
+                api_key=self.config.api_key,
+                timeout=self.config.timeout,
+                max_retries=self.config.max_retries,
+            )
+        return self._client
+
+    def _format_query(self, query: str, instruction: str | None = None) -> str:
+        """Format query based on model type."""
+        if self.config.query_prefix:
             if instruction:
                 logger.warning("FRIDA doesn't support dynamic instructions, ignoring")
-            formatted = f"{self.query_prefix}{query}"
-        elif self.default_instruction:
-            # Qwen3 format
-            task = instruction or self.default_instruction
-            formatted = f"Instruct: {task}\nQuery: {query}"
-        else:
-            formatted = query
+            return f"{self.config.query_prefix}{query}"
+        elif self.config.default_instruction:
+            task = instruction or self.config.default_instruction
+            return f"Instruct: {task}\nQuery: {query}"
+        return query
 
+    def _format_documents(self, texts: list[str]) -> list[str]:
+        """Format documents based on model type."""
+        if self.config.doc_prefix:
+            return [f"{self.config.doc_prefix}{t}" for t in texts]
+        return texts
+
+    def embed_query(self, query: str, instruction: str | None = None) -> list[float]:
+        formatted = self._format_query(query, instruction)
         try:
-            response = self.client.embeddings.create(model=self.model, input=formatted)
-            return response.data[0].embedding
+            if self.config.local:
+                return self._embed_local(formatted)
+            else:
+                return self._embed_remote(formatted)
         except Exception as e:
-            logger.error(f"Embedding error from {self.endpoint} (model={self.model}): {e}")
+            logger.error(
+                f"Embedding error from {self.config.endpoint} (model={self.config.model}): {e}"
+            )
             raise
 
     def embed_documents(
         self, texts: list[str], batch_size: int = 8, show_progress: bool = True
     ) -> list[list[float]]:
-        if self.doc_prefix:
-            formatted = [f"{self.doc_prefix}{t}" for t in texts]
-        else:
-            formatted = texts
-
+        formatted = self._format_documents(texts)
         try:
-            response = self.client.embeddings.create(model=self.model, input=formatted)
-            return [d.embedding for d in response.data]
+            if self.config.local:
+                return self._embed_documents_local(formatted)
+            else:
+                return self._embed_documents_remote(formatted)
         except Exception as e:
-            logger.error(f"Embedding error from {self.endpoint} (model={self.model}): {e}")
+            logger.error(
+                f"Embedding error from {self.config.endpoint} (model={self.config.model}): {e}"
+            )
             raise
 
+    def _embed_local(self, text: str) -> list[float]:
+        """Direct HTTP request for local providers."""
+        resp = requests.post(
+            f"{self.config.endpoint}/embeddings",
+            json={"input": text, "model": self.config.model},
+            timeout=self.config.timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()["data"][0]["embedding"]
+
+    def _embed_remote(self, text: str) -> list[float]:
+        """OpenAI SDK for remote providers."""
+        response = self.client.embeddings.create(model=self.config.model, input=text)
+        return response.data[0].embedding
+
+    def _embed_documents_local(self, texts: list[str]) -> list[list[float]]:
+        """Direct HTTP for local providers."""
+        resp = requests.post(
+            f"{self.config.endpoint}/embeddings",
+            json={"input": texts, "model": self.config.model},
+            timeout=self.config.timeout,
+        )
+        resp.raise_for_status()
+        return [d["embedding"] for d in resp.json()["data"]]
+
+    def _embed_documents_remote(self, texts: list[str]) -> list[list[float]]:
+        """OpenAI SDK for remote providers."""
+        response = self.client.embeddings.create(model=self.config.model, input=texts)
+        return [d.embedding for d in response.data]
+
     def get_embedding_dim(self) -> int:
-        test_embedding = self.embed_query("test")
-        return len(test_embedding)
+        """Return dimension from config (no test request)."""
+        return self.config.dimensions
 
 
 def create_embedder(settings) -> Embedder:
-    """Factory creates appropriate embedder based on model slug and provider type.
+    """Factory creates embedder from .env + models.yaml.
 
     Args:
         settings: Application settings with embedding_provider_type and embedding_model fields
@@ -242,6 +293,9 @@ def create_embedder(settings) -> Embedder:
     registry = ModelRegistry()
     model_data = registry.get_model(model_slug)
     canonical_slug = model_data["canonical_slug"]
+    dimensions_raw = model_data.get("dimensions")
+    assert dimensions_raw is not None, f"Missing dimensions for model: {model_slug}"
+    dimensions: int = int(dimensions_raw)
 
     # Get provider-specific configuration
     provider_config = registry.get_provider_config(canonical_slug, provider)
@@ -276,9 +330,12 @@ def create_embedder(settings) -> Embedder:
 
     config = OpenAIEmbeddingConfig(
         type="openai_compatible",
+        provider=provider,
         endpoint=endpoint,
         model=model,
         api_key=api_key,
+        dimensions=dimensions,
+        local=settings.embedding_local,
         query_prefix=provider_config.get("query_prefix"),
         doc_prefix=provider_config.get("doc_prefix"),
         default_instruction=provider_config.get("default_instruction"),

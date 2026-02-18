@@ -26,22 +26,23 @@ class DirectEmbeddingConfig(BaseModel):
 
 
 class OpenAIEmbeddingConfig(BaseModel):
-    """Config for any OpenAI-compatible embedding API (Infinity, Mosec, OpenRouter)."""
+    """Config for OpenAI-compatible embedding API. All values from models.yaml + .env."""
 
     type: Literal["openai_compatible"]
+    provider: str = Field(..., description="Provider type: mosec, infinity, or openrouter")
     endpoint: str = Field(..., description="API endpoint URL")
     model: str = Field(default="auto", description="Model name for API requests")
     api_key: str | None = Field(default=None, description="API key (None for local servers)")
+    dimensions: int = Field(..., description="Embedding dimension from models.yaml")
+    local: bool = Field(..., description="Use direct HTTP (local) or OpenAI SDK (remote)")
 
-    # FRIDA formatting (optional)
+    # Model formatting (from models.yaml)
     query_prefix: str | None = Field(
         default=None, description="Prefix for queries (FRIDA: search_query: )"
     )
     doc_prefix: str | None = Field(
         default=None, description="Prefix for documents (FRIDA: search_document: )"
     )
-
-    # Qwen3 formatting (optional)
     default_instruction: str | None = Field(
         default=None, description="Default instruction for Qwen3"
     )
