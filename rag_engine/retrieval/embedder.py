@@ -382,5 +382,5 @@ def create_embedder(settings) -> Embedder:
 
     else:
         raise ValueError(
-            f"Unknown embedder provider: {provider}. Supported: direct, infinity, openrouter"
+            f"Unknown embedder provider: {provider}. Supported: direct, infinity, mosec, openrouter"
         )

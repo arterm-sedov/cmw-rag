@@ -373,6 +373,38 @@ class TestCreateEmbedderFactory:
             assert embedder == mock_instance
 
     @patch("rag_engine.retrieval.embedder.ModelRegistry")
+    def test_factory_mosec_frida(self, mock_registry_cls):
+        """Test factory creates Mosec embedder for mosec provider."""
+        mock_registry = MagicMock()
+        mock_registry.get_model.return_value = {
+            "canonical_slug": "ai-forever/FRIDA",
+            "type": "embedding",
+        }
+        mock_registry.get_provider_config.return_value = {
+            "query_prefix": "search_query: ",
+            "doc_prefix": "search_document: ",
+        }
+        mock_registry_cls.return_value = mock_registry
+
+        settings = MagicMock()
+        settings.embedding_provider_type = "mosec"
+        settings.embedding_model = "ai-forever/FRIDA"
+        settings.mosec_embedding_endpoint = "http://localhost:7997"
+
+        with patch("rag_engine.retrieval.embedder.InfinityEmbedder") as mock_mosec:
+            mock_instance = MagicMock()
+            mock_mosec.return_value = mock_instance
+
+            embedder = create_embedder(settings)
+
+            mock_mosec.assert_called_once()
+            config_arg = mock_mosec.call_args[0][0]
+            assert config_arg.endpoint == "http://localhost:7997"
+            assert config_arg.query_prefix == "search_query: "
+            assert config_arg.doc_prefix == "search_document: "
+            assert embedder == mock_instance
+
+    @patch("rag_engine.retrieval.embedder.ModelRegistry")
     def test_factory_case_insensitive_model_slug(self, mock_registry_cls):
         """Test factory handles case-insensitive model slugs."""
         mock_registry = MagicMock()
