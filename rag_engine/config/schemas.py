@@ -26,10 +26,13 @@ class DirectEmbeddingConfig(BaseModel):
 
 
 class ServerEmbeddingConfig(BaseModel):
-    """HTTP server embedder (Infinity)."""
+    """HTTP server embedder (Infinity/Mosec)."""
 
     type: Literal["server"]
     endpoint: str = Field(..., description="HTTP endpoint (e.g., http://localhost:7997/v1)")
+    model: str = Field(
+        default="auto", description="Model name for API requests (mosec requires exact name)"
+    )
 
     # Model-specific formatting
     query_prefix: Optional[str] = Field(None)  # FRIDA: "search_query: "

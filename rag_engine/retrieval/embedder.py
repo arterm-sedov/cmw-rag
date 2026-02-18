@@ -216,7 +216,7 @@ class HTTPClientMixin:
 
 
 class InfinityEmbedder(HTTPClientMixin):
-    """FRIDA/Qwen3 via Infinity HTTP server."""
+    """FRIDA/Qwen3 via Infinity/Mosec HTTP server."""
 
     def __init__(self, config: ServerEmbeddingConfig):
         super().__init__(
@@ -224,6 +224,7 @@ class InfinityEmbedder(HTTPClientMixin):
             timeout=60.0,
             max_retries=3,
         )
+        self.model = config.model
         self.query_prefix = config.query_prefix
         self.doc_prefix = config.doc_prefix
         self.default_instruction = config.default_instruction
@@ -241,7 +242,7 @@ class InfinityEmbedder(HTTPClientMixin):
 
         response = self._post(
             "/embeddings",
-            {"input": [formatted], "model": "auto"},  # Infinity ignores model, uses loaded model
+            {"input": [formatted], "model": self.model},
         )
         return response["data"][0]["embedding"]
 
@@ -257,7 +258,7 @@ class InfinityEmbedder(HTTPClientMixin):
 
         response = self._post(
             "/embeddings",
-            {"input": formatted, "model": "auto"},
+            {"input": formatted, "model": self.model},
         )
         return [d["embedding"] for d in response["data"]]
 
@@ -342,6 +343,7 @@ def create_embedder(settings) -> Embedder:
         config = ServerEmbeddingConfig(
             type="server",
             endpoint=endpoint,
+            model="auto",  # Infinity ignores model, uses loaded model
             query_prefix=provider_config.get("query_prefix"),
             doc_prefix=provider_config.get("doc_prefix"),
             default_instruction=provider_config.get("default_instruction"),
@@ -355,6 +357,7 @@ def create_embedder(settings) -> Embedder:
         config = ServerEmbeddingConfig(
             type="server",
             endpoint=endpoint,
+            model=canonical_slug,  # Mosec requires exact model name
             query_prefix=provider_config.get("query_prefix"),
             doc_prefix=provider_config.get("doc_prefix"),
             default_instruction=provider_config.get("default_instruction"),

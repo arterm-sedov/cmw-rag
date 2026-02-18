@@ -370,6 +370,8 @@ class TestCreateEmbedderFactory:
             embedder = create_embedder(settings)
 
             mock_infinity.assert_called_once()
+            config_arg = mock_infinity.call_args[0][0]
+            assert config_arg.model == "auto"  # Infinity ignores model field
             assert embedder == mock_instance
 
     @patch("rag_engine.retrieval.embedder.ModelRegistry")
@@ -400,6 +402,7 @@ class TestCreateEmbedderFactory:
             mock_mosec.assert_called_once()
             config_arg = mock_mosec.call_args[0][0]
             assert config_arg.endpoint == "http://localhost:7997"
+            assert config_arg.model == "ai-forever/FRIDA"  # Mosec requires exact model name
             assert config_arg.query_prefix == "search_query: "
             assert config_arg.doc_prefix == "search_document: "
             assert embedder == mock_instance
