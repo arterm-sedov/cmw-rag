@@ -2,7 +2,7 @@
 
 Supports two provider types:
 1. Direct: sentence-transformers CrossEncoder (DiTy, BGE)
-2. Server: Infinity HTTP API (DiTy, BGE, Qwen3)
+2. Server: Infinity/Mosec HTTP API (DiTy, BGE, Qwen3)
 """
 
 from __future__ import annotations
@@ -11,8 +11,11 @@ import logging
 from collections.abc import Sequence
 from typing import Any, Optional, Protocol
 
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 from rag_engine.config.schemas import ModelRegistry, ServerRerankerConfig
-from rag_engine.retrieval.embedder import HTTPClientMixin
 from rag_engine.utils.device_utils import detect_device
 
 logger = logging.getLogger(__name__)
@@ -21,6 +24,45 @@ try:  # Provide a module-level alias for monkeypatch-friendly tests
     from sentence_transformers import CrossEncoder as CrossEncoder  # type: ignore
 except Exception:  # noqa: BLE001
     CrossEncoder = None  # type: ignore
+
+
+class HTTPClientMixin:
+    """Mixin providing resilient HTTP client with retries and timeouts."""
+
+    def __init__(self, endpoint: str, timeout: float = 60.0, max_retries: int = 3):
+        self.endpoint = endpoint
+        self.timeout = timeout
+
+        self.session = requests.Session()
+        retry_strategy = Retry(
+            total=max_retries,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["POST", "GET"],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
+    def _post(self, path: str, json_data: dict) -> dict:
+        """Make POST request with error handling."""
+        url = f"{self.endpoint}{path}"
+        try:
+            response = self.session.post(url, json=json_data, timeout=self.timeout)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.Timeout:
+            logger.error(f"Request to {url} timed out after {self.timeout}s")
+            raise RuntimeError(f"Server at {url} not responding")
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Cannot connect to {url}")
+            raise RuntimeError(f"Server at {url} is not running")
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTP error from {url}: {e.response.status_code} - {e.response.text}")
+            raise RuntimeError(f"Server returned error: {e.response.status_code}")
+        except Exception as e:
+            logger.error(f"Unexpected error calling {url}: {e}")
+            raise
 
 
 class Reranker(Protocol):
