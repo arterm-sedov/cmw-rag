@@ -128,67 +128,60 @@ def format_queries_badge_from_count(count: int) -> str:
 
 
 def yield_hidden_updates(chunk: list[dict] | None = None) -> tuple:
-    """Standard hidden update for all UI components during streaming."""
-    chatbot_update = chunk if chunk is not None else gr.update(visible=False)
+    """Standard no-op update for all UI components during streaming."""
+    chatbot_update = chunk if chunk is not None else []
     return (
         chatbot_update,
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False, value={}),
-        gr.update(visible=False, value={}),
-        gr.update(visible=False, value={}),
-        gr.update(visible=False, value=[]),
+        gr.update(),  # No-op
+        gr.update(),  # No-op
+        gr.update(),  # No-op
+        gr.update(),  # No-op
+        gr.update(),  # No-op
     )
 
 
 def yield_badge_updates(
     chatbot: list[dict],
-    confidence_badge: str = "",
-    queries_badge: str = "",
+    analysis_data: dict | None = None,
     metadata_dict: dict | None = None,
 ) -> tuple:
     """Yield badge updates and metadata updates.
 
     Args:
         chatbot: Chatbot history
-        confidence_badge: HTML for confidence badge
-        queries_badge: HTML for queries badge
+        analysis_data: Dict with confidence_badge and queries_badge HTML
         metadata_dict: Metadata dictionary with UI values
 
     Returns:
-        Tuple with 8 component outputs
+        Tuple with 7 component outputs
     """
-    badge_visible = not settings.gradio_embedded_widget
+    # Analysis JSON - combines confidence and queries badges
+    if analysis_data:
+        analysis_update = gr.update(value=analysis_data)
+    else:
+        analysis_update = gr.update(value={})
 
-    # Badge updates
-    confidence_update = gr.update(
-        visible=badge_visible and bool(confidence_badge), value=confidence_badge
-    )
-    queries_update = gr.update(visible=badge_visible and bool(queries_badge), value=queries_badge)
-
-    # Extract metadata values (with defaults for embedded widget)
-    if metadata_dict and not settings.gradio_embedded_widget:
+    # Extract metadata values
+    if metadata_dict:
         guard_info_val = metadata_dict.get("guardian_info", {})
         sgr_plan_val = metadata_dict.get("sgr_plan", {})
         srp_plan_val = metadata_dict.get("srp_plan", {})
         articles_val = metadata_dict.get("articles_df_data", [])
-
-        # Show metadata fields when they have values
-        guardian_json_update = gr.update(visible=bool(guard_info_val), value=guard_info_val)
-        sgr_plan_json_update = gr.update(visible=bool(sgr_plan_val), value=sgr_plan_val)
-        srp_plan_json_update = gr.update(visible=bool(srp_plan_val), value=srp_plan_val)
-        articles_df_update = gr.update(visible=bool(articles_val), value=articles_val)
     else:
-        # Hidden by default for embedded widget or no metadata
-        guardian_json_update = gr.update(visible=False, value={})
-        sgr_plan_json_update = gr.update(visible=False, value={})
-        srp_plan_json_update = gr.update(visible=False, value={})
-        articles_df_update = gr.update(visible=False, value=[])
+        guard_info_val = {}
+        sgr_plan_val = {}
+        srp_plan_val = {}
+        articles_val = []
+
+    # Metadata updates - just value, no visibility toggles
+    guardian_json_update = gr.update(value=guard_info_val)
+    sgr_plan_json_update = gr.update(value=sgr_plan_val)
+    srp_plan_json_update = gr.update(value=srp_plan_val)
+    articles_df_update = gr.update(value=articles_val)
 
     return (
         chatbot,
-        confidence_update,
-        queries_update,
+        analysis_update,
         guardian_json_update,
         sgr_plan_json_update,
         srp_plan_json_update,
@@ -2883,12 +2876,11 @@ async def chat_with_metadata(
             last_history = chunk
             yield (
                 chunk,
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False, value={}),
-                gr.update(visible=False, value={}),
-                gr.update(visible=False, value={}),
-                gr.update(visible=False, value=[]),
+                gr.update(),  # No-op during streaming
+                gr.update(),  # No-op during streaming
+                gr.update(),  # No-op during streaming
+                gr.update(),  # No-op during streaming
+                gr.update(),  # No-op during streaming
             )
         else:
             ctx = chunk
@@ -3087,10 +3079,14 @@ async def chat_with_metadata(
         )
 
         try:
+            # Build analysis data for JSON field
+            analysis_data = {
+                "confidence": confidence_badge_html,
+                "queries": queries_badge_html,
+            }
             yield yield_badge_updates(
                 last_history,
-                confidence_badge_html,
-                queries_badge_html,
+                analysis_data,
                 metadata_dict,
             )
             yield_elapsed = (time.perf_counter() - yield_start) * 1000
@@ -3105,15 +3101,14 @@ async def chat_with_metadata(
 
     except Exception as exc:
         logger.error("Error in chat_with_metadata metadata processing: %s", exc, exc_info=True)
-        # Yield safe fallback (8 values to match outputs)
+        # Yield safe fallback (6 values to match outputs)
         yield (
             last_history,
-            gr.update(visible=False),  # confidence_badge
-            gr.update(visible=False),  # queries_badge
-            gr.update(visible=False, value={}),  # guardian_json
-            gr.update(visible=False, value={}),  # sgr_plan_json
-            gr.update(visible=False, value={}),  # srp_plan_json
-            gr.update(visible=False, value=[]),  # articles_df
+            gr.update(value={}),  # analysis_metadata
+            gr.update(value={}),  # guardian_json
+            gr.update(value={}),  # sgr_plan_json
+            gr.update(value={}),  # srp_plan_json
+            gr.update(value=[]),  # articles_df
         )
 
 
@@ -3169,19 +3164,21 @@ with gr.Blocks(
     # Note: Using direct dict value (not lambda) for Gradio 6 compatibility
     cancellation_state = gr.State(value={"cancelled": False})
 
-    # --- Metadata badges (populated after streaming completes, shown below chat) ---
-    with gr.Row():
-        confidence_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
-        queries_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
-
-    # Metadata panels (populated after streaming completes)
+    # Metadata panels (always visible, populated after streaming completes)
     gr.Markdown(
         f"### {i18n_resolve('analysis_summary_title')}",
         visible=not settings.gradio_embedded_widget,
     )
-    guardian_json = gr.JSON(label=i18n_resolve("guardian_badge_label"), visible=False)
-    sgr_plan_json = gr.JSON(label=i18n_resolve("sgr_plan_label"), visible=False)
-    srp_plan_json = gr.JSON(label=i18n_resolve("srp_plan_label"), visible=False)
+    analysis_metadata = gr.JSON(label="Analysis", visible=not settings.gradio_embedded_widget)
+    guardian_json = gr.JSON(
+        label=i18n_resolve("guardian_badge_label"), visible=not settings.gradio_embedded_widget
+    )
+    sgr_plan_json = gr.JSON(
+        label=i18n_resolve("sgr_plan_label"), visible=not settings.gradio_embedded_widget
+    )
+    srp_plan_json = gr.JSON(
+        label=i18n_resolve("srp_plan_label"), visible=not settings.gradio_embedded_widget
+    )
 
     gr.Markdown(
         f"### {i18n_resolve('retrieved_articles_title')}",
@@ -3195,7 +3192,7 @@ with gr.Blocks(
             i18n_resolve("articles_url_header"),
         ],
         interactive=False,
-        visible=False,
+        visible=not settings.gradio_embedded_widget,
     )
 
     def handle_stop_click(
@@ -3310,6 +3307,7 @@ with gr.Blocks(
         """Update metadata UI components from stored metadata state.
 
         Called after input is unlocked to populate SGR metadata.
+        Note: Metadata fields are always visible - just update values.
         """
         logger.info("update_metadata_ui: starting")
         if settings.gradio_embedded_widget:
@@ -3319,14 +3317,14 @@ with gr.Blocks(
         if not metadata:
             logger.info("update_metadata_ui: no metadata to display")
             return (
-                gr.update(visible=False, value=""),
-                gr.update(visible=False, value=""),
-                gr.update(visible=False, value=""),
-                gr.update(visible=False, value=0),
-                gr.update(visible=False, value={}),
-                gr.update(visible=False, value=[]),
-                gr.update(visible=False, value=[]),
-                gr.update(visible=False, value=[]),
+                gr.update(value=""),
+                gr.update(value=""),
+                gr.update(value=""),
+                gr.update(value=0),
+                gr.update(value={}),
+                gr.update(value=[]),
+                gr.update(value=[]),
+                gr.update(value=[]),
             )
 
         logger.info(
@@ -3341,39 +3339,16 @@ with gr.Blocks(
             f"has_articles={metadata.get('has_articles', False)}"
         )
         logger.info("update_metadata_ui: starting gr.update calls")
+        # Just update values - fields are always visible
         result = (
-            gr.update(
-                visible=metadata.get("has_user_intent", False),
-                value=metadata.get("user_intent", ""),
-            ),
-            gr.update(
-                visible=metadata.get("has_topic", False),
-                value=metadata.get("topic", ""),
-            ),
-            gr.update(
-                visible=metadata.get("has_category", False),
-                value=metadata.get("category", ""),
-            ),
-            gr.update(
-                visible=metadata.get("has_intent_confidence", False),
-                value=metadata.get("intent_confidence"),
-            ),
-            gr.update(
-                visible=metadata.get("has_guardian", False),
-                value=metadata.get("guardian_info", {}),
-            ),
-            gr.update(
-                visible=metadata.get("has_queries", False),
-                value=metadata.get("knowledge_base_search_queries", []),
-            ),
-            gr.update(
-                visible=metadata.get("has_action_plan", False),
-                value=metadata.get("action_plan", []),
-            ),
-            gr.update(
-                visible=metadata.get("has_articles", False),
-                value=metadata.get("articles_df_data", []),
-            ),
+            gr.update(value=metadata.get("user_intent", "")),
+            gr.update(value=metadata.get("topic", "")),
+            gr.update(value=metadata.get("category", "")),
+            gr.update(value=metadata.get("intent_confidence")),
+            gr.update(value=metadata.get("guardian_info", {})),
+            gr.update(value=metadata.get("knowledge_base_search_queries", [])),
+            gr.update(value=metadata.get("action_plan", [])),
+            gr.update(value=metadata.get("articles_df_data", [])),
         )
         logger.info("update_metadata_ui: completed all gr.update calls")
         return result
@@ -3383,8 +3358,7 @@ with gr.Blocks(
         inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
         outputs=[
             chatbot,
-            confidence_badge,
-            queries_badge,
+            analysis_metadata,
             guardian_json,
             sgr_plan_json,
             srp_plan_json,
