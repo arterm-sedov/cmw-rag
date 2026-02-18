@@ -240,7 +240,7 @@ class OpenAICompatibleEmbedder:
     def _embed_local(self, text: str) -> list[float]:
         """Direct HTTP request for local providers."""
         resp = requests.post(
-            f"{self.config.endpoint}/embeddings",
+            self.config.endpoint,
             json={"input": text, "model": self.config.model},
             timeout=self.config.timeout,
         )
@@ -255,7 +255,7 @@ class OpenAICompatibleEmbedder:
     def _embed_documents_local(self, texts: list[str]) -> list[list[float]]:
         """Direct HTTP for local providers."""
         resp = requests.post(
-            f"{self.config.endpoint}/embeddings",
+            self.config.endpoint,
             json={"input": texts, "model": self.config.model},
             timeout=self.config.timeout,
         )

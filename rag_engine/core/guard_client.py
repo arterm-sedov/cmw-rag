@@ -77,7 +77,7 @@ class GuardClient:
         Returns:
             Dict with safety_level, categories, is_safe, etc.
         """
-        url = f"{settings.guard_mosec_url}:{settings.guard_mosec_port}{settings.guard_mosec_path}"
+        url = settings.guard_mosec_endpoint
         payload = {"content": content, "moderation_type": "prompt"}
 
         last_error = None

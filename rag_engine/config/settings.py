@@ -179,9 +179,7 @@ class Settings(BaseSettings):
     guard_provider_type: str
 
     # MOSEC provider settings (required when provider_type="mosec")
-    guard_mosec_url: str
-    guard_mosec_port: int
-    guard_mosec_path: str
+    guard_mosec_endpoint: str
 
     # VLLM provider settings (required when provider_type="vllm")
     guard_vllm_url: str
