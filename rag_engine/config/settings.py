@@ -79,15 +79,16 @@ class Settings(BaseSettings):
     reranker_model: str
 
     # Provider Endpoints (optional, have defaults)
-    infinity_embedding_endpoint: str
-    infinity_reranker_endpoint: str
-    mosec_embedding_endpoint: str
-    mosec_reranker_endpoint: str
-    openrouter_endpoint: str
+    infinity_embedding_endpoint: str | None = None
+    infinity_reranker_endpoint: str | None = None
+    mosec_embedding_endpoint: str | None = None
+    mosec_reranker_endpoint: str | None = None
+    openrouter_endpoint: str | None = None
 
     # Request Configuration
     embedding_timeout: float
     embedding_max_retries: int
+    embedding_local: bool  # true=direct HTTP (faster), false=OpenAI SDK (auth+retries)
     reranker_timeout: float
     reranker_max_retries: int
 
