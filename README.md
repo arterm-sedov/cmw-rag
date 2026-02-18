@@ -473,9 +473,7 @@ GUARD_PROVIDER_TYPE=mosec                   # mosec | vllm
 
 **MOSEC** (returns JSON directly):
 ```
-GUARD_MOSEC_URL=http://localhost            # MOSEC server URL
-GUARD_MOSEC_PORT=7999                       # MOSEC server port
-GUARD_MOSEC_PATH=/api/v1/guard              # API endpoint path
+GUARD_MOSEC_ENDPOINT=http://localhost:7999/api/v1/guard  # Complete endpoint URL
 ```
 
 **VLLM** (OpenAI-compatible API, parses raw text):
