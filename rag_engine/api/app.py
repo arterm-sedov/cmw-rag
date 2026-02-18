@@ -725,7 +725,7 @@ def _build_agent_messages_from_gradio_history(
         normalized = normalize_gradio_history_message(msg)
 
         # Replace blocked message content with placeholder
-        if msg_role == "user" and msg.get("metadata", {}).get("log") == "blocked_by_guardian":
+        if msg_role == "user" and (msg.get("metadata") or {}).get("log") == "blocked_by_guardian":
             locale = os.getenv("GRADIO_LOCALE", "ru")
             normalized["content"] = i18n_resolve("guard_blocked", locale)
             logger.info("Replaced blocked message [%d] with placeholder", idx)
