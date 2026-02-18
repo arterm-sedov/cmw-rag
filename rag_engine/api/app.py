@@ -316,6 +316,21 @@ def format_articles_dataframe(articles: list[dict]) -> list[list]:
     return rows
 
 
+def _extract_executed_queries(tool_results: list[str]) -> list[str]:
+    """Extract deduplicated queries from tool results."""
+    from rag_engine.tools.utils import extract_metadata_from_tool_result
+
+    seen_queries: set[str] = set()
+    queries: list[str] = []
+    for result_str in tool_results:
+        meta = extract_metadata_from_tool_result(result_str)
+        query = meta.get("query")
+        if query and query not in seen_queries:
+            seen_queries.add(query)
+            queries.append(query)
+    return queries
+
+
 # Initialize singletons (order matters: llm_manager before retriever)
 embedder = create_embedder(settings)
 vector_store = ChromaStore(collection_name=settings.chromadb_collection)
@@ -2286,16 +2301,7 @@ async def agent_chat_handler(
             agent_context.final_articles = (
                 [_article_to_dict(a) for a in articles] if articles else []
             )
-            from rag_engine.tools.utils import extract_metadata_from_tool_result
-
-            seen_queries: set[str] = set()
-            for result_str in tool_results:
-                meta = extract_metadata_from_tool_result(result_str)
-                query = meta.get("query")
-                if query and query not in seen_queries:
-                    seen_queries.add(query)
-                    agent_context.executed_queries.append(query)
-            # Log rerank_score presence for debugging
+            agent_context.executed_queries = _extract_executed_queries(tool_results)
             if articles:
                 scores = [(a.kb_id, (a.metadata or {}).get("rerank_score")) for a in articles[:5]]
                 logger.debug(
@@ -2514,15 +2520,9 @@ async def agent_chat_handler(
                         agent_context.final_articles = (
                             [_article_to_dict(a) for a in articles] if articles else []
                         )
-                        from rag_engine.tools.utils import extract_metadata_from_tool_result
-
-                        seen_queries: set[str] = set()
-                        for result_str in fallback_tool_results:
-                            meta = extract_metadata_from_tool_result(result_str)
-                            query = meta.get("query")
-                            if query and query not in seen_queries:
-                                seen_queries.add(query)
-                                agent_context.executed_queries.append(query)
+                        agent_context.executed_queries = _extract_executed_queries(
+                            fallback_tool_results
+                        )
                         agent_context.diagnostics = {
                             "model": current_model,
                             "fallback_retry": True,
