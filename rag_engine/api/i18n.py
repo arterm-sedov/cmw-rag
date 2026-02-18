@@ -74,6 +74,7 @@ i18n = gr.I18n(
         "articles_rank_header": "Rank",
         "articles_title_header": "Title",
         "articles_confidence_header": "Confidence",
+        "articles_normalized_header": "Normalized",
         "articles_url_header": "URL",
         # Guard/Safety badge
         "guard_badge_label": "Safety",
@@ -177,6 +178,7 @@ i18n = gr.I18n(
         "articles_rank_header": "Ранг",
         "articles_title_header": "Название",
         "articles_confidence_header": "Релевантность",
+        "articles_normalized_header": "Нормализованная",
         "articles_url_header": "URL",
         # Guard/Safety badge
         "guard_badge_label": "Безопасность",

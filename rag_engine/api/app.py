@@ -292,7 +292,6 @@ def format_guard_badge(guard_info: dict | None) -> str:
 
 
 def format_articles_dataframe(articles: list[dict]) -> list[list]:
-    """Format final articles list for gr.Dataframe."""
     rows: list[list] = []
     for idx, article in enumerate(articles or [], start=1):
         meta = article.get("metadata", {}) if isinstance(article, dict) else {}
@@ -305,6 +304,9 @@ def format_articles_dataframe(articles: list[dict]) -> list[list]:
                 ),
                 f"{meta.get('rerank_score', 0):.2f}"
                 if isinstance(meta.get("rerank_score"), (int, float))
+                else "",
+                f"{meta.get('normalized_rank', 0):.3f}"
+                if isinstance(meta.get("normalized_rank"), (int, float))
                 else "",
                 meta.get("article_url") or meta.get("url") or article.get("url", "")
                 if isinstance(article, dict)
@@ -2958,34 +2960,33 @@ async def chat_with_metadata(
                     f"chat_with_metadata: trace[{idx}] - has_confidence={has_conf}, "
                     f"confidence_type={conf_type}, articles_count={len(trace.get('articles', [])) if isinstance(trace, dict) else 0}"
                 )
-        try:
-            # Use SGR intent_confidence since query_traces is not populated
-            confidence_badge_html = format_confidence_badge_from_value(intent_confidence)
-        except Exception as exc:
-            logger.error("Failed to format confidence badge: %s", exc, exc_info=True)
-            confidence_badge_html = ""
+        search_confidence = None
+        if ctx.final_articles:
+            scores = [
+                float((article.get("metadata") or {}).get("rerank_score", 0.0))
+                for article in ctx.final_articles
+                if isinstance((article.get("metadata") or {}).get("rerank_score"), (int, float))
+            ]
+            if scores:
+                min_score = min(scores)
+                max_score = max(scores)
+                if max_score > min_score:
+                    normalized_scores = [(s - min_score) / (max_score - min_score) for s in scores]
+                else:
+                    normalized_scores = [0.5] * len(scores)
+                search_confidence = sum(normalized_scores) / len(normalized_scores)
         conf_elapsed = (time.perf_counter() - conf_start) * 1000
-        logger.info(f"chat_with_metadata: confidence badge formatting took {conf_elapsed:.2f}ms")
+        logger.info(f"chat_with_metadata: search confidence calculation took {conf_elapsed:.2f}ms")
 
-        try:
-            # Count actual search requests from history (search bubbles)
-            actual_search_count = sum(
-                1
-                for msg in last_history
-                if msg
-                and isinstance(msg, dict)
-                and msg.get("metadata")
-                and msg["metadata"].get("ui_type") == "search_bubble"
-            )
-            queries_badge_html = format_queries_badge_from_count(actual_search_count)
-            logger.info(
-                f"chat_with_metadata: queries badge formatting - "
-                f"actual_search_count={actual_search_count}"
-            )
-        except Exception as exc:
-            logger.error("Failed to format queries badge: %s", exc, exc_info=True)
-            queries_badge_html = ""
-            actual_search_count = 0
+        actual_search_count = sum(
+            1
+            for msg in last_history
+            if msg
+            and isinstance(msg, dict)
+            and msg.get("metadata")
+            and msg["metadata"].get("ui_type") == "search_bubble"
+        )
+        logger.info(f"chat_with_metadata: queries count={actual_search_count}")
 
         # Extract guard info for metadata
         guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
@@ -3081,8 +3082,8 @@ async def chat_with_metadata(
         try:
             # Build analysis data for JSON field
             analysis_data = {
-                "confidence": confidence_badge_html,
-                "queries": queries_badge_html,
+                "confidence": search_confidence,
+                "queries": actual_search_count,
             }
             yield yield_badge_updates(
                 last_history,
@@ -3189,6 +3190,7 @@ with gr.Blocks(
             i18n_resolve("articles_rank_header"),
             i18n_resolve("articles_title_header"),
             i18n_resolve("articles_confidence_header"),
+            i18n_resolve("articles_normalized_header"),
             i18n_resolve("articles_url_header"),
         ],
         interactive=False,
