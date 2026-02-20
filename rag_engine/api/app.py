@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import os
@@ -1042,34 +1041,43 @@ async def agent_chat_handler(
             "blocked": False,
         }
 
-    # Build moderation context for SGR (only for Safe/Controversial, or always for report mode)
+    def _expand_guardian_categories(categories: list[str]) -> list[str]:
+        category_expansions = {
+            "PII": "PII (Personal Identifiable Information)",
+            "Jailbreak": "Jailbreak (System Prompt Override Attempt)",
+        }
+        return [category_expansions.get(cat, cat) for cat in categories]
+
+    moderation_context: str | None = None
     if moderation_result:
         safety_level = moderation_result.get("safety_level", "Safe")
         categories = moderation_result.get("categories", [])
         guard_mode = getattr(settings, "guard_mode", "enforce")
 
-        if safety_level == "Safe":
-            # Safe: only pass category (no safety level needed)
+        if safety_level == "Controversial":
             if categories:
-                moderation_context = f"[GUARD] Category: {categories[0]}"
-        elif safety_level == "Controversial":
-            # Controversial: pass level and categories
-            if categories:
+                categories_str = ", ".join(_expand_guardian_categories(categories))
                 moderation_context = (
-                    f"[GUARD] Safety: Controversial, Categories: {', '.join(categories)}"
+                    "<safety_validation>\n"
+                    f"  Safety: Controversial\n"
+                    f"  Categories: {categories_str}\n"
+                    "</safety_validation>"
                 )
             else:
-                moderation_context = "[GUARD] Safety: Controversial"
-        elif safety_level == "Unsafe":
-            if guard_mode == "report":
-                # Report mode with unsafe: always pass context (even if no categories)
-                if categories:
-                    moderation_context = (
-                        f"[GUARD] Safety: Unsafe, Categories: {', '.join(categories)}"
-                    )
-                else:
-                    moderation_context = "[GUARD] Safety: Unsafe"
-            # In enforce mode, we already returned early, so no need to handle
+                moderation_context = (
+                    "<safety_validation>\n  Safety: Controversial\n</safety_validation>"
+                )
+        elif safety_level == "Unsafe" and guard_mode == "report":
+            if categories:
+                categories_str = ", ".join(_expand_guardian_categories(categories))
+                moderation_context = (
+                    "<safety_validation>\n"
+                    f"  Safety: Unsafe\n"
+                    f"  Categories: {categories_str}\n"
+                    "</safety_validation>"
+                )
+            else:
+                moderation_context = "<safety_validation>\n  Safety: Unsafe\n</safety_validation>"
 
     # Build dynamic context for user wrapper (datetime + guardian + SGR)
     dynamic_context = get_dynamic_context(
@@ -1138,7 +1146,6 @@ async def agent_chat_handler(
             logger.info("SGR planning UI bubble added to history")
 
             from rag_engine.llm.llm_manager import LLMManager
-            from rag_engine.llm.schemas import SGRPlanResult
 
             # Initialize LLM
             sgr_llm = LLMManager(

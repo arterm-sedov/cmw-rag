@@ -215,7 +215,8 @@ def get_sgr_suffix() -> str:
 
     Appended to system prompt when SGR planning is enabled.
     """
-    return """MANDATORY: Call the analyse_user_request tool with arguments matching the schema.
+    return """<analyse_request>
+MANDATORY: Call the analyse_user_request tool with arguments matching the schema.
 
 ALWAYS provide all fields:
 - Text: 10-100 words in Russian
@@ -223,7 +224,8 @@ ALWAYS provide all fields:
 - spam_score, intent_confidence: 0.0-1.0
 
 For long requests: summarize briefly.
-For off-topic requests: set spam_score >= 0.6."""
+For off-topic requests: set spam_score >= 0.6.
+</analyse_request>"""
 
 
 def get_srp_suffix() -> str:
