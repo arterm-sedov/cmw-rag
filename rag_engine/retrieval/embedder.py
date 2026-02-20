@@ -401,6 +401,9 @@ def create_embedder(settings) -> Embedder:
     assert dimensions_raw is not None, f"Missing dimensions for model: {model_slug}"
     dimensions: int = int(dimensions_raw)
 
+    # Get model-level default_instruction (centralized per model)
+    model_instruction = registry.get_default_instruction(canonical_slug)
+
     # Get provider-specific configuration
     provider_config = registry.get_provider_config(canonical_slug, provider)
 
@@ -418,7 +421,7 @@ def create_embedder(settings) -> Embedder:
                 model_name=canonical_slug,
                 device=device,
                 max_seq_length=max_seq_length,
-                default_instruction=provider_config.get("default_instruction"),
+                default_instruction=model_instruction,
             )
         else:
             # FRIDA and other sentence-transformers models
@@ -460,7 +463,7 @@ def create_embedder(settings) -> Embedder:
         local=settings.embedding_local,
         query_prefix=provider_config.get("query_prefix"),
         doc_prefix=provider_config.get("doc_prefix"),
-        default_instruction=provider_config.get("default_instruction"),
+        default_instruction=model_instruction,
         timeout=settings.embedding_timeout,
         max_retries=settings.embedding_max_retries,
     )

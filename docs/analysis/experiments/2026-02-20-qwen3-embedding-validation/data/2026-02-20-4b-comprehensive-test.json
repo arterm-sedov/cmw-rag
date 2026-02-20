@@ -1,0 +1,53 @@
+{
+  "timestamp": "20260220_131155",
+  "model": "Qwen/Qwen3-Embedding-4B",
+  "num_runs": 10,
+  "backends": {
+    "direct": {
+      "status": "FAILED",
+      "error": "CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 47.37 GiB of which 13"
+    },
+    "vllm": {
+      "status": "FAILED",
+      "error": "All configurations failed"
+    },
+    "openrouter": {
+      "status": "SUCCESS",
+      "latency_avg_ms": 311.44,
+      "latency_min_ms": 263.2,
+      "latency_max_ms": 478.49,
+      "latencies_ms": [
+        363.21,
+        286.35,
+        282.73,
+        292.65,
+        283.18,
+        263.2,
+        289.64,
+        292.68,
+        478.49,
+        282.24
+      ],
+      "dimensions": 2560
+    },
+    "mosec": {
+      "status": "SUCCESS",
+      "latency_avg_ms": 4.16,
+      "latency_min_ms": 3.88,
+      "latency_max_ms": 5.85,
+      "latencies_ms": [
+        5.85,
+        3.94,
+        3.88,
+        3.95,
+        4.0,
+        3.98,
+        3.96,
+        4.04,
+        3.98,
+        4.01
+      ],
+      "dimensions": 2560
+    }
+  }
+}

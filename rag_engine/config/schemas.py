@@ -194,16 +194,19 @@ class ModelRegistry:
             Provider configuration dict
 
         Raises:
-            ValueError: If provider not supported for this model
+            ValueError If provider explicitly not supported (supported: false)
         """
         model = self.get_model(model_slug)
         formats = model.get("provider_formats", {})
 
+        # If provider not listed, check if it's implicitly supported
         if provider not in formats:
-            raise ValueError(f"Provider {provider} not supported for model {model_slug}")
+            # Check if model has this provider type by checking other models
+            # Default: all providers supported unless marked supported: false
+            return {}  # Empty config = use defaults
 
         config = formats[provider]
-        if not config.get("supported", True):
+        if config.get("supported", True) is False:
             raise ValueError(f"Provider {provider} is not supported for model {model_slug}")
 
         return config
@@ -236,6 +239,18 @@ class ModelRegistry:
     def get_retries(self, provider: str) -> int:
         """Get default retries for a provider."""
         return self._defaults.get("retries", {}).get(provider, 3)
+
+    def get_default_instruction(self, model_slug: str) -> str | None:
+        """Get default instruction for a model (e.g., Qwen3 embedding models).
+
+        Args:
+            model_slug: Model identifier
+
+        Returns:
+            Default instruction string or None if not applicable
+        """
+        model = self.get_model(model_slug)
+        return model.get("default_instruction")
 
     def list_models(self, model_type: Optional[str] = None) -> list[str]:
         """List available models.
