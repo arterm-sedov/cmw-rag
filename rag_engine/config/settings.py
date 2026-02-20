@@ -83,6 +83,7 @@ class Settings(BaseSettings):
     infinity_reranker_endpoint: str | None = None
     mosec_embedding_endpoint: str | None = None
     mosec_reranker_endpoint: str | None = None
+    vllm_embedding_endpoint: str | None = None
     openrouter_endpoint: str | None = None
 
     # Request Configuration
