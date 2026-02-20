@@ -1,0 +1,180 @@
+{
+  "timestamp": "2026-02-20 09:53:00",
+  "test_texts": [
+    "What is machine learning?",
+    "Natural language processing applications",
+    "Deep learning neural networks",
+    "Artificial intelligence in healthcare"
+  ],
+  "instruction": "Given a web search query, retrieve relevant passages that answer the query",
+  "results": [
+    {
+      "provider": "direct",
+      "model_size": "0.6B",
+      "model_path": "Qwen/Qwen3-Embedding-0.6B",
+      "status": "SUCCESS",
+      "dimensions": 1024,
+      "load_time_sec": 1.6245417594909668,
+      "latency_ms": 127.60591506958008,
+      "cosine_similarity": null,
+      "mean_relative_error": null,
+      "error_message": null,
+      "embedding_sample": [
+        -0.0771484375,
+        -0.027618408203125,
+        0.0033550262451171875,
+        -0.07281494140625,
+        -0.0440673828125
+      ],
+      "test_text": "What is machine learning?"
+    },
+    {
+      "provider": "vllm",
+      "model_size": "0.6B",
+      "model_path": "Qwen/Qwen3-Embedding-0.6B",
+      "status": "SUCCESS",
+      "dimensions": 1024,
+      "load_time_sec": 10.893681049346924,
+      "latency_ms": 17.287492752075195,
+      "cosine_similarity": 0.9999427426943219,
+      "mean_relative_error": 0.0004507172052190685,
+      "error_message": null,
+      "embedding_sample": [
+        -0.07695872336626053,
+        -0.02800878696143627,
+        0.0036647010128945112,
+        -0.07277049124240875,
+        -0.043714649975299835
+      ],
+      "test_text": "What is machine learning?"
+    },
+    {
+      "provider": "openrouter",
+      "model_size": "0.6B",
+      "model_path": "Qwen/Qwen3-Embedding-0.6B",
+      "status": "SKIPPED",
+      "dimensions": null,
+      "load_time_sec": null,
+      "latency_ms": null,
+      "cosine_similarity": null,
+      "mean_relative_error": null,
+      "error_message": "Not available on OpenRouter",
+      "embedding_sample": null,
+      "test_text": null
+    },
+    {
+      "provider": "direct",
+      "model_size": "4B",
+      "model_path": "Qwen/Qwen3-Embedding-4B",
+      "status": "SUCCESS",
+      "dimensions": 2560,
+      "load_time_sec": 2.7823305130004883,
+      "latency_ms": 14.2669677734375,
+      "cosine_similarity": null,
+      "mean_relative_error": null,
+      "error_message": null,
+      "embedding_sample": [
+        -0.0002830028533935547,
+        -0.0003669261932373047,
+        -0.006023406982421875,
+        0.01174163818359375,
+        -0.0012798309326171875
+      ],
+      "test_text": "What is machine learning?"
+    },
+    {
+      "provider": "vllm",
+      "model_size": "4B",
+      "model_path": "Qwen/Qwen3-Embedding-4B",
+      "status": "SUCCESS",
+      "dimensions": 2560,
+      "load_time_sec": 12.050841093063354,
+      "latency_ms": 17.626285552978516,
+      "cosine_similarity": 0.9998765528013291,
+      "mean_relative_error": 0.0002922000652397754,
+      "error_message": null,
+      "embedding_sample": [
+        -0.00027508052880875766,
+        -0.0006037481944076717,
+        -0.0055444804020226,
+        0.011374758556485176,
+        -0.0012360761174932122
+      ],
+      "test_text": "What is machine learning?"
+    },
+    {
+      "provider": "openrouter",
+      "model_size": "4B",
+      "model_path": "qwen/qwen3-embedding-4b",
+      "status": "SUCCESS",
+      "dimensions": 2560,
+      "load_time_sec": null,
+      "latency_ms": 2986.0808849334717,
+      "cosine_similarity": 0.9999249085826208,
+      "mean_relative_error": 0.00024633420206324663,
+      "error_message": null,
+      "embedding_sample": [
+        -0.0002727508544921875,
+        -0.000621795654296875,
+        -0.006744384765625,
+        0.01171875,
+        -0.0012359619140625
+      ],
+      "test_text": "What is machine learning?"
+    },
+    {
+      "provider": "direct",
+      "model_size": "8B",
+      "model_path": "Qwen/Qwen3-Embedding-8B",
+      "status": "SUCCESS",
+      "dimensions": 4096,
+      "load_time_sec": 58.93523645401001,
+      "latency_ms": 23.197174072265625,
+      "cosine_similarity": null,
+      "mean_relative_error": null,
+      "error_message": null,
+      "embedding_sample": [
+        0.0657958984375,
+        0.002166748046875,
+        -0.0377197265625,
+        -0.006534576416015625,
+        0.06134033203125
+      ],
+      "test_text": "What is machine learning?"
+    },
+    {
+      "provider": "vllm",
+      "model_size": "8B",
+      "model_path": "Qwen/Qwen3-Embedding-8B",
+      "status": "FAILED",
+      "dimensions": null,
+      "load_time_sec": null,
+      "latency_ms": null,
+      "cosine_similarity": null,
+      "mean_relative_error": null,
+      "error_message": "Engine core initialization failed. See root cause above. Failed core proc(s): {}",
+      "embedding_sample": null,
+      "test_text": null
+    },
+    {
+      "provider": "openrouter",
+      "model_size": "8B",
+      "model_path": "qwen/qwen3-embedding-8b",
+      "status": "SUCCESS",
+      "dimensions": 4096,
+      "load_time_sec": null,
+      "latency_ms": 1988.0499839782715,
+      "cosine_similarity": 0.9997765103939944,
+      "mean_relative_error": 0.00020569538717279167,
+      "error_message": null,
+      "embedding_sample": [
+        0.0654296875,
+        0.0023040771484375,
+        -0.03759765625,
+        -0.006744384765625,
+        0.060546875
+      ],
+      "test_text": "What is machine learning?"
+    }
+  ]
+}

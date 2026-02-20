@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-02-20 10:00:49",
+  "test_texts": [
+    "What is machine learning and how does it work?",
+    "Natural language processing applications in industry",
+    "Deep learning neural networks architectures explained",
+    "Artificial intelligence in healthcare diagnosis"
+  ],
+  "results": [
+    {
+      "model_size": "0.6B",
+      "provider_a": "direct",
+      "provider_b": "vllm",
+      "status": "PASS",
+      "cosine_similarity": 0.9998595094611018,
+      "mean_relative_error": 0.00044633008257797136,
+      "dimensions_match": true,
+      "error_message": null
+    },
+    {
+      "model_size": "0.6B",
+      "provider_a": "direct",
+      "provider_b": "vllm",
+      "status": "PASS",
+      "cosine_similarity": 0.9996619408411166,
+      "mean_relative_error": 0.0003832539699602489,
+      "dimensions_match": true,
+      "error_message": null
+    },
+    {
+      "model_size": "4B",
+      "provider_a": "direct",
+      "provider_b": "vllm",
+      "status": "PASS",
+      "cosine_similarity": 0.9999896207362315,
+      "mean_relative_error": 0.00026508399366258553,
+      "dimensions_match": true,
+      "error_message": null
+    },
+    {
+      "model_size": "4B",
+      "provider_a": "direct",
+      "provider_b": "openrouter",
+      "status": "PASS",
+      "cosine_similarity": 0.9999945797786781,
+      "mean_relative_error": 0.0002585399161049376,
+      "dimensions_match": true,
+      "error_message": null
+    },
+    {
+      "model_size": "4B",
+      "provider_a": "vllm",
+      "provider_b": "openrouter",
+      "status": "PASS",
+      "cosine_similarity": 0.9997550648785193,
+      "mean_relative_error": 0.0003405252948478845,
+      "dimensions_match": true,
+      "error_message": null
+    },
+    {
+      "model_size": "4B",
+      "provider_a": "direct",
+      "provider_b": "vllm",
+      "status": "PASS",
+      "cosine_similarity": 0.9998686876276144,
+      "mean_relative_error": 0.00023268697927245288,
+      "dimensions_match": true,
+      "error_message": null
+    },
+    {
+      "model_size": "4B",
+      "provider_a": "direct",
+      "provider_b": "openrouter",
+      "status": "PASS",
+      "cosine_similarity": 0.9998805941059107,
+      "mean_relative_error": 0.0002180167568871148,
+      "dimensions_match": true,
+      "error_message": null
+    },
+    {
+      "model_size": "4B",
+      "provider_a": "vllm",
+      "provider_b": "openrouter",
+      "status": "PASS",
+      "cosine_similarity": 0.9998418900515691,
+      "mean_relative_error": 0.0002727879019228862,
+      "dimensions_match": true,
+      "error_message": null
+    }
+  ]
+}
