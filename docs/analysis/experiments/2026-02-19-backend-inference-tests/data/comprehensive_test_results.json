@@ -1,0 +1,119 @@
+{
+  "Qwen3-Embedding_Direct": {
+    "model": "Qwen3-Embedding",
+    "backend": "Direct",
+    "status": "SUCCESS",
+    "metrics": {
+      "latency_ms": 73.46940040588379,
+      "scores": [
+        [
+          0.7667763233184814,
+          0.16027605533599854
+        ],
+        [
+          0.13606172800064087,
+          0.5947344899177551
+        ]
+      ]
+    },
+    "timestamp": "2026-02-19 19:23:27"
+  },
+  "Qwen3-Reranker_Direct": {
+    "model": "Qwen3-Reranker",
+    "backend": "Direct",
+    "status": "SUCCESS",
+    "metrics": {
+      "latency_ms": 11.670351028442383,
+      "scores": [
+        0.9966030120849609,
+        0.9195086359977722
+      ]
+    },
+    "timestamp": "2026-02-19 19:23:29"
+  },
+  "Qwen3Guard_Direct": {
+    "model": "Qwen3Guard",
+    "backend": "Direct",
+    "status": "FAILED",
+    "metrics": {
+      "error": "Using a `device_map`, `tp_plan`, `torch.device` context manager or setting `torch.set_default_device(device)` requires `accelerate`. You can install it with `pip install accelerate`"
+    },
+    "timestamp": "2026-02-19 19:23:30"
+  },
+  "DiTy-Reranker_Direct": {
+    "model": "DiTy-Reranker",
+    "backend": "Direct",
+    "status": "SUCCESS",
+    "metrics": {
+      "latency_ms": 27.868032455444336,
+      "scores": [
+        -0.48485732078552246,
+        -6.201428413391113
+      ]
+    },
+    "timestamp": "2026-02-19 19:23:33"
+  },
+  "Qwen3-Embedding_vLLM": {
+    "model": "Qwen3-Embedding",
+    "backend": "vLLM",
+    "status": "FAILED",
+    "metrics": {
+      "error": "Engine core initialization failed. See root cause above. Failed core proc(s): {}"
+    },
+    "timestamp": "2026-02-19 19:23:51"
+  },
+  "Qwen3Guard_vLLM": {
+    "model": "Qwen3Guard",
+    "backend": "vLLM",
+    "status": "FAILED",
+    "metrics": {
+      "error": "Engine core initialization failed. See root cause above. Failed core proc(s): {}"
+    },
+    "timestamp": "2026-02-19 19:24:10"
+  },
+  "DiTy-Reranker_vLLM": {
+    "model": "DiTy-Reranker",
+    "backend": "vLLM",
+    "status": "FAILED",
+    "metrics": {
+      "error": "LLM.score() missing 1 required positional argument: 'data_2'"
+    },
+    "timestamp": "2026-02-19 19:24:24"
+  },
+  "Qwen3-Embedding_Mosec": {
+    "model": "Qwen3-Embedding",
+    "backend": "Mosec",
+    "status": "FAILED",
+    "metrics": {
+      "error": "Failed to start server"
+    },
+    "timestamp": "2026-02-19 19:26:28"
+  },
+  "Qwen3Guard_Mosec": {
+    "model": "Qwen3Guard",
+    "backend": "Mosec",
+    "status": "FAILED",
+    "metrics": {
+      "error": "Failed to start server"
+    },
+    "timestamp": "2026-02-19 19:28:33"
+  },
+  "Qwen3-Reranker_Mosec": {
+    "model": "Qwen3-Reranker",
+    "backend": "Mosec",
+    "status": "FAILED",
+    "metrics": {
+      "error": "Failed to start server"
+    },
+    "timestamp": "2026-02-19 19:30:37"
+  },
+  "DiTy-Reranker_Mosec": {
+    "model": "DiTy-Reranker",
+    "backend": "Mosec",
+    "status": "FAILED",
+    "metrics": {
+      "error": "Failed to start server"
+    },
+    "timestamp": "2026-02-19 19:32:41"
+  }
+}
