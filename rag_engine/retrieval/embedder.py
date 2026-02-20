@@ -169,6 +169,110 @@ class FRIDAEmbedder:
         return dim
 
 
+class Qwen3DirectEmbedder:
+    """Qwen3 embeddings via HuggingFace transformers (Direct GPU).
+
+    Uses AutoModel/AutoTokenizer with last-token pooling.
+    Supports instruction-based query formatting.
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        device: str = "auto",
+        max_seq_length: int = 8192,
+        default_instruction: str | None = None,
+    ):
+        """Initialize Qwen3 embedder.
+
+        Args:
+            model_name: HuggingFace model path (e.g., "Qwen/Qwen3-Embedding-0.6B")
+            device: Device to run on ('auto', 'cpu', 'cuda')
+            max_seq_length: Maximum sequence length
+            default_instruction: Default instruction for query formatting
+        """
+        # Lazy imports to avoid heavy dependencies when not needed
+        import torch
+        from transformers import AutoModel, AutoTokenizer
+
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        self.device = device
+        self.max_seq_length = max_seq_length
+        self.default_instruction = default_instruction
+
+        logger.info(f"Loading Qwen3 embedder: {model_name} on {device}")
+
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            trust_remote_code=True,
+        )
+        self.model = AutoModel.from_pretrained(
+            model_name,
+            trust_remote_code=True,
+            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        ).to(device)
+        self.model.eval()
+
+        logger.info(f"Qwen3 embedder loaded. Dimension: {self.get_embedding_dim()}")
+
+    def _format_query(self, query: str, instruction: str | None = None) -> str:
+        """Format query with instruction."""
+        if self.default_instruction or instruction:
+            task = instruction or self.default_instruction
+            return f"Instruct: {task}\nQuery: {query}"
+        return query
+
+    def _compute_embedding(self, text: str) -> list[float]:
+        """Compute embedding for single text."""
+        import torch
+
+        # Tokenize
+        inputs = self.tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=self.max_seq_length,
+        ).to(self.device)
+
+        # Forward pass
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+            hidden_states = outputs.last_hidden_state
+
+            # Last-token pooling (Qwen3 uses this)
+            attention_mask = inputs["attention_mask"]
+            sequence_lengths = attention_mask.sum(dim=1) - 1
+            last_idx = sequence_lengths[0].item()
+            embedding = hidden_states[0, last_idx, :]
+
+            # Normalize
+            embedding = torch.nn.functional.normalize(embedding, p=2, dim=0)
+
+        return embedding.cpu().numpy().tolist()
+
+    def embed_query(self, query: str, instruction: str | None = None) -> list[float]:
+        """Embed a search query with instruction formatting."""
+        formatted = self._format_query(query, instruction)
+        return self._compute_embedding(formatted)
+
+    def embed_documents(
+        self, texts: list[str], batch_size: int = 8, show_progress: bool = True
+    ) -> list[list[float]]:
+        """Embed multiple documents (no instruction formatting)."""
+        embeddings = []
+        for i, text in enumerate(texts):
+            embeddings.append(self._compute_embedding(text))
+            if show_progress and (i + 1) % 10 == 0:
+                logger.debug(f"Embedded {i + 1}/{len(texts)} documents")
+        return embeddings
+
+    def get_embedding_dim(self) -> int:
+        """Get embedding dimension from model config."""
+        return self.model.config.hidden_size
+
+
 class OpenAICompatibleEmbedder:
     """Embedder for OpenAI-compatible APIs.
 
@@ -301,14 +405,28 @@ def create_embedder(settings) -> Embedder:
     provider_config = registry.get_provider_config(canonical_slug, provider)
 
     if provider == "direct":
-        # Direct sentence-transformers; device from model registry (YAML)
+        # Direct inference: FRIDA (sentence-transformers) or Qwen3 (transformers)
         device = provider_config.get("device", "auto")
         max_seq_length = provider_config.get("max_seq_length", 512)
-        return FRIDAEmbedder(
-            model_name=canonical_slug,
-            device=device,
-            max_seq_length=max_seq_length,
-        )
+
+        # Detect Qwen3 models by slug pattern
+        is_qwen3 = "qwen3" in canonical_slug.lower() and "embedding" in canonical_slug.lower()
+
+        if is_qwen3:
+            # Qwen3 uses transformers with last-token pooling
+            return Qwen3DirectEmbedder(
+                model_name=canonical_slug,
+                device=device,
+                max_seq_length=max_seq_length,
+                default_instruction=provider_config.get("default_instruction"),
+            )
+        else:
+            # FRIDA and other sentence-transformers models
+            return FRIDAEmbedder(
+                model_name=canonical_slug,
+                device=device,
+                max_seq_length=max_seq_length,
+            )
 
     # Map provider to endpoint/model/api_key
     if provider == "mosec":
@@ -319,13 +437,17 @@ def create_embedder(settings) -> Embedder:
         endpoint = settings.infinity_embedding_endpoint
         model = "auto"
         api_key = None
+    elif provider == "vllm":
+        endpoint = settings.vllm_embedding_endpoint
+        model = canonical_slug
+        api_key = None
     elif provider == "openrouter":
         endpoint = settings.openrouter_endpoint
         model = provider_config.get("model_id", canonical_slug.lower())
         api_key = settings.openrouter_api_key
     else:
         raise ValueError(
-            f"Unknown embedder provider: {provider}. Supported: direct, infinity, mosec, openrouter"
+            f"Unknown embedder provider: {provider}. Supported: direct, infinity, mosec, vllm, openrouter"
         )
 
     config = OpenAIEmbeddingConfig(
