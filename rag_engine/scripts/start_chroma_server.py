@@ -284,9 +284,12 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
         print(f"   Port: {config['port']}")
         print(f"   Data path: {config['persist_dir']}")
 
-    # Build command
+    # Build command - derive chroma from sys.executable
+    venv_dir = Path(sys.executable).parent.parent
+    chroma_path = venv_dir / "bin" / "chroma"
+
     cmd = [
-        "chroma",
+        str(chroma_path),
         "run",
         "--host",
         str(config["host"]),
