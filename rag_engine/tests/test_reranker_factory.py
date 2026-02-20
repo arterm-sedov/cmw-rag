@@ -311,15 +311,14 @@ class TestCreateRerankerFactory:
 
     @patch("rag_engine.retrieval.reranker.ModelRegistry")
     def test_factory_infinity_dity(self, mock_registry_cls):
-        """Test factory creates Infinity reranker for server provider."""
+        """Test factory creates Infinity reranker for DiTy."""
         mock_registry = MagicMock()
         mock_registry.get_model.return_value = {
             "canonical_slug": "DiTy/cross-encoder-russian-msmarco",
             "type": "reranker",
         }
-        mock_registry.get_provider_config.return_value = {
-            # DiTy doesn't use instructions
-        }
+        mock_registry.get_provider_config.return_value = {}
+        mock_registry.get_default_instruction.return_value = None
         mock_registry_cls.return_value = mock_registry
 
         settings = MagicMock()
@@ -344,14 +343,15 @@ class TestCreateRerankerFactory:
             "canonical_slug": "Qwen/Qwen3-Reranker-8B",
             "type": "reranker",
         }
-        mock_registry.get_provider_config.return_value = {
-            "default_instruction": "Given a web search query, retrieve relevant passages that answer the query",
-        }
+        mock_registry.get_provider_config.return_value = {}
+        mock_registry.get_default_instruction.return_value = (
+            "Given a web search query, retrieve relevant passages that answer the query"
+        )
         mock_registry_cls.return_value = mock_registry
 
         settings = MagicMock()
         settings.reranker_provider_type = "infinity"
-        settings.reranker_model = "Qwen/Qwen3-Reranker-8B"
+        settings.reranker_model = "DiTy/cross-encoder-russian-msmarco"
         settings.infinity_reranker_endpoint = "http://localhost:7998"
 
         with patch("rag_engine.retrieval.reranker.InfinityReranker") as mock_infinity:

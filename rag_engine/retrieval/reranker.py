@@ -262,6 +262,9 @@ def create_reranker(settings) -> Reranker:
     model_data = registry.get_model(model_slug)
     canonical_slug = model_data["canonical_slug"]
 
+    # Get model-level default_instruction (centralized per model)
+    model_instruction = registry.get_default_instruction(canonical_slug)
+
     # Get provider-specific configuration
     provider_config = registry.get_provider_config(canonical_slug, provider)
 
@@ -294,7 +297,7 @@ def create_reranker(settings) -> Reranker:
         type="server",
         provider=provider,
         endpoint=endpoint,
-        default_instruction=provider_config.get("default_instruction"),
+        default_instruction=model_instruction,
         timeout=settings.reranker_timeout,
         max_retries=settings.reranker_max_retries,
     )

@@ -9,6 +9,7 @@ models:
     type: embedding
     dimensions: 1536
     description: "Russian-optimized multilingual embeddings"
+    # FRIDA uses query_prefix/doc_prefix (no instruction needed)
     provider_formats:
       direct:
         query_prefix: "search_query: "
@@ -22,7 +23,6 @@ models:
         query_prefix: "search_query: "
         doc_prefix: "search_document: "
       vllm:
-        # vLLM does not support T5/encoder-decoder models
         supported: false
       openrouter:
         supported: false
@@ -31,79 +31,50 @@ models:
     type: embedding
     dimensions: 1024
     description: "Lightweight Qwen3 embedding model (1B params)"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
     provider_formats:
       direct:
-        # Direct transformers support via AutoModel (last-token pooling)
         device: auto
         max_seq_length: 8192
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      infinity:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      mosec:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
       vllm:
-        # vLLM automatically uses last-token pooling for Qwen3
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+        supported: false
       openrouter:
-        # Not available on OpenRouter (only 4B and 8B)
         supported: false
 
   Qwen/Qwen3-Embedding-4B:
     type: embedding
     dimensions: 2560
     description: "Mid-size Qwen3 embedding model (4B params)"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
     provider_formats:
       direct:
         device: auto
         max_seq_length: 8192
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      infinity:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      mosec:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      vllm:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
       openrouter:
         model_id: "qwen/qwen3-embedding-4b"
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
 
   Qwen/Qwen3-Embedding-8B:
     type: embedding
     dimensions: 4096
     description: "Large Qwen3 embedding model (8B params, best quality)"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
     provider_formats:
       direct:
         device: auto
         max_seq_length: 8192
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      infinity:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      mosec:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      vllm:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
       openrouter:
         model_id: "qwen/qwen3-embedding-8b"
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
 
   # ============ RERANKER MODELS ============
-  
+
   DiTy/cross-encoder-russian-msmarco:
     type: reranker
-    dimensions: 1  # Rerankers output scores, not embeddings
+    dimensions: 1
     description: "Russian-optimized cross-encoder reranker"
     provider_formats:
       direct:
         batch_size: 16
         device: auto
-      infinity: {}
-      mosec: {}
-      vllm:
-        # vLLM llm.score() API doesn't support cross-encoders
-        supported: false
-      openrouter:
-        # Not available on OpenRouter
-        supported: false
 
   BAAI/bge-reranker-v2-m3:
     type: reranker
@@ -113,61 +84,83 @@ models:
       direct:
         batch_size: 16
         device: auto
-      infinity: {}
-      mosec: {}
-      vllm:
-        supported: false
-      openrouter:
-        supported: false
 
   Qwen/Qwen3-Reranker-0.6B:
     type: reranker
     dimensions: 1
     description: "Lightweight Qwen3 reranker"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
     provider_formats:
       direct:
         supported: false
-      infinity:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      mosec:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      vllm:
-        # vLLM doesn't support generative rerankers
-        supported: false
-      openrouter:
-        supported: false  # Not yet available
+      infinity: {}
+      mosec: {}
 
   Qwen/Qwen3-Reranker-4B:
     type: reranker
     dimensions: 1
     description: "Mid-size Qwen3 reranker"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
     provider_formats:
       direct:
         supported: false
-      infinity:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      mosec:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      vllm:
-        supported: false
-      openrouter:
-        supported: false
+      infinity: {}
+      mosec: {}
 
   Qwen/Qwen3-Reranker-8B:
     type: reranker
     dimensions: 1
     description: "Large Qwen3 reranker"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
     provider_formats:
       direct:
         supported: false
-      infinity:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      mosec:
-        default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
-      vllm:
-        supported: false
+      infinity: {}
+      mosec: {}
+
+  # ============ INFERENCE MODELS ============
+
+  Qwen/Qwen3-8B-Instruct:
+    type: llm
+    dimensions: 4096
+    description: "Qwen3 instruction model with improved reasoning"
+    provider_formats:
       openrouter:
-        supported: false
+        model_id: "qwen/qwen3-8b"
+
+  Qwen/Qwen3-32B-Instruct:
+    type: llm
+    dimensions: 6144
+    description: "Large Qwen3 instruction model"
+    provider_formats:
+      openrouter:
+        model_id: "qwen/qwen3-32b"
+
+  # ============ GUARDIAN (CONTENT MODERATION) MODELS ============
+
+  Qwen/Qwen3Guard-Gen-0.6B:
+    type: guard
+    dimensions: 1
+    description: "Qwen3Guard content safety model (0.6B params, 119 languages)"
+    provider_formats:
+      vllm: {}
+      mosec: {}
+
+  Qwen/Qwen3Guard-Gen-4B:
+    type: guard
+    dimensions: 1
+    description: "Qwen3Guard content safety model (4B params, 119 languages)"
+    provider_formats:
+      vllm: {}
+      mosec: {}
+
+  Qwen/Qwen3Guard-Gen-8B:
+    type: guard
+    dimensions: 1
+    description: "Qwen3Guard content safety model (8B params, 119 languages)"
+    provider_formats:
+      vllm: {}
+      mosec: {}
 
 
 # Default provider endpoints and settings
@@ -182,13 +175,13 @@ defaults:
     vllm:
       embedding: "http://localhost:8000/v1/embeddings"
     openrouter: "https://openrouter.ai/api/v1"
-  
+
   timeouts:
     infinity: 60.0
     mosec: 60.0
     vllm: 60.0
     openrouter: 60.0
-  
+
   retries:
     infinity: 3
     mosec: 3
