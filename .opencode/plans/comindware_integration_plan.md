@@ -24,23 +24,22 @@ Copy from `C:\Repos\cmw-platform-agent\`:
 ### Directory Structure
 
 ```
-rag_engine/integrations/
-└── comindware/
-    ├── __init__.py       # exports: create_record, read_record
-    ├── models.py         # HTTPResponse, APIResponse
-    ├── api.py            # _load_server_config, _basic_headers, _get_request, _post_request
-    └── records.py        # create_record(), read_record()
+rag_engine/cmw_platform/
+├── __init__.py       # exports: create_record, read_record
+├── models.py         # HTTPResponse, APIResponse
+├── api.py            # _load_server_config, _basic_headers, _get_request, _post_request
+└── records.py        # create_record(), read_record()
 ```
 
 ## Files to Create
 
-### 1. rag_engine/integrations/comindware/models.py
+### 1. rag_engine/cmw_platform/models.py
 Copy from `C:\Repos\cmw-platform-agent\tools\requests_models.py`:
 - `HTTPResponse`
 - `APIResponse` 
 - `RequestConfig`
 
-### 2. rag_engine/integrations/comindware/api.py
+### 2. rag_engine/cmw_platform/api.py
 Adapted from `C:\Repos\cmw-platform-agent\tools\requests_.py`:
 
 | Function | Description |
@@ -55,7 +54,7 @@ Adapted from `C:\Repos\cmw-platform-agent\tools\requests_.py`:
 - Remove `CMW_USE_DOTENV` logic (always use `.env`)
 - Keep Basic Auth on every request (already how it works in reference)
 
-### 3. rag_engine/integrations/comindware/records.py
+### 3. rag_engine/cmw_platform/records.py
 
 | Function | Description |
 |----------|-------------|
@@ -86,22 +85,22 @@ Adapted from `C:\Repos\cmw-platform-agent\tools\requests_.py`:
 }
 ```
 
-### 4. rag_engine/integrations/comindware/__init__.py
+### 4. rag_engine/cmw_platform/__init__.py
 ```python
-from rag_engine.integrations.comindware.records import create_record, read_record
+from rag_engine.cmw_platform.records import create_record, read_record
 
 __all__ = ["create_record", "read_record"]
 ```
 
-### 5. rag_engine/integrations/__init__.py
+### 5. rag_engine/cmw_platform/__init__.py (models)
 Empty or marker file to make it a package.
 
 ## Environment Variables
 
-Add to `.env` and `.env-example`:
+Add to `.env` (local, never commit) and `.env-example` (commit):
 
 ```bash
-# Comindware Platform
+# Comindware Platform (no defaults - required)
 CMW_BASE_URL=https://your-platform.comindware.com
 CMW_LOGIN=your_username
 CMW_PASSWORD=your_password
@@ -118,7 +117,7 @@ requests>=2.28.0
 ## Usage Example
 
 ```python
-from rag_engine.integrations.comindware import create_record, read_record
+from rag_engine.cmw_platform import create_record, read_record
 
 # Read record with specific fields (server-side filtering via GetPropertyValues)
 result = read_record("record-uuid-123", fields=["user_question", "title"])
@@ -151,21 +150,21 @@ Note: All requests use Basic Authentication header. No login endpoint required.
 
 ## Implementation Order
 
-1. Create `rag_engine/integrations/comindware/` directory
+1. Create `rag_engine/cmw_platform/` directory
 2. Copy `models.py` from reference
 3. Create `api.py` (adapted from reference)
 4. Create `records.py` with both functions
 5. Create `__init__.py` with exports
 6. Add `requests` to `requirements.txt`
 7. Update `.env-example` with new variables
-8. Create unit tests `rag_engine/tests/test_comindware_api.py`
+8. Create unit tests `rag_engine/tests/test_cmw_platform.py`
 9. (Optional) Create integration test script
 
 ## Verification
 
 ```bash
 # Test import
-python -c "from rag_engine.integrations.comindware import create_record, read_record; print('OK')"
+python -c "from rag_engine.cmw_platform import create_record, read_record; print('OK')"
 
 # Run tests (if any created)
 pytest rag_engine/tests/ -v
@@ -175,7 +174,7 @@ pytest rag_engine/tests/ -v
 
 Following AGENTS.md best practices: test behavior, not implementation.
 
-### Unit Tests (`rag_engine/tests/test_comindware_api.py`)
+### Unit Tests (`rag_engine/tests/test_cmw_platform.py`)
 
 **Test behavior, not implementation details:**
 
@@ -216,7 +215,7 @@ For unit tests, mock the `requests` library:
 ```python
 from unittest.mock import patch, Mock
 
-@patch('rag_engine.integrations.comindware.api.requests.post')
+@patch('rag_engine.cmw_platform.api.requests.post')
 def test_create_record_success(mock_post):
     mock_response = Mock()
     mock_response.status_code = 200
