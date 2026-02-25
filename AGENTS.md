@@ -104,7 +104,7 @@ def test_config_loads_infinity():
 ## 📐 Code Style & Conventions
 
 ### General Philosophy
-- **Style:** LangChain-pure, dry, lean, modular, pythonic.
+- **Style:** dry, lean, minimal, abstract, brillian, modular, pythonic, clean, testable, beautiful.
 - **Architecture:** Separation of concerns. Isolate code by function. Group code by function in different files to avoid clutter.
 - **Extensibility:** Ensure testability and extensibility.
 - **Purity:** Prefer LangChain purity for LangChain code and Gradio purity for Gradio code.
