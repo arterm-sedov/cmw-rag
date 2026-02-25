@@ -1,6 +1,5 @@
 # CMW Platform Template Configuration
 # This file defines templates and their attribute system names for the cmw_platform integration
-# System names (not display names) are used for all aliases
 # Attribute types are defined in code (rag_engine/cmw_platform/attribute_types.py) - they are immutable
 
 templates:
