@@ -199,6 +199,13 @@ class Settings(BaseSettings):
     # Generates resolution plan for human support engineers after answer generation
     srp_enabled: bool = False
 
+    # CMW Platform Integration
+    # Comindware Platform API credentials (required for platform integration)
+    cmw_base_url: str
+    cmw_login: str
+    cmw_password: str
+    cmw_timeout: int = 30
+
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
         env_file=".env",
