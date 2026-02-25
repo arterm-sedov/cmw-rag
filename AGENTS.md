@@ -36,25 +36,35 @@ Following industry best practices from Google Test Primer and IBM Unit Testing G
 
 #### Test Behavior, Not Implementation
 
-**Core Principle:** Tests should validate what code **does**, not **how** it does it.
+**Core Principles:**
+
+- Start with test suite before doing the feature itself.
+- Tests should validate what code **does**, not **how** it does it.
 
 **❌ BAD - Testing implementation details:**
 ```python
-# Testing hardcoded ports or specific paths
-def test_config_loads_infinity():
-    config = load_embedding_config("infinity_qwen3_8b")
-    assert config.endpoint == "http://localhost:8000/v1"  # Fragile!
-    mock_post.assert_called_once_with("/v1/embeddings")  # Implementation detail!
+# Over-specifying internal calls and wire format
+def test_infinity_embeddings_implementation_details(mocker):
+    mock_post = mocker.patch("rag_engine.embedding_client.post")
+    client = InfinityEmbeddingClient(config=load_embedding_config("infinity_qwen3_8b"))
+
+    client.embed("hello world")
+
+    mock_post.assert_called_once_with(
+        "http://localhost:8000/v1/embeddings",  # Hardcoded internal URL
+        json={"input": "hello world"},          # Internal wire format
+    )
 ```
 
 **✅ GOOD - Testing behavior:**
 ```python
-# Testing valid configuration and functionality
-def test_config_loads_infinity():
-    config = load_embedding_config("infinity_qwen3_8b")
-    assert config.endpoint.startswith("http://localhost:")  # Valid URL pattern
-    assert "/v1" in config.endpoint  # Functional requirement
-    assert config.type == "server"
+# Verifying observable behavior and public contract
+def test_infinity_embeddings_returns_vector_of_expected_size(infinity_client):
+    vector = infinity_client.embed("hello world")
+
+    assert isinstance(vector, list)
+    assert len(vector) == infinity_client.dim  # Publicly-documented contract
+    assert all(isinstance(x, float) for x in vector)
 ```
 
 **Key Guidelines:**
