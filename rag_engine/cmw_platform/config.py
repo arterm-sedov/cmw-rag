@@ -13,6 +13,30 @@ def load_cmw_config() -> dict[str, Any]:
         return yaml.safe_load(f)
 
 
+def load_pipeline_config() -> dict[str, Any]:
+    """Load pipeline configuration section from YAML."""
+    config = load_cmw_config()
+    return config.get("pipeline", {})
+
+
+def get_input_config() -> dict[str, Any]:
+    """Get input configuration (template to fetch from)."""
+    pipeline = load_pipeline_config()
+    return pipeline.get("input", {})
+
+
+def get_output_config() -> dict[str, Any]:
+    """Get output configuration (template to create in)."""
+    pipeline = load_pipeline_config()
+    return pipeline.get("output", {})
+
+
+def get_request_template() -> str:
+    """Get the markdown request template."""
+    pipeline = load_pipeline_config()
+    return pipeline.get("request_template", "")
+
+
 def get_template_config(app: str, template: str) -> dict[str, Any] | None:
     """Get configuration for a specific template."""
     config = load_cmw_config()
@@ -30,12 +54,20 @@ def get_attribute_metadata(app: str, template: str) -> dict[str, AttributeMetada
 
     attrs = template_config.get("attributes", {})
     result = {}
-    for alias, config in attrs.items():
+    for alias, cfg in attrs.items():
+        # Handle both formats: 'title: string' or 'title: {type: string, from_agent: ...}'
+        if isinstance(cfg, str):
+            attr_type = cfg
+            from_agent = None
+        else:
+            attr_type = cfg.get("type", "string") if cfg else "string"
+            from_agent = cfg.get("from_agent")
+
         result[alias] = AttributeMetadata(
             alias=alias,
-            type=config.get("type", "string"),
-            is_system=config.get("system", False),
-            is_multivalue=config.get("multivalue", False),
+            type=attr_type,
+            is_system=False,
+            is_multivalue=False,
         )
     return result
 

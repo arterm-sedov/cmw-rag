@@ -1,32 +1,143 @@
-# CMW Platform Template Configuration
-# This file defines templates and their attribute system names for the cmw_platform integration
-# System names (not display names) are used for all aliases
-# Attribute types are defined in code (rag_engine/cmw_platform/attribute_types.py) - they are immutable
+# CMW Platform Configuration
+# Single source of truth for the agent pipeline
 
+# Pipeline configuration
+pipeline:
+  # Input: template to fetch records from
+  input:
+    application: dima
+    template: TPAIModel
+    fields:
+      - name: title
+      - name: question
+      - name: version
+      - name: browser
+
+  # Request builder: how to combine fields into markdown
+  request_template: |
+    # {title}
+
+    {question}
+
+    ---
+    Metadata:
+    - Version: {version}
+    - Browser: {browser}
+
+  # Output: template to create response in
+  output:
+    application: dima
+    template: agent_responses
+    link_field: support_request
+    link_to_template: TPAIModel
+
+# Templates: combined attribute schema + agent mapping
 templates:
-  # Application: dima
   dima:
-    # Template: TP AI Model
+    # Input template
     TPAIModel:
       attributes:
-        name:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        user_question:
-          type: string
-        text:
-          type: string
-        exampletext:
-          type: string
+        title: string
+        question: string
+        version: string
+        browser: string
 
-    # Template: response
-    response:
+    # Output template: schema + from_agent mapping
+    agent_responses:
       attributes:
-        request:
+        support_request:
           type: record
           reference_to: TPAIModel
-        exampletext:
+          from_agent: _input_record_id
+
+        confidence:
+          type: decimal
+          from_agent: plan.intent_confidence
+
+        queries_count:
+          type: integer
+          from_agent: len(plan.knowledge_base_search_queries)
+
+        queries:
+          type: text
+          from_agent: plan.knowledge_base_search_queries_as_html
+
+        is_safe:
+          type: boolean
+          from_agent: diagnostics.guard.is_safe
+
+        safety_categories:
+          type: text
+          from_agent: diagnostics.guard.categories_as_html
+
+        user_intent:
           type: string
+          from_agent: plan.user_intent
+
+        topic:
+          type: string
+          from_agent: plan.topic
+
+        category:
+          type: string
+          from_agent: plan.category
+
+        intent_confidence:
+          type: decimal
+          from_agent: plan.intent_confidence
+
+        spam_score:
+          type: decimal
+          from_agent: plan.spam_score
+
+        spam_reason:
+          type: string
+          from_agent: plan.spam_reason
+
+        action:
+          type: string
+          from_agent: plan.action
+
+        action_plan:
+          type: text
+          from_agent: plan.action_plan_ordered_html
+
+        safety_level:
+          type: string
+          from_agent: diagnostics.guard.safety_level
+
+        sequrity_provider:
+          type: string
+          from_agent: diagnostics.guard.provider
+
+        engineer_intervention_needed:
+          type: boolean
+          from_agent: resolution_plan.engineer_intervention_needed
+
+        issue_summary:
+          type: string
+          from_agent: resolution_plan.issue_summary
+
+        steps_completed:
+          type: text
+          from_agent: resolution_plan.steps_completed_ordered_html
+
+        next_steps:
+          type: text
+          from_agent: resolution_plan.next_steps_ordered_html
+
+        outcome:
+          type: string
+          from_agent: resolution_plan.outcome
+
+        agent_answer:
+          type: text
+          from_agent: _convert_markdown_to_html_answer
+
+        articles_count:
+          type: integer
+          from_agent: len(final_articles)
+
+        articles_found:
+          type: text
+          from_agent: _format_articles_html

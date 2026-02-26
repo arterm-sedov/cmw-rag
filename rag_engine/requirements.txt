@@ -37,6 +37,7 @@ numpy>=1.24.0,<2.3.0
 pandas
 openpyxl
 markdownify
+markdown2
 tqdm>=4.66.0
 
 # Testing & Linting
