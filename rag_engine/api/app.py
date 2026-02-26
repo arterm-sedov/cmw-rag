@@ -751,6 +751,10 @@ def _build_agent_messages_from_gradio_history(
     if wrapped_user_content and messages and messages[-1]["role"] == "user":
         messages[-1]["content"] = wrapped_user_content
         logger.info("Replaced last user message with wrapped content")
+    elif wrapped_user_content and not messages:
+        # No history - add wrapped content as user message (for batch/API calls)
+        messages.append({"role": "user", "content": wrapped_user_content})
+        logger.info("Added wrapped content as new user message")
 
     return messages
 
@@ -2875,6 +2879,7 @@ async def ask_comindware_structured(
 
     return StructuredAgentResult(
         plan=plan,
+        resolution_plan=getattr(context, 'resolution_plan', None),
         per_query_results=context.query_traces if include_per_query_trace else [],
         final_articles=context.final_articles,
         answer_text=context.final_answer,

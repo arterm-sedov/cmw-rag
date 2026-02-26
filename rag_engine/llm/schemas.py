@@ -328,9 +328,12 @@ class StructuredAgentResult(BaseModel):
       {query, confidence: {...}, articles: [...]}
     - `final_articles` is a list of dicts serialized from existing Article objects
       (same shape as retrieve_context tool output's article items).
+    - `resolution_plan` contains SRP (Support Resolution Plan) fields:
+      engineer_intervention_needed, issue_summary, steps_completed, next_steps, outcome
     """
 
     plan: SGRPlanResult
+    resolution_plan: dict[str, Any] | None = Field(default=None)
     per_query_results: list[dict[str, Any]] = Field(default_factory=list)
     final_articles: list[dict[str, Any]] = Field(default_factory=list)
     answer_text: str = ""

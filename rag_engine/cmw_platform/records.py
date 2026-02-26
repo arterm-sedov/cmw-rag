@@ -33,7 +33,12 @@ def create_record(
         if coerced is not None and coerced != "":
             coerced_values[key] = coerced
 
-    template_global_alias = f"Template@{application_alias}.{template_alias}"
+    # Build template global alias - handle both raw template name and full alias
+    if template_alias.startswith("Template@"):
+        template_global_alias = template_alias
+    else:
+        template_global_alias = f"Template@{application_alias}.{template_alias}"
+    
     endpoint = f"/webapi/Record/{template_global_alias}"
 
     result = api._post_request(coerced_values, endpoint)
