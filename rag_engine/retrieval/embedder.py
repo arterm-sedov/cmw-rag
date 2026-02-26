@@ -357,19 +357,73 @@ class OpenAICompatibleEmbedder:
         return response.data[0].embedding
 
     def _embed_documents_local(self, texts: list[str]) -> list[list[float]]:
-        """Direct HTTP for local providers."""
-        resp = requests.post(
-            self.config.endpoint,
-            json={"input": texts, "model": self.config.model},
-            timeout=self.config.timeout,
-        )
-        resp.raise_for_status()
-        return [d["embedding"] for d in resp.json()["data"]]
+        """Direct HTTP for local providers with fallback to smaller batches."""
+        try:
+            logger.debug(f"Embedding {len(texts)} documents to Mosec")
+            resp = requests.post(
+                self.config.endpoint,
+                json={"input": texts, "model": self.config.model},
+                timeout=self.config.timeout,
+            )
+            if resp.status_code == 500:
+                logger.warning("Mosec 500, falling back to smaller batches")
+            else:
+                resp.raise_for_status()
+                return [d["embedding"] for d in resp.json()["data"]]
+        except requests.exceptions.HTTPError:
+            pass
+
+        logger.info("Batch embedding failed, trying in batches of 20")
+        all_embeddings = []
+        for i in range(0, len(texts), 20):
+            batch = texts[i : i + 20]
+            batch_succeeded = False
+            try:
+                resp = requests.post(
+                    self.config.endpoint,
+                    json={"input": batch, "model": self.config.model},
+                    timeout=self.config.timeout,
+                )
+                if resp.status_code == 500:
+                    logger.warning("Fallback batch 500, trying individually")
+                else:
+                    resp.raise_for_status()
+                    all_embeddings.extend([d["embedding"] for d in resp.json()["data"]])
+                    batch_succeeded = True
+            except requests.exceptions.HTTPError:
+                pass
+
+            if not batch_succeeded:
+                logger.info("Embedding individually")
+                for text in batch:
+                    resp = requests.post(
+                        self.config.endpoint,
+                        json={"input": [text], "model": self.config.model},
+                        timeout=self.config.timeout,
+                    )
+                    resp.raise_for_status()
+                    all_embeddings.append(resp.json()["data"][0]["embedding"])
+        return all_embeddings
 
     def _embed_documents_remote(self, texts: list[str]) -> list[list[float]]:
-        """OpenAI SDK for remote providers."""
-        response = self.client.embeddings.create(model=self.config.model, input=texts)
-        return [d.embedding for d in response.data]
+        """OpenAI SDK for remote providers with fallback to smaller batches."""
+        try:
+            response = self.client.embeddings.create(model=self.config.model, input=texts)
+            return [d.embedding for d in response.data]
+        except Exception:
+            logger.warning("Remote batch failed, trying in batches of 20")
+            all_embeddings = []
+            for i in range(0, len(texts), 20):
+                batch = texts[i : i + 20]
+                try:
+                    response = self.client.embeddings.create(model=self.config.model, input=batch)
+                    all_embeddings.extend([d.embedding for d in response.data])
+                except Exception:
+                    logger.info("Remote batch failed, embedding individually")
+                    for text in batch:
+                        response = self.client.embeddings.create(model=self.config.model, input=[text])
+                        all_embeddings.append(response.data[0].embedding)
+            return all_embeddings
 
     def get_embedding_dim(self) -> int:
         """Return dimension from config (no test request)."""
