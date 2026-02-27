@@ -71,23 +71,6 @@ def build_question_for_agent(agent_result: Any, input_record_data: dict) -> str:
     
     # Build final output
     return f"{frontmatter}\n# {title}\n\n{question_md}"
-    """Convert Markdown to clean HTML for CMW Platform.
-
-    CMW Platform ignores most HTML attributes and only renders basic tags.
-    """
-    if not md_text:
-        return ""
-
-    extras = [
-        "tables",
-        "fenced-code-blocks",
-        "break-on-newline",
-        "cuddled-lists",
-        "strike",
-        "code-friendly",
-    ]
-
-    return markdown2.markdown(md_text, extras=extras)
 
 
 def convert_array_to_html_list(items: list | str, ordered: bool = False) -> str:

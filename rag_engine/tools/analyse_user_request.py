@@ -13,7 +13,8 @@ import logging
 
 from langchain.tools import ToolRuntime, tool
 
-from rag_engine.llm.schemas import SGRAction, SGRCategory, SGRPlanResult
+from rag_engine.llm.schemas import SGRAction, SGRPlanResult, SGRCategory
+from rag_engine.cmw_platform.category_enum import load_category_enum
 from rag_engine.utils.context_tracker import AgentContext
 
 logger = logging.getLogger(__name__)
@@ -86,11 +87,11 @@ def render_sgr_template(
     Returns:
         Formatted markdown string for LLM context
     """
-    if action == SGRAction.PROCEED:
+    if action == SGRAction.PROCEED.value or action == SGRAction.PROCEED:
         return _render_proceed_template(plan, guardian_result)
-    elif action == SGRAction.ASK_CLARIFICATION:
+    elif action == SGRAction.ASK_CLARIFICATION.value or action == SGRAction.ASK_CLARIFICATION:
         return _render_clarify_template(plan)
-    elif action == SGRAction.DECLINE:
+    elif action == SGRAction.DECLINE.value or action == SGRAction.DECLINE:
         return _render_decline_template(plan)
     return ""
 
@@ -99,7 +100,7 @@ def render_sgr_template(
 async def analyse_user_request(
     user_intent: str = "",
     topic: str = "",
-    category: SGRCategory = SGRCategory.GENERAL_QUESTION,
+    category: SGRCategory = SGRCategory.OTHER if hasattr(SGRCategory, "OTHER") else list(SGRCategory)[0],
     intent_confidence: float = 0.0,
     clarification_questions_to_ask: list[str] = None,
     spam_score: float = 0.0,
@@ -113,14 +114,14 @@ async def analyse_user_request(
     plan = {
         "user_intent": user_intent,
         "topic": topic,
-        "category": category,
+        "category": category.value if hasattr(category, "value") else str(category),
         "intent_confidence": intent_confidence,
         "clarification_questions_to_ask": clarification_questions_to_ask or [],
         "spam_score": spam_score,
         "spam_reason": spam_reason,
         "knowledge_base_search_queries": knowledge_base_search_queries or [],
         "action_plan": action_plan or [],
-        "action": action,
+        "action": action.value if hasattr(action, "value") else str(action),
     }
 
     if runtime and hasattr(runtime, "context") and runtime.context is not None:

@@ -1,8 +1,28 @@
+import re
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from pydantic import BaseModel
+
+
+def to_api_alias(alias: str) -> str:
+    """Convert attribute alias to API format.
+    
+    CMW Platform API expects FirstCapital to be firstLowerCase.
+    Everything else (snake_case, already lowerCase) passes through as-is.
+    
+    Examples:
+        RequestsIssueArea -> requestsIssueArea
+        requests_issue_area -> requests_issue_area
+        topic -> topic
+    """
+    if not alias:
+        return alias
+    # If first letter is uppercase and rest is lowercase, convert to lowerFirst
+    if alias[0].isupper() and len(alias) > 1 and alias[1].islower():
+        return alias[0].lower() + alias[1:]
+    return alias
 
 
 class AttributeMetadata(BaseModel):

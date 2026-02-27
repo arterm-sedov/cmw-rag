@@ -1,6 +1,7 @@
 from typing import Any
 
 from rag_engine.cmw_platform import api
+from rag_engine.cmw_platform.attribute_types import to_api_alias
 from rag_engine.cmw_platform.config import coerce_attribute_value, get_attribute_metadata
 
 
@@ -31,7 +32,9 @@ def create_record(
             continue
         coerced = coerce_attribute_value(application_alias, template_alias, key, val)
         if coerced is not None and coerced != "":
-            coerced_values[key] = coerced
+            # Convert key to API alias format (e.g. PascalCase -> camelCase)
+            api_key = to_api_alias(key)
+            coerced_values[api_key] = coerced
 
     # Build template global alias - handle both raw template name and full alias
     if template_alias.startswith("Template@"):
@@ -58,6 +61,46 @@ def create_record(
         "data": result.get("data"),
         "error": result.get("error"),
     }
+
+
+def update_record(
+    record_id: str,
+    values: dict[str, Any],
+    application_alias: str = "",
+    template_alias: str = "",
+) -> dict[str, Any]:
+    """Update an existing record in the CMW Platform using PUT.
+
+    Args:
+        record_id: The record UUID
+        values: Dictionary of field names to values
+        application_alias: Optional application system name for type coercion
+        template_alias: Optional template system name for type coercion
+
+    Returns:
+        Dictionary with keys: success (bool), status_code (int), data, error
+    """
+    processed_values: dict[str, Any] = {}
+    
+    for key, val in values.items():
+        if val is None:
+            continue
+            
+        # Use coercion if metadata is available
+        if application_alias and template_alias:
+            coerced = coerce_attribute_value(application_alias, template_alias, key, val)
+        else:
+            coerced = val
+            
+        if coerced is not None:
+            # Convert key to API alias format (e.g. PascalCase -> camelCase)
+            api_key = to_api_alias(key)
+            processed_values[api_key] = coerced
+
+    endpoint = f"/webapi/Record/{record_id}"
+    result = api._put_request(processed_values, endpoint)
+
+    return result
 
 
 def read_record(
