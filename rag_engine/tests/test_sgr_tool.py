@@ -2,7 +2,7 @@
 
 import pytest
 
-from rag_engine.llm.schemas import SGRCategory, SGRPlanResult, SGRAction
+from rag_engine.llm.schemas import SGRPlanResult, SGRAction, SGRCategory
 from rag_engine.tools.analyse_user_request import (
     analyse_user_request,
     render_sgr_template,
@@ -17,7 +17,8 @@ class TestSGRPlanResultSchema:
         result = SGRPlanResult()
         assert result.user_intent == ""
         assert result.topic == ""
-        assert result.category == SGRCategory.GENERAL_QUESTION
+        expected_default = SGRCategory.OTHER if hasattr(SGRCategory, "OTHER") else list(SGRCategory)[0]
+        assert result.category == expected_default
         assert result.intent_confidence == 0.0
         assert result.clarification_questions_to_ask == []
         assert result.spam_score == 0.0
@@ -57,18 +58,21 @@ class TestSGRPlanResultSchema:
 
     def test_category_string_converted_to_enum(self):
         """Category validator should convert string to enum."""
-        result = SGRPlanResult(category="how_to")
-        assert result.category == SGRCategory.HOW_TO
+        # 'documentation' is a known code in cmw_platform.yaml
+        result = SGRPlanResult(category="documentation")
+        assert result.category == SGRCategory.DOCUMENTATION
+        assert result.category.value == "documentation"
 
     def test_category_case_insensitive(self):
         """Category validator should be case-insensitive."""
-        result = SGRPlanResult(category="HOW_TO")
-        assert result.category == SGRCategory.HOW_TO
+        result = SGRPlanResult(category="DOCUMENTATION")
+        assert result.category == SGRCategory.DOCUMENTATION
 
     def test_category_invalid_returns_default(self):
         """Invalid category should return default."""
         result = SGRPlanResult(category="invalid_category")
-        assert result.category == SGRCategory.GENERAL_QUESTION
+        expected_default = SGRCategory.OTHER if hasattr(SGRCategory, "OTHER") else list(SGRCategory)[0]
+        assert result.category == expected_default
 
 
 class TestAnalyseUserRequestTool:
@@ -138,8 +142,9 @@ class TestRenderSGRTemplate:
         base = {
             "user_intent": "test intent",
             "topic": "test topic",
-            "category": SGRCategory.HOW_TO,
+            "category": SGRCategory.DOCUMENTATION,
             "intent_confidence": 0.9,
+
             "clarification_questions_to_ask": [],
             "spam_score": 0.0,
             "spam_reason": "",

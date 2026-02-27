@@ -21,18 +21,21 @@ class SGRAction(str, Enum):
     DECLINE = "decline"
 
 
-class SGRCategory(str, Enum):
-    """Request categories for classification."""
+# Load dynamic category enum from YAML config
+from rag_engine.cmw_platform.category_enum import (
+    load_category_enum, 
+    get_category_choices_with_descriptions
+)
 
-    SETUP_HELP = "setup_help"
-    TROUBLESHOOTING = "troubleshooting"
-    FEATURE_REQUEST = "feature_request"
-    GENERAL_QUESTION = "general_question"
-    ADMINISTRATION = "administration"
-    INTEGRATION = "integration"
-    TRAINING = "training"
-    HOW_TO = "how_to"
-    OTHER = "other"
+
+def _get_category_enum() -> type[Enum]:
+    """Get the dynamic category enum from YAML config."""
+    return load_category_enum()
+
+
+# Dynamic Enum for the schema
+SGRCategory = _get_category_enum()
+_category_choices_with_desc = get_category_choices_with_descriptions()
 
 
 class SGRPlanResult(BaseModel):
@@ -76,22 +79,25 @@ class SGRPlanResult(BaseModel):
     )
 
     category: SGRCategory = Field(
-        default=SGRCategory.GENERAL_QUESTION,
+        default=SGRCategory.OTHER if hasattr(SGRCategory, "OTHER") else list(SGRCategory)[0],
         description=(
-            "What type of request is this? Choose the most appropriate category from the enum."
+            f"Type of request. Choose from available categories:\n{_category_choices_with_desc}"
         ),
     )
 
     @field_validator("category", mode="before")
     @classmethod
     def _convert_category(cls, v: Any) -> SGRCategory:
-        if isinstance(v, SGRCategory):
-            return v
+        """Accept any string value - will be matched against valid codes."""
         if isinstance(v, str):
-            for cat in SGRCategory:
-                if cat.value.lower() == v.lower():
-                    return cat
-        return SGRCategory.GENERAL_QUESTION
+            # Try to match by value (code)
+            v_clean = v.lower().strip()
+            for member in SGRCategory:
+                if member.value.lower() == v_clean:
+                    return member
+        # Fallback to OTHER
+        return SGRCategory.OTHER if hasattr(SGRCategory, "OTHER") else list(SGRCategory)[0]
+
 
     intent_confidence: float | None = Field(
         default=0.0,

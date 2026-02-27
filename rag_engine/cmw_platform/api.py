@@ -112,3 +112,50 @@ def _post_request(body: dict[str, Any], endpoint: str) -> dict[str, Any]:
     except Exception as e:
         logger.error(f"Request failed: {e}")
         return {"success": False, "status_code": 500, "error": str(e), "data": None}
+
+
+def _put_request(body: dict[str, Any], endpoint: str) -> dict[str, Any]:
+    """Make PUT request with Basic Auth header."""
+    config = _load_server_config()
+    url = f"{config.base_url}{endpoint}"
+    headers = _basic_headers()
+
+    try:
+        response = requests.put(
+            url, json=body, headers=headers, timeout=config.timeout
+        )
+        http_response = HTTPResponse(
+            success=response.status_code == 200,
+            status_code=response.status_code,
+            raw_response=response.json() if response.content else None,
+            base_url=url,
+        )
+
+        raw = http_response.raw_response
+        extracted_error = None
+        api_success = http_response.success
+
+        if isinstance(raw, dict):
+            api_success = raw.get("success", http_response.success)
+            if not api_success:
+                error_data = raw.get("error", {})
+                if isinstance(error_data, dict):
+                    extracted_error = error_data.get("message") or error_data.get("inner", {}).get("message")
+                else:
+                    extracted_error = str(error_data) if error_data else None
+
+        return {
+            "success": api_success,
+            "status_code": http_response.status_code,
+            "data": raw,
+            "error": extracted_error,
+        }
+    except requests.Timeout:
+        logger.error(f"Request timeout: {url}")
+        return {"success": False, "status_code": 408, "error": "Request timeout", "data": None}
+    except requests.ConnectionError:
+        logger.error(f"Connection error: {url}")
+        return {"success": False, "status_code": 503, "error": "Connection error", "data": None}
+    except Exception as e:
+        logger.error(f"Request failed: {e}")
+        return {"success": False, "status_code": 500, "error": str(e), "data": None}
