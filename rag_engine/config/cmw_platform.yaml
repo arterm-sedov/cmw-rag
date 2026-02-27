@@ -1,5 +1,6 @@
 # CMW Platform Configuration
 # Single source of truth for the agent pipeline
+# Attribute types are defined in code (rag_engine/cmw_platform/attribute_types.py) - they are immutable
 
 # Pipeline configuration
 pipeline:
@@ -52,13 +53,21 @@ templates:
 
         confidence:
           type: decimal
+          from_agent: answer_confidence
+
+        intent_confidence:
+          type: decimal
           from_agent: plan.intent_confidence
 
         queries_count:
           type: integer
-          from_agent: len(plan.knowledge_base_search_queries)
+          from_agent: len(executed_queries)
 
         queries:
+          type: text
+          from_agent: executed_queries_as_html
+
+        knowledge_base_search_queries:
           type: text
           from_agent: plan.knowledge_base_search_queries_as_html
 
@@ -81,10 +90,6 @@ templates:
         category:
           type: string
           from_agent: plan.category
-
-        intent_confidence:
-          type: decimal
-          from_agent: plan.intent_confidence
 
         spam_score:
           type: decimal
