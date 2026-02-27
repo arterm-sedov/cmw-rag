@@ -24,6 +24,46 @@ Implement a **cascaded reversible anonymization pipeline** that:
 User Message
     ↓
 ┌─────────────────────────────────────────────────────────────┐
+│  Stage 1: Deterministic/Regex (Presidio + Custom Russian)   │
+│  - Fast (0.1ms/sample), Reliable for structured IDs         │
+│  - Phones, Emails, Passports, SNILS, INN, Credentials       │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Stage 2: Russian NER (Gherman/bert-base-NER-Russian)       │
+│  - Moderate (50-70ms/sample on CPU)                         │
+│  - Highly accurate for Russian Names, Locations, Orgs       │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Stage 3: Multilingual NER (tabularisai/eu-pii-safeguard)   │
+│  - Slow (~150-200ms/sample on CPU)                          │
+│  - Multilingual fallback for missed entities                │
+│  - 42 entity types (Jobs, Addresses, etc.)                  │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Post-Processing: Merge & Resolve Overlaps                  │
+│  - Merge adjacent same-semantic-type entities               │
+│  - Resolve overlaps: Longest Match First                    │
+│  - Normalize to unified semantic names                      │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+[Guardian Check - Content Moderation - existing]
+    ↓
+[LLM Processing - with anonymized content]
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Deanonymization                                           │
+│  - Restore original PII from mapping                       │
+│  - Handle LLM output containing placeholders              │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+User sees original text (transparent experience)
+```
+User Message
+    ↓
+┌─────────────────────────────────────────────────────────────┐
 │  Stage 1: Deterministic/Regex (Presidio + Custom Russian) │
 │  ┌─────────────────────────────────────────────────────┐  │
 │  │ Presidio Built-in: EMAIL, CREDIT_CARD, URL, IP     │  │
@@ -1395,132 +1435,30 @@ class RegexAnonymizationStage(AnonymizationStage):
         return mapping.get(presidio_type.upper())
 ```
 
-### 3.4 Stage 2: EU-PII-Safeguard (`rag_engine/anonymization/stages/stage2_eu_pii.py`)
+### 3.4 Stage 2: Russian NER (`rag_engine/anonymization/stages/stage2_ner.py`)
 
-```python
-"""Stage 2: EU-PII-Safeguard multilingual PII detection."""
+Stage 2 uses `Gherman/bert-base-NER-Russian`. It is the primary NER engine for Russian text.
 
-import logging
-from typing import Any
+- **Speed**: ~50-70ms/sample on CPU.
+- **Accuracy**: Very high for standard Russian PII (PERSON, LOC, ORG).
+- **Function**: Runs before Stage 3 to catch major entities quickly and accurately.
 
-from rag_engine.anonymization.stages.base import AnonymizationStage
-from rag_engine.anonymization.types import (
-    DetectionStage,
-    DetectedEntity,
-    EntityType,
-)
+### 3.5 Stage 3: EU-PII-Safeguard (`rag_engine/anonymization/stages/stage3_eu_pii.py`)
 
-logger = logging.getLogger(__name__)
+Stage 3 uses `tabularisai/eu-pii-safeguard` as a multilingual fallback.
 
+- **Speed**: ~150-200ms/sample on CPU.
+- **Function**: Catches job titles, detailed address components, and multilingual PII that Gherman might miss.
+- **Fragmentation**: Known to fragment entities (e.g., "Санкт-Петербург" → 3 entities). Controlled via post-processing merge logic.
 
-class EUPIIAnonymizationStage(AnonymizationStage):
-    """Stage 2: EU-PII-Safeguard PII detection.
-    
-    Detects 42 entity types across 26 European languages.
-    Uses tabularisai/eu-pii-safeguard model.
-    """
-    
-    def __init__(self, config: dict[str, Any]):
-        super().__init__(config)
-        
-        self.model_config = config.get("model", {})
-        self.provider_config = config.get("provider", {})
-        
-        # Lazy load model
-        self._pipeline = None
-    
-    @property
-    def pipeline(self):
-        """Lazy load the model pipeline."""
-        if self._pipeline is None:
-            from transformers import pipeline
-            
-            model_name = self.model_config.get("name", "tabularisai/eu-pii-safeguard")
-            device = self.model_config.get("device", "auto")
-            
-            # Use provider factory to get inference
-            # For now, use local inference
-            self._pipeline = pipeline(
-                "ner",
-                model=model_name,
-                tokenizer=model_name,
-                aggregation_strategy="simple",
-                device=device,
-            )
-        
-        return self._pipeline
-    
-    def detect(self, text: str) -> list[DetectedEntity]:
-        """Detect PII using EU-PII-Safeguard."""
-        if not self.is_enabled():
-            return []
-        
-        try:
-            results = self.pipeline(text)
-        except Exception as e:
-            logger.warning(f"EU-PII-Safeguard inference failed: {e}")
-            return []
-        
-        entities = []
-        for result in results:
-            entity_type = self._map_eu_pii_entity(result.get("entity_group"))
-            if entity_type:
-                entities.append(DetectedEntity(
-                    text=result.get("word", ""),
-                    entity_type=entity_type,
-                    start=result.get("start", 0),
-                    end=result.get("end", 0),
-                    confidence=result.get("score", 0.0),
-                    stage=DetectionStage.STAGE2_EU_PII,
-                ))
-        
-        return entities
-    
-    def _map_eu_pii_entity(self, eu_pii_type: str | None) -> EntityType | None:
-        """Map EU-PII entity types to our EntityType enum."""
-        if not eu_pii_type:
-            return None
-        
-        # EU-PII-Safeguard entity types (subset)
-        mapping = {
-            # Person
-            "FIRST_NAME": EntityType.NAME,
-            "LAST_NAME": EntityType.NAME,
-            "FULL_NAME": EntityType.NAME,
-            
-            # Location
-            "ADDRESS": EntityType.ADDRESS,
-            "STREET": EntityType.STREET_ADDRESS,
-            "CITY": EntityType.CITY,
-            "COUNTRY": EntityType.COUNTRY,
-            
-            # Organization
-            "ORGANIZATION": EntityType.COMPANY,
-            "COMPANY": EntityType.COMPANY,
-            
-            # Contact
-            "EMAIL": EntityType.EMAIL,
-            "PHONE": EntityType.PHONE,
-            "URL": EntityType.URL,
-            
-            # Documents
-            "PASSPORT": EntityType.PASSPORT,
-            "ID_CARD": EntityType.PASSPORT,
-            "NATIONAL_ID": EntityType.PASSPORT,
-            
-            # Financial
-            "BANK_ACCOUNT": EntityType.BANK_CARD,
-            "CREDIT_CARD": EntityType.BANK_CARD,
-            
-            # Other
-            "DATE": EntityType.DATE,
-            "IP_ADDRESS": EntityType.IP_ADDRESS,
-        }
-        
-        return mapping.get(eu_pii_type.upper())
-```
+### 3.6 Post-Processing & Overlap Resolution
 
-### 3.5 Stage 3: Russian NER (`rag_engine/anonymization/stages/stage3_ner.py`)
+The pipeline applies a centralized resolution logic after all stages have collected their candidates:
+
+1.  **Merge Adjacent**: Entities of the same semantic type that are adjacent or separated by 1-2 chars (punctuation/spaces) are merged into a single entity.
+2.  **Longest Match First**: Candidates are sorted by length (descending).
+3.  **Conflict Map**: A boolean array (`covered_indices`) tracks text spans. If a candidate overlaps with an already-covered span, it is discarded.
+4.  **Position Stability**: Final entities are sorted by start index and replaced in reverse order to maintain position accuracy during string manipulation.
 
 ```python
 """Stage 3: Russian NER using Gherman/bert-base-NER-Russian."""
