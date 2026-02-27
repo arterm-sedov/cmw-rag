@@ -3464,6 +3464,60 @@ with gr.Blocks(
     # Explicitly set a plain attribute for tests and downstream code to read
     demo.title = "Comindware Platform Documentation Assistant"
 
+    # Add CMW Platform API endpoint using FastAPI routes
+    # Gradio exposes the underlying FastAPI app at demo.app
+    from fastapi import APIRouter, HTTPException, Request
+    from pydantic import BaseModel
+
+    cmw_router = APIRouter(prefix="/api/v1/cmw", tags=["cmw_platform"])
+
+    class ProcessSupportRequest(BaseModel):
+        request_id: str
+
+    @cmw_router.post("/process-support-request")
+    def process_support_request(
+        request_body: ProcessSupportRequest,
+        request: Request,
+    ) -> dict:
+        """Process a CMW Platform support request.
+
+        Expects: {"request_id": "123456"}
+        Returns: {"success": true, "message": "Request fetched, agent started", "error": null}
+
+        Note: This is a fire-and-forget endpoint. The agent runs asynchronously
+        and creates the linked response record in the background.
+
+        Authentication: CMW_API_KEY must be present in .env (empty = no auth, present = require it)
+        """
+        api_key = settings.cmw_api_key
+
+        if api_key:
+            request_api_key = request.headers.get("X-API-Key")
+            if request_api_key != api_key:
+                logger.warning("Invalid API key attempt to CMW endpoint")
+                raise HTTPException(status_code=401, detail="Invalid API key")
+
+        request_id = request_body.request_id
+        if not request_id:
+            raise HTTPException(status_code=400, detail="Missing request_id")
+
+        from rag_engine.cmw_platform.connector import PlatformConnector
+
+        connector = PlatformConnector()
+        result = connector.start_request(request_id)
+
+        return {
+            "success": result.success,
+            "message": result.message,
+            "error": result.error,
+        }
+
+    demo_app = getattr(demo, "app", None)
+    if demo_app:
+        demo_app.include_router(cmw_router)
+    else:
+        logger.warning("Could not add CMW API endpoint: demo.app not available")
+
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
 

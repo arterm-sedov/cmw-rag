@@ -208,12 +208,16 @@ class Settings(BaseSettings):
     cmw_login: str
     cmw_password: str
     cmw_timeout: int = 30
+    # API key for CMW Platform webhook endpoints
+    # MANDATORY in .env - must be present (empty = skip auth, present = require it)
+    cmw_api_key: str
 
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
         extra="ignore",
+        validate_default=True,
     )
 
 
