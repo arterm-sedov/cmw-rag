@@ -2,6 +2,8 @@ from typing import Any
 
 from rag_engine.cmw_platform import config
 
+from markdownify import markdownify as html_to_markdown
+
 
 def build_request(record_data: dict[str, Any]) -> str:
     """Build markdown request from record data using config template.
@@ -27,6 +29,9 @@ def build_request(record_data: dict[str, Any]) -> str:
         value = record_data.get(key, "")
         if value is None:
             value = ""
+        # Convert HTML to markdown for question field
+        if key == "question" and value:
+            value = html_to_markdown(value)
         formatted_data[key] = value
 
     return template.format(**formatted_data)

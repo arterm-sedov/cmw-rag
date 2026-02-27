@@ -61,7 +61,7 @@ def call_agent(md_request: str) -> any:
     return result
 
 
-def create_response_record(input_record_id: str, agent_result: any) -> dict:
+def create_response_record(input_record_id: str, agent_result: any, md_request: str) -> dict:
     """Create the response record in CMW Platform."""
     output_config = config.get_output_config()
     application = output_config.get("application")
@@ -73,11 +73,12 @@ def create_response_record(input_record_id: str, agent_result: any) -> dict:
 
     logger.info(f"Mapping agent response to {application}.{template}")
 
-    # Map agent result to CMW fields
+    # Map agent result to CMW fields - pass md_request directly
     mapped_values = map_agent_response(
         agent_result=agent_result,
         input_record_id=input_record_id,
         attributes=attributes,
+        md_request=md_request,
     )
 
     logger.info(f"Mapped values: {list(mapped_values.keys())}")
@@ -134,7 +135,7 @@ def run_pipeline(record_id: str, dry_run: bool = False) -> dict:
 
         if not dry_run:
             # Step 4: Create response record
-            response_result = create_response_record(record_id, agent_result)
+            response_result = create_response_record(record_id, agent_result, md_request)
 
             if response_result["success"]:
                 results["response_record_id"] = response_result.get("record_id")

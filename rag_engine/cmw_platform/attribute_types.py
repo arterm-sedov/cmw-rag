@@ -29,6 +29,34 @@ def coerce_string(value: Any) -> CoercionResult:
     return CoercionResult(value=str(value))
 
 
+def coerce_enum(value: Any, attribute_alias: str = "") -> CoercionResult:
+    """Coerce to enum value.
+    
+    CMW Platform expects enum values in the format:
+    {
+        "alias": {
+            "type": "Variant",
+            "owner": "<attribute_alias>",
+            "alias": "<enum_value_system_name>"
+        }
+    }
+    """
+    if value is None or value == "":
+        return CoercionResult(value=None)
+    
+    # Convert to string if not already
+    enum_value = str(value) if value is not None else ""
+    
+    # Build the enum alias structure
+    enum_alias = {
+        "type": "Variant",
+        "owner": attribute_alias,
+        "alias": enum_value,
+    }
+    
+    return CoercionResult(value={"alias": enum_alias})
+
+
 def coerce_boolean(value: Any) -> CoercionResult:
     """Coerce to boolean."""
     if isinstance(value, bool):
@@ -105,7 +133,7 @@ ATTRIBUTE_TYPE_COERCERS: dict[str, callable] = {
     "record": coerce_record,
     "role": coerce_string,
     "account": coerce_string,
-    "enum": coerce_string,
+    "enum": coerce_enum,
     "boolean": coerce_boolean,
     "datetime": coerce_datetime,
     "decimal": coerce_decimal,
@@ -113,13 +141,14 @@ ATTRIBUTE_TYPE_COERCERS: dict[str, callable] = {
 }
 
 
-def coerce_value(attr_type: str, value: Any, is_multivalue: bool = False) -> CoercionResult:
+def coerce_value(attr_type: str, value: Any, is_multivalue: bool = False, attribute_alias: str = "") -> CoercionResult:
     """Coerce value to the correct type based on attribute type.
 
     Args:
         attr_type: The platform attribute type (string, boolean, record, etc.)
         value: The value to coerce
         is_multivalue: Whether this is a multi-value attribute
+        attribute_alias: The attribute alias (needed for enum coercion)
 
     Returns:
         CoercionResult with coerced value
@@ -135,11 +164,18 @@ def coerce_value(attr_type: str, value: Any, is_multivalue: bool = False) -> Coe
         value_list = value if isinstance(value, list) else [value]
         coerced_list = []
         for item in value_list:
-            result = coercer(item)
+            # Pass attribute_alias to coerce_enum
+            if attr_type.lower() == "enum":
+                result = coercer(item, attribute_alias)
+            else:
+                result = coercer(item)
             if not result.success:
                 return result
             coerced_list.append(result.value)
         return CoercionResult(value=coerced_list)
 
     # Single value
+    # Pass attribute_alias to coerce_enum
+    if attr_type.lower() == "enum":
+        return coercer(value, attribute_alias)
     return coercer(value)

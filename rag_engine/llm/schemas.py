@@ -330,10 +330,14 @@ class StructuredAgentResult(BaseModel):
       (same shape as retrieve_context tool output's article items).
     - `resolution_plan` contains SRP (Support Resolution Plan) fields:
       engineer_intervention_needed, issue_summary, steps_completed, next_steps, outcome
+    - `executed_queries` contains the actual queries sent to the knowledge base
+    - `answer_confidence` is calculated from average rerank scores of retrieved articles
     """
 
     plan: SGRPlanResult
     resolution_plan: dict[str, Any] | None = Field(default=None)
+    executed_queries: list[str] = Field(default_factory=list)
+    answer_confidence: float | None = Field(default=None)
     per_query_results: list[dict[str, Any]] = Field(default_factory=list)
     final_articles: list[dict[str, Any]] = Field(default_factory=list)
     answer_text: str = ""
