@@ -1,7 +1,7 @@
 # CMW Platform API Endpoint Implementation Plan
 
 **Date:** 2026-02-27  
-**Status:** PLANNED (Not Implemented)  
+**Status:** COMPLETED  
 **Parent Branch:** `20260225_platform_integration`
 
 ---
@@ -69,277 +69,71 @@ All templates, fields, and mappings defined in `cmw_platform.yaml` — no hardco
 
 ## Code Organization
 
-### Current State (Reference)
+### Final State
 
 ```
 rag_engine/
 ├── cmw_platform/
+│   ├── __init__.py         # Exports: Connector, ProcessResult, Records
 │   ├── api.py              # _get_request, _post_request, _put_request
 │   ├── attribute_types.py  # to_api_alias, coerce, metadata
 │   ├── category_enum.py    # load_category_enum
 │   ├── config.py           # load_cmw_config, get_*_config
+│   ├── connector.py        # NEW: PlatformConnector orchestrator
 │   ├── mapping.py          # map_agent_response
 │   ├── models.py           # Pydantic models
 │   ├── records.py          # create_record, read_record, update_record
-│   └── request_builder.py # build_request
+│   └── request_builder.py  # build_request
+├── api/
+│   └── app.py              # MODIFIED: Added /api/v1/cmw/process-support-request endpoint
 ├── scripts/
 │   └── process_cmw_record.py  # REFERENCE IMPLEMENTATION (KEPT)
 ```
 
-### Target State (Production)
+---
 
-```
-rag_engine/
-├── cmw_platform/
-│   ├── __init__.py         # Exports: Connector, Config, Records
-│   ├── api.py              # Unchanged
-│   ├── attribute_types.py  # Unchanged
-│   ├── category_enum.py    # Unchanged
-│   ├── config.py           # Unchanged
-│   ├── connector.py        # NEW: PlatformConnector orchestrator
-│   ├── mapping.py          # Unchanged
-│   ├── models.py           # Unchanged
-│   ├── records.py          # Unchanged
-│   └── request_builder.py  # Unchanged
-├── api/
-│   └── app.py              # MODIFIED: Add /api/v1/cmw/process-support-request endpoint
-```
+## Implementation Details
 
-### New File: `rag_engine/cmw_platform/connector.py`
+### connector.py
 
-```python
-"""CMW Platform connector orchestrator.
+- `ProcessResult` dataclass for return values
+- `PlatformConnector` class with `start_request()` method
+- Fire-and-forget: fetches record, starts agent in background thread
+- Uses `threading.Thread` with daemon=True
+- Full pipeline: fetch → build request → call agent → map → create response record
 
-Provides a single entry point for processing platform requests.
-"""
-import logging
-from dataclasses import dataclass
+### API Endpoint
 
-from rag_engine.cmw_platform import config, records
-from rag_engine.cmw_platform.mapping import map_agent_response
-from rag_engine.cmw_platform.request_builder import build_request
+- FastAPI route via Gradio's underlying `demo.app`
+- `POST /api/v1/cmw/process-support-request`
+- Request model: `{"request_id": "string"}`
+- Auth via `X-API-Key` header (optional if `CMW_API_KEY` is empty in .env)
 
+### Settings
 
-logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ProcessResult:
-    success: bool
-    message: str | None = None
-    error: str | None = None
-
-
-class PlatformConnector:
-    """Orchestrates the complete CMW Platform request → response pipeline."""
-
-    def start_request(self, request_id: str) -> ProcessResult:
-        """Start processing a TPAIModel record through the RAG pipeline.
-        
-        This method is ASYNC - it fetches the record, starts the agent, and returns.
-        The agent runs in the background and creates the linked response record.
-        
-        Args:
-            request_id: The TPAIModel request ID to process
-            
-        Returns:
-            ProcessResult with success status (fetch succeeded, agent started)
-        """
-        try:
-            # 1. Fetch input record
-            input_config = config.get_input_config()
-            fields = [f["name"] for f in input_config.get("fields", [])]
-            record = records.read_record(request_id, fields=fields)
-            
-            if not record["success"]:
-                logger.error(f"Failed to fetch record {request_id}: {record.get('error')}")
-                return ProcessResult(
-                    success=False,
-                    error=f"Failed to fetch record: {record.get('error')}"
-                )
-            
-            record_data = record["data"].get(request_id, {})
-            
-            # 2. Build markdown request
-            md_request = build_request(record_data)
-            
-            # 3. START AGENT IN BACKGROUND (fire-and-forget)
-            # Return success AFTER fetching record, not after agent completes
-            import asyncio
-            from rag_engine.api.app import ask_comindware_structured
-            
-            # Run in background thread so we don't block the API response
-            def run_agent():
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    agent_result = loop.run_until_complete(
-                        ask_comindware_structured(md_request)
-                    )
-                    
-                    # 4. Map to output template
-                    output_config = config.get_output_config()
-                    template_config = config.get_template_config(
-                        output_config["application"],
-                        output_config["template"]
-                    )
-                    mapped_values = map_agent_response(
-                        agent_result=agent_result,
-                        input_record_id=request_id,
-                        attributes=template_config["attributes"],
-                        md_request=md_request,
-                    )
-                    
-                    # 5. Create response record
-                    response = records.create_record(
-                        application_alias=output_config["application"],
-                        template_alias=output_config["template"],
-                        values=mapped_values,
-                    )
-                    
-                    if not response["success"]:
-                        logger.error(f"Failed to create response: {response.get('error')}")
-                    else:
-                        logger.info(f"Created response record: {response.get('record_id')}")
-                        
-                finally:
-                    loop.close()
-            
-            import threading
-            thread = threading.Thread(target=run_agent, daemon=True)
-            thread.start()
-            
-            logger.info(f"Started agent for request {request_id}")
-            
-            return ProcessResult(
-                success=True,
-                message="Request fetched, agent started",
-            )
-            
-        except Exception as e:
-            return ProcessResult(success=False, error=str(e))
-```
-
-### Integration: `rag_engine/api/app.py`
-
-Add a new FastAPI endpoint (Gradio is based on FastAPI anyway):
-
-```python
-from rag_engine.cmw_platform.connector import PlatformConnector, ProcessResult
-
-@app.post("/api/v1/cmw/process-support-request")
-def process_support_request(request: dict) -> dict:
-    """Process a CMW Platform support request.
-    
-    Expects: {"request_id": "123456"}
-    Returns: {"success": true, "message": "Request fetched, agent started", "error": null}
-    
-    Note: This is a fire-and-forget endpoint. The agent runs asynchronously
-    and creates the linked response record in the background.
-    
-    Authentication: CMW_API_KEY must be present in .env (empty = no auth, present = use it)
-    """
-    # 1. Get API key from settings (mandatory in .env, but can be empty to skip auth)
-    # Use similar pattern as rag_agent: from rag_engine.config.settings import settings
-    from rag_engine.config.settings import settings
-    api_key = settings.cmw_api_key  # str | None, from settings
-    
-    if api_key:  # truthy = require auth
-        # 2. Validate API key from header
-        request_api_key = request.headers.get("X-API-Key")
-        if request_api_key != api_key:
-            logger.warning("Invalid API key attempt")
-            return {
-                "success": False,
-                "message": None,
-                "error": "Invalid API key"
-            }
-    
-    # 3. Get request_id
-    request_id = request.get("request_id")
-    if not request_id:
-        return {
-            "success": False,
-            "message": None,
-            "error": "Missing request_id"
-        }
-    
-    # 4. Start processing (async)
-    connector = PlatformConnector()
-    result = connector.start_request(request_id)
-    
-    return {
-        "success": result.success,
-        "message": result.message,
-        "error": result.error,
-    }
-
-    
-    # 2. Get request_id
-    request_id = request.get("request_id")
-    if not request_id:
-        return {
-            "success": False,
-            "message": None,
-            "error": "Missing request_id"
-        }
-    
-    # 3. Start processing (async)
-    connector = PlatformConnector()
-    result = connector.start_request(request_id)
-    
-    return {
-        "success": result.success,
-        "message": result.message,
-        "error": result.error,
-    }
-```
+- `cmw_api_key: str` - mandatory in .env (empty = skip auth, present = require it)
+- Added to settings.py with `validate_default=True`
+- If not present in .env → fails on startup (ValidationError)
 
 ---
 
-## Implementation Order
+## Tests
 
-1. **Add tests first** (they define expected behavior)  
-   - Test `PlatformConnector.start_request()` with mocked records  
-   - Integration test with real platform connection (config in `.env`, templates in `cmw_platform.yaml`)  
-   - Use `rag_engine/cmw_platform/records.py::list_records()` to get latest request from TPAIModel  
-   - Or hardcode `322919` for quick validation  
-
-2. **Create `rag_engine/cmw_platform/connector.py`**  
-   - Wrap reference logic in `PlatformConnector` class  
-   - Keep it minimal — delegate to existing modules  
-   - Use threading for fire-and-forget async execution  
-
-3. **Add API endpoint in `rag_engine/api/app.py`**  
-   - Use FastAPI (built into Gradio)  
-   - Add simple API key validation  
-   - Return success immediately after starting agent  
-
-4. **Keep reference implementation**  
-   - `rag_engine/scripts/process_cmw_record.py` stays as comparison baseline  
-
----
-
-## Cleanup Checklist
-
-- [ ] KEEP `rag_engine/scripts/process_cmw_record.py` as reference
-- [ ] Add `cmw_api_key: str | None = None` to `rag_engine/config/settings.py` (CMW Platform section, mandatory in .env but can be empty to skip auth)
-- [ ] Add `CMW_API_KEY=` to `.env-example` (mandatory in .env, empty = skip auth, filled = use it)
-- [ ] Generate key with `python -c "import secrets; print(secrets.token_hex(32))"` and add to actual `.env` (NEVER commit .env)
-- [ ] Ensure all imports in `rag_engine/cmw_platform/__init__.py` are correct
-- [ ] Verify no circular dependencies between `api.app` and `cmw_platform.connector`
+All 23 tests pass:
+- 14 existing tests
+- 9 new tests for PlatformConnector and auth logic
 
 ---
 
 ## Validation
 
-After implementation, the endpoint should:
-- Accept `{"request_id": "322919"}` via POST with optional `X-API-Key` header (if configured)
-- Return `{"success": true, "message": "Request fetched, agent started", "error": null}`
-- Start agent in background after fetching the request record
-- Create linked record in `agent_responses` template asynchronously
-- Log all pipeline steps using existing logging engine
-- Tests cover: valid request, missing request_id, invalid API key
+The endpoint:
+- ✅ Accepts `{"request_id": "322919"}` via POST with optional `X-API-Key` header
+- ✅ Returns `{"success": true, "message": "Request fetched, agent started", "error": null}`
+- ✅ Starts agent in background after fetching the request record
+- ✅ Creates linked record in `agent_responses` template asynchronously
+- ✅ Logs all pipeline steps using existing logging engine
+- ✅ Tests cover: valid request, missing request_id, invalid API key
 
 ---
 

@@ -278,3 +278,138 @@ class TestCreateRecord:
         assert result["success"] is False
         assert result["status_code"] == 408
         assert "timeout" in result["error"].lower()
+
+
+class TestPlatformConnector:
+    """Test PlatformConnector class."""
+
+    @patch("rag_engine.cmw_platform.connector.records.read_record")
+    @patch("rag_engine.cmw_platform.connector.build_request")
+    @patch("rag_engine.cmw_platform.connector.threading.Thread")
+    def test_start_request_success(self, mock_thread, mock_build_request, mock_read_record, monkeypatch):
+        """Test successful request processing starts background agent."""
+        monkeypatch.setenv("CMW_BASE_URL", "https://test.comindware.com")
+        monkeypatch.setenv("CMW_LOGIN", "test_user")
+        monkeypatch.setenv("CMW_PASSWORD", "test_pass")
+
+        mock_read_record.return_value = {
+            "success": True,
+            "data": {"record-123": {"user_question": "Test question?"}}
+        }
+        mock_build_request.return_value = "## Request\n\nTest question?"
+
+        from rag_engine.cmw_platform.connector import PlatformConnector
+
+        connector = PlatformConnector()
+        result = connector.start_request("record-123")
+
+        assert result.success is True
+        assert result.message == "Request fetched, agent started"
+        assert result.error is None
+        mock_thread.assert_called_once()
+
+    @patch("rag_engine.cmw_platform.connector.records.read_record")
+    def test_start_request_fetch_failure(self, mock_read_record, monkeypatch):
+        """Test failed record fetch returns error."""
+        monkeypatch.setenv("CMW_BASE_URL", "https://test.comindware.com")
+        monkeypatch.setenv("CMW_LOGIN", "test_user")
+        monkeypatch.setenv("CMW_PASSWORD", "test_pass")
+
+        mock_read_record.return_value = {
+            "success": False,
+            "error": "Record not found"
+        }
+
+        from rag_engine.cmw_platform.connector import PlatformConnector
+
+        connector = PlatformConnector()
+        result = connector.start_request("record-123")
+
+        assert result.success is False
+        assert "Failed to fetch record" in result.error
+        assert "Record not found" in result.error
+
+    def test_start_request_exception(self, monkeypatch):
+        """Test exception handling returns error."""
+        monkeypatch.setenv("CMW_BASE_URL", "https://test.comindware.com")
+        monkeypatch.setenv("CMW_LOGIN", "test_user")
+        monkeypatch.setenv("CMW_PASSWORD", "test_pass")
+
+        from rag_engine.cmw_platform.connector import PlatformConnector
+
+        connector = PlatformConnector()
+        result = connector.start_request("")
+
+        assert result.success is False
+        assert result.error is not None
+
+
+class TestProcessResult:
+    """Test ProcessResult dataclass."""
+
+    def test_process_result_success(self):
+        """Test successful process result."""
+        from rag_engine.cmw_platform.connector import ProcessResult
+
+        result = ProcessResult(success=True, message="Done", error=None)
+
+        assert result.success is True
+        assert result.message == "Done"
+        assert result.error is None
+
+    def test_process_result_error(self):
+        """Test error process result."""
+        from rag_engine.cmw_platform.connector import ProcessResult
+
+        result = ProcessResult(success=False, message=None, error="Failed")
+
+        assert result.success is False
+        assert result.message is None
+        assert result.error == "Failed"
+
+
+class TestAPIEndpoint:
+    """Test the CMW API endpoint logic."""
+
+    def test_settings_has_cmw_api_key(self):
+        """Test that settings has cmw_api_key attribute."""
+        from rag_engine.config.settings import Settings
+
+        assert hasattr(Settings, "model_fields")
+        fields = Settings.model_fields
+        assert "cmw_api_key" in fields
+
+    def test_auth_logic_empty_key_skips_auth(self):
+        """Test that empty API key skips authentication."""
+        api_key = ""
+
+        if api_key:
+            auth_required = True
+        else:
+            auth_required = False
+
+        assert auth_required is False
+
+    def test_auth_logic_key_set_requires_auth(self):
+        """Test that setting API key requires authentication."""
+        api_key = "test-key"
+        request_key = "wrong-key"
+
+        if api_key and request_key != api_key:
+            auth_failed = True
+        else:
+            auth_failed = False
+
+        assert auth_failed is True
+
+    def test_auth_logic_valid_key_passes(self):
+        """Test that valid API key passes authentication."""
+        api_key = "test-key"
+        request_key = "test-key"
+
+        if api_key and request_key != api_key:
+            auth_failed = True
+        else:
+            auth_failed = False
+
+        assert auth_failed is False

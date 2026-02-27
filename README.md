@@ -360,6 +360,33 @@ Environment-driven behavior:
 }
 ```
 
+### CMW Platform Integration
+
+Process support requests from CMW Platform:
+
+```bash
+curl -X POST http://localhost:7862/api/v1/cmw/process-support-request \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{"request_id": "322919"}'
+```
+
+**Endpoint**: `POST /api/v1/cmw/process-support-request`
+
+**Authentication**: Set `CMW_API_KEY` in `.env` (empty = no auth, present = require `X-API-Key` header)
+
+**Request Body**:
+- `request_id` (string, required): TPAIModel record ID
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Request fetched, agent started",
+  "error": null
+}
+```
+
 ## Configuration
 
 All configuration is managed through environment variables. Copy `.env-example` to `.env` and configure your settings:
