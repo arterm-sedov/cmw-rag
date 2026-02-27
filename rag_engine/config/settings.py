@@ -106,6 +106,9 @@ class Settings(BaseSettings):
     # Optional overrides for model config (if set, overrides model_configs.py values)
     llm_token_limit: int | None = None  # Optional override for token_limit from model config
 
+    # LangChain Configuration
+    langchain_recursion_limit: int = 100  # Max steps for LangGraph StateGraph
+
     # Fallback and summarization
     llm_fallback_enabled: bool
     llm_fallback_provider: str | None = None

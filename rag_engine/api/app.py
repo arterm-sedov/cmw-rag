@@ -1352,9 +1352,12 @@ async def agent_chat_handler(
         stream_chunk_count = 0
         tool_calls_detected_in_stream = False
 
+        # Increase recursion limit for complex conversations to avoid GRAPH_RECURSION_LIMIT errors
+        agent_config = {"recursion_limit": settings.langchain_recursion_limit}
+
         try:
             async for stream_mode, chunk in agent.astream(
-                {"messages": messages}, context=agent_context, stream_mode=["updates", "messages"]
+                {"messages": messages}, context=agent_context, config=agent_config, stream_mode=["updates", "messages"]
             ):
                 # Check for cancellation at each iteration
                 if is_cancelled():
@@ -2877,9 +2880,23 @@ async def ask_comindware_structured(
             action="proceed",
         )
 
+    # Calculate answer confidence from rerank scores if articles available
+    answer_confidence = None
+    if context.final_articles:
+        scores = []
+        for article in context.final_articles:
+            metadata = article.get('metadata', {})
+            rerank_score = metadata.get('rerank_score')
+            if rerank_score is not None:
+                scores.append(rerank_score)
+        if scores:
+            answer_confidence = sum(scores) / len(scores)
+
     return StructuredAgentResult(
         plan=plan,
         resolution_plan=getattr(context, 'resolution_plan', None),
+        executed_queries=getattr(context, 'executed_queries', []),
+        answer_confidence=answer_confidence,
         per_query_results=context.query_traces if include_per_query_trace else [],
         final_articles=context.final_articles,
         answer_text=context.final_answer,

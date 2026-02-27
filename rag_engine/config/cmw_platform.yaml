@@ -16,14 +16,14 @@ pipeline:
 
   # Request builder: how to combine fields into markdown
   request_template: |
+    ---
+    - product version: {version}
+    - user browser: {browser}
+    ---
+
     # {title}
 
     {question}
-
-    ---
-    Metadata:
-    - Version: {version}
-    - Browser: {browser}
 
   # Output: template to create response in
   output:
@@ -50,6 +50,10 @@ templates:
           type: record
           reference_to: TPAIModel
           from_agent: _input_record_id
+
+        question_for_agent:
+          type: text
+          from_agent: _question_for_agent_from_md
 
         confidence:
           type: decimal

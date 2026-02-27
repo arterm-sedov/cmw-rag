@@ -99,5 +99,5 @@ def coerce_attribute_value(
     if not attr:
         return str(value) if value is not None else None
 
-    result = coerce_value(attr.type, value, attr.is_multivalue)
+    result = coerce_value(attr.type, value, attr.is_multivalue, attribute)
     return result.value if result.success else value

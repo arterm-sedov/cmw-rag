@@ -4,9 +4,73 @@ from typing import Any
 from rag_engine.cmw_platform import config
 
 import markdown2
+from markdownify import markdownify as html_to_markdown
+
+
+def convert_html_to_markdown(html_text: str) -> str:
+    """Convert HTML to Markdown using markdownify.
+    
+    Args:
+        html_text: HTML string from CMW Platform
+        
+    Returns:
+        Markdown formatted string
+    """
+    if not html_text:
+        return ""
+    return html_to_markdown(html_text)
 
 
 def convert_markdown_to_html(md_text: str) -> str:
+    """Convert Markdown to clean HTML for CMW Platform.
+
+    CMW Platform ignores most HTML attributes and only renders basic tags.
+    """
+    if not md_text:
+        return ""
+
+    extras = [
+        "tables",
+        "fenced-code-blocks",
+        "break-on-newline",
+        "cuddled-lists",
+        "strike",
+        "code-friendly",
+    ]
+
+    return markdown2.markdown(md_text, extras=extras)
+
+
+def build_question_for_agent(agent_result: Any, input_record_data: dict) -> str:
+    """Build the question_for_agent field with YAML frontmatter and converted question.
+    
+    Args:
+        agent_result: StructuredAgentResult from agent
+        input_record_data: Raw input record data from CMW Platform
+        
+    Returns:
+        Formatted string with YAML frontmatter and markdown question
+    """
+    # Get metadata from input record
+    version = input_record_data.get('version', '')
+    browser = input_record_data.get('browser', '')
+    title = input_record_data.get('title', '')
+    question = input_record_data.get('question', '')
+    
+    # Convert HTML to markdown
+    question_md = convert_html_to_markdown(question)
+    
+    # Build YAML frontmatter
+    frontmatter_parts = []
+    if version:
+        frontmatter_parts.append(f"- product version: {version}")
+    if browser:
+        frontmatter_parts.append(f"- user browser: {browser}")
+    
+    frontmatter = "---\n" + "\n".join(frontmatter_parts) + "\n---\n"
+    
+    # Build final output
+    return f"{frontmatter}\n# {title}\n\n{question_md}"
     """Convert Markdown to clean HTML for CMW Platform.
 
     CMW Platform ignores most HTML attributes and only renders basic tags.
@@ -154,6 +218,22 @@ def get_nested_value(obj: Any, path: str) -> Any:
         answer_text = getattr(obj, 'answer_text', '')
         return convert_markdown_to_html(answer_text)
 
+    # Special handler for building question_for_agent - needs both agent_result and input_record_data
+    if path == "_build_question_for_agent":
+        from rag_engine.cmw_platform.mapping import build_question_for_agent
+        # obj here is actually a tuple (agent_result, input_record_data)
+        if isinstance(obj, tuple) and len(obj) == 2:
+            agent_result, input_record_data = obj
+            return build_question_for_agent(agent_result, input_record_data)
+        return ""
+
+    # Handle special cases
+    if path == "_input_record_id":
+        # If obj is a tuple, return the input record ID from second element
+        if isinstance(obj, tuple) and len(obj) == 2:
+            return obj[1].get('id') if isinstance(obj[1], dict) else None
+        return obj
+
     # Handle array to HTML conversion - use field name suffix
     # Must check for _ordered_html BEFORE _as_html since it's longer
     if path.endswith("_ordered_html"):
@@ -171,10 +251,6 @@ def get_nested_value(obj: Any, path: str) -> Any:
         value = get_nested_value(obj, field_name)
         return convert_array_to_html_list(value, ordered=False)
 
-    # Handle special cases
-    if path == "_input_record_id":
-        return obj
-
     # Regular dot notation traversal
     parts = path.split(".")
     current = obj
@@ -191,17 +267,20 @@ def get_nested_value(obj: Any, path: str) -> Any:
     return current
 
 
-def extract_value(agent_result: Any, from_agent: str) -> Any:
+def extract_value(agent_result: Any, from_agent: str, input_record_data: dict | None = None) -> Any:
     """Extract a value from agent result using the from_agent path.
 
     Args:
         agent_result: The StructuredAgentResult from the agent
         from_agent: The path to extract (e.g., "plan.user_intent", "len(final_articles)")
+        input_record_data: Optional input record data for special handlers
 
     Returns:
         The extracted value
     """
-    return get_nested_value(agent_result, from_agent)
+    # Pass tuple for special handlers that need both
+    obj = (agent_result, input_record_data) if input_record_data else agent_result
+    return get_nested_value(obj, from_agent)
 
 
 def serialize_value(value: Any, attr_type: str) -> Any:
@@ -256,6 +335,7 @@ def map_agent_response(
     agent_result: Any,
     input_record_id: str,
     attributes: dict[str, Any],
+    md_request: str | None = None,
 ) -> dict[str, Any]:
     """Map agent response to CMW Platform attributes.
 
@@ -263,6 +343,7 @@ def map_agent_response(
         agent_result: The StructuredAgentResult from the agent
         input_record_id: The ID of the input record (for link field)
         attributes: Dictionary of attribute configs with from_agent mappings
+        md_request: The markdown request that was sent to the agent (for question_for_agent)
 
     Returns:
         Dictionary of mapped values ready for CMW Platform
@@ -281,8 +362,13 @@ def map_agent_response(
         if from_agent is None:
             continue
 
+        # For question_for_agent, use md_request directly
+        if from_agent == "_question_for_agent_from_md" and md_request:
+            result[attr_name] = md_request
+            continue
+
         # Extract value from agent result
-        value = extract_value(agent_result, from_agent)
+        value = extract_value(agent_result, from_agent, None)
 
         # Serialize based on type
         serialized = serialize_value(value, attr_type)
