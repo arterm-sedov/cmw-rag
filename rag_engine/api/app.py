@@ -3461,50 +3461,29 @@ with gr.Blocks(
         api_description="Ask questions about Comindware Platform documentation and get intelligent answers with citations. The assistant automatically searches the knowledge base to find relevant articles and provides comprehensive answers based on official documentation. Use this for technical questions, configuration help, API usage, troubleshooting, and general platform guidance.",
     )
 
-    # Explicitly set a plain attribute for tests and downstream code to read
     demo.title = "Comindware Platform Documentation Assistant"
 
-    # Add CMW Platform API endpoint using FastAPI routes
-    # Gradio exposes the underlying FastAPI app at demo.app
-    from fastapi import APIRouter, HTTPException, Request
-    from pydantic import BaseModel
+    # CMW Platform API endpoint - works with both direct REST and Gradio API calls
+    def cmw_process_support_request(request_id: str | dict, request: gr.Request) -> dict:
+        """Process CMW Platform support request via API."""
+        # Handle Gradio API dict format
+        if isinstance(request_id, dict):
+            request_id = request_id.get("request_id")
 
-    cmw_router = APIRouter(prefix="/api/v1/cmw", tags=["cmw_platform"])
-
-    class ProcessSupportRequest(BaseModel):
-        request_id: str
-
-    @cmw_router.post("/process-support-request")
-    def process_support_request(
-        request_body: ProcessSupportRequest,
-        request: Request,
-    ) -> dict:
-        """Process a CMW Platform support request.
-
-        Expects: {"request_id": "123456"}
-        Returns: {"success": true, "message": "Request fetched, agent started", "error": null}
-
-        Note: This is a fire-and-forget endpoint. The agent runs asynchronously
-        and creates the linked response record in the background.
-
-        Authentication: CMW_API_KEY must be present in .env (empty = no auth, present = require it)
-        """
-        api_key = settings.cmw_api_key
-
-        if api_key:
-            request_api_key = request.headers.get("X-API-Key")
-            if request_api_key != api_key:
-                logger.warning("Invalid API key attempt to CMW endpoint")
-                raise HTTPException(status_code=401, detail="Invalid API key")
-
-        request_id = request_body.request_id
         if not request_id:
-            raise HTTPException(status_code=400, detail="Missing request_id")
+            return {"success": False, "message": None, "error": "Missing request_id"}
+
+        # API key authentication
+        if settings.cmw_api_key:
+            provided_key = request.headers.get("X-API-Key")
+            if provided_key != settings.cmw_api_key:
+                logger.warning("Invalid API key attempt to CMW endpoint")
+                return {"success": False, "message": None, "error": "Invalid API key"}
 
         from rag_engine.cmw_platform.connector import PlatformConnector
 
         connector = PlatformConnector()
-        result = connector.start_request(request_id)
+        result = connector.start_request(str(request_id))
 
         return {
             "success": result.success,
@@ -3512,11 +3491,7 @@ with gr.Blocks(
             "error": result.error,
         }
 
-    demo_app = getattr(demo, "app", None)
-    if demo_app:
-        demo_app.include_router(cmw_router)
-    else:
-        logger.warning("Could not add CMW API endpoint: demo.app not available")
+    # Note: FastAPI endpoint at /api/v1/cmw/process-support-request (see below)
 
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
@@ -3533,18 +3508,38 @@ if __name__ == "__main__":
             "Share link enabled. If share link creation fails, the app will still run locally."
         )
 
-    # Configure queue with default concurrency limit per Gradio queuing best practices
-    # https://www.gradio.app/guides/queuing
-    # This sets the default for all event listeners unless overridden
+    # Configure queue
     demo.queue(
         default_concurrency_limit=settings.gradio_default_concurrency_limit,
         status_update_rate="auto",
-    ).launch(
-        server_name=settings.gradio_server_name,
-        server_port=settings.gradio_server_port,
-        share=settings.gradio_share,
+    )
+
+    # Build FastAPI app with CMW Platform endpoint
+    from fastapi import FastAPI, Request
+    from pydantic import BaseModel
+    from gradio import mount_gradio_app
+
+    fastapi_app = FastAPI(title="CMW RAG API")
+
+    class ProcessSupportRequest(BaseModel):
+        request_id: str
+
+    @fastapi_app.post("/api/v1/cmw/process-support-request")
+    async def cmw_endpoint(req: ProcessSupportRequest, http_req: Request) -> dict:
+        """Process CMW Platform support request via REST API."""
+        return cmw_process_support_request(req.request_id, http_req)
+
+    # Mount Gradio with all options including MCP
+    app = mount_gradio_app(
+        fastapi_app,
+        demo,
+        path="/",
         mcp_server=True,
         footer_links=["api"],
         theme=gr.themes.Soft(),
         css_paths=[css_file_path] if css_file_path.exists() else [],
+        allowed_paths=[str(css_file_path.parent)] if css_file_path.exists() else None,
     )
+
+    import uvicorn
+    uvicorn.run(app, host=settings.gradio_server_name, port=settings.gradio_server_port)
