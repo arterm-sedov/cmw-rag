@@ -23,10 +23,12 @@ Implemented production-ready API endpoint for CMW Platform to process support re
 
 ### 2. API Endpoint (`rag_engine/api/app.py`)
 
-- FastAPI route via Gradio's underlying `demo.app`
+- FastAPI endpoint via `mount_gradio_app` (Gradio 6 pattern)
 - `POST /api/v1/cmw/process-support-request`
-- Request model: `{"request_id": "string"}`
-- Auth via `X-API-Key` header
+- Request: `{"request_id": "string"}`
+- Auth via `X-API-Key` header (optional)
+- MCP server preserved
+- All Gradio features preserved (theme, footer_links, css_paths)
 
 ### 3. Settings
 
@@ -59,7 +61,7 @@ Response: {"success": true, "message": "Request fetched, agent started", "error"
 | `rag_engine/config/settings.py` | Added `cmw_api_key` |
 | `rag_engine/cmw_platform/connector.py` | NEW |
 | `rag_engine/cmw_platform/__init__.py` | Added exports |
-| `rag_engine/api/app.py` | Added endpoint |
+| `rag_engine/api/app.py` | Added endpoint via mount_gradio_app |
 | `.env` | Added `CMW_API_KEY=` |
 | `.env-example` | Added `CMW_API_KEY=` |
 | `rag_engine/tests/test_cmw_platform.py` | Added 9 tests |
