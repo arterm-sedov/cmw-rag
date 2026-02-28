@@ -1,0 +1,162 @@
+# =============================================================================
+# Anonymization Pipeline Configuration
+# =============================================================================
+# Unified entity list for 3-stage cascade:
+# - Stage 1: Regex (deterministic patterns)
+# - Stage 2: Gherman (Russian NER)
+# - Stage 3: EU-PII-Safeguard (multilingual NER)
+#
+# All entities are mapped to unified names regardless of source model.
+# Non-sensitive entities are commented out but listed for completeness.
+# =============================================================================
+
+# Pipeline settings
+pipeline:
+  enabled: false
+  mode: "cascade"  # cascade: Regex → Gherman → EU-PII
+  placeholder_format: "semantic"  # "Person A", "Email B", etc.
+  merge_adjacent_entities: true
+  handle_unicode_dashes: true
+
+# =============================================================================
+# UNIFIED ENTITY LIST
+# =============================================================================
+# Entities from all stages are normalized to these unified names.
+# Comment/uncomment to enable/disable specific entity types.
+# =============================================================================
+
+entities:
+  # ---------------------------------------------------------------------------
+  # CONTACT INFO (always sensitive)
+  # ---------------------------------------------------------------------------
+  - PHONE      # Phone numbers (+7-XXX, 8-XXX, international)
+  - EMAIL      # Email addresses
+
+  # ---------------------------------------------------------------------------
+  # PERSONAL IDENTITY (always sensitive)
+  # ---------------------------------------------------------------------------
+  - PERSON     # Names (FIRST_NAME, LAST_NAME, MIDDLE_NAME from NER)
+  - PASSPORT   # Russian passport (XX XX XXXXXX)
+  - SNILS      # Russian insurance number (XXX-XXX-XXX XX)
+  - INN        # Russian tax ID (10/12 digits)
+
+  # ---------------------------------------------------------------------------
+  # LOCATION (context-dependent sensitivity)
+  # ---------------------------------------------------------------------------
+  - ADDRESS    # Full address, building number
+  - CITY       # City names
+  - STREET     # Street names
+  - REGION     # Region/State
+  - COUNTRY    # Country names
+  - POSTAL_CODE  # Postal/ZIP codes - often not sensitive
+
+  # ---------------------------------------------------------------------------
+  # CORPORATE / ORGANIZATIONAL
+  # ---------------------------------------------------------------------------
+  - ORGANIZATION  # Company names (ORGANIZATION from NER)
+  - OGRN       # Primary state registration number (13/15 digits)
+  - KPP        # Tax registration reason code (9 digits)
+  - BIC        # Bank identifier code (9 digits, starts with 04)
+  - BANK_ACCOUNT    # Bank account numbers (20 digits)
+  - OKPO    # OKPO codes - rarely needed
+  - OKVED    # OKVED codes - rarely needed
+
+  # ---------------------------------------------------------------------------
+  # VEHICLES
+  # ---------------------------------------------------------------------------
+  - CAR_NUMBER # Russian license plates (А777АА77)
+  - VIN        # Vehicle identification number (17 chars)
+
+  # ---------------------------------------------------------------------------
+  # SENSITIVE / CREDENTIALS (always sensitive)
+  # ---------------------------------------------------------------------------
+  - PASSWORD   # Password patterns
+  - LOGIN      # Login/username patterns
+  - API_KEY    # API keys
+  - INTERNAL_URL    # Internal network URLs
+  - CREDIT_CARD     # Credit card numbers
+
+  # ---------------------------------------------------------------------------
+  # OPTIONAL / CONTEXT-DEPENDENT (uncommented for better testing visibility)
+  # ---------------------------------------------------------------------------
+  - JOB_TITLE     # Job titles - not confidential for support requests
+  - AGE           # Age mentions - not typically confidential
+  - DATE_TIME     # Dates - not sensitive, hurts LLM context
+  - URL           # General URLs - usually not sensitive
+  - IP_ADDRESS    # IP addresses - context-dependent
+
+  # ---------------------------------------------------------------------------
+  # ADDITIONAL RUSSIAN IDS (uncommented for better testing visibility)
+  # ---------------------------------------------------------------------------
+  - DRIVER_LICENSE   # Driver's license number
+  - OMS_POLICY       # Medical insurance policy
+  - BIRTH_CERT       # Birth certificate number
+  - MILITARY_ID      # Military ID
+
+# =============================================================================
+# STAGE-SPECIFIC ENTITY MAPPINGS
+# =============================================================================
+# Maps model-specific entity types to unified entity names above.
+# Used internally by the pipeline for normalization.
+# =============================================================================
+
+entity_mappings:
+  # Regex patterns (Stage 1) - direct mapping
+  regex:
+    PHONE: PHONE
+    EMAIL: EMAIL
+    PASSPORT: PASSPORT
+    SNILS: SNILS
+    INN: INN
+    OGRN: OGRN
+    KPP: KPP
+    BIC: BIC
+    BANK_ACCOUNT: BANK_ACCOUNT
+    CAR_NUMBER: CAR_NUMBER
+    VIN: VIN
+    PASSWORD: PASSWORD
+    LOGIN: LOGIN
+    API_KEY: API_KEY
+    INTERNAL_URL: INTERNAL_URL
+    AGE: AGE
+    OKPO: OKPO
+    OKVED: OKVED
+    OMS_POLICY: OMS_POLICY
+    BIRTH_CERT: BIRTH_CERT
+    MILITARY_ID: MILITARY_ID
+    DRIVER_LICENSE: DRIVER_LICENSE
+    CREDIT_CARD: CREDIT_CARD
+    POSTAL_CODE: POSTAL_CODE
+    DATE_TIME: DATE_TIME
+    URL: URL
+    IP_ADDRESS: IP_ADDRESS
+
+  # Gherman/bert-base-NER-Russian (Stage 2)
+  gherman:
+    FIRST_NAME: PERSON
+    LAST_NAME: PERSON
+    MIDDLE_NAME: PERSON
+    PERSON: PERSON
+    ORGANIZATION: ORGANIZATION
+    CITY: CITY
+    STREET: STREET
+    REGION: REGION
+    HOUSE: ADDRESS
+    ADDRESS: ADDRESS
+
+  # EU-PII-Safeguard (Stage 3)
+  eu_pii:
+    FIRSTNAME: PERSON
+    LASTNAME: PERSON
+    MIDDLENAME: PERSON
+    COMPANY_NAME: ORGANIZATION
+    EMAIL: EMAIL
+    PHONE_NUMBER: PHONE
+    ADDRESS: ADDRESS
+    CITY: CITY
+    STREET: STREET
+    BUILDING_NUMBER: ADDRESS
+    POSTAL_CODE: POSTAL_CODE
+    COUNTRY: COUNTRY
+    STATE: REGION
+    JOB_TITLE: JOB_TITLE

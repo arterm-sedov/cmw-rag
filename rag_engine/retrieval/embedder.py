@@ -2,26 +2,21 @@
 
 Supports three provider types:
 1. Direct: sentence-transformers (FRIDA)
-2. Server: Infinity HTTP API (FRIDA, Qwen3)
-3. API: OpenRouter cloud API (Qwen3)
+2. OpenAI-compatible: Infinity, Mosec, OpenRouter HTTP APIs
 """
 
 from __future__ import annotations
 
 import logging
-import os
 import threading
-from typing import Optional, Protocol
+from typing import Protocol
 
+import requests
 from openai import OpenAI
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 from rag_engine.config.schemas import (
-    ApiEmbeddingConfig,
-    DirectEmbeddingConfig,
     ModelRegistry,
-    ServerEmbeddingConfig,
+    OpenAIEmbeddingConfig,
 )
 from rag_engine.utils.device_utils import detect_device
 from rag_engine.utils.disk_space import check_disk_space_available, get_huggingface_cache_dir
@@ -38,7 +33,7 @@ _frida_init_lock = threading.Lock()
 class Embedder(Protocol):
     """Unified interface for all embedding providers."""
 
-    def embed_query(self, query: str, instruction: Optional[str] = None) -> list[float]:
+    def embed_query(self, query: str, instruction: str | None = None) -> list[float]:
         """
         Embed a single query.
 
@@ -141,7 +136,7 @@ class FRIDAEmbedder:
             else:
                 raise
 
-    def embed_query(self, query: str, instruction: Optional[str] = None) -> list[float]:
+    def embed_query(self, query: str, instruction: str | None = None) -> list[float]:
         """Embed a search query using search_query prefix."""
         if instruction:
             logger.warning("FRIDA doesn't support dynamic instructions, ignoring")
@@ -168,140 +163,275 @@ class FRIDAEmbedder:
 
     def get_embedding_dim(self) -> int:
         """Get embedding dimension."""
-        return self.model.get_sentence_embedding_dimension()
+        dim: int = self.model.get_sentence_embedding_dimension() or 0
+        if dim == 0:
+            raise RuntimeError("Could not determine embedding dimension")
+        return dim
 
 
-class HTTPClientMixin:
-    """Mixin providing resilient HTTP client with retries and timeouts."""
+class Qwen3DirectEmbedder:
+    """Qwen3 embeddings via HuggingFace transformers (Direct GPU).
 
-    def __init__(self, endpoint: str, timeout: float = 60.0, max_retries: int = 3):
-        self.endpoint = endpoint
-        self.timeout = timeout
+    Uses AutoModel/AutoTokenizer with last-token pooling.
+    Supports instruction-based query formatting.
+    """
 
-        # Setup session with retry strategy
-        import requests
+    def __init__(
+        self,
+        model_name: str,
+        device: str = "auto",
+        max_seq_length: int = 8192,
+        default_instruction: str | None = None,
+    ):
+        """Initialize Qwen3 embedder.
 
-        self.session = requests.Session()
-        retry_strategy = Retry(
-            total=max_retries,
-            backoff_factor=1,  # 1s, 2s, 4s between retries
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["POST", "GET"],
+        Args:
+            model_name: HuggingFace model path (e.g., "Qwen/Qwen3-Embedding-0.6B")
+            device: Device to run on ('auto', 'cpu', 'cuda')
+            max_seq_length: Maximum sequence length
+            default_instruction: Default instruction for query formatting
+        """
+        # Lazy imports to avoid heavy dependencies when not needed
+        import torch
+        from transformers import AutoModel, AutoTokenizer
+
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        self.device = device
+        self.max_seq_length = max_seq_length
+        self.default_instruction = default_instruction
+
+        logger.info(f"Loading Qwen3 embedder: {model_name} on {device}")
+
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            trust_remote_code=True,
         )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
+        self.model = AutoModel.from_pretrained(
+            model_name,
+            trust_remote_code=True,
+            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        ).to(device)
+        self.model.eval()
 
-    def _post(self, path: str, json_data: dict) -> dict:
-        """Make POST request with error handling."""
-        import requests
+        logger.info(f"Qwen3 embedder loaded. Dimension: {self.get_embedding_dim()}")
 
-        url = f"{self.endpoint}{path}"
-        try:
-            response = self.session.post(url, json=json_data, timeout=self.timeout)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.Timeout:
-            logger.error(f"Request to {url} timed out after {self.timeout}s")
-            raise RuntimeError(f"Server at {url} not responding")
-        except requests.exceptions.ConnectionError:
-            logger.error(f"Cannot connect to {url}")
-            raise RuntimeError(f"Server at {url} is not running")
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"HTTP error from {url}: {e.response.status_code} - {e.response.text}")
-            raise RuntimeError(f"Server returned error: {e.response.status_code}")
-        except Exception as e:
-            logger.error(f"Unexpected error calling {url}: {e}")
-            raise
-
-
-class InfinityEmbedder(HTTPClientMixin):
-    """FRIDA/Qwen3 via Infinity HTTP server."""
-
-    def __init__(self, config: ServerEmbeddingConfig):
-        super().__init__(
-            endpoint=config.endpoint,
-            timeout=60.0,
-            max_retries=3,
-        )
-        self.query_prefix = config.query_prefix
-        self.doc_prefix = config.doc_prefix
-        self.default_instruction = config.default_instruction
-
-    def embed_query(self, query: str, instruction: Optional[str] = None) -> list[float]:
-        if self.default_instruction:
-            # Qwen3 format
+    def _format_query(self, query: str, instruction: str | None = None) -> str:
+        """Format query with instruction."""
+        if self.default_instruction or instruction:
             task = instruction or self.default_instruction
-            formatted = f"Instruct: {task}\nQuery: {query}"
-        else:
-            # FRIDA format
+            return f"Instruct: {task}\nQuery: {query}"
+        return query
+
+    def _compute_embedding(self, text: str) -> list[float]:
+        """Compute embedding for single text."""
+        import torch
+
+        # Tokenize
+        inputs = self.tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=self.max_seq_length,
+        ).to(self.device)
+
+        # Forward pass
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+            hidden_states = outputs.last_hidden_state
+
+            # Last-token pooling (Qwen3 uses this)
+            attention_mask = inputs["attention_mask"]
+            sequence_lengths = attention_mask.sum(dim=1) - 1
+            last_idx = sequence_lengths[0].item()
+            embedding = hidden_states[0, last_idx, :]
+
+            # Normalize
+            embedding = torch.nn.functional.normalize(embedding, p=2, dim=0)
+
+        return embedding.cpu().numpy().tolist()
+
+    def embed_query(self, query: str, instruction: str | None = None) -> list[float]:
+        """Embed a search query with instruction formatting."""
+        formatted = self._format_query(query, instruction)
+        return self._compute_embedding(formatted)
+
+    def embed_documents(
+        self, texts: list[str], batch_size: int = 8, show_progress: bool = True
+    ) -> list[list[float]]:
+        """Embed multiple documents (no instruction formatting)."""
+        embeddings = []
+        for i, text in enumerate(texts):
+            embeddings.append(self._compute_embedding(text))
+            if show_progress and (i + 1) % 10 == 0:
+                logger.debug(f"Embedded {i + 1}/{len(texts)} documents")
+        return embeddings
+
+    def get_embedding_dim(self) -> int:
+        """Get embedding dimension from model config."""
+        return self.model.config.hidden_size
+
+
+class OpenAICompatibleEmbedder:
+    """Embedder for OpenAI-compatible APIs.
+
+    Uses direct HTTP for local providers (3x faster).
+    Uses OpenAI SDK for remote providers (auth + retries).
+    """
+
+    def __init__(self, config: OpenAIEmbeddingConfig):
+        self.config = config
+        self._client: OpenAI | None = None  # Lazy load for remote only
+
+    @property
+    def client(self) -> OpenAI:
+        """Lazy-load OpenAI client for remote providers."""
+        if self._client is None:
+            self._client = OpenAI(
+                base_url=self.config.endpoint,
+                api_key=self.config.api_key,
+                timeout=self.config.timeout,
+                max_retries=self.config.max_retries,
+            )
+        return self._client
+
+    def _format_query(self, query: str, instruction: str | None = None) -> str:
+        """Format query based on model type."""
+        if self.config.query_prefix:
             if instruction:
                 logger.warning("FRIDA doesn't support dynamic instructions, ignoring")
-            formatted = f"{self.query_prefix}{query}"
+            return f"{self.config.query_prefix}{query}"
+        elif self.config.default_instruction:
+            task = instruction or self.config.default_instruction
+            return f"Instruct: {task}\nQuery: {query}"
+        return query
 
-        response = self._post(
-            "/embeddings",
-            {"input": [formatted], "model": "auto"},  # Infinity ignores model, uses loaded model
-        )
-        return response["data"][0]["embedding"]
+    def _format_documents(self, texts: list[str]) -> list[str]:
+        """Format documents based on model type."""
+        if self.config.doc_prefix:
+            return [f"{self.config.doc_prefix}{t}" for t in texts]
+        return texts
+
+    def embed_query(self, query: str, instruction: str | None = None) -> list[float]:
+        formatted = self._format_query(query, instruction)
+        try:
+            if self.config.local:
+                return self._embed_local(formatted)
+            else:
+                return self._embed_remote(formatted)
+        except Exception as e:
+            logger.error(
+                f"Embedding error from {self.config.endpoint} (model={self.config.model}): {e}"
+            )
+            raise
 
     def embed_documents(
         self, texts: list[str], batch_size: int = 8, show_progress: bool = True
     ) -> list[list[float]]:
-        if self.default_instruction:
-            # Qwen3 - documents don't get instruction
-            formatted = texts
-        else:
-            # FRIDA - add prefixes
-            formatted = [f"{self.doc_prefix}{t}" for t in texts]
+        formatted = self._format_documents(texts)
+        try:
+            if self.config.local:
+                return self._embed_documents_local(formatted)
+            else:
+                return self._embed_documents_remote(formatted)
+        except Exception as e:
+            logger.error(
+                f"Embedding error from {self.config.endpoint} (model={self.config.model}): {e}"
+            )
+            raise
 
-        response = self._post(
-            "/embeddings",
-            {"input": formatted, "model": "auto"},
+    def _embed_local(self, text: str) -> list[float]:
+        """Direct HTTP request for local providers."""
+        resp = requests.post(
+            self.config.endpoint,
+            json={"input": text, "model": self.config.model},
+            timeout=self.config.timeout,
         )
-        return [d["embedding"] for d in response["data"]]
+        resp.raise_for_status()
+        return resp.json()["data"][0]["embedding"]
 
-    def get_embedding_dim(self) -> int:
-        """Get embedding dimension from server."""
-        # Make a test request to get dimension
-        test_embedding = self.embed_query("test")
-        return len(test_embedding)
-
-
-class OpenRouterEmbedder:
-    """Qwen3 via OpenRouter API."""
-
-    def __init__(self, config: ApiEmbeddingConfig):
-        self.client = OpenAI(
-            base_url=config.endpoint,
-            api_key=os.getenv("OPENROUTER_API_KEY", ""),
-        )
-        self.model = config.model
-        self.default_instruction = config.default_instruction
-
-    def embed_query(self, query: str, instruction: Optional[str] = None) -> list[float]:
-        # Dynamic instruction support!
-        task = instruction or self.default_instruction
-        formatted = f"Instruct: {task}\nQuery: {query}"
-        response = self.client.embeddings.create(model=self.model, input=formatted)
+    def _embed_remote(self, text: str) -> list[float]:
+        """OpenAI SDK for remote providers."""
+        response = self.client.embeddings.create(model=self.config.model, input=text)
         return response.data[0].embedding
 
-    def embed_documents(
-        self, texts: list[str], batch_size: int = 8, show_progress: bool = True
-    ) -> list[list[float]]:
-        # Documents don't get instruction
-        response = self.client.embeddings.create(model=self.model, input=texts)
-        return [d.embedding for d in response.data]
+    def _embed_documents_local(self, texts: list[str]) -> list[list[float]]:
+        """Direct HTTP for local providers with fallback to smaller batches."""
+        try:
+            logger.debug(f"Embedding {len(texts)} documents to Mosec")
+            resp = requests.post(
+                self.config.endpoint,
+                json={"input": texts, "model": self.config.model},
+                timeout=self.config.timeout,
+            )
+            if resp.status_code == 500:
+                logger.warning("Mosec 500, falling back to smaller batches")
+            else:
+                resp.raise_for_status()
+                return [d["embedding"] for d in resp.json()["data"]]
+        except requests.exceptions.HTTPError:
+            pass
+
+        logger.info("Batch embedding failed, trying in batches of 20")
+        all_embeddings = []
+        for i in range(0, len(texts), 20):
+            batch = texts[i : i + 20]
+            batch_succeeded = False
+            try:
+                resp = requests.post(
+                    self.config.endpoint,
+                    json={"input": batch, "model": self.config.model},
+                    timeout=self.config.timeout,
+                )
+                if resp.status_code == 500:
+                    logger.warning("Fallback batch 500, trying individually")
+                else:
+                    resp.raise_for_status()
+                    all_embeddings.extend([d["embedding"] for d in resp.json()["data"]])
+                    batch_succeeded = True
+            except requests.exceptions.HTTPError:
+                pass
+
+            if not batch_succeeded:
+                logger.info("Embedding individually")
+                for text in batch:
+                    resp = requests.post(
+                        self.config.endpoint,
+                        json={"input": [text], "model": self.config.model},
+                        timeout=self.config.timeout,
+                    )
+                    resp.raise_for_status()
+                    all_embeddings.append(resp.json()["data"][0]["embedding"])
+        return all_embeddings
+
+    def _embed_documents_remote(self, texts: list[str]) -> list[list[float]]:
+        """OpenAI SDK for remote providers with fallback to smaller batches."""
+        try:
+            response = self.client.embeddings.create(model=self.config.model, input=texts)
+            return [d.embedding for d in response.data]
+        except Exception:
+            logger.warning("Remote batch failed, trying in batches of 20")
+            all_embeddings = []
+            for i in range(0, len(texts), 20):
+                batch = texts[i : i + 20]
+                try:
+                    response = self.client.embeddings.create(model=self.config.model, input=batch)
+                    all_embeddings.extend([d.embedding for d in response.data])
+                except Exception:
+                    logger.info("Remote batch failed, embedding individually")
+                    for text in batch:
+                        response = self.client.embeddings.create(model=self.config.model, input=[text])
+                        all_embeddings.append(response.data[0].embedding)
+            return all_embeddings
 
     def get_embedding_dim(self) -> int:
-        """Get embedding dimension from API."""
-        # Make a test request to get dimension
-        test_embedding = self.embed_query("test")
-        return len(test_embedding)
+        """Return dimension from config (no test request)."""
+        return self.config.dimensions
 
 
 def create_embedder(settings) -> Embedder:
-    """Factory creates appropriate embedder based on model slug and provider type.
+    """Factory creates embedder from .env + models.yaml.
 
     Args:
         settings: Application settings with embedding_provider_type and embedding_model fields
@@ -321,53 +451,74 @@ def create_embedder(settings) -> Embedder:
     registry = ModelRegistry()
     model_data = registry.get_model(model_slug)
     canonical_slug = model_data["canonical_slug"]
+    dimensions_raw = model_data.get("dimensions")
+    assert dimensions_raw is not None, f"Missing dimensions for model: {model_slug}"
+    dimensions: int = int(dimensions_raw)
+
+    # Get model-level default_instruction (centralized per model)
+    model_instruction = registry.get_default_instruction(canonical_slug)
 
     # Get provider-specific configuration
     provider_config = registry.get_provider_config(canonical_slug, provider)
 
     if provider == "direct":
-        # Direct sentence-transformers; device from model registry (YAML)
+        # Direct inference: FRIDA (sentence-transformers) or Qwen3 (transformers)
         device = provider_config.get("device", "auto")
         max_seq_length = provider_config.get("max_seq_length", 512)
-        return FRIDAEmbedder(
-            model_name=canonical_slug,
-            device=device,
-            max_seq_length=max_seq_length,
-        )
 
+        # Detect Qwen3 models by slug pattern
+        is_qwen3 = "qwen3" in canonical_slug.lower() and "embedding" in canonical_slug.lower()
+
+        if is_qwen3:
+            # Qwen3 uses transformers with last-token pooling
+            return Qwen3DirectEmbedder(
+                model_name=canonical_slug,
+                device=device,
+                max_seq_length=max_seq_length,
+                default_instruction=model_instruction,
+            )
+        else:
+            # FRIDA and other sentence-transformers models
+            return FRIDAEmbedder(
+                model_name=canonical_slug,
+                device=device,
+                max_seq_length=max_seq_length,
+            )
+
+    # Map provider to endpoint/model/api_key
+    if provider == "mosec":
+        endpoint = settings.mosec_embedding_endpoint
+        model = canonical_slug
+        api_key = None
     elif provider == "infinity":
-        # Infinity HTTP server - use endpoint from settings
         endpoint = settings.infinity_embedding_endpoint
-
-        config = ServerEmbeddingConfig(
-            type="server",
-            endpoint=endpoint,
-            query_prefix=provider_config.get("query_prefix"),
-            doc_prefix=provider_config.get("doc_prefix"),
-            default_instruction=provider_config.get("default_instruction"),
-        )
-        return InfinityEmbedder(config)
-
+        model = "auto"
+        api_key = None
+    elif provider == "vllm":
+        endpoint = settings.vllm_embedding_endpoint
+        model = canonical_slug
+        api_key = None
     elif provider == "openrouter":
-        # OpenRouter API
         endpoint = settings.openrouter_endpoint
-        model_id = provider_config.get("model_id", canonical_slug.lower())
-        default_instruction = provider_config.get(
-            "default_instruction",
-            "Given a web search query, retrieve relevant passages that answer the query",
-        )
-
-        config = ApiEmbeddingConfig(
-            type="api",
-            endpoint=endpoint,
-            model=model_id,
-            default_instruction=default_instruction,
-            timeout=settings.embedding_timeout,
-            max_retries=settings.embedding_max_retries,
-        )
-        return OpenRouterEmbedder(config)
-
+        model = provider_config.get("model_id", canonical_slug.lower())
+        api_key = settings.openrouter_api_key
     else:
         raise ValueError(
-            f"Unknown embedder provider: {provider}. Supported: direct, infinity, openrouter"
+            f"Unknown embedder provider: {provider}. Supported: direct, infinity, mosec, vllm, openrouter"
         )
+
+    config = OpenAIEmbeddingConfig(
+        type="openai_compatible",
+        provider=provider,
+        endpoint=endpoint,
+        model=model,
+        api_key=api_key,
+        dimensions=dimensions,
+        local=settings.embedding_local,
+        query_prefix=provider_config.get("query_prefix"),
+        doc_prefix=provider_config.get("doc_prefix"),
+        default_instruction=model_instruction,
+        timeout=settings.embedding_timeout,
+        max_retries=settings.embedding_max_retries,
+    )
+    return OpenAICompatibleEmbedder(config)

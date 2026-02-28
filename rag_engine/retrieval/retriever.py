@@ -11,7 +11,7 @@ import tiktoken
 
 from rag_engine.config.settings import settings
 from rag_engine.core.chunker import split_text
-from rag_engine.retrieval.reranker import build_reranker
+from rag_engine.retrieval.reranker import create_reranker
 from rag_engine.retrieval.vector_search import top_k_search_async
 from rag_engine.utils.metadata_utils import extract_numeric_kbid
 from rag_engine.utils.path_utils import normalize_path
@@ -47,19 +47,7 @@ class RAGRetriever:
         self.llm_manager = llm_manager  # For dynamic context budgeting
         self.top_k_retrieve = top_k_retrieve
         self.top_k_rerank = top_k_rerank
-        self.reranker = (
-            build_reranker(
-                rerankers
-                or [
-                    {"model_name": "DiTy/cross-encoder-russian-msmarco", "batch_size": 16},
-                    {"model_name": "BAAI/bge-reranker-v2-m3", "batch_size": 16},
-                    {"model_name": "jinaai/jina-reranker-v2-base-multilingual", "batch_size": 16},
-                ],
-                device=settings.embedding_device,  # Reuse embedding device setting
-            )
-            if rerank_enabled
-            else None
-        )
+        self.reranker = create_reranker(settings) if rerank_enabled else None
         self.metadata_boost_weights = metadata_boost_weights or {
             "tag_match": 1.2,
             "code_presence": 1.15,
@@ -256,15 +244,22 @@ class RAGRetriever:
         logger.info("Top chunks belong to %d unique articles", len(articles_map))
 
         # Filter by score threshold before loading articles from disk
-        threshold = settings.rerank_score_threshold
-        if threshold is not None:
-            articles_map = {
-                kb_id: (chunks, score)
-                for kb_id, (chunks, score) in articles_map.items()
-                if score >= threshold
-            }
-            logger.info("Filtered to %d articles with rerank_score >= %.2f",
-                        len(articles_map), threshold)
+        # Only apply threshold when reranker is enabled (scores are meaningful)
+        if self.reranker is not None:
+            threshold = settings.rerank_score_threshold
+            if threshold is not None:
+                articles_map = {
+                    kb_id: (chunks, score)
+                    for kb_id, (chunks, score) in articles_map.items()
+                    if score >= threshold
+                }
+                logger.info(
+                    "Filtered to %d articles with rerank_score >= %.2f",
+                    len(articles_map),
+                    threshold,
+                )
+        else:
+            logger.info("Reranker disabled, skipping score threshold filter")
 
         if not articles_map:
             logger.warning("No articles passed score threshold")

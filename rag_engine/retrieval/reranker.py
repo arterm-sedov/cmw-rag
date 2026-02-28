@@ -2,7 +2,7 @@
 
 Supports two provider types:
 1. Direct: sentence-transformers CrossEncoder (DiTy, BGE)
-2. Server: Infinity HTTP API (DiTy, BGE, Qwen3)
+2. Server: Infinity/Mosec HTTP API (DiTy, BGE, Qwen3)
 """
 
 from __future__ import annotations
@@ -11,8 +11,11 @@ import logging
 from collections.abc import Sequence
 from typing import Any, Optional, Protocol
 
-from rag_engine.config.schemas import DirectRerankerConfig, ModelRegistry, ServerRerankerConfig
-from rag_engine.retrieval.embedder import HTTPClientMixin
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+from rag_engine.config.schemas import ModelRegistry, ServerRerankerConfig
 from rag_engine.utils.device_utils import detect_device
 
 logger = logging.getLogger(__name__)
@@ -21,6 +24,45 @@ try:  # Provide a module-level alias for monkeypatch-friendly tests
     from sentence_transformers import CrossEncoder as CrossEncoder  # type: ignore
 except Exception:  # noqa: BLE001
     CrossEncoder = None  # type: ignore
+
+
+class HTTPClientMixin:
+    """Mixin providing resilient HTTP client with retries and timeouts."""
+
+    def __init__(self, endpoint: str, timeout: float = 60.0, max_retries: int = 3):
+        self.endpoint = endpoint
+        self.timeout = timeout
+
+        self.session = requests.Session()
+        retry_strategy = Retry(
+            total=max_retries,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["POST", "GET"],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
+    def _post(self, json_data: dict) -> dict:
+        """Make POST request with error handling."""
+        url = self.endpoint
+        try:
+            response = self.session.post(url, json=json_data, timeout=self.timeout)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.Timeout:
+            logger.error(f"Request to {url} timed out after {self.timeout}s")
+            raise RuntimeError(f"Server at {url} not responding")
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Cannot connect to {url}")
+            raise RuntimeError(f"Server at {url} is not running")
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTP error from {url}: {e.response.status_code} - {e.response.text}")
+            raise RuntimeError(f"Server returned error: {e.response.status_code}")
+        except Exception as e:
+            logger.error(f"Unexpected error calling {url}: {e}")
+            raise
 
 
 class Reranker(Protocol):
@@ -140,15 +182,15 @@ class CrossEncoderReranker:
 
 
 class InfinityReranker(HTTPClientMixin):
-    """DiTy/BGE/Qwen3 via Infinity HTTP server."""
+    """DiTy/BGE/Qwen3 via Infinity/Mosec HTTP server."""
 
     def __init__(self, config: ServerRerankerConfig):
         super().__init__(
             endpoint=config.endpoint,
-            timeout=60.0,
-            max_retries=3,
+            timeout=config.timeout,
+            max_retries=config.max_retries,
         )
-        self.default_instruction = config.default_instruction
+        self.config = config
 
     def rerank(
         self,
@@ -158,10 +200,10 @@ class InfinityReranker(HTTPClientMixin):
         metadata_boost_weights: Optional[dict[str, float]] = None,
         instruction: Optional[str] = None,
     ) -> list[tuple[Any, float]]:
-        """Rerank candidates via Infinity server."""
-        if self.default_instruction:
+        """Rerank candidates via HTTP server."""
+        if self.config.default_instruction:
             # Qwen3 format: "Instruct: {task}\nQuery: {query}"
-            task = instruction or self.default_instruction
+            task = instruction or self.config.default_instruction
             formatted_query = f"Instruct: {task}\nQuery: {query}"
         else:
             # DiTy/BGE format: raw query
@@ -174,7 +216,6 @@ class InfinityReranker(HTTPClientMixin):
         ]
 
         response = self._post(
-            "/rerank",
             {"query": formatted_query, "documents": documents, "top_k": top_k},
         )
 
@@ -221,6 +262,9 @@ def create_reranker(settings) -> Reranker:
     model_data = registry.get_model(model_slug)
     canonical_slug = model_data["canonical_slug"]
 
+    # Get model-level default_instruction (centralized per model)
+    model_instruction = registry.get_default_instruction(canonical_slug)
+
     # Get provider-specific configuration
     provider_config = registry.get_provider_config(canonical_slug, provider)
 
@@ -234,25 +278,30 @@ def create_reranker(settings) -> Reranker:
             device=device,
         )
 
-    elif provider == "infinity":
-        # Infinity HTTP server - use endpoint from settings or default
+    # Map provider to endpoint
+    if provider == "infinity":
         endpoint = settings.infinity_reranker_endpoint
-
-        config = ServerRerankerConfig(
-            type="server",
-            endpoint=endpoint,
-            default_instruction=provider_config.get("default_instruction"),
-        )
-        return InfinityReranker(config)
-
+    elif provider == "mosec":
+        endpoint = settings.mosec_reranker_endpoint
     elif provider == "openrouter":
         # OpenRouter reranker API (when available)
         raise NotImplementedError(
-            "OpenRouter reranker support is not yet implemented. Use infinity provider for now."
+            "OpenRouter reranker support is not yet implemented. Use infinity or mosec provider for now."
+        )
+    else:
+        raise ValueError(
+            f"Unknown reranker provider: {provider}. Supported: direct, infinity, mosec"
         )
 
-    else:
-        raise ValueError(f"Unknown reranker provider: {provider}. Supported: direct, infinity")
+    config = ServerRerankerConfig(
+        type="server",
+        provider=provider,
+        endpoint=endpoint,
+        default_instruction=model_instruction,
+        timeout=settings.reranker_timeout,
+        max_retries=settings.reranker_max_retries,
+    )
+    return InfinityReranker(config)
 
 
 # Legacy function for backward compatibility

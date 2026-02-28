@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     vllm_api_key: str
 
     # Embedding Configuration (Model-Slug Based)
-    # Provider type: direct | infinity | openrouter
+    # Provider type: direct | infinity | mosec | openrouter
     embedding_provider_type: str
     # Model slug (e.g., "ai-forever/FRIDA", "Qwen/Qwen3-Embedding-8B")
     # Case insensitive - "qwen/qwen3-embedding-8b" works too
@@ -79,13 +79,17 @@ class Settings(BaseSettings):
     reranker_model: str
 
     # Provider Endpoints (optional, have defaults)
-    infinity_embedding_endpoint: str
-    infinity_reranker_endpoint: str
-    openrouter_endpoint: str
+    infinity_embedding_endpoint: str | None = None
+    infinity_reranker_endpoint: str | None = None
+    mosec_embedding_endpoint: str | None = None
+    mosec_reranker_endpoint: str | None = None
+    vllm_embedding_endpoint: str | None = None
+    openrouter_endpoint: str | None = None
 
     # Request Configuration
     embedding_timeout: float
     embedding_max_retries: int
+    embedding_local: bool  # true=direct HTTP (faster), false=OpenAI SDK (auth+retries)
     reranker_timeout: float
     reranker_max_retries: int
 
@@ -101,6 +105,9 @@ class Settings(BaseSettings):
     )
     # Optional overrides for model config (if set, overrides model_configs.py values)
     llm_token_limit: int | None = None  # Optional override for token_limit from model config
+
+    # LangChain Configuration
+    langchain_recursion_limit: int = 100  # Max steps for LangGraph StateGraph
 
     # Fallback and summarization
     llm_fallback_enabled: bool
@@ -168,11 +175,49 @@ class Settings(BaseSettings):
     # Default timezone for datetime operations (IANA timezone name, e.g., 'Europe/Moscow', 'UTC')
     default_timezone: str
 
+    # Guardian (Content Moderation)
+    # All guardian settings must be defined in .env file
+    # No hard-coded defaults - .env is single source of truth
+    guard_enabled: bool
+    guard_block_threshold: str
+    guard_provider_type: str
+
+    # MOSEC provider settings (required when provider_type="mosec")
+    guard_mosec_endpoint: str
+
+    # VLLM provider settings (required when provider_type="vllm")
+    guard_vllm_url: str
+    guard_vllm_model: str
+
+    # Reserved settings for future use (must be defined in .env)
+    guard_model: str
+    guard_device: str
+    guard_openrouter_model: str
+
+    # Common settings
+    guard_timeout: float
+    guard_max_retries: int
+
+    # SRP (Support Resolution Plan)
+    # Generates resolution plan for human support engineers after answer generation
+    srp_enabled: bool = False
+
+    # CMW Platform Integration
+    # Comindware Platform API credentials (required for platform integration)
+    cmw_base_url: str
+    cmw_login: str
+    cmw_password: str
+    cmw_timeout: int = 30
+    # API key for CMW Platform webhook endpoints
+    # MANDATORY in .env - must be present (empty = skip auth, present = require it)
+    cmw_api_key: str
+
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
         extra="ignore",
+        validate_default=True,
     )
 
 

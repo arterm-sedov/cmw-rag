@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List
+from collections.abc import Iterable
+from typing import Any
 
 from rag_engine.utils.metadata_utils import extract_numeric_kbid
 
@@ -22,21 +23,16 @@ def _normalize_url(url: str | None) -> str:
         return str(url or "").strip()
 
 
-def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
-    """Format answer with citations using proper article URLs; never use file paths.
+def _deduplicate_articles(articles: Iterable[Any]) -> dict[str, dict[str, Any]]:
+    """Deduplicate articles by kbId/URL, preserving order.
 
-    Deduplicates by kbId to ensure each article is cited only once.
-
-    Assumptions:
-    - metadata contains numeric kbId (enforced by indexer)
-    - metadata may already contain a canonical 'url' or precomputed 'article_url'
+    Returns:
+        Dict mapping normalized kbId/URL to article metadata.
     """
-    # Disclaimer already prepended during streaming
-    # Deduplicate by kbId to avoid citing the same article multiple times
-    seen_kbids: Dict[str, Dict[str, Any]] = {}
+    seen_kbids: dict[str, dict[str, Any]] = {}
     seen_urls: set[str] = set()
-    for d in docs:
-        meta: Dict[str, Any] = getattr(d, "metadata", {}) or {}
+    for d in articles:
+        meta: dict[str, Any] = getattr(d, "metadata", {}) or {}
         kbid = meta.get("kbId") or getattr(d, "kb_id", None)
         url = meta.get("url") or meta.get("article_url")
         norm_url = _normalize_url(url)
@@ -57,8 +53,24 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
                 # Use a synthetic key to preserve ordering when kbId is missing
                 if norm_url not in seen_kbids:
                     seen_kbids[norm_url] = meta
+    return seen_kbids
 
-    citations: List[str] = []
+
+def format_sources_list(articles: Iterable[Any]) -> str:
+    """Format articles as numbered markdown list with titles and URLs.
+
+    Deduplicates by kbId to ensure each article is cited only once.
+
+    Assumptions:
+    - metadata contains numeric kbId (enforced by indexer)
+    - metadata may already contain a canonical 'url' or precomputed 'article_url'
+
+    Returns:
+        "\\n\\n## Источники:\\n\\n1. [title](url)\\n2. [title](url)..." or empty string.
+    """
+    seen_kbids = _deduplicate_articles(articles)
+
+    citations: list[str] = []
     for i, (kbid, meta) in enumerate(seen_kbids.items(), 1):
         title = meta.get("title") or kbid or f"Source {i}"
 
@@ -79,8 +91,16 @@ def format_with_citations(answer: str, docs: Iterable[Any]) -> str:
 
         link = f"[{title}]({full_url})" if full_url else title
         citations.append(f"{i}. {link}")
+
     if citations:
-        return answer + "\n\n## Источники:\n\n" + "\n".join(citations)
-    return answer
+        return "\n\n## Источники:\n\n" + "\n".join(citations)
+    return ""
 
 
+def format_with_citations(answer: str, articles: Iterable[Any]) -> str:
+    """Format answer with sources list appended.
+
+    Returns answer with "## Источники:" section if articles exist.
+    """
+    sources = format_sources_list(articles)
+    return answer + sources if sources else answer

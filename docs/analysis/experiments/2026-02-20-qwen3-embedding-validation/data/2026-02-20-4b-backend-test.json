@@ -1,0 +1,77 @@
+{
+  "timestamp": "20260220_121131",
+  "model": "Qwen/Qwen3-Embedding-4B",
+  "model_size": "4B",
+  "dimensions": 2560,
+  "backends": {
+    "direct": {
+      "status": "SUCCESS",
+      "load_time_sec": 4.4,
+      "latency_ms": 36.9,
+      "dimensions": 2560,
+      "vram_gb": 7.54,
+      "sample": [
+        -0.0002815723419189453,
+        -0.0003845691680908203,
+        -0.005794525146484375,
+        0.0117645263671875,
+        -0.0012798309326171875
+      ]
+    },
+    "vllm": {
+      "status": "SUCCESS",
+      "load_time_sec": 10.0,
+      "latency_ms": 26.2,
+      "dimensions": 2560,
+      "vram_gb": 7.55,
+      "config": {
+        "gpu_memory_utilization": 0.30,
+        "max_model_len": 4096,
+        "enforce_eager": true,
+        "dtype": "float16"
+      },
+      "sample": [
+        -0.00028874046984128654,
+        -0.00028023493359796703,
+        -0.0059878951869904995,
+        0.011739426292479038,
+        -0.0013107474660500884
+      ]
+    },
+    "openrouter": {
+      "status": "SUCCESS",
+      "latency_ms": 723.5,
+      "dimensions": 2560,
+      "sample": [
+        -0.0002727508544921875,
+        -4.6253204345703125e-05,
+        -0.004913330078125,
+        0.01177978515625,
+        -0.0012359619140625
+      ]
+    },
+    "mosec": {
+      "status": "SUCCESS",
+      "latency_ms": 9.2,
+      "dimensions": 2560,
+      "vram_gb": "N/A (runs in separate process)",
+      "sample": [
+        -0.00028514862060546875,
+        -0.0003380775451660156,
+        -0.005985260009765625,
+        0.011749267578125,
+        -0.0013103485107421875
+      ]
+    }
+  },
+  "comparisons": {
+    "direct_vs_vllm": 99.97,
+    "direct_vs_openrouter": 99.77,
+    "direct_vs_mosec": 99.99
+  },
+  "notes": {
+    "vllm": "Requires gpu_memory_utilization=0.30 (14GB) with 16GB available. Model uses ~7.5GB.",
+    "mosec": "Runs in separate process, VRAM tracked separately.",
+    "direct": "Direct transformers with float16, ~7.5GB VRAM"
+  }
+}
