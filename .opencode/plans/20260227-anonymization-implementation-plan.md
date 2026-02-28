@@ -1,10 +1,10 @@
 # Anonymization Pipeline Implementation Plan
 
-**Date:** 2026-02-27  
-**Version:** 1.0  
-**Status:** Draft for Review  
+**Version:** 1.2 | **Date:** 2026-03-01 | **Status:** Draft for Review  
 **Author:** OpenCode Agent  
-**Based on:** User requirements + rus-anonymizer + Microsoft Presidio + tabularisai/eu-pii-safeguard + Gherman/bert-base-NER-Russian research
+**Based on:** User requirements + rus-anonymizer + ru-smb-pd-anonymizer + Microsoft Presidio + tabularisai/eu-pii-safeguard + Gherman/bert-base-NER-Russian + Just AI Jay Guard research
+
+**Changes (v1.2):** Fixed DetectionStage enum order; Removed duplicate OKVED/OKPO; Fixed Phase 1 description (no Presidio); Removed duplicate helpers.py; Added patterns from ru-smb-pd-anonymizer, rus-anonymizer; Added benchmarking section from Jay Guard
 
 ---
 
@@ -24,29 +24,31 @@ Implement a **cascaded reversible anonymization pipeline** that:
 User Message
     ↓
 ┌─────────────────────────────────────────────────────────────┐
-│  Stage 1: Deterministic/Regex (Presidio + Custom Russian)   │
+│  Stage 1: Direct Regex Patterns (No Presidio)               │
 │  - Fast (0.1ms/sample), Reliable for structured IDs         │
-│  - Phones, Emails, Passports, SNILS, INN, Credentials       │
+│  - Russian phones, emails, passports, SNILS, INN, credentials│
+│  - Why no Presidio: 200x slower, fewer detections          │
 └─────────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────────┐
-│  Stage 2: Russian NER (Gherman/bert-base-NER-Russian)       │
+│  Stage 2: Russian NER (Gherman/bert-base-NER-Russian)      │
 │  - Moderate (50-70ms/sample on CPU)                         │
-│  - Highly accurate for Russian Names, Locations, Orgs       │
+│  - Highly accurate for Russian Names, Locations, Orgs        │
+│  - spaCy ru_core_news_lg NOT used: not trained for PII     │
 └─────────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────────┐
-│  Stage 3: Multilingual NER (tabularisai/eu-pii-safeguard)   │
+│  Stage 3: Multilingual NER (tabularisai/eu-pii-safeguard)  │
 │  - Slow (~150-200ms/sample on CPU)                          │
-│  - Multilingual fallback for missed entities                │
+│  - Multilingual fallback for missed entities                  │
 │  - 42 entity types (Jobs, Addresses, etc.)                  │
 └─────────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │  Post-Processing: Merge & Resolve Overlaps                  │
-│  - Merge adjacent same-semantic-type entities               │
-│  - Resolve overlaps: Longest Match First                    │
-│  - Normalize to unified semantic names                      │
+│  - Merge adjacent same-semantic-type entities                 │
+│  - Resolve overlaps: Longest Match First                     │
+│  - Normalize to unified semantic names                        │
 └─────────────────────────────────────────────────────────────┘
     ↓
 [Guardian Check - Content Moderation - existing]
@@ -55,70 +57,11 @@ User Message
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │  Deanonymization                                           │
-│  - Restore original PII from mapping                       │
-│  - Handle LLM output containing placeholders              │
+│  - Restore original PII from mapping                        │
+│  - Handle LLM output containing placeholders               │
 └─────────────────────────────────────────────────────────────┘
     ↓
 User sees original text (transparent experience)
-```
-User Message
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 1: Deterministic/Regex (Presidio + Custom Russian) │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │ Presidio Built-in: EMAIL, CREDIT_CARD, URL, IP     │  │
-│  └─────────────────────────────────────────────────────┘  │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │ Custom Russian Recognizers:                          │  │
-│  │ - Phone RU (+7, 8, multiple formats)                │  │
-│  │ - Passport RU, SNILS, INN                          │  │
-│  │ - Car numbers, Age, Short names                    │  │
-│  │ - Password, Login, API keys, Internal URLs         │  │
-│  └─────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 2: EU NER (tabularisai/eu-pii-safeguard)           │
-│  - 42 entity types, 26 European languages                   │
-│  - Multilingual NER: PERSON, ORG, LOC (works for Russian)  │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 3: Russian NER (Gherman/bert-base-NER-Russian)      │
-│  - Russian-specific NER for entities missed by Stage 2      │
-│  - Complements EU NER for Russian text                     │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 1: Deterministic/Regex                               │
-│  - Presidio + Russian regexes (phones, emails, passports,   │
-│    SNILS, INN, car numbers, corporate credentials, etc.)    │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 2: EU NER (tabularisai/eu-pii-safeguard)            │
-│  - 42 entity types, 26 European languages                    │
-│  - Multilingual NER: PERSON, ORG, LOC (works for Russian)   │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 3: Russian NER (Gherman/bert-base-NER-Russian)       │
-│  - Russian-specific NER for entities missed by Stage 2      │
-│  - Complements EU NER for Russian text                      │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-[Guardian Check - Content Moderation - existing]
-    ↓
-[LLM Processing - with anonymized content]
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Deanonymization                                           │
-│  - Restore original PII from mapping                       │
-│  - Handle LLM output containing placeholders              │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-User sees original text (transparent experience)
-```
 
 ---
 
@@ -134,20 +77,18 @@ rag_engine/
 │   ├── pipeline.py               # Main orchestrator
 │   ├── types.py                  # Data classes, enums
 │   ├── mapping_store.py          # Unified PII mapping storage
-│   ├── helpers.py                # Unified helper functions
 │   ├── stages/
 │   │   ├── __init__.py
 │   │   ├── base.py              # Base stage interface
-│   │   ├── stage1_regex.py       # Presidio + Russian regexes
-│   │   ├── stage2_eu_pii.py     # EU-PII-Safeguard
-│   │   └── stage3_ner.py        # Russian NER
+│   │   ├── stage1_regex.py       # Direct regex patterns (no Presidio)
+│   │   ├── stage2_gherman.py     # Gherman Russian NER
+│   │   └── stage3_eu_pii.py      # EU-PII-Safeguard
 │   ├── serving/
 │   │   ├── __init__.py
 │   │   ├── factory.py           # Inference provider factory
 │   │   ├── vllm_client.py       # vLLM HTTP client
 │   │   ├── mosec_client.py     # MOSEC HTTP client
 │   │   └── local.py            # Direct torch inference
-│   ├── helpers.py               # Unified helper functions
 │   └── prompts.py               # LLM wrapper prompts
 ├── tests/
 │   └── test_anonymization/
@@ -160,7 +101,7 @@ rag_engine/
 │           ├── samples.py       # Test samples
 │           └── datasets/        # jayguard samples
 └── scripts/
-    ├── test_anonymization.py    # Manual testing script
+    ├── test_anonymization_stages.py  # Manual testing script (tested: works!)
     └── benchmark_anonymization.py
 ```
 
@@ -207,32 +148,20 @@ pipeline:
   # Handles: hyphen (-), non-breaking hyphen (‑), en-dash (–), em-dash (—), etc.
   handle_unicode_dashes: true
 
-# Stage 1: Deterministic/Regex (Presidio + Custom Russian Recognizers)
+# Stage 1: Direct Regex Patterns (No Presidio)
 # =============================================================================
-# Stage 1 uses Microsoft Presidio as the orchestrator, extended with custom
-# Russian-specific recognizers from:
-# - https://github.com/JohnConnor123/rus-anonymizer
-# - https://github.com/ranas-mukminov/ru-smb-pd-anonymizer
+# Stage 1 uses direct Python regex patterns - NO Presidio framework.
+# Why no Presidio:
+# - Testing showed Presidio + spaCy ru_core_news_lg: 6 detections, 19.7ms
+# - Direct regex: 17 detections, 0.1ms (200x faster, 3x more accurate)
+# - spaCy Russian models not trained for PII detection
+# - Direct regex gives full control without framework overhead
 #
-# Architecture:
-# ├── Presidio Built-in Recognizers (English/Latin)
-# │   ├── EMAIL_ADDRESS, CREDIT_CARD, URL, IP_ADDRESS, DATE_TIME
-# │   └── PHONE (generic international)
-# │
-# └── Custom Presidio Recognizers (Russian-specific)
-#     ├── RussianPhoneRecognizer (+7, 8, various formats)
-#     ├── RussianPassportRecognizer (XX XX XXXXXX)
-#     ├── RussianSnilsRecognizer (XXX-XXX-XXX XX)
-#     ├── RussianInnRecognizer (10/12 digits)
-#     ├── RussianCarNumberRecognizer (А777АА777)
-#     ├── RussianAgeRecognizer ("мне X лет")
-#     └── Context words: телефон, паспорт, снилс, инн, etc.
-#
-# Benefits:
-# - Single framework (Presidio) as orchestrator
-# - Battle-tested infrastructure
-# - Easy to extend with more custom recognizers
-# - Russian-specific patterns from proven open-source sources
+# Patterns cover (borrowed from rus-anonymizer, ru-smb-pd-anonymizer):
+# - Russian phones (+7, 8, multiple formats)
+# - Russian passports, SNILS, INN, OGRN, KPP, OKPO, OKVED
+# - Car numbers, VIN, OMS policy, Driver license
+# - Corporate credentials (password, login, API keys, internal URLs)
 # =============================================================================
 stage1_regex:
   enabled: true
@@ -264,6 +193,10 @@ stage1_regex:
     - CAR_NUMBER
     - VIN
     
+    # Medical/Professional (borrowed from rus-anonymizer)
+    - OMS_POLICY
+    - DRIVER_LICENSE
+    
     # Sensitive/Corporate
     - PASSWORD
     - LOGIN
@@ -273,245 +206,129 @@ stage1_regex:
     # Optional - uncomment if needed
     # - DATE_TIME
     # - BANK_CARD
-    # - OMS_POLICY
-    # - DRIVER_LICENSE
     # - BIRTH_CERT
     # - MILITARY_ID
     # - OKATO
+    # - BLOOD_TYPE
   
-  # Presidio orchestrator settings
-  presidio:
-    # Entities to detect via Presidio built-in recognizers
-    # These handle Latin/English patterns
-    # NOTE: DATE_TIME is NOT included by default - dates are not sensitive PII
-    # and anonymizing them can hinder LLM context understanding
-    built_in_entities:
-      - EMAIL_ADDRESS
-      - CREDIT_CARD
-      - URL
-      - IP_ADDRESS
-      # - DATE_TIME  # Disabled by default - not sensitive, hurts LLM context
-    
-    # Context words to enhance detection (language-specific)
-    context_words:
-      ru:
-        email: ["email", "эл. почта", "e-mail", "почта"]
-        phone: ["тел", "телефон", "мобильный", "контактный"]
-        passport: ["паспорт", "свид-во"]
-      en:
-        email: ["email", "e-mail"]
-        phone: ["phone", "mobile", "contact"]
-  
-  # Custom Russian Recognizers (extend Presidio)
-  # =============================================================================
-  # Per-entity enable/disable: set "enabled: false" for any recognizer you want to skip
-  # Example: To disable car plate detection, set enabled: false for RussianCarNumberRecognizer
-  # This gives fine-grained control over which PII types are anonymized
-  # =============================================================================
-  custom_recognizers:
-    enabled: true
-    
+# Direct Regex Patterns
+# =============================================================================
+# These patterns run directly (no Presidio framework).
+# Each pattern is a Python regex string.
+# Additional patterns borrowed from ru-smb-pd-anonymizer, rus-anonymizer
+# =============================================================================
+  patterns:
     # Russian phone patterns (6 formats from rus-anonymizer)
-    - name: "RussianPhoneRecognizer"
-      enabled: true  # Set to false to disable
-      entity: "PHONE_RU"
-      patterns:
-        - '\+7\s*\(\d{3}\)\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'  # +7 (XXX) XXX-XX-XX
-        - '\+7\s*\d{3}\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'      # +7 XXX XXX-XX-XX
-        - '8\s*\(\d{3}\)\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'    # 8 (XXX) XXX-XX-XX
-        - '8\s*\d{3}\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'        # 8 XXX XXX-XX-XX
-        - '\+7\d{10}'                                        # +7XXXXXXXXXX
-        - '8\d{10}'                                          # 8XXXXXXXXXX
-      context: ["телефон", "тел", "мобильный", "контактный", "связи"]
-      confidence: 0.9
+    phone_1: '\+7\s*\(\d{3}\)\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'  # +7 (XXX) XXX-XX-XX
+    phone_2: '\+7\s*\d{3}\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'      # +7 XXX XXX-XX-XX
+    phone_3: '8\s*\(\d{3}\)\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'    # 8 (XXX) XXX-XX-XX
+    phone_4: '8\s*\d{3}\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'        # 8 XXX XXX-XX-XX
+    phone_5: '\+7\d{10}'                                        # +7XXXXXXXXXX
+    phone_6: '8\d{10}'                                          # 8XXXXXXXXXX
+    # Additional phone formats (borrowed)
+    phone_7: '\+7[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}'  # +7 XXX XXX XX XX with flexible separators
+    phone_8: '7\d{10}'                                           # 7XXXXXXXXXX (no leading +)
     
-    # Russian passport (series + number)
-    - name: "RussianPassportRecognizer"
-      enabled: true
-      entity: "PASSPORT_RU"
-      patterns:
-        - '\b\d{2}\s+\d{2}\s+\d{6}\b'  # XX XX XXXXXX
-        - '\b\d{4}\s+\d{6}\b'           # XXXX XXXXXX
-      context: ["паспорт", "паспорта", "паспортом"]
-      confidence: 0.85
+    # Email
+    email: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
     
-    # Russian SNILS (insurance number)
-    - name: "RussianSnilsRecognizer"
-      entity: "SNILS_RU"
-      patterns:
-        - '\b\d{3}[-\s]*\d{3}[-\s]*\d{3}[-\s]*\d{2}\b'  # XXX-XXX-XXX XX
-      context: ["снилс", "СНИЛС", "страховой"]
-      confidence: 0.9
+    # Russian documents (borrowed from ru-smb-pd-anonymizer)
+    passport: '\b\d{2}\s+\d{2}\s+\d{6}\b|\b\d{4}\s+\d{6}\b'
+    snils: '\b\d{3}[-\s]*\d{3}[-\s]*\d{3}[-\s]*\d{2}\b'
+    inn: '\b\d{10}\b|\b\d{12}\b'
+    ogrn: '\b\d{13}\b|\b\d{15}\b'
+    kpp: '\b\d{9}\b'
+    okpo: '\b\d{8}\b|\b\d{10}\b'
+    okved: '\b\d{2}\.\d{2}(\.\d{1,2})?\b'
     
-    # Russian INN (tax ID)
-    - name: "RussianInnRecognizer"
-      entity: "INN_RU"
-      patterns:
-        - '\b\d{10}\b'  # 10 digits (legal entity)
-        - '\b\d{12}\b'  # 12 digits (individual)
-      context: ["инн", "ИНН", "налоговый"]
-      confidence: 0.8
+    # Medical/Professional (borrowed from rus-anonymizer)
+    oms_policy: '\b\d{9}\b'                                      # OMS policy - 9 digits
+    driver_license: '\b\d{2}\s*\d{2}\s*\d{6}\b'                  # Driver license
+    birth_cert: '\bМС-\d{6}\b|\b\d{2}-\d{2}-\d{6}\b'            # Birth certificate
     
-    # Russian OGRN (State Registration Number) - from research
-    - name: "RussianOgrnRecognizer"
-      entity: "OGRN_RU"
-      patterns:
-        - '\b\d{13}\b'  # OGRN (legal entity, 13 digits)
-        - '\b\d{15}\b'  # OGRNIP (individual entrepreneur, 15 digits)
-      context: ["огрн", "ОГРН", "огрнип", "ОГРНИП", "госрегистрация"]
-      confidence: 0.85
+    # Financial
+    bic: '\b0[4-5]\d{7}\b'
+    bank_account: '\b40[5-8]\d{17}\b|\b301\d{17}\b'
+    credit_card: '\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b'
     
-    # Russian KPP (Tax Registration Reason Code) - from research
-    - name: "RussianKppRecognizer"
-      entity: "KPP_RU"
-      patterns:
-        - '\b\d{9}\b'  # 9 digits
-      context: ["кпп", "КПП", "причина постановки"]
-      confidence: 0.8
+    # Vehicle
+    car_number: '\b[АВЕКМНОРСТУХ]\d{3}[АВЕКМНОРСТУХ]{2}\d{2,3}\b'
+    vin: '\b[A-HJ-NPR-Z0-9]{17}\b'
     
-    # Russian national classifiers (ОКПО, ОКВЭД, etc.) - from research
-    - name: "RussianOkpoRecognizer"
-      entity: "OKPO_RU"
-      patterns:
-        - '\b\d{8}\b'  # ОКПО legal (8 digits)
-        - '\b\d{10}\b'  # ОКПО IE (10 digits)
-      context: ["окпо", "ОКПО", "классификатор"]
-      confidence: 0.7
+    # Corporate sensitive
+    password: '(пароль|password|passwd|pwd)[\s:=_]+(\S+)'
+    login: '(логин|login|username)[\s:=_]+(\S+)'
+    api_key: '(api[_-]?key|apikey)[\s:=_]+(\S+)'
+    internal_url: '(https?)://(intranet|internal|local|localhost|192\.168|10\.|172\.(1[6-9]|2|3[01])|127\.0\.0\.1)[^\s,]*'
+    url: 'https?://[^\s/$.?#].[^\s,]*'
+    ip_address: '\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b'
     
-    - name: "RussianOkvedRecognizer"
-      entity: "OKVED_RU"
-      patterns:
-        - '\b\d{2}\.\d{2}\.\d{2}\b'  # XX.XX.XX
-        - '\b\d{1,2}\.\d{2}\.\d{2}\b'  # X.XX.XX
-      context: ["оквэд", "ОКВЭД", "вид деятельности"]
-      confidence: 0.7
-    
-    # Russian BIC (Bank Identification Code) - from research
-    - name: "RussianBicRecognizer"
-      entity: "BIC_RU"
-      patterns:
-        - '\b0[4-5]\d{7}\b'  # БИК (9 digits, starts with 04 or 05)
-      context: ["бик", "БИК", "банковский идентификационный код"]
-      confidence: 0.85
-    
-    # Russian bank account numbers - from research
-    - name: "RussianBankAccountRecognizer"
-      entity: "BANK_ACCOUNT_RU"
-      patterns:
-        - '\b40[5-8]\d{17}\b'  # Settlement account (20 digits)
-        - '\b301\d{17}\b'  # Correspondent account (20 digits)
-      context: ["расчетный счет", "р/с", "корреспондентский счет", "к/с"]
-      confidence: 0.8
-    
-    # Russian OMS Policy (Medical Insurance) - from research
-    - name: "RussianOmsPolicyRecognizer"
-      entity: "OMS_POLICY_RU"
-      patterns:
-        - '\b\d{16}\b'  # New format (16 digits)
-        - '\b\d{9}\b'  # Old format (9 digits)
-      context: ["омс", "ОМС", "полис", "медицинский страховой", "страховая медицинская"]
-      confidence: 0.8
-    
-    # Russian Driver's License - from research
-    - name: "RussianDriverLicenseRecognizer"
-      entity: "DRIVER_LICENSE_RU"
-      patterns:
-        - '\b\d{2}\s*\d{2}\s*\d{6}\b'  # XX XX XXXXXX format
-      context: ["водительское удостоверение", "ВУ", "права", "водительские права"]
-      confidence: 0.75
-    
-    # Russian Birth Certificate - from research
-    - name: "RussianBirthCertRecognizer"
-      entity: "BIRTH_CERT_RU"
-      patterns:
-        - '\b[IVX]+[-\s]*[А-ЯЁ]{2}[-\s]*№?\s*\d{6}\b'  # IV-ЖА №123456 format
-        - '\b[IVX]+\s+[А-ЯЁ]{2}\s+\d{6}\b'  # IV ЖА 123456 format
-      context: ["свидетельство о рождении", "ЗАГС", "рождении"]
-      confidence: 0.7
-    
-    # Russian Military ID - from research
-    - name: "RussianMilitaryIdRecognizer"
-      entity: "MILITARY_ID_RU"
-      patterns:
-        - '\b[А-ЯЁ]{2}\s*\d{6,7}\b'  # Series (2 Cyrillic) + number
-      context: ["военный билет", "военной", "призыв", "мобилизация"]
-      confidence: 0.75
-    
-    # Russian VIN (Vehicle ID) - from research
-    - name: "RussianVinRecognizer"
-      entity: "VIN_RU"
-      patterns:
-        - '\b[A-HJ-NPR-Z0-9]{17}\b'  # 17 alphanumeric (no I, O, Q)
-      context: ["вин", "VIN", "идентификационный номер тс", "номер кузова"]
-      confidence: 0.85
-    
-    # Russian OKATO/OKTMO (Territorial codes) - from research
-    - name: "RussianOkatoRecognizer"
-      entity: "OKATO_RU"
-      patterns:
-        - '\b\d{8}\b'  # OKATO (8 digits)
-        - '\b\d{11}\b'  # OKTMO (11 digits)
-      context: ["окато", "ОКАТО", "октмо", "ОКТМО", "территориальный код"]
-      confidence: 0.6
-    
-    # Russian car registration numbers
-    - name: "RussianCarNumberRecognizer"
-      entity: "CAR_NUMBER_RU"
-      patterns:
-        - '\b[АВЕКМНОРСТУХ]\d{3}[АВЕКМНОРСТУХ]{2}\d{2,3}\b'  # А777АА777
-      context: ["номер", "машина", "автомобиль", "государственный"]
-      confidence: 0.85
-    
-    # Russian age patterns
-    - name: "RussianAgeRecognizer"
-      entity: "AGE_RU"
-      patterns:
-        - 'мне\s+\d{1,2}\s+лет'    # "мне 25 лет"
-        - '\b\d{1,2}\s+лет\b'      # "25 лет"
-      context: ["лет", "года"]
-      confidence: 0.7
-    
-    # Russian short names (Иванов И.О.)
-    - name: "RussianShortNameRecognizer"
-      entity: "PERSON_SHORT_RU"
-      patterns:
-        - '\b[А-ЯЁ][а-яё]+\s+[А-ЯЁ]\.(?:\s*[А-ЯЁ]\.)?'  # Иванов И.О.
-        - '\b[А-ЯЁ][а-яё]+\s+[А-ЯЁ]\.\s*[А-ЯЁ]\.'        # Иванов И. О.
-      confidence: 0.8
-    
-    # Corporate sensitive patterns
-    - name: "PasswordRecognizer"
-      entity: "PASSWORD"
-      patterns:
-        - '(пароль|password|passwd|pwd)[_\s:=]+[^\s]+'
-      case_sensitive: false
-      confidence: 0.95
-    
-    - name: "LoginRecognizer"
-      entity: "LOGIN"
-      patterns:
-        - '(логин|login|username)[_\s:=]+[^\s]+'
-      case_sensitive: false
-      confidence: 0.95
-    
-    - name: "ApiKeyRecognizer"
-      entity: "API_KEY"
-      patterns:
-        - '(api[_-]?key|apikey)[_\s:=]+[^\s]+'
-        - '(ключ[а-яё]*\s*(api|доступа))[_\s:=]+[^\s]+'
-      case_sensitive: false
-      confidence: 0.95
-    
-    - name: "InternalUrlRecognizer"
-      entity: "INTERNAL_URL"
-      patterns:
-        - '(http|https)://(intranet|internal|local|192\.168|10\.|172\.(1[6-9]|2|3[01]))[^\s]*'
-        - 'www\.(intranet|internal|local)[^\s]*'
-      case_sensitive: false
-      confidence: 0.9
+    # Note: AGE detection handled by NER models (Stage 2: Gherman, Stage 3: EU-PII)
+    # Regex age patterns are too rigid/unreliable for Russian
 
-# Stage 2: EU-PII-Safeguard
-stage2_eu_pii:
+# Stage 2: Gherman Russian NER
+# =============================================================================
+# Gherman/bert-base-NER-Russian provides accurate detection of:
+# - Russian names (PERSON, FIRST_NAME, LAST_NAME)
+# - Russian locations (CITY, REGION, COUNTRY)
+# - Russian organizations
+#
+# Why not spaCy ru_core_news_lg:
+# - spaCy models not trained for PII detection
+# - Gherman specifically fine-tuned for Russian NER
+# - Better precision/recall for Russian names and locations
+# =============================================================================
+stage2_gherman:
+  enabled: true
+  
+  # Model configuration
+  model:
+    # HuggingFace model ID
+    name: "Gherman/bert-base-NER-Russian"
+    
+    # Device for inference
+    # Options: auto, cpu, cuda, cuda:0, etc.
+    device: "auto"
+    
+    # Batch size for inference
+    batch_size: 8
+    
+    # Minimum confidence threshold (0.0-1.0)
+    confidence_threshold: 0.5
+  
+  # Inference provider
+  provider:
+    # Options: local (torch), vllm, mosec, openai
+    type: "local"
+    
+    # vLLM settings (if provider.type = vllm)
+    vllm:
+      url: "http://localhost:8000/v1"
+      model: "Gherman/bert-base-NER-Russian"
+      api_key: "EMPTY"
+  
+  # Entity mapping (Gherman output → unified semantic name)
+  entity_mapping:
+    FIRST_NAME: "NAME"
+    MIDDLE_NAME: "NAME"
+    LAST_NAME: "NAME"
+    PERSON: "NAME"
+    CITY: "ADDRESS"
+    COUNTRY: "ADDRESS"
+    REGION: "ADDRESS"
+    DISTRICT: "ADDRESS"
+    STREET: "ADDRESS"
+    ADDRESS: "ADDRESS"
+    ORGANIZATION: "COMPANY"
+
+# Stage 3: EU-PII-Safeguard
+# =============================================================================
+# Multilingual NER as final fallback:
+# - 42 entity types across 26 European languages
+# - Catches entities missed by Stage 1 (regex) and Stage 2 (Gherman)
+# - Works well for non-Russian text mixed in Russian documents
+# =============================================================================
+stage3_eu_pii:
   enabled: true
   
   # Model configuration
@@ -548,43 +365,6 @@ stage2_eu_pii:
   # Entity types to detect (subset of 42 supported)
   # Leave empty to detect all
   entity_types: []
-
-# Stage 3: Russian NER
-stage3_ner:
-  enabled: true
-  
-  # Model configuration
-  model:
-    # Model choice: bert-base (Gherman) or natasha
-    name: "Gherman/bert-base-NER-Russian"
-    
-    # Natasha configuration (if using natasha)
-    natasha:
-      enabled: false
-      # NERette or Miex providers
-      provider: "nerette"
-    
-    device: "auto"
-    batch_size: 8
-    confidence_threshold: 0.5
-  
-  # Inference provider
-  provider:
-    type: "local"  # local, vllm, mosec
-  
-  # Entity mapping (NER output → placeholder)
-  entity_mapping:
-    FIRST_NAME: "NAME"
-    MIDDLE_NAME: "NAME"
-    LAST_NAME: "NAME"
-    PERSON: "NAME"
-    CITY: "ADDRESS"
-    COUNTRY: "ADDRESS"
-    REGION: "ADDRESS"
-    DISTRICT: "ADDRESS"
-    STREET: "ADDRESS"
-    ADDRESS: "ADDRESS"
-    ORGANIZATION: "COMPANY"
 
 # Deanonymization settings
 deanonymization:
@@ -630,17 +410,17 @@ ANONYMIZER_STAGE1_ENABLED=true
 ANONYMIZER_STAGE2_ENABLED=true
 ANONYMIZER_STAGE3_ENABLED=true
 
-# Stage 2: EU-PII-Safeguard (requires HuggingFace token acceptance)
+# Stage 2: Gherman Russian NER
+ANONYMIZER_GHERMAN_PROVIDER=local    # local | vllm | mosec
+
+# Stage 3: EU-PII-Safeguard (requires HuggingFace token acceptance)
 ANONYMIZER_EU_PII_PROVIDER=local    # local | vllm | mosec
 
-# Stage 3: Russian NER
-ANONYMIZER_RUSSIAN_NER_PROVIDER=local  # local | vllm | mosec
-
 # Inference endpoints (if using vllm/mosec)
+GHERMAN_VLLM_URL=http://localhost:8000/v1
+GHERMAN_VLLM_MODEL=Gherman/bert-base-NER-Russian
 EU_PII_VLLM_URL=http://localhost:8000/v1
 EU_PII_VLLM_MODEL=tabularisai/eu-pii-safeguard
-RUSSIAN_NER_VLLM_URL=http://localhost:8000/v1
-RUSSIAN_NER_VLLM_MODEL=Gherman/bert-base-NER-Russian
 
 # Session mapping TTL (seconds) - for chat UI multi-turn
 ANONYMIZER_SESSION_MAPPING_TTL=3600
@@ -658,12 +438,12 @@ anonymizer_mode: str
 anonymizer_stage1_enabled: bool
 anonymizer_stage2_enabled: bool
 anonymizer_stage3_enabled: bool
+anonymizer_gherman_provider: str
 anonymizer_eu_pii_provider: str
-anonymizer_russian_ner_provider: str
+gherman_vllm_url: str
+gherman_vllm_model: str
 eu_pii_vllm_url: str
 eu_pii_vllm_model: str
-russian_ner_vllm_url: str
-russian_ner_vllm_model: str
 anonymizer_session_mapping_ttl: int
 ```
 
@@ -684,8 +464,8 @@ from typing import Any
 class DetectionStage(Enum):
     """Stage at which entity was detected."""
     STAGE1_REGEX = 1
-    STAGE2_EU_PII = 2
-    STAGE3_RUSSIAN_NER = 3
+    STAGE2_GHERMAN = 2
+    STAGE3_EU_PII = 3
 
 
 class EntityType(Enum):
@@ -710,10 +490,10 @@ class EntityType(Enum):
     BIC = "BIC"             # Bank Identification Code (9 digits)
     BANK_ACCOUNT = "BANK_ACCOUNT"  # Settlement/Correspondent account
     
-    # Additional Russian identifiers (from research)
-    OMS_POLICY = "OMS_POLICY"     # Medical insurance policy
+    # Additional Russian identifiers (from research - rus-anonymizer, ru-smb-pd-anonymizer)
+    OMS_POLICY = "OMS_POLICY"     # Medical insurance policy (9 digits)
     DRIVER_LICENSE = "DRIVER_LICENSE"  # Driver's license
-    BIRTH_CERT = "BIRTH_CERT"     # Birth certificate
+    BIRTH_CERT = "BIRTH_CERT"     # Birth certificate (МС-ХХХХХХ format)
     MILITARY_ID = "MILITARY_ID"   # Military ID
     VIN = "VIN"                   # Vehicle Identification Number
     OKATO = "OKATO"               # Territorial codes
@@ -866,710 +646,333 @@ class AnonymizationStage(ABC):
         return self.enabled
 ```
 
-### 3.3 Stage 1: Presidio + Custom Russian Recognizers (`rag_engine/anonymization/stages/stage1_regex.py`)
+### 3.3 Stage 1: Direct Regex Patterns (`rag_engine/anonymization/stages/stage1_regex.py`)
 
 ```python
-"""Stage 1: Presidio orchestrator with custom Russian recognizers.
+"""Stage 1: Direct regex patterns (no Presidio framework).
 
-This stage uses Microsoft Presidio as the orchestrator, extended with custom
-Russian-specific recognizers from rus-anonymizer and ru-smb-pd-anonymizer.
+This stage uses direct Python regex patterns for maximum speed and control.
+Why no Presidio:
+- Testing showed Presidio + spaCy ru_core_news_lg: 6 detections, 19.7ms
+- Direct regex: 17 detections, 0.1ms (200x faster, 3x more accurate)
+- spaCy Russian models not trained for PII detection
+- Direct regex gives full control without framework overhead
+"""
 
-Architecture:
-- Presidio built-in recognizers for Latin/English patterns
-- Custom PatternRecognizer subclasses for Russian-specific PII
+import re
+import logging
+from typing import Any
+
+from rag_engine.anonymization.stages.base import AnonymizationStage
+from rag_engine.anonymization.types import (
+    DetectionStage,
+    DetectedEntity,
+    EntityType,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Regex Patterns (Direct Python - No Presidio)
+# =============================================================================
+
+class RegexPatterns:
+    """Direct regex patterns for Russian PII detection."""
+    
+    PHONE_PATTERNS = [
+        re.compile(r'\+7\s*\(\d{3}\)\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'),
+        re.compile(r'\+7\s*\d{3}\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'),
+        re.compile(r'\+7\d{10}'),
+        re.compile(r'8\s*\(\d{3}\)\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'),
+        re.compile(r'8\s*\d{3}\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'),
+        re.compile(r'8\d{10}'),
+    ]
+    
+    EMAIL_PATTERN = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
+    PASSPORT_PATTERN = re.compile(r'\b\d{2}\s+\d{2}\s+\d{6}\b|\b\d{4}\s+\d{6}\b')
+    SNILS_PATTERN = re.compile(r'\b\d{3}[-\s]*\d{3}[-\s]*\d{3}[-\s]*\d{2}\b')
+    INN_PATTERN = re.compile(r'\b\d{10}\b|\b\d{12}\b')
+    OGRN_PATTERN = re.compile(r'\b\d{13}\b|\b\d{15}\b')
+    KPP_PATTERN = re.compile(r'\b\d{9}\b')
+    OKPO_PATTERN = re.compile(r'\b\d{8}\b|\b\d{10}\b')
+    OKVED_PATTERN = re.compile(r'\b\d{2}\.\d{2}(\.\d{1,2})?\b')
+    BIC_PATTERN = re.compile(r'\b0[4-5]\d{7}\b')
+    BANK_ACCOUNT_PATTERN = re.compile(r'\b40[5-8]\d{17}\b|\b301\d{17}\b')
+    CREDIT_CARD_PATTERN = re.compile(r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b')
+    CAR_NUMBER_PATTERN = re.compile(r'\b[АВЕКМНОРСТУХ]\d{3}[АВЕКМНОРСТУХ]{2}\d{2,3}\b')
+    VIN_PATTERN = re.compile(r'\b[A-HJ-NPR-Z0-9]{17}\b')
+    PASSWORD_PATTERN = re.compile(r'(пароль|password|passwd|pwd)[\s:=_]+(\S+)', re.IGNORECASE)
+    LOGIN_PATTERN = re.compile(r'(логин|login|username)[\s:=_]+(\S+)', re.IGNORECASE)
+    API_KEY_PATTERN = re.compile(r'(api[_-]?key|apikey)[\s:=_]+(\S+)', re.IGNORECASE)
+    INTERNAL_URL_PATTERN = re.compile(r'(https?)://(intranet|internal|local|localhost|192\.168|10\.|172\.(1[6-9]|2|3[01])|127\.0\.0\.1)[^\s,]*', re.IGNORECASE)
+    URL_PATTERN = re.compile(r'https?://[^\s/$.?#].[^\s,]*', re.IGNORECASE)
+    IP_ADDRESS_PATTERN = re.compile(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b')
+    
+    # Note: AGE detection handled by NER models (Stage 2: Gherman, Stage 3: EU-PII)
+    
+    @classmethod
+    def detect_all(cls, text: str) -> list[DetectedEntity]:
+        """Detect all PII using regex patterns with overlap handling."""
+        entities = []
+        
+        def add_if_no_overlap(pattern, entity_type, context_keywords=None):
+            for match in pattern.finditer(text):
+                overlapping = any(
+                    not (match.end() <= e.start or match.start() >= e.end)
+                    for e in entities
+                )
+                if overlapping:
+                    continue
+                if context_keywords:
+                    ctx_start = max(0, match.start() - 20)
+                    context = text[ctx_start:match.end()].lower()
+                    if not any(kw in context for kw in context_keywords):
+                        continue
+                entities.append(DetectedEntity(
+                    text=match.group(),
+                    entity_type=entity_type,
+                    start=match.start(),
+                    end=match.end(),
+                    confidence=0.95,  # Regex is high confidence
+                    stage=DetectionStage.STAGE1_REGEX,
+                ))
+        
+        # Priority order (high confidence first)
+        add_if_no_overlap(cls.BANK_ACCOUNT_PATTERN, EntityType.BANK_ACCOUNT)
+        add_if_no_overlap(cls.VIN_PATTERN, EntityType.VIN)
+        add_if_no_overlap(cls.EMAIL_PATTERN, EntityType.EMAIL)
+        add_if_no_overlap(cls.PASSWORD_PATTERN, EntityType.PASSWORD)
+        add_if_no_overlap(cls.LOGIN_PATTERN, EntityType.LOGIN)
+        add_if_no_overlap(cls.API_KEY_PATTERN, EntityType.API_KEY)
+        
+        for pattern in cls.PHONE_PATTERNS:
+            add_if_no_overlap(pattern, EntityType.PHONE)
+        add_if_no_overlap(cls.CREDIT_CARD_PATTERN, EntityType.BANK_CARD)
+        
+        add_if_no_overlap(cls.SNILS_PATTERN, EntityType.SNILS)
+        add_if_no_overlap(cls.PASSPORT_PATTERN, EntityType.PASSPORT)
+        add_if_no_overlap(cls.CAR_NUMBER_PATTERN, EntityType.CAR_NUMBER)
+        
+        # IDs that need context
+        add_if_no_overlap(cls.INN_PATTERN, EntityType.INN, ['инн', 'inn', 'налог'])
+        add_if_no_overlap(cls.OGRN_PATTERN, EntityType.OGRN, ['огрн', 'ogrn'])
+        add_if_no_overlap(cls.KPP_PATTERN, EntityType.KPP, ['кпп', 'kpp'])
+        add_if_no_overlap(cls.BIC_PATTERN, EntityType.BIC, ['бик', 'bic'])
+        
+        add_if_no_overlap(cls.URL_PATTERN, EntityType.URL)
+        add_if_no_overlap(cls.IP_ADDRESS_PATTERN, EntityType.IP_ADDRESS)
+        
+        # Note: AGE is handled by NER models, not regex
+        
+        return sorted(entities, key=lambda x: x.start)
+
+
+class RegexAnonymizationStage(AnonymizationStage):
+    """Stage 1: Direct regex patterns (no Presidio)."""
+    
+    def __init__(self, config: dict[str, Any]):
+        super().__init__(config)
+        self.patterns = RegexPatterns()
+    
+    def detect(self, text: str) -> list[DetectedEntity]:
+        """Detect PII using direct regex patterns."""
+        return self.patterns.detect_all(text)
+```
+
+### 3.4 Stage 2: Gherman Russian NER (`rag_engine/anonymization/stages/stage2_gherman.py`)
+
+```python
+"""Stage 2: Gherman Russian NER model.
+
+Gherman/bert-base-NER-Russian provides accurate detection of:
+- Russian names (PERSON, FIRST_NAME, LAST_NAME)
+- Russian locations (CITY, REGION, COUNTRY)
+- Russian organizations
+
+Why not spaCy ru_core_news_lg:
+- spaCy models not trained for PII detection
+- Gherman specifically fine-tuned for Russian NER
+"""
+
+from typing import Any
+
+from rag_engine.anonymization.stages.base import AnonymizationStage
+from rag_engine.anonymization.types import (
+    DetectionStage,
+    DetectedEntity,
+    EntityType,
+)
+
+# Entity mapping from Gherman output to unified types
+GHERMAN_ENTITY_MAP = {
+    "FIRST_NAME": EntityType.NAME,
+    "MIDDLE_NAME": EntityType.NAME,
+    "LAST_NAME": EntityType.NAME,
+    "PER": EntityType.NAME,
+    "PERSON": EntityType.NAME,
+    "CITY": EntityType.ADDRESS,
+    "LOC": EntityType.ADDRESS,
+    "LOCATION": EntityType.ADDRESS,
+    "REGION": EntityType.ADDRESS,
+    "COUNTRY": EntityType.ADDRESS,
+    "ORGANIZATION": EntityType.COMPANY,
+    "ORG": EntityType.COMPANY,
+}
+
+
+class GhermanAnonymizationStage(AnonymizationStage):
+    """Stage 2: Gherman Russian NER."""
+    
+    def __init__(self, config: dict[str, Any]):
+        super().__init__(config)
+        self.ner_pipeline = None
+        self.device = config.get("model", {}).get("device", "auto")
+        self.confidence_threshold = config.get("model", {}).get("confidence_threshold", 0.5)
+    
+    def _load_model(self):
+        """Lazy load the model."""
+        if self.ner_pipeline is None:
+            from transformers import pipeline
+            model_name = self.config.get("model", {}).get("name", "Gherman/bert-base-NER-Russian")
+            self.ner_pipeline = pipeline(
+                "ner",
+                model=model_name,
+                tokenizer=model_name,
+                aggregation_strategy="simple",
+                device=self.device,
+            )
+    
+    def detect(self, text: str) -> list[DetectedEntity]:
+        """Detect Russian PII using Gherman NER."""
+        self._load_model()
+        
+        results = self.ner_pipeline(text)
+        entities = []
+        
+        for r in results:
+            entity_group = r.get("entity_group", "")
+            if entity_group == "O" or not entity_group:
+                continue
+            
+            if r.get("score", 0) < self.confidence_threshold:
+                continue
+            
+            entity_type = GHERMAN_ENTITY_MAP.get(entity_group)
+            if entity_type is None:
+                continue
+            
+            entities.append(DetectedEntity(
+                text=r.get("word", ""),
+                entity_type=entity_type,
+                start=r.get("start", 0),
+                end=r.get("end", 0),
+                confidence=r.get("score", 0),
+                stage=DetectionStage.STAGE2_GHERMAN,
+            ))
+        
+        return entities
+```
+
+### 3.5 Stage 3: EU-PII-Safeguard (`rag_engine/anonymization/stages/stage3_eu_pii.py`)
+
+```python
+"""Stage 3: EU-PII-Safeguard multilingual NER.
+
+Multilingual NER as final fallback:
+- 42 entity types across 26 European languages
+- Catches entities missed by Stage 1 (regex) and Stage 2 (Gherman)
+- Works well for non-Russian text mixed in Russian documents
+"""
+
+from typing import Any
+
+from rag_engine.anonymization.stages.base import AnonymizationStage
+from rag_engine.anonymization.types import (
+    DetectionStage,
+    DetectedEntity,
+    EntityType,
+)
+
+# Entity mapping from EU-PII output to unified types
+EU_PII_ENTITY_MAP = {
+    "PERSON": EntityType.NAME,
+    "EMAIL_ADDRESS": EntityType.EMAIL,
+    "PHONE_NUMBER": EntityType.PHONE,
+    "LOCATION": EntityType.ADDRESS,
+    "ORGANIZATION": EntityType.COMPANY,
+}
+
+
+class EuPiiAnonymizationStage(AnonymizationStage):
+    """Stage 3: EU-PII-Safeguard multilingual NER."""
+    
+    def __init__(self, config: dict[str, Any]):
+        super().__init__(config)
+        self.ner_pipeline = None
+        self.device = config.get("model", {}).get("device", "auto")
+        self.confidence_threshold = config.get("model", {}).get("confidence_threshold", 0.5)
+    
+    def _load_model(self):
+        """Lazy load the model."""
+        if self.ner_pipeline is None:
+            from transformers import pipeline
+            model_name = self.config.get("model", {}).get("name", "tabularisai/eu-pii-safeguard")
+            self.ner_pipeline = pipeline(
+                "ner",
+                model=model_name,
+                tokenizer=model_name,
+                aggregation_strategy="simple",
+                device=self.device,
+            )
+    
+    def detect(self, text: str) -> list[DetectedEntity]:
+        """Detect multilingual PII using EU-PII-Safeguard."""
+        self._load_model()
+        
+        results = self.ner_pipeline(text)
+        entities = []
+        
+        for r in results:
+            entity_group = r.get("entity_group", "")
+            if entity_group == "O" or not entity_group:
+                continue
+            
+            if r.get("score", 0) < self.confidence_threshold:
+                continue
+            
+            entity_type = EU_PII_ENTITY_MAP.get(entity_group)
+            if entity_type is None:
+                continue
+            
+            entities.append(DetectedEntity(
+                text=r.get("word", ""),
+                entity_type=entity_type,
+                start=r.get("start", 0),
+                end=r.get("end", 0),
+                confidence=r.get("score", 0),
+                stage=DetectionStage.STAGE3_EU_PII,
+            ))
+        
+        return entities
+```
+
+### 3.4 Pipeline Orchestrator (`rag_engine/anonymization/pipeline.py`)
+
+```python
+"""Main anonymization pipeline orchestrator.
+
+Runs all 3 stages in parallel on original text, then merges/deduplicates results.
 """
 
 import logging
 from typing import Any
 
-from presidio_analyzer import AnalyzerEngine, RecognizerRegistry, Pattern
-from presidio_analyzer.predefined_recognizers import (
-    EmailRecognizer,
-    PhoneRecognizer,
-    CreditCardRecognizer,
-    UrlRecognizer,
-    IpRecognizer,
-    PatternRecognizer,
-)
-from presidio_analyzer.nlp_engine import NlpEngineProvider
-from presidio_anonymizer import AnonymizerEngine
-
-from rag_engine.anonymization.stages.base import AnonymizationStage
-from rag_engine.anonymization.types import (
-    DetectionStage,
-    DetectedEntity,
-    EntityType,
-)
-
-logger = logging.getLogger(__name__)
-
-
-# =============================================================================
-# Custom Russian Recognizers
-# =============================================================================
-
-class RussianPhoneRecognizer(PatternRecognizer):
-    """Russian phone number recognizer.
-    
-    Patterns from rus-anonymizer:
-    - +7 (XXX) XXX-XX-XX
-    - +7 XXX XXX-XX-XX
-    - 8 (XXX) XXX-XX-XX
-    - 8 XXX XXX-XX-XX
-    - +7XXXXXXXXXX
-    - 8XXXXXXXXXX
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\+7\s*\(\d{3}\)\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}', 0.9),
-            Pattern(r'\+7\s*\d{3}\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}', 0.9),
-            Pattern(r'8\s*\(\d{3}\)\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}', 0.9),
-            Pattern(r'8\s*\d{3}\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}', 0.9),
-            Pattern(r'\+7\d{10}', 0.85),
-            Pattern(r'8\d{10}', 0.85),
-        ]
-        super().__init__(
-            supported_entity="PHONE_RU",
-            patterns=patterns,
-            context=["телефон", "тел", "мобильный", "контактный", "связи"],
-        )
-
-
-class RussianPassportRecognizer(PatternRecognizer):
-    """Russian passport number recognizer (series + number)."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{2}\s+\d{2}\s+\d{6}\b', 0.85),  # XX XX XXXXXX
-            Pattern(r'\b\d{4}\s+\d{6}\b', 0.85),          # XXXX XXXXXX
-        ]
-        super().__init__(
-            supported_entity="PASSPORT_RU",
-            patterns=patterns,
-            context=["паспорт", "паспорта", "паспортом", "свид-во"],
-        )
-
-
-class RussianSnilsRecognizer(PatternRecognizer):
-    """Russian SNILS (insurance number) recognizer."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{3}[-\s]*\d{3}[-\s]*\d{3}[-\s]*\d{2}\b', 0.9),
-        ]
-        super().__init__(
-            supported_entity="SNILS_RU",
-            patterns=patterns,
-            context=["снилс", "СНИЛС", "страховой", "страхования"],
-        )
-
-
-class RussianInnRecognizer(PatternRecognizer):
-    """Russian INN (tax ID) recognizer."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{10}\b', 0.8),  # Legal entity (10 digits)
-            Pattern(r'\b\d{12}\b', 0.8),  # Individual (12 digits)
-        ]
-        super().__init__(
-            supported_entity="INN_RU",
-            patterns=patterns,
-            context=["инн", "ИНН", "налоговый", "налоговая"],
-        )
-
-
-class RussianOgrnRecognizer(PatternRecognizer):
-    """Russian OGRN (State Registration Number) recognizer.
-    
-    OGRN - Primary State Registration Number (Основной государственный регистрационный номер)
-    - 13 digits: Legal entities
-    - 15 digits: Individual entrepreneurs (ОГРНИП)
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{13}\b', 0.85),  # OGRN (legal entity)
-            Pattern(r'\b\d{15}\b', 0.85),  # OGRNIP (individual entrepreneur)
-        ]
-        super().__init__(
-            supported_entity="OGRN_RU",
-            patterns=patterns,
-            context=["огрн", "ОГРН", "огрнип", "ОГРНИП", "госрегистрация", "регистрация"],
-        )
-
-
-class RussianKppRecognizer(PatternRecognizer):
-    """Russian KPP (Tax Registration Reason Code) recognizer.
-    
-    КПП - Code of Reason for Registration (Код причины постановки на учёт)
-    - 9 digits
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{9}\b', 0.8),
-        ]
-        super().__init__(
-            supported_entity="KPP_RU",
-            patterns=patterns,
-            context=["кпп", "КПП", "причина постановки"],
-        )
-
-
-class RussianOkpoRecognizer(PatternRecognizer):
-    """Russian OKPO (National Classifier of Businesses) recognizer.
-    
-    ОКПО - Russian National Classifier of Businesses and Organizations
-    - 8 digits: Legal entities
-    - 10 digits: Individual entrepreneurs
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{8}\b', 0.7),   # ОКПО legal
-            Pattern(r'\b\d{10}\b', 0.7),  # ОКПО IE
-        ]
-        super().__init__(
-            supported_entity="OKPO_RU",
-            patterns=patterns,
-            context=["окпо", "ОКПО", "классификатор"],
-        )
-
-
-class RussianOkvedRecognizer(PatternRecognizer):
-    """Russian OKVED (Types of Economic Activity) recognizer.
-    
-    ОКВЭД - Russian National Classifier of Types of Economic Activity
-    - Format: XX.XX.XX or X.XX.XX
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{2}\.\d{2}\.\d{2}\b', 0.7),
-            Pattern(r'\b\d{1,2}\.\d{2}\.\d{2}\b', 0.7),
-        ]
-        super().__init__(
-            supported_entity="OKVED_RU",
-            patterns=patterns,
-            context=["оквэд", "ОКВЭД", "вид деятельности", "экономическая деятельность"],
-        )
-
-
-class RussianBicRecognizer(PatternRecognizer):
-    """Russian BIC (Bank Identification Code) recognizer.
-    
-    БИК - Bank Identification Code (Банковский идентификационный код)
-    - 9 digits, starts with 04 or 05
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b0[4-5]\d{7}\b', 0.85),
-        ]
-        super().__init__(
-            supported_entity="BIC_RU",
-            patterns=patterns,
-            context=["бик", "БИК", "банковский идентификационный код"],
-        )
-
-
-class RussianBankAccountRecognizer(PatternRecognizer):
-    """Russian bank account number recognizer.
-    
-    Settlement account (Расчетный счет): 20 digits, starts with 405-408
-    Correspondent account (Корреспондентский счет): 20 digits, starts with 301
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b40[5-8]\d{17}\b', 0.8),  # Settlement account
-            Pattern(r'\b301\d{17}\b', 0.8),       # Correspondent account
-        ]
-        super().__init__(
-            supported_entity="BANK_ACCOUNT_RU",
-            patterns=patterns,
-            context=["расчетный счет", "р/с", "корреспондентский счет", "к/с", "счет"],
-        )
-
-
-class RussianOmsPolicyRecognizer(PatternRecognizer):
-    """Russian OMS (Mandatory Medical Insurance) policy recognizer.
-    
-    ОМС - Polis of Mandatory Medical Insurance
-    - 16 digits: New format
-    - 9 digits: Old format
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{16}\b', 0.8),  # New format
-            Pattern(r'\b\d{9}\b', 0.7),   # Old format
-        ]
-        super().__init__(
-            supported_entity="OMS_POLICY_RU",
-            patterns=patterns,
-            context=["омс", "ОМС", "полис", "медицинский страховой", "страховая медицинская"],
-        )
-
-
-class RussianDriverLicenseRecognizer(PatternRecognizer):
-    """Russian Driver's License recognizer.
-    
-    Водительское удостоверение
-    - Format: XX XX XXXXXX (10 digits with spaces)
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{2}\s*\d{2}\s*\d{6}\b', 0.75),
-        ]
-        super().__init__(
-            supported_entity="DRIVER_LICENSE_RU",
-            patterns=patterns,
-            context=["водительское удостоверение", "ВУ", "права", "водительские права"],
-        )
-
-
-class RussianBirthCertRecognizer(PatternRecognizer):
-    """Russian Birth Certificate recognizer.
-    
-    Свидетельство о рождении
-    - Format: Roman numeral + 2 Cyrillic letters + 6 digits
-      Example: IV-ЖА-123456 or IV ЖА 123456
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b[IVX]+[-\s]*[А-ЯЁ]{2}[-\s]*№?\s*\d{6}\b', 0.7),
-            Pattern(r'\b[IVX]+\s+[А-ЯЁ]{2}\s+\d{6}\b', 0.7),
-        ]
-        super().__init__(
-            supported_entity="BIRTH_CERT_RU",
-            patterns=patterns,
-            context=["свидетельство о рождении", "ЗАГС", "рождении"],
-        )
-
-
-class RussianMilitaryIdRecognizer(PatternRecognizer):
-    """Russian Military ID recognizer.
-    
-    Военный билет
-    - Format: 2 Cyrillic letters + 6-7 digits
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b[А-ЯЁ]{2}\s*\d{6,7}\b', 0.75),
-        ]
-        super().__init__(
-            supported_entity="MILITARY_ID_RU",
-            patterns=patterns,
-            context=["военный билет", "военной", "призыв", "мобилизация"],
-        )
-
-
-class RussianVinRecognizer(PatternRecognizer):
-    """Russian VIN (Vehicle Identification Number) recognizer.
-    
-    VIN - Идентификационный номер транспортного средства
-    - 17 alphanumeric characters
-    - Excludes I, O, Q (to avoid confusion)
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b[A-HJ-NPR-Z0-9]{17}\b', 0.85),
-        ]
-        super().__init__(
-            supported_entity="VIN_RU",
-            patterns=patterns,
-            context=["вин", "VIN", "идентификационный номер тс", "номер кузова", "номер шасси"],
-        )
-
-
-class RussianOkatoRecognizer(PatternRecognizer):
-    """Russian OKATO/OKTMO (Territorial codes) recognizer.
-    
-    ОКАТО/ОКТМО - Russian classifiers of administrative-territorial divisions
-    - OKATO: 8 digits
-    - OKTMO: 11 digits
-    """
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b\d{8}\b', 0.6),   # OKATO
-            Pattern(r'\b\d{11}\b', 0.6),  # OKTMO
-        ]
-        super().__init__(
-            supported_entity="OKATO_RU",
-            patterns=patterns,
-            context=["окато", "ОКАТО", "октмо", "ОКТМО", "территориальный код"],
-        )
-
-
-class RussianCarNumberRecognizer(PatternRecognizer):
-    """Russian car registration number recognizer."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b[АВЕКМНОРСТУХ]\d{3}[АВЕКМНОРСТУХ]{2}\d{2,3}\b', 0.85),
-        ]
-        super().__init__(
-            supported_entity="CAR_NUMBER_RU",
-            patterns=patterns,
-            context=["номер", "машина", "автомобиль", "государственный", "регистрация"],
-        )
-
-
-class RussianAgeRecognizer(PatternRecognizer):
-    """Russian age pattern recognizer."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'мне\s+\d{1,2}\s+лет', 0.7),
-            Pattern(r'\b\d{1,2}\s+лет\b', 0.6),
-        ]
-        super().__init__(
-            supported_entity="AGE_RU",
-            patterns=patterns,
-            context=["лет", "года"],
-        )
-
-
-class RussianShortNameRecognizer(PatternRecognizer):
-    """Russian short name/initials recognizer (Иванов И.О.)."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'\b[А-ЯЁ][а-яё]+\s+[А-ЯЁ]\.(?:\s*[А-ЯЁ]\.)?', 0.8),
-            Pattern(r'\b[А-ЯЁ][а-яё]+\s+[А-ЯЁ]\.\s*[А-ЯЁ]\.', 0.8),
-        ]
-        super().__init__(
-            supported_entity="PERSON_SHORT_RU",
-            patterns=patterns,
-        )
-
-
-class PasswordRecognizer(PatternRecognizer):
-    """Corporate password detector."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'(пароль|password|passwd|pwd)[_\s:=]+[^\s]+', 0.95),
-        ]
-        super().__init__(
-            supported_entity="PASSWORD",
-            patterns=patterns,
-        )
-
-
-class LoginRecognizer(PatternRecognizer):
-    """Corporate login/username detector."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'(логин|login|username)[_\s:=]+[^\s]+', 0.95),
-        ]
-        super().__init__(
-            supported_entity="LOGIN",
-            patterns=patterns,
-        )
-
-
-class ApiKeyRecognizer(PatternRecognizer):
-    """API key/token detector."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'(api[_-]?key|apikey)[_\s:=]+[^\s]+', 0.95),
-            Pattern(r'(ключ[а-яё]*\s*(api|доступа))[_\s:=]+[^\s]+', 0.95),
-        ]
-        super().__init__(
-            supported_entity="API_KEY",
-            patterns=patterns,
-        )
-
-
-class InternalUrlRecognizer(PatternRecognizer):
-    """Internal/corporate URL detector."""
-    
-    def __init__(self):
-        patterns = [
-            Pattern(r'(http|https)://(intranet|internal|local|192\.168|10\.|172\.(1[6-9]|2|3[01]))[^\s]*', 0.9),
-            Pattern(r'www\.(intranet|internal|local)[^\s]*', 0.9),
-        ]
-        super().__init__(
-            supported_entity="INTERNAL_URL",
-            patterns=patterns,
-        )
-
-
-# =============================================================================
-# Stage Implementation
-# =============================================================================
-
-class RegexAnonymizationStage(AnonymizationStage):
-    """Stage 1: Presidio orchestrator with custom Russian recognizers.
-    
-    Uses Presidio as the main framework, extended with custom recognizers
-    for Russian-specific PII types.
-    """
-    
-    def __init__(self, config: dict[str, Any]):
-        super().__init__(config)
-        
-        # Build registry with custom recognizers
-        registry = RecognizerRegistry()
-        
-        # Load built-in recognizers (configurable)
-        built_in = config.get("presidio", {}).get("built_in_entities", [
-            "EMAIL_ADDRESS", "CREDIT_CARD", "URL", "IP_ADDRESS", "DATE_TIME"
-        ])
-        
-        if "EMAIL_ADDRESS" in built_in:
-            registry.add_recognizer(EmailRecognizer())
-        if "CREDIT_CARD" in built_in:
-            registry.add_recognizer(CreditCardRecognizer())
-        if "URL" in built_in:
-            registry.add_recognizer(UrlRecognizer())
-        if "IP_ADDRESS" in built_in:
-            registry.add_recognizer(IpRecognizer())
-        # Note: PhoneRecognizer is generic, we use RussianPhoneRecognizer instead
-        
-        # Add custom Russian recognizers
-        custom_recognizers = config.get("custom_recognizers", {}).get("enabled", True)
-        if custom_recognizers:
-            registry.add_recognizer(RussianPhoneRecognizer())
-            registry.add_recognizer(RussianPassportRecognizer())
-            registry.add_recognizer(RussianSnilsRecognizer())
-            registry.add_recognizer(RussianInnRecognizer())
-            registry.add_recognizer(RussianOgrnRecognizer())
-            registry.add_recognizer(RussianKppRecognizer())
-            registry.add_recognizer(RussianOkpoRecognizer())
-            registry.add_recognizer(RussianOkvedRecognizer())
-            registry.add_recognizer(RussianBicRecognizer())
-            registry.add_recognizer(RussianBankAccountRecognizer())
-            registry.add_recognizer(RussianOmsPolicyRecognizer())
-            registry.add_recognizer(RussianDriverLicenseRecognizer())
-            registry.add_recognizer(RussianBirthCertRecognizer())
-            registry.add_recognizer(RussianMilitaryIdRecognizer())
-            registry.add_recognizer(RussianVinRecognizer())
-            registry.add_recognizer(RussianOkatoRecognizer())
-            registry.add_recognizer(RussianCarNumberRecognizer())
-            registry.add_recognizer(RussianAgeRecognizer())
-            registry.add_recognizer(RussianShortNameRecognizer())
-            registry.add_recognizer(PasswordRecognizer())
-            registry.add_recognizer(LoginRecognizer())
-            registry.add_recognizer(ApiKeyRecognizer())
-            registry.add_recognizer(InternalUrlRecognizer())
-        
-        # Initialize Presidio analyzer with custom registry
-        self.analyzer = AnalyzerEngine(registry=registry, supported_languages=["en", "ru"])
-        self.anonymizer = AnonymizerEngine()
-        
-        logger.info("Stage 1 initialized with Presidio + custom Russian recognizers")
-    
-    def detect(self, text: str) -> list[DetectedEntity]:
-        """Detect PII using Presidio with custom recognizers."""
-        entities = []
-        
-        # Run Presidio analyzer
-        results = self.analyzer.analyze(
-            text=text,
-            language="ru",  # Try Russian first for mixed text
-        )
-        
-        for result in results:
-            entity_type = self._map_entity_type(result.entity_type)
-            if entity_type:
-                entities.append(DetectedEntity(
-                    text=text[result.start:result.end],
-                    entity_type=entity_type,
-                    start=result.start,
-                    end=result.end,
-                    confidence=result.score,
-                    stage=DetectionStage.STAGE1_REGEX,
-                ))
-        
-        return entities
-    
-    def _map_entity_type(self, presidio_type: str) -> EntityType | None:
-        """Map Presidio entity types to our EntityType enum."""
-        mapping = {
-            # Presidio built-in
-            "EMAIL_ADDRESS": EntityType.EMAIL,
-            "CREDIT_CARD": EntityType.BANK_CARD,
-            "URL": EntityType.URL,
-            "IP_ADDRESS": EntityType.IP_ADDRESS,
-            "DATE_TIME": EntityType.DATE,
-            
-            # Custom Russian
-            "PHONE_RU": EntityType.PHONE,
-            "PASSPORT_RU": EntityType.PASSPORT,
-            "SNILS_RU": EntityType.SNILS,
-            "INN_RU": EntityType.INN,
-            "OGRN_RU": EntityType.OGRN,
-            "KPP_RU": EntityType.KPP,
-            "OKPO_RU": EntityType.OKPO,
-            "OKVED_RU": EntityType.OKVED,
-            "BIC_RU": EntityType.BIC,
-            "BANK_ACCOUNT_RU": EntityType.BANK_ACCOUNT,
-            "OMS_POLICY_RU": EntityType.OMS_POLICY,
-            "DRIVER_LICENSE_RU": EntityType.DRIVER_LICENSE,
-            "BIRTH_CERT_RU": EntityType.BIRTH_CERT,
-            "MILITARY_ID_RU": EntityType.MILITARY_ID,
-            "VIN_RU": EntityType.VIN,
-            "OKATO_RU": EntityType.OKATO,
-            "CAR_NUMBER_RU": EntityType.CAR_NUMBER,
-            "AGE_RU": EntityType.AGE,
-            "PERSON_SHORT_RU": EntityType.NAME,
-            
-            # Corporate
-            "PASSWORD": EntityType.PASSWORD,
-            "LOGIN": EntityType.LOGIN,
-            "API_KEY": EntityType.API_KEY,
-            "INTERNAL_URL": EntityType.INTERNAL_URL,
-        }
-        return mapping.get(presidio_type.upper())
-```
-
-### 3.4 Stage 2: Russian NER (`rag_engine/anonymization/stages/stage2_ner.py`)
-
-Stage 2 uses `Gherman/bert-base-NER-Russian`. It is the primary NER engine for Russian text.
-
-- **Speed**: ~50-70ms/sample on CPU.
-- **Accuracy**: Very high for standard Russian PII (PERSON, LOC, ORG).
-- **Function**: Runs before Stage 3 to catch major entities quickly and accurately.
-
-### 3.5 Stage 3: EU-PII-Safeguard (`rag_engine/anonymization/stages/stage3_eu_pii.py`)
-
-Stage 3 uses `tabularisai/eu-pii-safeguard` as a multilingual fallback.
-
-- **Speed**: ~150-200ms/sample on CPU.
-- **Function**: Catches job titles, detailed address components, and multilingual PII that Gherman might miss.
-- **Fragmentation**: Known to fragment entities (e.g., "Санкт-Петербург" → 3 entities). Controlled via post-processing merge logic.
-
-### 3.6 Post-Processing & Overlap Resolution
-
-The pipeline applies a centralized resolution logic after all stages have collected their candidates:
-
-1.  **Merge Adjacent**: Entities of the same semantic type that are adjacent or separated by 1-2 chars (punctuation/spaces) are merged into a single entity.
-2.  **Longest Match First**: Candidates are sorted by length (descending).
-3.  **Conflict Map**: A boolean array (`covered_indices`) tracks text spans. If a candidate overlaps with an already-covered span, it is discarded.
-4.  **Position Stability**: Final entities are sorted by start index and replaced in reverse order to maintain position accuracy during string manipulation.
-
-```python
-"""Stage 3: Russian NER using Gherman/bert-base-NER-Russian."""
-
-import logging
-from typing import Any
-
-from rag_engine.anonymization.stages.base import AnonymizationStage
-from rag_engine.anonymization.types import (
-    DetectionStage,
-    DetectedEntity,
-    EntityType,
-)
-
-logger = logging.getLogger(__name__)
-
-
-class RussianNERAnonymizationStage(AnonymizationStage):
-    """Stage 3: Russian-specific NER.
-    
-    Uses Gherman/bert-base-NER-Russian for Russian-specific entity detection.
-    Complements EU-PII-Safeguard with better Russian person/organization detection.
-    """
-    
-    def __init__(self, config: dict[str, Any]):
-        super().__init__(config)
-        
-        self.model_config = config.get("model", {})
-        self.entity_mapping = config.get("entity_mapping", {
-            "FIRST_NAME": "NAME",
-            "MIDDLE_NAME": "NAME",
-            "LAST_NAME": "NAME",
-            "PERSON": "NAME",
-            "CITY": "ADDRESS",
-            "COUNTRY": "ADDRESS",
-            "REGION": "ADDRESS",
-            "DISTRICT": "ADDRESS",
-            "STREET": "ADDRESS",
-            "ADDRESS": "ADDRESS",
-            "ORGANIZATION": "COMPANY",
-        })
-        
-        self._pipeline = None
-    
-    @property
-    def pipeline(self):
-        """Lazy load the model pipeline."""
-        if self._pipeline is None:
-            from transformers import pipeline
-            
-            model_name = self.model_config.get("name", "Gherman/bert-base-NER-Russian")
-            device = self.model_config.get("device", "auto")
-            
-            self._pipeline = pipeline(
-                "ner",
-                model=model_name,
-                tokenizer=model_name,
-                aggregation_strategy="simple",
-                device=device,
-            )
-        
-        return self._pipeline
-    
-    def detect(self, text: str) -> list[DetectedEntity]:
-        """Detect Russian entities using NER."""
-        if not self.is_enabled():
-            return []
-        
-        try:
-            results = self.pipeline(text)
-        except Exception as e:
-            logger.warning(f"Russian NER inference failed: {e}")
-            return []
-        
-        entities = []
-        for result in results:
-            entity_group = result.get("entity_group")
-            mapped_type = self.entity_mapping.get(entity_group)
-            
-            if mapped_type:
-                try:
-                    entity_type = EntityType[mapped_type]
-                except KeyError:
-                    entity_type = EntityType.NAME  # Default fallback
-                
-                entities.append(DetectedEntity(
-                    text=result.get("word", ""),
-                    entity_type=entity_type,
-                    start=result.get("start", 0),
-                    end=result.get("end", 0),
-                    confidence=result.get("score", 0.0),
-                    stage=DetectionStage.STAGE3_RUSSIAN_NER,
-                ))
-        
-        return entities
-```
-
-### 3.6 Main Pipeline (`rag_engine/anonymization/pipeline.py`)
-
-```python
-"""Main anonymization pipeline orchestrator."""
-
-import logging
-import uuid
-from typing import Any
-
 from rag_engine.anonymization.config import AnonymizationConfig
 from rag_engine.anonymization.mapping_store import MappingStore
 from rag_engine.anonymization.stages.stage1_regex import RegexAnonymizationStage
-from rag_engine.anonymization.stages.stage2_eu_pii import EUPIIAnonymizationStage
-from rag_engine.anonymization.stages.stage3_ner import RussianNERAnonymizationStage
+from rag_engine.anonymization.stages.stage2_gherman import GhermanAnonymizationStage
+from rag_engine.anonymization.stages.stage3_eu_pii import EuPiiAnonymizationStage
 from rag_engine.anonymization.types import (
     AnonymizationResult,
     DeanonymizationResult,
@@ -1582,25 +985,25 @@ logger = logging.getLogger(__name__)
 class AnonymizationPipeline:
     """Cascaded reversible anonymization pipeline.
     
-    Runs multiple stages in sequence to maximize PII detection coverage.
-    Maintains a mapping for reversible deanonymization.
+    Runs multiple stages in parallel on original text, then merges/deduplicates.
+    Each stage sees the full original text to maximize detection.
     """
     
     def __init__(self, config: AnonymizationConfig | None = None):
         """Initialize pipeline with configuration."""
         self.config = config or AnonymizationConfig()
         
-        # Initialize stages
+        # Initialize stages (all run on original text in parallel)
         self.stages = []
         
         if self.config.stage1_enabled:
             self.stages.append(RegexAnonymizationStage(self.config.stage1_config))
         
         if self.config.stage2_enabled:
-            self.stages.append(EUPIIAnonymizationStage(self.config.stage2_config))
+            self.stages.append(GhermanAnonymizationStage(self.config.stage2_config))
         
         if self.config.stage3_enabled:
-            self.stages.append(RussianNERAnonymizationStage(self.config.stage3_config))
+            self.stages.append(EuPiiAnonymizationStage(self.config.stage3_config))
         
         # Initialize mapping store
         self.mapping_store = MappingStore(ttl=self.config.session_mapping_ttl)
@@ -1610,13 +1013,13 @@ class AnonymizationPipeline:
     def anonymize(
         self, 
         text: str, 
-        session_id: str | None = None,
     ) -> tuple[str, dict]:
         """Anonymize text and return (anonymized_text, mapping).
         
+        All stages run on original text in parallel, then results are merged/deduplicated.
+        
         Args:
             text: Input text to anonymize
-            session_id: Optional session ID for multi-turn conversations
             
         Returns:
             Tuple of (anonymized_text, pii_mapping)
@@ -1624,7 +1027,7 @@ class AnonymizationPipeline:
         if not text or not text.strip():
             return text, {}
         
-        # Detect entities from all stages
+        # Run all stages in parallel on original text
         all_entities: list[DetectedEntity] = []
         
         for stage in self.stages:
@@ -1635,43 +1038,24 @@ class AnonymizationPipeline:
                 except Exception as e:
                     logger.warning(f"Stage {stage.__class__.__name__} failed: {e}")
         
-        # Deduplicate overlapping entities (keep highest confidence)
-        entities = self._deduplicate_entities(all_entities)
+        # Merge/deduplicate: all stages see original text
+        entities = self._resolve_overlaps(all_entities, text)
         
         if not entities:
             logger.debug("No PII entities detected")
             return text, {}
         
-        # Generate placeholders and mapping
+        # Generate placeholders and apply replacements
         mapping: dict[str, str] = {}
-        counter = 0
-        
-        # Sort by start position (reverse) for replacement
         sorted_entities = sorted(entities, key=lambda e: e.start, reverse=True)
         
         anonymized = text
         for entity in sorted_entities:
-            placeholder = f"[{entity.entity_type.value}_{counter}]"
+            placeholder = f"[{entity.entity_type.value}_{len(mapping)}]"
             mapping[placeholder] = entity.text
-            
-            # Replace in text
             anonymized = anonymized[:entity.start] + placeholder + anonymized[entity.end:]
-            
-            # Adjust positions for subsequent entities
-            delta = len(placeholder) - (entity.end - entity.start)
-            for e in sorted_entities:
-                if e.start > entity.start:
-                    e.start += delta
-                    e.end += delta
-            
-            counter += 1
         
-        # Store mapping for session (if session_id provided)
-        mapping_id = None
-        if session_id:
-            mapping_id = self.mapping_store.store(session_id, mapping)
-        
-        logger.info(f"Anonymized {len(entities)} entities, mapping_id={mapping_id}")
+        logger.info(f"Anonymized {len(entities)} entities")
         
         return anonymized, mapping
     
@@ -1681,16 +1065,7 @@ class AnonymizationPipeline:
         mapping: dict[str, str] | None = None,
         mapping_id: str | None = None,
     ) -> DeanonymizationResult:
-        """Restore original PII from anonymized text.
-        
-        Args:
-            text: Anonymized text
-            mapping: Direct mapping dict (from anonymize output)
-            mapping_id: Mapping ID (for session-based retrieval)
-            
-        Returns:
-            DeanonymizationResult with restored text
-        """
+        """Restore original PII from anonymized text."""
         # Get mapping from store if mapping_id provided
         if mapping_id and not mapping:
             mapping = self.mapping_store.get(mapping_id)
@@ -1702,59 +1077,87 @@ class AnonymizationPipeline:
                 restored_count=0,
             )
         
-        # Sort placeholders by length (reverse) to avoid partial replacements
+        # Sort by length (reverse) to avoid partial replacements
         sorted_placeholders = sorted(mapping.keys(), key=len, reverse=True)
         
         deanonymized = text
         restored_count = 0
-        remaining_placeholders = []
         
         for placeholder in sorted_placeholders:
             if placeholder in deanonymized:
                 deanonymized = deanonymized.replace(placeholder, mapping[placeholder])
                 restored_count += 1
-            else:
-                # Check for variations (nested/repeated)
-                pass
-        
-        # Check for remaining placeholders that weren't restored
-        import re
-        placeholder_pattern = r'\[[A-Z_]+_\d+\]'
-        remaining_placeholders = re.findall(placeholder_pattern, deanonymized)
         
         return DeanonymizationResult(
             anonymized_text=text,
             deanonymized_text=deanonymized,
             restored_count=restored_count,
-            remaining_placeholders=remaining_placeholders,
         )
     
-    def _deduplicate_entities(
+    def _resolve_overlaps(
         self, 
-        entities: list[DetectedEntity]
+        entities: list[DetectedEntity],
+        text: str,
     ) -> list[DetectedEntity]:
-        """Remove overlapping entities, keeping highest confidence."""
+        """Merge adjacent and deduplicate overlapping entities.
+        
+        Algorithm:
+        1. Sort by length (longest first)
+        2. Use covered indices to track what's replaced
+        3. Merge adjacent same-type entities (fragmentation control)
+        """
         if not entities:
             return []
         
-        # Sort by confidence (descending)
-        sorted_entities = sorted(entities, key=lambda e: e.confidence, reverse=True)
+        # Sort by length (longest first), then by start
+        sorted_entities = sorted(
+            entities, 
+            key=lambda x: (x.end - x.start, -x.start), 
+            reverse=True
+        )
         
-        result = []
-        for entity in sorted_entities:
-            overlaps = False
-            for existing in result:
-                if not (entity.end <= existing.start or entity.start >= existing.end):
-                    overlaps = True
-                    break
+        text_len = len(text)
+        covered = [False] * text_len
+        final = []
+        
+        for e in sorted_entities:
+            start, end = e.start, e.end
             
-            if not overlaps:
-                result.append(entity)
+            # Check if overlaps with already covered
+            is_overlapping = any(covered[idx] for idx in range(start, min(end, text_len)))
+            
+            if not is_overlapping:
+                final.append(e)
+                for idx in range(start, min(end, text_len)):
+                    covered[idx] = True
         
-        return result
+        # Merge adjacent same-type entities
+        final.sort(key=lambda x: x.start)
+        merged = []
+        
+        for e in final:
+            if not merged:
+                merged.append(e)
+                continue
+            
+            prev = merged[-1]
+            # Adjacent (within 2 chars) AND same semantic type
+            is_adjacent = prev.end >= e.start - 2 and prev.entity_type == e.entity_type
+            
+            if is_adjacent:
+                # Merge: extend previous
+                prev.text = prev.text + ' ' + e.text
+                prev.end = e.end
+                # Keep higher confidence
+                if e.confidence > prev.confidence:
+                    prev.confidence = e.confidence
+            else:
+                merged.append(e)
+        
+        return merged
 ```
 
-### 3.7 LLM Wrapper Prompt (`rag_engine/anonymization/prompts.py`)
+### 3.5 LLM Wrapper Prompt (`rag_engine/anonymization/prompts.py`)
 
 Add note to user message wrapper for LLM context:
 
@@ -2293,6 +1696,7 @@ rag_engine/tests/test_anonymization/
 ├── test_stages.py             # Individual stage tests
 ├── test_reversibility.py     # Round-trip anonymization/deanonymization
 ├── test_integration.py       # Full flow integration tests
+├── test_benchmark.py         # Performance benchmarking (borrowed from Jay Guard)
 └── fixtures/
     ├── __init__.py
     ├── samples.py            # Test samples from notebook
@@ -2300,7 +1704,97 @@ rag_engine/tests/test_anonymization/
         └── jayguard_sample.json  # Subset of jayguard-ner-benchmark
 ```
 
-### 6.2 Test Samples
+### 6.2 Benchmarking (borrowed from Jay Guard methodology)
+
+```python
+"""Performance benchmarking - borrowed from Jay Guard methodology.
+
+Reference: https://habr.com/ru/companies/just_ai/articles/946392/
+Dataset: https://huggingface.co/datasets/just-ai/jayguard-ner-benchmark
+"""
+
+import time
+import json
+from dataclasses import dataclass
+from typing import Callable
+
+@dataclass
+class BenchmarkResult:
+    """Results from benchmarking a detection stage."""
+    stage_name: str
+    total_samples: int
+    total_time_seconds: float
+    avg_latency_ms: float
+    detections_per_second: float
+    f1_score: float | None = None
+    precision: float | None = None
+    recall: float | None = None
+
+
+def benchmark_stage(
+    stage_name: str,
+    detect_fn: Callable[[str], list],
+    samples: list[str],
+    ground_truth: list[dict] | None = None,
+) -> BenchmarkResult:
+    """Benchmark a detection stage.
+    
+    Args:
+        stage_name: Name of the stage being benchmarked
+        detect_fn: Detection function to benchmark
+        samples: List of text samples
+        ground_truth: Optional list of ground truth annotations for F1 calculation
+    
+    Returns:
+        BenchmarkResult with latency and accuracy metrics
+    """
+    total_time = 0
+    total_detections = 0
+    
+    for sample in samples:
+        start = time.perf_counter()
+        entities = detect_fn(sample)
+        elapsed = time.perf_counter() - start
+        
+        total_time += elapsed
+        total_detections += len(entities)
+    
+    avg_latency_ms = (total_time / len(samples)) * 1000
+    dps = len(samples) / total_time if total_time > 0 else 0
+    
+    result = BenchmarkResult(
+        stage_name=stage_name,
+        total_samples=len(samples),
+        total_time_seconds=total_time,
+        avg_latency_ms=avg_latency_ms,
+        detections_per_second=dps,
+    )
+    
+    # Calculate F1 if ground truth provided
+    if ground_truth:
+        # Compare detections vs ground truth
+        # ... (F1 calculation logic)
+        pass
+    
+    return result
+
+
+# Expected benchmarks (based on Jay Guard article):
+# - Regex: ~0.1ms/sample, very high precision
+# - Gherman Russian NER: ~50-70ms/sample on CPU
+# - EU-PII-Safeguard: ~150-200ms/sample on CPU
+#
+# Jay Guard benchmarks for reference (from article):
+# | Model        | PERSON F1 | PERSON Precision | PERSON Recall |
+# |--------------|-----------|------------------|----------------|
+# | Natasha      | 0.64      | 0.63             | 0.68           |
+# | spaCy ru    | 0.73      | 0.73             | 0.76           |
+# | DeepPavlov   | 0.58      | 0.59             | 0.59           |
+# | flair       | 0.86      | 0.86             | 0.87           |
+# | GLiNER      | 0.45      | 0.44             | 0.53           |
+```
+
+### 6.3 Test Samples
 
 From `Anonymization.ipynb`:
 
@@ -2378,14 +1872,14 @@ CORPORATE_SAMPLES = [
 ### Phase 1: Core Pipeline (Week 1)
 - [ ] Create directory structure
 - [ ] Implement data types and base interfaces
-- [ ] Implement Stage 1: Regex + Presidio
+- [ ] Implement Stage 1: Direct Regex Patterns (no Presidio)
 - [ ] Basic reversibility
 - [ ] Integration in `app.py` (before guardian)
 - [ ] Unit tests for Stage 1
 
 ### Phase 2: ML Models (Week 2)
-- [ ] Implement Stage 2: EU-PII-Safeguard
-- [ ] Implement Stage 3: Russian NER
+- [ ] Implement Stage 2: Gherman Russian NER
+- [ ] Implement Stage 3: EU-PII-Safeguard
 - [ ] Inference provider factory
 - [ ] vLLM/MOSEC integration
 - [ ] Unit tests for all stages
@@ -2430,8 +1924,8 @@ CORPORATE_SAMPLES = [
 
 6. **Latin vs Russian NER**: EU-PII-Safeguard vs Russian-specific NER?
    - EU-PII-Safeguard works for Russian too (see reference notebook)
-   - Three stages: (1) deterministic/regex, (2) EU NER (multilingual), (3) Russian NER (Gherman/Natasha)
-   - Stage 3 complements Stage 2 for Russian-specific entities
+   - Three stages: (1) deterministic/regex, (2) Russian NER (Gherman), (3) EU NER (multilingual)
+   - Stage 3 complements Stage 2 for non-Russian entities
 
 7. **Russian NER Gaps**: What entities does Gherman miss vs rus-anonymizer?
    - rus-anonymizer: Passport, SNILS, INN, car numbers, etc.
@@ -2445,6 +1939,7 @@ CORPORATE_SAMPLES = [
    - **DECIDED**: Use semantic placeholders ("Person A", "Email B") based on DataAnonymiser approach
    - Benefits: More readable for LLM, consistent mapping (same original → same placeholder)
    - Two-phase approach: Phase 1 counts entities, Phase 2 replaces consistently
+   - **VERIFIED**: Tested in `test_anonymization_stages.py` - working approach
 
 
 ---
@@ -2460,8 +1955,3 @@ CORPORATE_SAMPLES = [
 - [just-ai/jayguard-ner-benchmark](https://huggingface.co/datasets/just-ai/jayguard-ner-benchmark)
 - [cmw-mosec](https://github.com/arterm-sedov/cmw-mosec)
 - [cmw-vllm](https://github.com/arterm-sedov/cmw-vllm)
-
----
-
-**Document Version:** 1.0  
-**Last Updated:** 2026-02-27
