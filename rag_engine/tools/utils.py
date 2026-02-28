@@ -4,6 +4,7 @@ This module contains utilities specific to parsing and processing tool results.
 For generic message handling utilities (content extraction, type checking, etc.),
 see rag_engine.utils.message_utils.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,22 +30,32 @@ def parse_tool_result_to_articles(tool_result: str) -> list[Article]:
         >>> articles = parse_tool_result_to_articles(result_json)
         >>> # Use articles with LLM or format_with_citations
     """
+    # Defensive check for empty or None tool results
+    if not tool_result or not tool_result.strip():
+        logger.debug("Empty tool result")
+        return []
+
     try:
         result = json.loads(tool_result)
-        articles = []
-
-        for article_data in result.get("articles", []):
-            article = Article(
-                kb_id=article_data["kb_id"],
-                content=article_data["content"],
-                metadata=article_data["metadata"],
-            )
-            articles.append(article)
-
-        return articles
-    except (json.JSONDecodeError, KeyError) as exc:
-        logger.error("Failed to parse tool result: %s", exc)
+    except json.JSONDecodeError as e:
+        logger.debug(
+            "Partial JSON (len=%d, pos=%d): %.30r...", len(tool_result), e.pos, tool_result
+        )
         return []
+
+    articles = []
+    for article_data in result.get("articles", []):
+        try:
+            articles.append(
+                Article(
+                    kb_id=article_data["kb_id"],
+                    content=article_data["content"],
+                    metadata=article_data["metadata"],
+                )
+            )
+        except KeyError as e:
+            logger.warning("Skip malformed article (missing '%s'): %.60r", e.args[0], article_data)
+    return articles
 
 
 def accumulate_articles_from_tool_results(tool_results: list[str]) -> list[Article]:
@@ -151,4 +162,3 @@ def extract_metadata_from_tool_result(tool_result: str) -> dict[str, Any]:
     except json.JSONDecodeError:
         logger.error("Failed to parse tool result metadata")
         return {}
-

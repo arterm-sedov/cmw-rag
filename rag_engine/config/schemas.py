@@ -25,32 +25,36 @@ class DirectEmbeddingConfig(BaseModel):
     max_seq_length: int = Field(default=512)
 
 
-class ServerEmbeddingConfig(BaseModel):
-    """HTTP server embedder (Infinity)."""
+class OpenAIEmbeddingConfig(BaseModel):
+    """Config for OpenAI-compatible embedding API. All values from models.yaml + .env."""
 
-    type: Literal["server"]
-    endpoint: str = Field(..., description="HTTP endpoint (e.g., http://localhost:7997/v1)")
-
-    # Model-specific formatting
-    query_prefix: Optional[str] = Field(None)  # FRIDA: "search_query: "
-    doc_prefix: Optional[str] = Field(None)  # FRIDA: "search_document: "
-    default_instruction: Optional[str] = Field(None)  # Qwen3: instruction template
-
-
-class ApiEmbeddingConfig(BaseModel):
-    """Cloud API embedder (OpenRouter)."""
-
-    type: Literal["api"]
+    type: Literal["openai_compatible"]
+    provider: str = Field(..., description="Provider type: mosec, infinity, or openrouter")
     endpoint: str = Field(..., description="API endpoint URL")
-    model: str = Field(..., description="Model identifier (e.g., qwen/qwen3-embedding-8b)")
-    default_instruction: str = Field(..., description="Default instruction template")
+    model: str = Field(default="auto", description="Model name for API requests")
+    api_key: str | None = Field(default=None, description="API key (None for local servers)")
+    dimensions: int = Field(..., description="Embedding dimension from models.yaml")
+    local: bool = Field(..., description="Use direct HTTP (local) or OpenAI SDK (remote)")
+
+    # Model formatting (from models.yaml)
+    query_prefix: str | None = Field(
+        default=None, description="Prefix for queries (FRIDA: search_query: )"
+    )
+    doc_prefix: str | None = Field(
+        default=None, description="Prefix for documents (FRIDA: search_document: )"
+    )
+    default_instruction: str | None = Field(
+        default=None, description="Default instruction for Qwen3"
+    )
+
+    # Request settings
     timeout: float = Field(default=60.0, description="Request timeout in seconds")
     max_retries: int = Field(default=3, description="Max retries on failure")
 
 
 # Discriminated union for type-safe config loading
 EmbeddingProviderConfig = Annotated[
-    Union[DirectEmbeddingConfig, ServerEmbeddingConfig, ApiEmbeddingConfig],
+    Union[DirectEmbeddingConfig, OpenAIEmbeddingConfig],
     Field(discriminator="type"),
 ]
 
@@ -68,11 +72,16 @@ class DirectRerankerConfig(BaseModel):
 
 
 class ServerRerankerConfig(BaseModel):
-    """HTTP server reranker (Infinity)."""
+    """HTTP server reranker (Infinity/Mosec). All values from models.yaml + .env."""
 
     type: Literal["server"]
-    endpoint: str = Field(..., description="HTTP endpoint (e.g., http://localhost:7998)")
-    default_instruction: Optional[str] = Field(None)  # Qwen3 only
+    provider: str = Field(..., description="Provider type: mosec or infinity")
+    endpoint: str = Field(
+        ..., description="Complete API endpoint URL (e.g., http://localhost:7998/v1/rerank)"
+    )
+    default_instruction: str | None = Field(None)  # Qwen3 only
+    timeout: float = Field(default=60.0, description="Request timeout in seconds")
+    max_retries: int = Field(default=3, description="Max retries on failure")
 
 
 RerankerProviderConfig = Annotated[
@@ -185,16 +194,19 @@ class ModelRegistry:
             Provider configuration dict
 
         Raises:
-            ValueError: If provider not supported for this model
+            ValueError If provider explicitly not supported (supported: false)
         """
         model = self.get_model(model_slug)
         formats = model.get("provider_formats", {})
 
+        # If provider not listed, check if it's implicitly supported
         if provider not in formats:
-            raise ValueError(f"Provider {provider} not supported for model {model_slug}")
+            # Check if model has this provider type by checking other models
+            # Default: all providers supported unless marked supported: false
+            return {}  # Empty config = use defaults
 
         config = formats[provider]
-        if not config.get("supported", True):
+        if config.get("supported", True) is False:
             raise ValueError(f"Provider {provider} is not supported for model {model_slug}")
 
         return config
@@ -227,6 +239,18 @@ class ModelRegistry:
     def get_retries(self, provider: str) -> int:
         """Get default retries for a provider."""
         return self._defaults.get("retries", {}).get(provider, 3)
+
+    def get_default_instruction(self, model_slug: str) -> str | None:
+        """Get default instruction for a model (e.g., Qwen3 embedding models).
+
+        Args:
+            model_slug: Model identifier
+
+        Returns:
+            Default instruction string or None if not applicable
+        """
+        model = self.get_model(model_slug)
+        return model.get("default_instruction")
 
     def list_models(self, model_type: Optional[str] = None) -> list[str]:
         """List available models.

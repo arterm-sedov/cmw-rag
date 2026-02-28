@@ -1,0 +1,97 @@
+{
+  "raw": [
+    {
+      "text": "What is machine learning?",
+      "format_type": "raw",
+      "formatted": "What is machine learning?",
+      "latency_ms": 16419.87,
+      "dimensions": 2560,
+      "embedding_sample": [
+        -0.00016689300537109375,
+        -0.0072021484375,
+        -0.006500244140625,
+        0.009521484375,
+        -0.000843048095703125
+      ]
+    },
+    {
+      "text": "Natural language processing applications",
+      "format_type": "raw",
+      "formatted": "Natural language processing applications",
+      "latency_ms": 3123.78,
+      "dimensions": 2560,
+      "embedding_sample": [
+        -7.82012939453125e-05,
+        0.0458984375,
+        0.011474609375,
+        0.0361328125,
+        -0.000667572021484375
+      ]
+    }
+  ],
+  "prefix": [
+    {
+      "text": "What is machine learning?",
+      "format_type": "prefix",
+      "formatted": "query: What is machine learning?",
+      "latency_ms": 9749.82,
+      "dimensions": 2560,
+      "embedding_sample": [
+        -0.00021457672119140625,
+        -0.004302978515625,
+        -0.0018768310546875,
+        0.005950927734375,
+        -0.00118255615234375
+      ]
+    },
+    {
+      "text": "Natural language processing applications",
+      "format_type": "prefix",
+      "formatted": "query: Natural language processing applications",
+      "latency_ms": 14600.24,
+      "dimensions": 2560,
+      "embedding_sample": [
+        -5.1021575927734375e-05,
+        0.04443359375,
+        -0.0024261474609375,
+        0.0556640625,
+        -0.0008697509765625
+      ]
+    }
+  ],
+  "qwen_instruct": [
+    {
+      "text": "What is machine learning?",
+      "format_type": "qwen_instruct",
+      "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: What is machine learning?",
+      "latency_ms": 1802.86,
+      "dimensions": 2560,
+      "embedding_sample": [
+        -0.0002727508544921875,
+        -0.000621795654296875,
+        -0.006744384765625,
+        0.01171875,
+        -0.0012359619140625
+      ]
+    },
+    {
+      "text": "Natural language processing applications",
+      "format_type": "qwen_instruct",
+      "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: Natural language processing applications",
+      "latency_ms": 1642.91,
+      "dimensions": 2560,
+      "embedding_sample": [
+        -2.7179718017578125e-05,
+        0.04638671875,
+        0.0026092529296875,
+        0.059326171875,
+        -0.000579833984375
+      ]
+    }
+  ],
+  "batch": {
+    "count": 2,
+    "latency_ms": 1823.41,
+    "avg_per_item_ms": 911.71
+  }
+}

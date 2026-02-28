@@ -2,18 +2,13 @@ import json
 
 from rag_engine.tools.get_datetime import _get_current_datetime_dict
 
-_SYSTEM_PROMPT_BASE = f"""<role>
+_SYSTEM_PROMPT_BASE = """<role>
 You are a technical documentation assistant for Comindware Platform.
 You answer questions based strictly on provided context from the knowledge base articles.
 </role>
 
-<current_date>
-Current date/time:
-{json.dumps(_get_current_datetime_dict(), ensure_ascii=False, separators=(',', ':'))}
-<current_date>
-
 <source_materials>
-- Use retrieve_context tool to search the knowledge base to answer questions.
+- Use available tools to search the knowledge base when needed.
 - ALWAYS answer based ONLY on the provided context articles. If information is not derivable from the retrieved articles, explicitly state that the information is not found.
 - Use available tools to get any supplementary information. Never include information outside of the provided context.
 - If needed, ask the user to clarify the question or provide more information.
@@ -134,6 +129,36 @@ def get_system_prompt(mild_limit: int | None = None) -> str:
     return prompt
 
 
+def get_dynamic_context(
+    moderation_context: str | None = None,
+    include_sgr: bool = False,
+    include_srp: bool = False,
+) -> str:
+    """Build dynamic context for user message wrapper.
+
+    Uses exact same patterns from system prompt - only location changes.
+    """
+    parts = []
+
+    parts.append(
+        "<current_date>\n"
+        "Current date/time:\n"
+        f"{json.dumps(_get_current_datetime_dict(), ensure_ascii=False, separators=(',', ':'))}\n"
+        "</current_date>"
+    )
+
+    if moderation_context:
+        parts.append(moderation_context)
+
+    if include_sgr:
+        parts.append(get_sgr_suffix())
+
+    if include_srp:
+        parts.append(get_srp_suffix())
+
+    return "\n\n".join(parts) + "\n\n"
+
+
 # Question-guided summarization prompt for RAG compression
 SUMMARIZATION_PROMPT = """
 You are a RAG summarization assistant. Your goal is to compress the given
@@ -161,16 +186,18 @@ QUERY_DECOMPOSITION_PROMPT = (
 
 # User question template for wrapping user messages
 USER_QUESTION_TEMPLATE_FIRST = (
-  "Найди информацию в базе знаний по по следующей теме:\n"
-  "{question}\n\n"
-  "Ответь на вопрос пользователя, используя эту информацию"
+    "{dynamic_context}"
+    "Найди информацию в базе знаний по по следующей теме:\n"
+    "{question}\n\n"
+    "Ответь на вопрос пользователя, используя эту информацию"
 )
 
 USER_QUESTION_TEMPLATE_SUBSEQUENT = (
-  "Ответь на вопрос пользователя:\n\n"
-  "{question}\n\n"
-  "Учти предыдущие сообщения.\n"
-  "Если требуется, найди в базе знаний информацию для ответа на вопрос.\n"
+    "{dynamic_context}"
+    "Ответь на вопрос пользователя:\n\n"
+    "{question}\n\n"
+    "Учти предыдущие сообщения.\n"
+    "Если требуется, найди в базе знаний информацию для ответа на вопрос.\n"
 )
 
 # AI-generated content disclaimer (prepended to all responses)
@@ -181,3 +208,42 @@ AI_DISCLAIMER = """## Сгенерированный ИИ контент
 
 -----------------
 """
+
+
+def get_sgr_suffix() -> str:
+    """Get SGR (Schema-Guided Request) suffix for structured output.
+
+    Appended to system prompt when SGR planning is enabled.
+    """
+    return """<analyse_request>
+MANDATORY: Call the analyse_user_request tool with arguments matching the schema.
+
+ALWAYS provide all fields:
+- Text: 10-100 words in Russian
+- Lists: 2-5 items
+- spam_score, intent_confidence: 0.0-1.0
+
+For long requests: summarize briefly.
+For off-topic requests: set spam_score >= 0.6.
+</analyse_request>"""
+
+
+def get_srp_suffix() -> str:
+    """Get SRP (Support Resolution Plan) suffix for structured output.
+
+    Appended to system prompt when SRP planning is enabled.
+    """
+    return """BEFORE calling the tool, analyze YOUR answer:
+
+1. Did you understand the user's specific problem?
+2. Is your answer tailored or generic?
+3. Is this urgent/critical (system down, data loss)?
+4. Does user need immediate human help?
+
+Set engineer_intervention_needed=TRUE if:
+- Specific situation not covered by KB
+- Urgent/critical issue
+- Answer couldn't fully resolve problem
+- User frustration or issue persists
+
+Set FALSE if: answer fully resolves request."""

@@ -1,0 +1,238 @@
+{
+  "Qwen3-Embedding-0.6B": {
+    "model": "Qwen3-Embedding-0.6B",
+    "model_path": "Qwen/Qwen3-Embedding-0.6B",
+    "load_time_sec": 8.280105829238892,
+    "embeddings": {
+      "query_What is machine learning?...": {
+        "text": "What is machine learning?",
+        "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: What is machine learning?",
+        "latency_ms": 13.63,
+        "dimensions": 1024,
+        "embedding_sample": [
+          -0.07695872336626053,
+          -0.02800878696143627,
+          0.0036647010128945112,
+          -0.07277049124240875,
+          -0.043714649975299835
+        ]
+      },
+      "query_Natural language processing ap...": {
+        "text": "Natural language processing applications",
+        "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: Natural language processing applications",
+        "latency_ms": 18.89,
+        "dimensions": 1024,
+        "embedding_sample": [
+          -0.029389992356300354,
+          -0.018401840701699257,
+          -0.00024719201610423625,
+          -0.09373024106025696,
+          -0.05507313832640648
+        ]
+      },
+      "query_Deep learning neural networks...": {
+        "text": "Deep learning neural networks",
+        "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: Deep learning neural networks",
+        "latency_ms": 5.39,
+        "dimensions": 1024,
+        "embedding_sample": [
+          -0.030555613338947296,
+          -0.017662949860095978,
+          0.0012973243137821555,
+          -0.00045325770042836666,
+          -0.03842013701796532
+        ]
+      },
+      "query_Artificial intelligence in hea...": {
+        "text": "Artificial intelligence in healthcare",
+        "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: Artificial intelligence in healthcare",
+        "latency_ms": 4.85,
+        "dimensions": 1024,
+        "embedding_sample": [
+          -0.09364974498748779,
+          0.0879267081618309,
+          0.006275833584368229,
+          0.005007660016417503,
+          -0.04760528728365898
+        ]
+      },
+      "doc_What is machine learning?...": {
+        "text": "What is machine learning?",
+        "formatted": "What is machine learning?",
+        "latency_ms": 4.47,
+        "dimensions": 1024,
+        "embedding_sample": [
+          -0.04885346442461014,
+          -0.025679385289549828,
+          -0.008377116173505783,
+          -0.11336509138345718,
+          -0.006967881694436073
+        ]
+      },
+      "doc_Natural language processing ap...": {
+        "text": "Natural language processing applications",
+        "formatted": "Natural language processing applications",
+        "latency_ms": 4.79,
+        "dimensions": 1024,
+        "embedding_sample": [
+          -0.021834149956703186,
+          -0.010755340568721294,
+          -0.009663633070886135,
+          -0.14362019300460815,
+          -0.02474537119269371
+        ]
+      },
+      "doc_Deep learning neural networks...": {
+        "text": "Deep learning neural networks",
+        "formatted": "Deep learning neural networks",
+        "latency_ms": 4.85,
+        "dimensions": 1024,
+        "embedding_sample": [
+          -0.03679712116718292,
+          0.013817694038152695,
+          -0.006833750754594803,
+          -0.0645826980471611,
+          -1.2980489373148885e-05
+        ]
+      },
+      "doc_Artificial intelligence in hea...": {
+        "text": "Artificial intelligence in healthcare",
+        "formatted": "Artificial intelligence in healthcare",
+        "latency_ms": 4.31,
+        "dimensions": 1024,
+        "embedding_sample": [
+          -0.08352351188659668,
+          0.07919266074895859,
+          -0.007540316786617041,
+          -0.060322534292936325,
+          -0.003480146173387766
+        ]
+      }
+    },
+    "batch": {
+      "count": 4,
+      "total_latency_ms": 9.03,
+      "avg_per_item_ms": 2.26
+    }
+  },
+  "Qwen3-Embedding-4B": {
+    "model": "Qwen3-Embedding-4B",
+    "model_path": "Qwen/Qwen3-Embedding-4B",
+    "load_time_sec": 43.34739112854004,
+    "embeddings": {
+      "query_What is machine learning?...": {
+        "text": "What is machine learning?",
+        "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: What is machine learning?",
+        "latency_ms": 19.75,
+        "dimensions": 2560,
+        "embedding_sample": [
+          -0.00027508052880875766,
+          -0.0006037481944076717,
+          -0.0055444804020226,
+          0.011374758556485176,
+          -0.0012360761174932122
+        ]
+      },
+      "query_Natural language processing ap...": {
+        "text": "Natural language processing applications",
+        "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: Natural language processing applications",
+        "latency_ms": 27.12,
+        "dimensions": 2560,
+        "embedding_sample": [
+          -2.7198479074286297e-05,
+          0.0469428189098835,
+          0.0026110538747161627,
+          0.05929619446396828,
+          -0.0005790643626824021
+        ]
+      },
+      "query_Deep learning neural networks...": {
+        "text": "Deep learning neural networks",
+        "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: Deep learning neural networks",
+        "latency_ms": 11.65,
+        "dimensions": 2560,
+        "embedding_sample": [
+          -0.00011260113387834281,
+          0.022924525663256645,
+          0.01140551920980215,
+          0.04879973456263542,
+          -0.0007234844379127026
+        ]
+      },
+      "query_Artificial intelligence in hea...": {
+        "text": "Artificial intelligence in healthcare",
+        "formatted": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: Artificial intelligence in healthcare",
+        "latency_ms": 11.28,
+        "dimensions": 2560,
+        "embedding_sample": [
+          -0.000330655399011448,
+          0.010005920194089413,
+          -0.05267484486103058,
+          0.0019551797304302454,
+          -0.0014879492809996009
+        ]
+      },
+      "doc_What is machine learning?...": {
+        "text": "What is machine learning?",
+        "formatted": "What is machine learning?",
+        "latency_ms": 11.32,
+        "dimensions": 2560,
+        "embedding_sample": [
+          -0.00016700402193237096,
+          -0.007039309479296207,
+          -0.0064646718092262745,
+          0.009883765131235123,
+          -0.0008404073305428028
+        ]
+      },
+      "doc_Natural language processing ap...": {
+        "text": "Natural language processing applications",
+        "formatted": "Natural language processing applications",
+        "latency_ms": 11.12,
+        "dimensions": 2560,
+        "embedding_sample": [
+          -7.836470467736945e-05,
+          0.04601646214723587,
+          0.011617456562817097,
+          0.0358157679438591,
+          -0.000669420522172004
+        ]
+      },
+      "doc_Deep learning neural networks...": {
+        "text": "Deep learning neural networks",
+        "formatted": "Deep learning neural networks",
+        "latency_ms": 11.16,
+        "dimensions": 2560,
+        "embedding_sample": [
+          -0.0,
+          0.02018064819276333,
+          0.018593406304717064,
+          0.026756364852190018,
+          -0.00030115083791315556
+        ]
+      },
+      "doc_Artificial intelligence in hea...": {
+        "text": "Artificial intelligence in healthcare",
+        "formatted": "Artificial intelligence in healthcare",
+        "latency_ms": 11.14,
+        "dimensions": 2560,
+        "embedding_sample": [
+          -5.871502071386203e-05,
+          0.020041394978761673,
+          -0.025279486551880836,
+          -0.0007294896640814841,
+          -0.000668995373416692
+        ]
+      }
+    },
+    "batch": {
+      "count": 4,
+      "total_latency_ms": 21.37,
+      "avg_per_item_ms": 5.34
+    }
+  },
+  "Qwen3-Embedding-8B": {
+    "model": "Qwen3-Embedding-8B",
+    "error": "Engine core initialization failed. See root cause above. Failed core proc(s): {}"
+  }
+}

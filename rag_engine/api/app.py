@@ -11,6 +11,7 @@ import time
 import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Any
 
 # Add project root to path if not already installed
 _project_root = Path(__file__).parent.parent.parent
@@ -35,9 +36,10 @@ from rag_engine.utils.context_tracker import (
     compute_context_tokens,
     estimate_accumulated_context,
     estimate_accumulated_tokens,
+    get_current_context,
 )
 from rag_engine.utils.conversation_store import salt_session_id
-from rag_engine.utils.formatters import format_with_citations
+from rag_engine.utils.formatters import format_sources_list, format_with_citations
 from rag_engine.utils.logging_manager import setup_logging
 from rag_engine.utils.vllm_fallback import (
     check_stream_completion,
@@ -79,18 +81,6 @@ def _badge_html(*, label: str, value: str, color: str) -> str:
     )
 
 
-def format_spam_badge(score: float) -> str:
-    """Format spam score as colored HTML badge (localized)."""
-    label = i18n_resolve("spam_badge_label")
-    if score < 0.3:
-        color, level = "green", i18n_resolve("spam_level_low")
-    elif score < 0.6:
-        color, level = "orange", i18n_resolve("spam_level_medium")
-    else:
-        color, level = "red", i18n_resolve("spam_level_high")
-    return _badge_html(label=label, value=f"{score:.2f} {level}", color=color)
-
-
 def format_confidence_badge(query_traces: list[dict]) -> str:
     """Format overall retrieval confidence as colored HTML badge (localized)."""
     from rag_engine.retrieval.confidence import compute_normalized_confidence_from_traces
@@ -101,9 +91,19 @@ def format_confidence_badge(query_traces: list[dict]) -> str:
     if avg is None:
         return _badge_html(label=label, value=i18n_resolve("confidence_level_na"), color="gray")
 
-    if avg > 0.7:
+    return format_confidence_badge_from_value(avg)
+
+
+def format_confidence_badge_from_value(confidence: float | None) -> str:
+    """Format confidence from a numeric value as colored HTML badge (localized)."""
+    label = i18n_resolve("confidence_badge_label")
+
+    if confidence is None:
+        return _badge_html(label=label, value=i18n_resolve("confidence_level_na"), color="gray")
+
+    if confidence > 0.7:
         color, level = "green", i18n_resolve("confidence_level_high")
-    elif avg > 0.4:
+    elif confidence > 0.4:
         color, level = "orange", i18n_resolve("confidence_level_medium")
     else:
         color, level = "red", i18n_resolve("confidence_level_low")
@@ -115,13 +115,182 @@ def format_queries_badge(query_traces: list[dict]) -> str:
     """Format queries count as colored HTML badge (localized)."""
     label = i18n_resolve("queries_badge_label")
     count = len(query_traces) if query_traces else 0
+    return format_queries_badge_from_count(count)
+
+
+def format_queries_badge_from_count(count: int) -> str:
+    """Format queries count as colored HTML badge (localized)."""
+    label = i18n_resolve("queries_badge_label")
     # Use blue color for queries badge to distinguish from confidence/spam
     color = "#87CEEB"  # skyblue - valid CSS color
     return _badge_html(label=label, value=str(count), color=color)
 
 
+def yield_hidden_updates(chunk: list[dict] | None = None) -> tuple:
+    """Standard no-op update for all UI components during streaming."""
+    chatbot_update = chunk if chunk is not None else []
+    return (
+        chatbot_update,
+        gr.update(),  # No-op
+        gr.update(),  # No-op
+        gr.update(),  # No-op
+        gr.update(),  # No-op
+        gr.update(),  # No-op
+    )
+
+
+def yield_badge_updates(
+    chatbot: list[dict],
+    analysis_data: dict | None = None,
+    metadata_dict: dict | None = None,
+) -> tuple:
+    """Yield badge updates and metadata updates.
+
+    Args:
+        chatbot: Chatbot history
+        analysis_data: Dict with confidence_badge and queries_badge HTML
+        metadata_dict: Metadata dictionary with UI values
+
+    Returns:
+        Tuple with 7 component outputs
+    """
+    # Analysis JSON - combines confidence and queries badges
+    if analysis_data:
+        analysis_update = gr.update(value=analysis_data)
+    else:
+        analysis_update = gr.update(value={})
+
+    # Extract metadata values
+    if metadata_dict:
+        guard_info_val = metadata_dict.get("guardian_info", {})
+        sgr_plan_val = metadata_dict.get("sgr_plan", {})
+        srp_plan_val = metadata_dict.get("srp_plan", {})
+        articles_val = metadata_dict.get("articles_df_data", [])
+    else:
+        guard_info_val = {}
+        sgr_plan_val = {}
+        srp_plan_val = {}
+        articles_val = []
+
+    # Metadata updates - just value, no visibility toggles
+    guardian_json_update = gr.update(value=guard_info_val)
+    sgr_plan_json_update = gr.update(value=sgr_plan_val)
+    srp_plan_json_update = gr.update(value=srp_plan_val)
+    articles_df_update = gr.update(value=articles_val)
+
+    return (
+        chatbot,
+        analysis_update,
+        guardian_json_update,
+        sgr_plan_json_update,
+        srp_plan_json_update,
+        articles_df_update,
+    )
+
+
+def format_guard_badge(guard_info: dict | None) -> str:
+    """Format guard/safety info as colored HTML badge (localized).
+
+    Args:
+        guard_info: Dict with safety_level, categories, is_safe, refusal
+
+    Returns:
+        HTML badge string showing safety level and localized categories
+    """
+    if not guard_info:
+        return ""
+
+    label = i18n_resolve("guard_badge_label")
+    safety_level = guard_info.get("safety_level", "Unknown")
+    categories = guard_info.get("categories", [])
+
+    # Color based on safety level
+    if safety_level == "Safe":
+        color = "#4CAF50"  # green
+        level_text = i18n_resolve("guard_level_safe")
+    elif safety_level == "Controversial":
+        color = "#FF9800"  # orange
+        level_text = i18n_resolve("guard_level_controversial")
+    else:  # Unsafe or Unknown
+        color = "#F44336"  # red
+        level_text = i18n_resolve("guard_level_unsafe")
+
+    # Map English category names to i18n keys (case-insensitive, handles variations)
+    category_mapping = {
+        # Violence variations
+        "Violence": "cat_violence",
+        "Violent": "cat_violence",
+        "Violent Content": "cat_violence",
+        "Violent Behavior": "cat_violence",
+        # Sexual variations
+        "Sexual": "cat_sexual",
+        "Sexual Content": "cat_sexual",
+        "Sexually Explicit": "cat_sexual",
+        # PII variations
+        "PII": "cat_pii",
+        "Personal Data": "cat_pii",
+        "Personally Identifiable": "cat_pii",
+        # Self-Harm variations
+        "Self-Harm": "cat_self_harm",
+        "Self Harm": "cat_self_harm",
+        "Suicide": "cat_self_harm",
+        # Harassment
+        "Harassment": "cat_harassment",
+        "Harassment/Threats": "cat_harassment",
+        # Hate Speech
+        "Hate Speech": "cat_hate",
+        "Hate": "cat_hate",
+        # Illegal variations
+        "Illegal Acts": "cat_illegal",
+        "Illegal": "cat_illegal",
+        "Non-violent Illegal Acts": "cat_illegal",
+        # Unethical
+        "Unethical Acts": "cat_unethical",
+        "Unethical": "cat_unethical",
+        # Politically Sensitive
+        "Politically Sensitive": "cat_politically",
+        "Political": "cat_politically",
+        # Copyright
+        "Copyright": "cat_copyright",
+        "Copyright Violation": "cat_copyright",
+        # Jailbreak
+        "Jailbreak": "cat_jailbreak",
+        # Spam
+        "Spam": "cat_spam",
+    }
+
+    # Localize categories (case-insensitive)
+    localized_cats = []
+    for cat in categories:
+        # Try exact match first, then case-insensitive search
+        i18n_key = category_mapping.get(cat)
+        if not i18n_key:
+            # Try case-insensitive search
+            cat_lower = cat.lower()
+            for key, value in category_mapping.items():
+                if key.lower() == cat_lower:
+                    i18n_key = value
+                    break
+
+        if not i18n_key:
+            i18n_key = "cat_other"
+
+        localized_cat = i18n_resolve(i18n_key)
+        localized_cats.append(localized_cat)
+
+    # Format categories (show first 2, truncate if too long)
+    if localized_cats:
+        cats_str = ", ".join(localized_cats[:2])
+        if len(localized_cats) > 2:
+            cats_str += f" +{len(localized_cats) - 2}"
+        content = f"{level_text} | {cats_str}"
+    else:
+        content = level_text
+
+    return _badge_html(label=label, value=content, color=color)
+
+
 def format_articles_dataframe(articles: list[dict]) -> list[list]:
-    """Format final articles list for gr.Dataframe."""
     rows: list[list] = []
     for idx, article in enumerate(articles or [], start=1):
         meta = article.get("metadata", {}) if isinstance(article, dict) else {}
@@ -135,12 +304,30 @@ def format_articles_dataframe(articles: list[dict]) -> list[list]:
                 f"{meta.get('rerank_score', 0):.2f}"
                 if isinstance(meta.get("rerank_score"), (int, float))
                 else "",
+                f"{meta.get('normalized_rank', 0):.3f}"
+                if isinstance(meta.get("normalized_rank"), (int, float))
+                else "",
                 meta.get("article_url") or meta.get("url") or article.get("url", "")
                 if isinstance(article, dict)
                 else "",
             ]
         )
     return rows
+
+
+def _extract_executed_queries(tool_results: list[str]) -> list[str]:
+    """Extract deduplicated queries from tool results."""
+    from rag_engine.tools.utils import extract_metadata_from_tool_result
+
+    seen_queries: set[str] = set()
+    queries: list[str] = []
+    for result_str in tool_results:
+        meta = extract_metadata_from_tool_result(result_str)
+        query = meta.get("query")
+        if query and query not in seen_queries:
+            seen_queries.add(query)
+            queries.append(query)
+    return queries
 
 
 # Initialize singletons (order matters: llm_manager before retriever)
@@ -328,8 +515,6 @@ class ToolBudgetMiddleware(AgentMiddleware):
             # Ensure runtime.context exists for every tool invocation.
             # Prefer the thread-local AgentContext created by the stream loop (set_current_context()).
             if runtime is not None and (not hasattr(runtime, "context") or runtime.context is None):
-                from rag_engine.utils.context_tracker import AgentContext, get_current_context
-
                 runtime.context = get_current_context() or AgentContext()
                 logger.debug("[ToolBudget] Initialized runtime.context (was missing)")
 
@@ -445,8 +630,8 @@ def _is_ui_only_message(msg: dict) -> bool:
             "generating_answer",
             "model_switch",
             "cancelled",
-            "user_intent_display",  # User intent message (UI only, not for agent context)
-            "disclaimer_display",  # AI disclaimer (UI only, not for agent context)
+            "user_intent_display",
+            "disclaimer_display",
         }:
             return True
 
@@ -515,94 +700,61 @@ def _message_exists_in_history(message: dict, history: list[dict]) -> bool:
 
 def _build_agent_messages_from_gradio_history(
     gradio_history: list[dict],
-    current_message: str,
-    wrapped_message: str,
+    wrapped_user_content: str | None = None,
 ) -> list[dict]:
-    """Build messages for agent from Gradio history, filtering out UI-only messages.
-
-    Filters gradio_history to exclude UI metadata messages (disclaimer, search_started, etc.)
-    and builds a clean message list for the agent. This ensures the agent only sees
-    actual conversation content, not UI elements.
+    """Build messages from Gradio history, filtering UI-only messages.
 
     Args:
         gradio_history: Full Gradio history including UI messages
-        current_message: Current user message (unwrapped, for filtering)
-        wrapped_message: Current user message wrapped with template (for agent)
+        wrapped_user_content: If provided, replaces last user message content
+                              (for SGR/agent calls). Pass None for SRP.
 
     Returns:
-        List of message dicts in LangChain format for agent
+        List of message dicts in LangChain format.
     """
-    messages = []
-
-    # Filter gradio_history to exclude UI-only messages
-    # We need to include previous conversation messages but exclude:
-    # - Disclaimer messages
-    # - Search started/completed metadata
-    # - Model switch notices
-    # - The current user message (we'll add it wrapped below)
     from rag_engine.utils.message_utils import normalize_gradio_history_message
 
-    # Log all messages in gradio_history before filtering for debugging
-    logger.info("gradio_history contents before filtering (%d messages):", len(gradio_history))
-    for idx, msg in enumerate(gradio_history):
-        msg_role = msg.get("role", "unknown")
-        msg_content = msg.get("content", "")
-        has_metadata = "metadata" in msg
-        metadata_keys = (
-            list(msg.get("metadata", {}).keys()) if isinstance(msg.get("metadata"), dict) else []
-        )
-        content_preview = (
-            str(msg_content)[:100]
-            if isinstance(msg_content, str)
-            else f"<{type(msg_content).__name__}>"
-        )
-        logger.info(
-            "  [%d] role=%s, has_metadata=%s, metadata_keys=%s, content_preview=%s",
-            idx,
-            msg_role,
-            has_metadata,
-            metadata_keys,
-            content_preview,
-        )
+    messages = []
 
     for idx, msg in enumerate(gradio_history):
         msg_role = msg.get("role")
         msg_content = msg.get("content", "")
-        has_metadata = "metadata" in msg
 
         # Skip UI-only messages
         if _is_ui_only_message(msg):
             logger.debug(
-                "Filtered out UI-only message [%d]: role=%s, has_metadata=%s, content_preview=%s",
+                "Filtered out UI-only message [%d]: role=%s, content_preview=%s",
                 idx,
                 msg_role,
-                has_metadata,
                 str(msg_content)[:100] if isinstance(msg_content, str) else "non-string",
             )
             continue
 
-        # Skip the current user message (we'll add wrapped version below)
-        if (
-            msg_role == "user"
-            and isinstance(msg_content, str)
-            and msg_content.strip() == current_message.strip()
-        ):
-            logger.debug("Skipping current user message [%d] (will add wrapped version)", idx)
-            continue
+        # Normalize message for LangChain
+        normalized = normalize_gradio_history_message(msg)
 
-        # Normalize message for LangChain (convert structured content to string)
-        normalized_msg = normalize_gradio_history_message(msg)
-        # Include actual conversation messages
-        messages.append(normalized_msg)
+        # Replace blocked message content with placeholder
+        if msg_role == "user" and (msg.get("metadata") or {}).get("log") == "blocked_by_guardian":
+            locale = os.getenv("GRADIO_LOCALE", "ru")
+            normalized["content"] = i18n_resolve("guard_blocked", locale)
+            logger.info("Replaced blocked message [%d] with placeholder", idx)
+
+        messages.append(normalized)
         logger.info(
-            "Included message [%d] in agent context: role=%s, content_preview=%s",
+            "Included message [%d]: role=%s, content_preview=%s",
             idx,
             msg_role,
             str(msg_content)[:100] if isinstance(msg_content, str) else "non-string",
         )
 
-    # Add wrapped current message for agent
-    messages.append({"role": "user", "content": wrapped_message})
+    # Replace last user message with wrapper if provided
+    if wrapped_user_content and messages and messages[-1]["role"] == "user":
+        messages[-1]["content"] = wrapped_user_content
+        logger.info("Replaced last user message with wrapped content")
+    elif wrapped_user_content and not messages:
+        # No history - add wrapped content as user message (for batch/API calls)
+        messages.append({"role": "user", "content": wrapped_user_content})
+        logger.info("Added wrapped content as new user message")
 
     return messages
 
@@ -787,27 +939,172 @@ async def agent_chat_handler(
     session_id = salt_session_id(base_session_id, history, message)
 
     # Wrap user message in template only for the first question in the conversation
+    # Note: dynamic_context will be built after moderation check below
     from rag_engine.llm.prompts import (
         USER_QUESTION_TEMPLATE_FIRST,
         USER_QUESTION_TEMPLATE_SUBSEQUENT,
+        get_dynamic_context,
     )
 
-    # is_first_message already determined above (for template)
-    wrapped_message = (
-        USER_QUESTION_TEMPLATE_FIRST.format(question=message)
-        if is_first_message
-        else USER_QUESTION_TEMPLATE_SUBSEQUENT.format(question=message)
-    )
+    # Wrap user message with template and dynamic context (built after moderation below)
+    # SGR planning is enabled by default
+    enable_sgr_planning_flag = True
 
     # Save user message to conversation store (BEFORE agent execution)
     # This ensures conversation history is tracked for memory compression
     if session_id:
         llm_manager._conversations.append(session_id, "user", message)
 
+    # --- Guardian (Content Moderation) ---
+    # Check user message with guardian BEFORE building messages
+    from rag_engine.core.guard_client import guard_client
+
+    moderation_result: dict | None = None
+    moderation_context: str | None = None
+    guard_debug_info: dict | None = None
+
+    # Skip if guardian is disabled
+    if not settings.guard_enabled:
+        logger.info("Guardian is disabled, skipping moderation")
+    else:
+        try:
+            moderation_result = await guard_client.classify(message)
+            logger.info(
+                "Guardian result: safety_level=%s, categories=%s",
+                moderation_result.get("safety_level") if moderation_result else None,
+                moderation_result.get("categories") if moderation_result else None,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Guardian API call failed: %s", exc, exc_info=True)
+            moderation_result = None
+
+    # Handle based on guard mode
+    guard_mode = getattr(settings, "guard_mode", "enforce")
+    should_block = guard_client.should_block(moderation_result) if moderation_result else False
+
+    if should_block and guard_mode == "enforce":
+        # Enforce mode: Block unsafe content immediately
+
+        # Mark user message with log field (survives Gradio round-trips)
+        # log is part of MetadataDict and persists across turns
+        for i in range(len(gradio_history) - 1, -1, -1):
+            msg = gradio_history[i]
+            if isinstance(msg, dict) and msg.get("role") == "user":
+                metadata = msg.get("metadata") or {}
+                metadata["log"] = "blocked_by_guardian"
+                msg["metadata"] = metadata
+                logger.info("Marked user message at index %d as blocked", i)
+                break
+
+        # Build guard_debug_info structure
+        guard_debug_info = {
+            "safety_level": moderation_result.get("safety_level", "Unknown")
+            if moderation_result
+            else "Unknown",
+            "categories": moderation_result.get("categories", []) if moderation_result else [],
+            "is_safe": moderation_result.get("is_safe", True) if moderation_result else True,
+            "refusal": moderation_result.get("refusal", "No") if moderation_result else "No",
+            "provider": moderation_result.get("provider", "unknown")
+            if moderation_result
+            else "unknown",
+            "blocked": True,
+        }
+
+        # Generic error message - no hints
+        locale = os.getenv("GRADIO_LOCALE", "ru")
+        error_message = f"❌ {i18n_resolve('guard_blocked', locale)}"
+        gradio_history.append(
+            {
+                "role": "assistant",
+                "content": error_message,
+                "metadata": {},
+            }
+        )
+        yield list(gradio_history)
+
+        # Yield AgentContext with guard_debug_info for debug pane and metadata updates
+        agent_context = AgentContext(
+            conversation_tokens=0,
+            accumulated_tool_tokens=0,
+            diagnostics={
+                "guard": guard_debug_info,
+                "guard_mode": guard_mode,
+            },
+        )
+        yield agent_context
+        return
+
+    elif moderation_result:
+        # Not blocked - still create guard_debug_info for analytics/reporting
+        guard_debug_info = {
+            "safety_level": moderation_result.get("safety_level", "Unknown"),
+            "categories": moderation_result.get("categories", []),
+            "is_safe": moderation_result.get("is_safe", True),
+            "refusal": moderation_result.get("refusal", "No"),
+            "provider": moderation_result.get("provider", "unknown"),
+            "blocked": False,
+        }
+
+    def _expand_guardian_categories(categories: list[str]) -> list[str]:
+        category_expansions = {
+            "PII": "PII (Personal Identifiable Information)",
+            "Jailbreak": "Jailbreak (System Prompt Override Attempt)",
+        }
+        return [category_expansions.get(cat, cat) for cat in categories]
+
+    moderation_context: str | None = None
+    if moderation_result:
+        safety_level = moderation_result.get("safety_level", "Safe")
+        categories = moderation_result.get("categories", [])
+        guard_mode = getattr(settings, "guard_mode", "enforce")
+
+        if safety_level == "Controversial":
+            if categories:
+                categories_str = ", ".join(_expand_guardian_categories(categories))
+                moderation_context = (
+                    "<safety_validation>\n"
+                    f"  Safety: Controversial\n"
+                    f"  Categories: {categories_str}\n"
+                    "</safety_validation>"
+                )
+            else:
+                moderation_context = (
+                    "<safety_validation>\n  Safety: Controversial\n</safety_validation>"
+                )
+        elif safety_level == "Unsafe" and guard_mode == "report":
+            if categories:
+                categories_str = ", ".join(_expand_guardian_categories(categories))
+                moderation_context = (
+                    "<safety_validation>\n"
+                    f"  Safety: Unsafe\n"
+                    f"  Categories: {categories_str}\n"
+                    "</safety_validation>"
+                )
+            else:
+                moderation_context = "<safety_validation>\n  Safety: Unsafe\n</safety_validation>"
+
+    # Build dynamic context for user wrapper (datetime + guardian + SGR)
+    dynamic_context = get_dynamic_context(
+        moderation_context=moderation_context,
+        include_sgr=enable_sgr_planning_flag,
+    )
+
+    # Build wrapped message with dynamic context
+    if is_first_message:
+        wrapped_message = USER_QUESTION_TEMPLATE_FIRST.format(
+            dynamic_context=dynamic_context, question=message
+        )
+    else:
+        wrapped_message = USER_QUESTION_TEMPLATE_SUBSEQUENT.format(
+            dynamic_context=dynamic_context, question=message
+        )
+
     # Build messages from gradio_history for agent (LangChain format)
     # This filters out UI-only messages (disclaimer, search_started, etc.)
     # and ensures the agent only sees actual conversation content
-    messages = _build_agent_messages_from_gradio_history(gradio_history, message, wrapped_message)
+    messages = _build_agent_messages_from_gradio_history(
+        gradio_history, wrapped_user_content=wrapped_message
+    )
 
     # Log messages being sent to agent for debugging memory issues
     logger.info(
@@ -830,12 +1127,18 @@ async def agent_chat_handler(
     if settings.llm_fallback_enabled:
         selected_model = _check_context_fallback(messages)
 
+    # Use static system prompt (cacheable)
+    from rag_engine.llm.prompts import get_system_prompt
+
+    system_msg = {"role": "system", "content": get_system_prompt()}
+    messages = [system_msg] + messages
+    logger.debug("Using static system prompt (cacheable)")
+
     # --- Forced user request analysis as tool call (per-turn) ---
     # We force an "analyse_user_request" tool call once per user turn, capture the plan, and
     # then inject the resulting tool-call transcript into the agent messages.
     # SGR planning is enabled by default (can be disabled via _create_rag_agent parameter)
     sgr_plan_dict: dict | None = None
-    enable_sgr_planning_flag = True  # Always enabled for now (matches _create_rag_agent default)
     if enable_sgr_planning_flag:
         logger.info("SGR planning enabled, executing forced analyse_user_request tool call")
         try:
@@ -847,65 +1150,46 @@ async def agent_chat_handler(
             logger.info("SGR planning UI bubble added to history")
 
             from rag_engine.llm.llm_manager import LLMManager
-            from rag_engine.llm.schemas import SGRPlanResult
-            from rag_engine.tools import analyse_user_request as analyse_user_request_tool
 
+            # Initialize LLM
             sgr_llm = LLMManager(
                 provider=settings.default_llm_provider,
                 model=selected_model or settings.default_model,
                 temperature=settings.llm_temperature,
             )._chat_model()
 
-            sgr_model = sgr_llm.bind_tools(
-                [analyse_user_request_tool],
-                tool_choice={"type": "function", "function": {"name": "analyse_user_request"}},
-            )
-
+            # Use bind_tools + tool_choice for forced tool execution (validates + returns markdown)
             logger.info("Calling SGR planning LLM with %d messages", len(messages))
-            sgr_msg = await sgr_model.ainvoke(messages)
-            tool_calls = getattr(sgr_msg, "tool_calls", None) or []
-            tool_call = tool_calls[0] if isinstance(tool_calls, list) and tool_calls else None
-            logger.info("SGR planning LLM returned %d tool calls", len(tool_calls))
+            yield list(gradio_history)
 
-            if isinstance(tool_call, dict):
-                call_id = tool_call.get("id") or "sgr_plan_call"
-                args = tool_call.get("args")
-                if isinstance(args, dict):
-                    plan = SGRPlanResult.model_validate(args)
-                    sgr_plan_dict = plan.model_dump()
-                    logger.info(
-                        "SGR plan extracted from tool_call.args: spam_score=%.2f, user_intent_len=%d, subqueries_count=%d",
-                        sgr_plan_dict.get("spam_score", 0.0),
-                        len(sgr_plan_dict.get("user_intent", "")),
-                        len(sgr_plan_dict.get("subqueries", [])),
-                    )
-                else:
-                    fn = (
-                        tool_call.get("function")
-                        if isinstance(tool_call.get("function"), dict)
-                        else {}
-                    )
-                    arg_str = fn.get("arguments") if isinstance(fn, dict) else None
-                    if isinstance(arg_str, str) and arg_str.strip():
-                        plan = SGRPlanResult.model_validate_json(arg_str)
-                        sgr_plan_dict = plan.model_dump()
-                        logger.info(
-                            "SGR plan extracted from tool_call.function.arguments: spam_score=%.2f, user_intent_len=%d, subqueries_count=%d",
-                            sgr_plan_dict.get("spam_score", 0.0),
-                            len(sgr_plan_dict.get("user_intent", "")),
-                            len(sgr_plan_dict.get("subqueries", [])),
-                        )
-                    else:
-                        logger.warning(
-                            "SGR planning tool_call missing arguments: tool_call=%s", tool_call
-                        )
-            else:
-                logger.warning(
-                    "SGR planning did not return valid tool_call: tool_calls=%s", tool_calls
+            from rag_engine.tools.analyse_user_request import analyse_user_request
+
+            sgr_llm_forced = sgr_llm.bind_tools(
+                [analyse_user_request], tool_choice="analyse_user_request"
+            )
+            response = await sgr_llm_forced.ainvoke(messages)
+            logger.info("SGR LLM returned: %s", type(response))
+
+            if response.tool_calls:
+                tool_call = response.tool_calls[0]
+                # Execute tool - validates args via Pydantic and returns both json + markdown
+                result = await analyse_user_request.ainvoke(tool_call["args"])
+                sgr_plan_dict = result["json"]
+                sgr_markdown = result["markdown"]
+                logger.info(
+                    "SGR plan extracted: spam_score=%.2f, user_intent_len=%d, queries_count=%d",
+                    sgr_plan_dict.get("spam_score", 0.0),
+                    len(sgr_plan_dict.get("user_intent", "")),
+                    len(sgr_plan_dict.get("knowledge_base_search_queries", [])),
                 )
+            else:
+                logger.warning("SGR LLM did not make tool call")
+                sgr_plan_dict = None
+                sgr_markdown = None
 
             if sgr_plan_dict:
                 plan_json = json.dumps(sgr_plan_dict, ensure_ascii=False, separators=(",", ":"))
+                call_id = "sgr_plan_call"
 
                 messages = list(messages) + [
                     {
@@ -924,7 +1208,7 @@ async def agent_chat_handler(
                     },
                     {
                         "role": "tool",
-                        "content": plan_json,
+                        "content": sgr_markdown,  # Use markdown from tool result
                         "tool_call_id": call_id,
                     },
                 ]
@@ -1068,9 +1352,12 @@ async def agent_chat_handler(
         stream_chunk_count = 0
         tool_calls_detected_in_stream = False
 
+        # Increase recursion limit for complex conversations to avoid GRAPH_RECURSION_LIMIT errors
+        agent_config = {"recursion_limit": settings.langchain_recursion_limit}
+
         try:
             async for stream_mode, chunk in agent.astream(
-                {"messages": messages}, context=agent_context, stream_mode=["updates", "messages"]
+                {"messages": messages}, context=agent_context, config=agent_config, stream_mode=["updates", "messages"]
             ):
                 # Check for cancellation at each iteration
                 if is_cancelled():
@@ -1856,12 +2143,11 @@ async def agent_chat_handler(
             disclaimer_prepended = True
             logger.info("Injected disclaimer message (was missing from stream)")
 
-        # Handle no results case
+        # Set final text - sources will be added later at the end of the answer
+        final_text = answer
         if not articles:
-            final_text = answer
             logger.info("Agent completed with no retrieved articles")
         else:
-            final_text = format_with_citations(answer, articles)
             logger.info("Agent completed with %d articles", len(articles))
 
         # Only update/append if we have actual content (don't overwrite with empty)
@@ -1896,8 +2182,109 @@ async def agent_chat_handler(
             if isinstance(md, dict) and md.get("ui_type") == "generating_answer":
                 del gradio_history[i]
         update_message_status_in_history(gradio_history, "search_started", "done")
-        update_message_status_in_history(gradio_history, "sgr_planning", "done")
-        logger.info("Marked all pending UI spinners as done before final yield")
+        # Note: sgr_planning is marked done by SGR section itself, don't mark here
+        logger.info("Marked search spinner as done")
+
+        # ========== SRP (Support Resolution Plan) - if enabled ==========
+        resolution_plan = None
+        resolution_markdown = ""
+        srp_enabled = getattr(settings, "srp_enabled", False)
+        logger.info("SRP check: srp_enabled=%s", srp_enabled)
+        if srp_enabled:
+            from rag_engine.api.stream_helpers import (
+                remove_message_by_ui_type,
+                update_message_status_in_history,
+                yield_srp_planning_started,
+            )
+            from rag_engine.llm.prompts import get_dynamic_context, get_system_prompt
+
+            try:
+                # Show SRP planning bubble
+                gradio_history.append(yield_srp_planning_started())
+                yield list(gradio_history)
+
+                # Build messages from updated gradio_history (includes final answer)
+                srp_messages = _build_agent_messages_from_gradio_history(gradio_history)
+
+                # Build ephemeral SRP context (not stored in history)
+                srp_context = get_dynamic_context(include_srp=True)
+                if articles:
+                    srp_context += format_sources_list(articles) + "\n\n"
+
+                srp_analysis_request = {
+                    "role": "user",
+                    "content": srp_context + "Analyze the above assistant answer quality.",
+                }
+                srp_messages.append(srp_analysis_request)
+
+                # Use static system prompt (cacheable)
+                srp_messages = [{"role": "system", "content": get_system_prompt()}] + srp_messages
+
+                # Initialize LLM
+                srp_llm = LLMManager(
+                    provider=settings.default_llm_provider,
+                    model=current_model or settings.default_model,
+                    temperature=settings.llm_temperature,
+                )._chat_model()
+
+                # Use bind_tools + tool_choice for forced tool execution
+                from rag_engine.tools.generate_resolution_plan import generate_resolution_plan
+
+                srp_llm_forced = srp_llm.bind_tools(
+                    [generate_resolution_plan], tool_choice="generate_resolution_plan"
+                )
+                logger.info("Calling SRP LLM...")
+                response = await srp_llm_forced.ainvoke(srp_messages)
+                logger.info("SRP LLM returned: %s", type(response))
+
+                if response.tool_calls:
+                    tool_call = response.tool_calls[0]
+                    # Execute tool - validates args via Pydantic and returns both json + markdown
+                    result = await generate_resolution_plan.ainvoke(tool_call["args"])
+                    resolution_plan = result["json"]
+                    resolution_markdown = result["markdown"]
+                    agent_context.resolution_plan = resolution_plan
+                    logger.info(
+                        "SRP plan generated: engineer_intervention_needed=%s",
+                        resolution_plan.get("engineer_intervention_needed"),
+                    )
+                else:
+                    logger.warning("SRP LLM did not make tool call")
+
+                # Hide and remove SRP bubble after completion
+                update_message_status_in_history(gradio_history, "srp_planning", "done")
+                remove_message_by_ui_type(gradio_history, "srp_planning")
+                yield list(gradio_history)
+
+            except Exception as exc:
+                logger.error("SRP tool failed: %s", exc)
+                agent_context.resolution_plan_error = str(exc)
+                update_message_status_in_history(gradio_history, "srp_planning", "done")
+                remove_message_by_ui_type(gradio_history, "srp_planning")
+                yield list(gradio_history)
+
+        # ========== Render Plan Section ==========
+        plan_section = ""
+        if (
+            resolution_plan
+            and resolution_plan.get("engineer_intervention_needed", False)
+            and resolution_markdown
+        ):
+            plan_section = "\n\n---\n\n" + resolution_markdown
+            logger.info("Plan section rendered")
+
+        # ========== Assemble Final Message ==========
+        # Structure: Answer + [Plan] + [Sources at end]
+        # Always add sources at the end (regardless of plan presence)
+        complete_content = f"{final_text}{plan_section}"
+        if articles:
+            complete_content += format_sources_list(articles)
+        # Update the answer in gradio_history
+        _update_or_append_assistant_message(gradio_history, complete_content)
+        # Update final_response and final_text for consistency
+        final_response = complete_content
+        final_text = complete_content
+        logger.info("Assembled final message with plan and sources")
 
         # Log final history state for debugging
         logger.info(
@@ -1928,7 +2315,7 @@ async def agent_chat_handler(
             agent_context.final_articles = (
                 [_article_to_dict(a) for a in articles] if articles else []
             )
-            # Log rerank_score presence for debugging
+            agent_context.executed_queries = _extract_executed_queries(tool_results)
             if articles:
                 scores = [(a.kb_id, (a.metadata or {}).get("rerank_score")) for a in articles[:5]]
                 logger.debug(
@@ -1940,6 +2327,7 @@ async def agent_chat_handler(
                 "tool_results_count": len(tool_results),
                 "conversation_tokens": agent_context.conversation_tokens,
                 "accumulated_tool_tokens": agent_context.accumulated_tool_tokens,
+                "guard": guard_debug_info,
             }
             logger.info(
                 f"agent_chat_handler: yielding AgentContext - "
@@ -2146,10 +2534,14 @@ async def agent_chat_handler(
                         agent_context.final_articles = (
                             [_article_to_dict(a) for a in articles] if articles else []
                         )
+                        agent_context.executed_queries = _extract_executed_queries(
+                            fallback_tool_results
+                        )
                         agent_context.diagnostics = {
                             "model": current_model,
                             "fallback_retry": True,
                             "tool_results_count": len(tool_results),
+                            "guard": guard_debug_info,
                         }
                         if sgr_plan_dict and not getattr(agent_context, "sgr_plan", None):
                             agent_context.sgr_plan = sgr_plan_dict
@@ -2195,7 +2587,11 @@ async def agent_chat_handler(
         try:
             agent_context.final_answer = error_msg
             agent_context.final_articles = []
-            agent_context.diagnostics = {"model": current_model, "error": str(e)}
+            agent_context.diagnostics = {
+                "model": current_model,
+                "error": str(e),
+                "guard": guard_debug_info,
+            }
         except Exception:
             pass
         yield agent_context
@@ -2454,10 +2850,14 @@ async def ask_comindware_structured(
         from rag_engine.llm.schemas import SGRPlanResult
 
         empty_plan = SGRPlanResult(
-            spam_score=0.0,
-            spam_reason="",
+            spam_score=None,  # None when SGR didn't run
+            spam_reason="SGR planning did not execute",
             user_intent="",
-            subqueries=[""],
+            topic="",
+            category="",
+            intent_confidence=None,  # None when SGR didn't run
+            knowledge_base_search_queries=[""],
+            action="proceed",
         )
         return StructuredAgentResult(plan=empty_plan, answer_text="")
 
@@ -2471,13 +2871,32 @@ async def ask_comindware_structured(
     except ValidationError:
         plan = SGRPlanResult(
             spam_score=0.0,
-            spam_reason="",
+            spam_reason="SGR plan validation failed",
             user_intent="",
-            subqueries=[""],
+            topic="",
+            category="",
+            intent_confidence=0.5,
+            knowledge_base_search_queries=[],
+            action="proceed",
         )
+
+    # Calculate answer confidence from rerank scores if articles available
+    answer_confidence = None
+    if context.final_articles:
+        scores = []
+        for article in context.final_articles:
+            metadata = article.get('metadata', {})
+            rerank_score = metadata.get('rerank_score')
+            if rerank_score is not None:
+                scores.append(rerank_score)
+        if scores:
+            answer_confidence = sum(scores) / len(scores)
 
     return StructuredAgentResult(
         plan=plan,
+        resolution_plan=getattr(context, 'resolution_plan', None),
+        executed_queries=getattr(context, 'executed_queries', []),
+        answer_confidence=answer_confidence,
         per_query_results=context.query_traces if include_per_query_trace else [],
         final_articles=context.final_articles,
         answer_text=context.final_answer,
@@ -2490,27 +2909,10 @@ async def chat_with_metadata(
     history: list[dict],
     cancel_state: dict | None = None,
     request: gr.Request | None = None,
-) -> AsyncGenerator[
-    tuple[
-        list[dict],
-        str | gr.HTML,
-        str | gr.HTML,
-        str | gr.HTML,
-        str | gr.Textbox,
-        list | gr.JSON,
-        list | gr.JSON,
-        list | gr.Dataframe,
-        dict | None,  # metadata_state
-    ],
-    None,
-]:
-    """Streaming UI handler with metadata enabled and 1s delays around culprits for debugging.
-
-    Adds 1 second delays around formatting operations to identify which causes frontend hang.
-    """
+) -> AsyncGenerator[tuple[list[dict], Any, Any, Any, Any, Any, Any], None]:
+    """Streaming UI handler with metadata - yields chatbot during streaming, metadata once at end."""
     last_history: list[dict] = history if history else []
     ctx: AgentContext | None = None
-    metadata_start_time = None
     user_message = message  # Store original message for fallback metadata
 
     async for chunk in agent_chat_handler(
@@ -2521,37 +2923,20 @@ async def chat_with_metadata(
     ):
         if isinstance(chunk, list):
             last_history = chunk
-            # Yield history with hidden metadata during streaming
             yield (
                 chunk,
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False, value=""),
-                gr.update(visible=False, value=[]),
-                gr.update(visible=False, value=[]),
-                gr.update(visible=False, value=[]),
-                None,  # metadata_state - not updated during streaming
+                gr.update(),  # No-op during streaming
+                gr.update(),  # No-op during streaming
+                gr.update(),  # No-op during streaming
+                gr.update(),  # No-op during streaming
+                gr.update(),  # No-op during streaming
             )
-        elif isinstance(chunk, AgentContext):
+        else:
             ctx = chunk
-            metadata_start_time = time.perf_counter()
-            logger.info("chat_with_metadata: received AgentContext, starting metadata processing")
 
-    # After streaming completes, populate metadata components with delays
     if ctx is None:
         logger.warning("chat_with_metadata: no AgentContext received, yielding hidden metadata")
-        yield (
-            last_history,
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False, value=""),
-            gr.update(visible=False, value=[]),
-            gr.update(visible=False, value=[]),
-            gr.update(visible=False, value=[]),
-            None,  # metadata_state - no metadata to store
-        )
+        yield yield_hidden_updates(last_history)
         return
 
     try:
@@ -2562,15 +2947,17 @@ async def chat_with_metadata(
             f"chat_with_metadata: sgr_plan present={ctx.sgr_plan is not None}, "
             f"plan_keys={list(plan.keys()) if plan else []}, "
             f"user_intent_present={'user_intent' in plan}, "
-            f"subqueries_present={'subqueries' in plan}, "
+            f"queries_present={'knowledge_base_search_queries' in plan}, "
             f"action_plan_present={'action_plan' in plan}, "
             f"user_message='{user_message[:50] if user_message else 'None'}...'"
         )
-        spam_score = float(plan.get("spam_score", 0.0) or 0.0)
         user_intent = (
             plan.get("user_intent", "") if isinstance(plan.get("user_intent"), str) else ""
         )
-        subqueries = plan.get("subqueries", [])
+        topic = plan.get("topic", "")
+        category = plan.get("category", "")
+        intent_confidence = plan.get("intent_confidence")
+        knowledge_base_search_queries = plan.get("knowledge_base_search_queries", [])
         action_plan = plan.get("action_plan", [])
 
         # Log if sgr_plan is missing (shouldn't happen if SGR planning executed)
@@ -2589,9 +2976,9 @@ async def chat_with_metadata(
                 f"chat_with_metadata: using fallback user_intent from message (len={len(user_intent)})"
             )
 
-        # Ensure subqueries is a list (even if empty)
-        if not isinstance(subqueries, list):
-            subqueries = []
+        # Ensure knowledge_base_search_queries is a list (even if empty)
+        if not isinstance(knowledge_base_search_queries, list):
+            knowledge_base_search_queries = []
 
         # Ensure action_plan is a list (even if empty)
         if not isinstance(action_plan, list):
@@ -2599,26 +2986,16 @@ async def chat_with_metadata(
         plan_elapsed = (time.perf_counter() - plan_start) * 1000
         logger.info(
             f"chat_with_metadata: plan extraction took {plan_elapsed:.2f}ms - "
-            f"spam_score={spam_score}, user_intent_len={len(user_intent)}, "
-            f"subqueries_count={len(subqueries) if isinstance(subqueries, list) else 0}, "
+            f"user_intent_len={len(user_intent)}, "
+            f"queries_count={len(knowledge_base_search_queries) if isinstance(knowledge_base_search_queries, list) else 0}, "
             f"action_plan_count={len(action_plan) if isinstance(action_plan, list) else 0}"
         )
-
-        # Format badges with timing
-        spam_start = time.perf_counter()
-        try:
-            spam_badge_html = format_spam_badge(spam_score)
-        except Exception as exc:
-            logger.error("Failed to format spam badge: %s", exc, exc_info=True)
-            spam_badge_html = ""
-        spam_elapsed = (time.perf_counter() - spam_start) * 1000
-        logger.info(f"chat_with_metadata: spam badge formatting took {spam_elapsed:.2f}ms")
 
         conf_start = time.perf_counter()
         query_traces = ctx.query_traces or []
         logger.info(
             f"chat_with_metadata: formatting confidence badge - query_traces_count={len(query_traces)}, "
-            f"has_traces={bool(query_traces)}"
+            f"has_traces={bool(query_traces)}, intent_confidence={intent_confidence}"
         )
         if query_traces:
             for idx, trace in enumerate(query_traces):
@@ -2630,35 +3007,41 @@ async def chat_with_metadata(
                     f"chat_with_metadata: trace[{idx}] - has_confidence={has_conf}, "
                     f"confidence_type={conf_type}, articles_count={len(trace.get('articles', [])) if isinstance(trace, dict) else 0}"
                 )
-        try:
-            confidence_badge_html = format_confidence_badge(query_traces)
-        except Exception as exc:
-            logger.error("Failed to format confidence badge: %s", exc, exc_info=True)
-            confidence_badge_html = ""
+        search_confidence = None
+        if ctx.final_articles:
+            scores = [
+                float((article.get("metadata") or {}).get("rerank_score", 0.0))
+                for article in ctx.final_articles
+                if isinstance((article.get("metadata") or {}).get("rerank_score"), (int, float))
+            ]
+            if scores:
+                min_score = min(scores)
+                max_score = max(scores)
+                if max_score > min_score:
+                    normalized_scores = [(s - min_score) / (max_score - min_score) for s in scores]
+                else:
+                    normalized_scores = [0.5] * len(scores)
+                search_confidence = sum(normalized_scores) / len(normalized_scores)
         conf_elapsed = (time.perf_counter() - conf_start) * 1000
-        logger.info(f"chat_with_metadata: confidence badge formatting took {conf_elapsed:.2f}ms")
+        logger.info(f"chat_with_metadata: search confidence calculation took {conf_elapsed:.2f}ms")
 
-        queries_start = time.perf_counter()
-        try:
-            queries_badge_html = format_queries_badge(query_traces)
-        except Exception as exc:
-            logger.error("Failed to format queries badge: %s", exc, exc_info=True)
-            queries_badge_html = ""
-        queries_elapsed = (time.perf_counter() - queries_start) * 1000
+        executed_queries = ctx.executed_queries or []
+        search_count = len(executed_queries)
         logger.info(
-            f"chat_with_metadata: queries badge formatting took {queries_elapsed:.2f}ms - "
-            f"queries_count={len(query_traces)}"
+            f"chat_with_metadata: queries={search_count}, executed_queries={executed_queries}"
         )
 
-        final_start = time.perf_counter()
+        # Extract guard info for metadata
+        guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
+        has_guard = guard_info is not None
+
+        # Extract SGR plan for metadata
         try:
             # format_articles_dataframe is disabled, returns empty list
             articles_df_data = format_articles_dataframe(ctx.final_articles or [])
         except Exception as exc:
             logger.error("Failed to format articles dataframe: %s", exc, exc_info=True)
             articles_df_data = []
-        final_elapsed = (time.perf_counter() - final_start) * 1000
-        logger.info(f"chat_with_metadata: final formatting took {final_elapsed:.2f}ms")
 
         # Yield badges immediately, store metadata in state for later UI update
         logger.info("chat_with_metadata: yielding badges and storing metadata in state")
@@ -2667,7 +3050,15 @@ async def chat_with_metadata(
         # Prepare metadata for state storage
         # Ensure we always show SGR metadata when plan exists
         has_user_intent = bool(user_intent and isinstance(user_intent, str) and user_intent.strip())
-        has_subqueries = bool(isinstance(subqueries, list) and len(subqueries) > 0)
+        has_topic = bool(topic and isinstance(topic, str) and topic.strip())
+        has_category = bool(category and isinstance(category, str) and category.strip())
+        has_intent_confidence = intent_confidence is not None and isinstance(
+            intent_confidence, (int, float)
+        )
+        has_queries = bool(
+            isinstance(knowledge_base_search_queries, list)
+            and len(knowledge_base_search_queries) > 0
+        )
         has_action_plan = bool(isinstance(action_plan, list) and len(action_plan) > 0)
         has_articles = bool(isinstance(articles_df_data, list) and len(articles_df_data) > 0)
 
@@ -2681,12 +3072,40 @@ async def chat_with_metadata(
                 f"sgr_plan_present={ctx.sgr_plan is not None}, user_intent_len={len(user_intent)}"
             )
 
+        # Extract guard info for metadata
+        guard_info = ctx.diagnostics.get("guard") if ctx.diagnostics else None
+        has_guard = guard_info is not None
+
+        # Extract SGR plan for metadata
+        sgr_plan = ctx.sgr_plan if ctx.sgr_plan else {}
+        has_sgr_plan = bool(sgr_plan)
+
         # Store metadata in state for later UI update (after input is unlocked)
+        queries_list = (
+            knowledge_base_search_queries if isinstance(knowledge_base_search_queries, list) else []
+        )
+
+        # Extract SRP plan from context
+        srp_plan = ctx.resolution_plan if hasattr(ctx, "resolution_plan") else None
+        has_srp_plan = bool(srp_plan and srp_plan.get("engineer_intervention_needed"))
+
         metadata_dict = {
             "user_intent": user_intent if has_user_intent else "",
             "has_user_intent": has_user_intent,
-            "subqueries": subqueries if isinstance(subqueries, list) else [],
-            "has_subqueries": has_subqueries,
+            "topic": topic if has_topic else "",
+            "has_topic": has_topic,
+            "category": category if has_category else "",
+            "has_category": has_category,
+            "intent_confidence": intent_confidence if has_intent_confidence else None,
+            "has_intent_confidence": has_intent_confidence,
+            "guardian_info": guard_info,
+            "has_guardian": has_guard,
+            "sgr_plan": sgr_plan,
+            "has_sgr_plan": has_sgr_plan,
+            "srp_plan": srp_plan,
+            "has_srp_plan": has_srp_plan,
+            "knowledge_base_search_queries": queries_list,
+            "has_queries": has_queries,
             "action_plan": action_plan if isinstance(action_plan, list) else [],
             "has_action_plan": has_action_plan,
             "articles_df_data": articles_df_data,
@@ -2696,27 +3115,24 @@ async def chat_with_metadata(
         logger.info(
             "chat_with_metadata: storing metadata in state - "
             f"user_intent={user_intent[:50] if user_intent else 'empty'}, "
-            f"subqueries_count={len(subqueries) if isinstance(subqueries, list) else 0}, "
+            f"topic={topic}, category={category}, intent_confidence={intent_confidence}, "
+            f"has_guardian={has_guard}, "
+            f"queries_count={len(knowledge_base_search_queries) if isinstance(knowledge_base_search_queries, list) else 0}, "
             f"action_plan_count={len(action_plan) if isinstance(action_plan, list) else 0}, "
             f"articles_df_rows={len(articles_df_data) if isinstance(articles_df_data, list) else 0}"
         )
 
-        badge_visible = not settings.gradio_embedded_widget
         try:
-            yield (
+            # Build analysis data for JSON field
+            analysis_data = {
+                "confidence": search_confidence,
+                "queries_count": search_count,
+                "queries": executed_queries,
+            }
+            yield yield_badge_updates(
                 last_history,
-                gr.update(visible=badge_visible, value=spam_badge_html),
-                gr.update(visible=badge_visible, value=confidence_badge_html),
-                gr.update(visible=badge_visible, value=queries_badge_html),
-                gr.update(visible=False, value=""),  # intent_text - hide for now, will update later
-                gr.update(
-                    visible=False, value=[]
-                ),  # subqueries_json - hide for now, will update later
-                gr.update(
-                    visible=False, value=[]
-                ),  # action_plan_json - hide for now, will update later
-                gr.update(visible=False, value=[]),  # articles_df - hide for now, will update later
-                metadata_dict,  # Store metadata in state
+                analysis_data,
+                metadata_dict,
             )
             yield_elapsed = (time.perf_counter() - yield_start) * 1000
             logger.info(
@@ -2726,25 +3142,18 @@ async def chat_with_metadata(
             logger.error(f"chat_with_metadata: badges yield failed: {yield_exc}", exc_info=True)
             raise
 
-        if metadata_start_time:
-            total_elapsed = (time.perf_counter() - metadata_start_time) * 1000
-            logger.info(f"chat_with_metadata: total metadata processing took {total_elapsed:.2f}ms")
-
         logger.info("chat_with_metadata: generator completing normally")
 
     except Exception as exc:
         logger.error("Error in chat_with_metadata metadata processing: %s", exc, exc_info=True)
-        # Yield safe fallback
+        # Yield safe fallback (6 values to match outputs)
         yield (
             last_history,
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False, value=""),
-            gr.update(visible=False, value=[]),
-            gr.update(visible=False, value=[]),
-            gr.update(visible=False, value=[]),
-            None,  # metadata_state - no metadata to store on error
+            gr.update(value={}),  # analysis_metadata
+            gr.update(value={}),  # guardian_json
+            gr.update(value={}),  # sgr_plan_json
+            gr.update(value={}),  # srp_plan_json
+            gr.update(value=[]),  # articles_df
         )
 
 
@@ -2799,25 +3208,22 @@ with gr.Blocks(
     # Cancellation state - mutable dict so changes propagate to running generator
     # Note: Using direct dict value (not lambda) for Gradio 6 compatibility
     cancellation_state = gr.State(value={"cancelled": False})
-    # State to store metadata for UI update after streaming completes
-    metadata_state = gr.State(value=None)
 
-    # --- Metadata badges (populated after streaming completes, shown below chat) ---
-    with gr.Row():
-        spam_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
-        confidence_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
-        queries_badge = gr.HTML(visible=not settings.gradio_embedded_widget)
-
-    # Metadata panels (populated after streaming completes)
+    # Metadata panels (always visible, populated after streaming completes)
     gr.Markdown(
         f"### {i18n_resolve('analysis_summary_title')}",
         visible=not settings.gradio_embedded_widget,
     )
-    intent_text = gr.Textbox(
-        label=i18n_resolve("user_intent_label"), interactive=False, visible=False
+    analysis_metadata = gr.JSON(label="Analysis", visible=not settings.gradio_embedded_widget)
+    guardian_json = gr.JSON(
+        label=i18n_resolve("guardian_badge_label"), visible=not settings.gradio_embedded_widget
     )
-    subqueries_json = gr.JSON(label=i18n_resolve("subqueries_label"), visible=False)
-    action_plan_json = gr.JSON(label=i18n_resolve("action_plan_label"), visible=False)
+    sgr_plan_json = gr.JSON(
+        label=i18n_resolve("sgr_plan_label"), visible=not settings.gradio_embedded_widget
+    )
+    srp_plan_json = gr.JSON(
+        label=i18n_resolve("srp_plan_label"), visible=not settings.gradio_embedded_widget
+    )
 
     gr.Markdown(
         f"### {i18n_resolve('retrieved_articles_title')}",
@@ -2828,10 +3234,11 @@ with gr.Blocks(
             i18n_resolve("articles_rank_header"),
             i18n_resolve("articles_title_header"),
             i18n_resolve("articles_confidence_header"),
+            i18n_resolve("articles_normalized_header"),
             i18n_resolve("articles_url_header"),
         ],
         interactive=False,
-        visible=False,
+        visible=not settings.gradio_embedded_widget,
     )
 
     def handle_stop_click(
@@ -2946,77 +3353,71 @@ with gr.Blocks(
         """Update metadata UI components from stored metadata state.
 
         Called after input is unlocked to populate SGR metadata.
+        Note: Metadata fields are always visible - just update values.
         """
+        logger.info("update_metadata_ui: starting")
         if settings.gradio_embedded_widget:
-            return (gr.update(), gr.update(), gr.update(), gr.update())
+            logger.info("update_metadata_ui: embedded widget, returning defaults")
+            return tuple(gr.update() for _ in range(8))
 
         if not metadata:
             logger.info("update_metadata_ui: no metadata to display")
             return (
-                gr.update(visible=False, value=""),
-                gr.update(visible=False, value=[]),
-                gr.update(visible=False, value=[]),
-                gr.update(visible=False, value=[]),
+                gr.update(value=""),
+                gr.update(value=""),
+                gr.update(value=""),
+                gr.update(value=0),
+                gr.update(value={}),
+                gr.update(value=[]),
+                gr.update(value=[]),
+                gr.update(value=[]),
             )
 
         logger.info(
             f"update_metadata_ui: updating UI with metadata - "
             f"has_user_intent={metadata.get('has_user_intent', False)}, "
-            f"has_subqueries={metadata.get('has_subqueries', False)}, "
+            f"has_topic={metadata.get('has_topic', False)}, "
+            f"has_category={metadata.get('has_category', False)}, "
+            f"has_intent_confidence={metadata.get('has_intent_confidence', False)}, "
+            f"has_guardian={metadata.get('has_guardian', False)}, "
+            f"has_queries={metadata.get('has_queries', False)}, "
             f"has_action_plan={metadata.get('has_action_plan', False)}, "
             f"has_articles={metadata.get('has_articles', False)}"
         )
+        logger.info("update_metadata_ui: starting gr.update calls")
+        # Just update values - fields are always visible
+        result = (
+            gr.update(value=metadata.get("user_intent", "")),
+            gr.update(value=metadata.get("topic", "")),
+            gr.update(value=metadata.get("category", "")),
+            gr.update(value=metadata.get("intent_confidence")),
+            gr.update(value=metadata.get("guardian_info", {})),
+            gr.update(value=metadata.get("knowledge_base_search_queries", [])),
+            gr.update(value=metadata.get("action_plan", [])),
+            gr.update(value=metadata.get("articles_df_data", [])),
+        )
+        logger.info("update_metadata_ui: completed all gr.update calls")
+        return result
 
-        return (
-            gr.update(
-                visible=metadata.get("has_user_intent", False),
-                value=metadata.get("user_intent", ""),
-            ),
-            gr.update(
-                visible=metadata.get("has_subqueries", False), value=metadata.get("subqueries", [])
-            ),
-            gr.update(
-                visible=metadata.get("has_action_plan", False),
-                value=metadata.get("action_plan", []),
-            ),
-            gr.update(
-                visible=metadata.get("has_articles", False),
-                value=metadata.get("articles_df_data", []),
-            ),
-        )
-
-    submit_event = (
-        submit_event.then(
-            fn=handler_fn,
-            inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
-            outputs=[
-                chatbot,
-                spam_badge,
-                confidence_badge,
-                queries_badge,
-                intent_text,
-                subqueries_json,
-                action_plan_json,
-                articles_df,
-                metadata_state,  # Store metadata for later UI update
-            ],
-            concurrency_limit=settings.gradio_default_concurrency_limit,
-            api_visibility="private",  # Hide agent_chat_handler from MCP tools
-        )
-        .then(
-            # Chain re-enable directly from handler completion
-            # .then() fires after generator completes and all yields are processed
-            fn=re_enable_textbox_and_hide_stop,
-            outputs=[msg],
-            api_visibility="private",
-        )
-        .then(
-            # Update metadata UI after input is unlocked
-            fn=update_metadata_ui,
-            inputs=[metadata_state],
-            outputs=[intent_text, subqueries_json, action_plan_json, articles_df],
-            api_visibility="private",
-        )
+    submit_event = submit_event.then(
+        fn=handler_fn,
+        inputs=[saved_input, chatbot, cancellation_state],  # Pass cancellation state to handler
+        outputs=[
+            chatbot,
+            analysis_metadata,
+            guardian_json,
+            sgr_plan_json,
+            srp_plan_json,
+            articles_df,
+        ],
+        concurrency_limit=settings.gradio_default_concurrency_limit,
+        api_visibility="private",  # Hide agent_chat_handler from MCP tools
+    ).then(
+        # Chain re-enable directly from handler completion
+        # .then() fires after generator completes and all yields are processed
+        fn=re_enable_textbox_and_hide_stop,
+        outputs=[msg],
+        api_visibility="private",
     )
 
     # Built-in stop button automatically cancels submit_event when stop_btn=True
@@ -3060,8 +3461,37 @@ with gr.Blocks(
         api_description="Ask questions about Comindware Platform documentation and get intelligent answers with citations. The assistant automatically searches the knowledge base to find relevant articles and provides comprehensive answers based on official documentation. Use this for technical questions, configuration help, API usage, troubleshooting, and general platform guidance.",
     )
 
-    # Explicitly set a plain attribute for tests and downstream code to read
     demo.title = "Comindware Platform Documentation Assistant"
+
+    # CMW Platform API endpoint - works with both direct REST and Gradio API calls
+    def cmw_process_support_request(request_id: str | dict, request: gr.Request) -> dict:
+        """Process CMW Platform support request via API."""
+        # Handle Gradio API dict format
+        if isinstance(request_id, dict):
+            request_id = request_id.get("request_id")
+
+        if not request_id:
+            return {"success": False, "message": None, "error": "Missing request_id"}
+
+        # API key authentication
+        if settings.cmw_api_key:
+            provided_key = request.headers.get("X-API-Key")
+            if provided_key != settings.cmw_api_key:
+                logger.warning("Invalid API key attempt to CMW endpoint")
+                return {"success": False, "message": None, "error": "Invalid API key"}
+
+        from rag_engine.cmw_platform.connector import PlatformConnector
+
+        connector = PlatformConnector()
+        result = connector.start_request(str(request_id))
+
+        return {
+            "success": result.success,
+            "message": result.message,
+            "error": result.error,
+        }
+
+    # Note: FastAPI endpoint at /api/v1/cmw/process-support-request (see below)
 
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
@@ -3078,18 +3508,38 @@ if __name__ == "__main__":
             "Share link enabled. If share link creation fails, the app will still run locally."
         )
 
-    # Configure queue with default concurrency limit per Gradio queuing best practices
-    # https://www.gradio.app/guides/queuing
-    # This sets the default for all event listeners unless overridden
+    # Configure queue
     demo.queue(
         default_concurrency_limit=settings.gradio_default_concurrency_limit,
         status_update_rate="auto",
-    ).launch(
-        server_name=settings.gradio_server_name,
-        server_port=settings.gradio_server_port,
-        share=settings.gradio_share,
+    )
+
+    # Build FastAPI app with CMW Platform endpoint
+    from fastapi import FastAPI, Request
+    from pydantic import BaseModel
+    from gradio import mount_gradio_app
+
+    fastapi_app = FastAPI(title="CMW RAG API")
+
+    class ProcessSupportRequest(BaseModel):
+        request_id: str
+
+    @fastapi_app.post("/api/v1/cmw/process-support-request")
+    async def cmw_endpoint(req: ProcessSupportRequest, http_req: Request) -> dict:
+        """Process CMW Platform support request via REST API."""
+        return cmw_process_support_request(req.request_id, http_req)
+
+    # Mount Gradio with all options including MCP
+    app = mount_gradio_app(
+        fastapi_app,
+        demo,
+        path="/",
         mcp_server=True,
         footer_links=["api"],
         theme=gr.themes.Soft(),
         css_paths=[css_file_path] if css_file_path.exists() else [],
+        allowed_paths=[str(css_file_path.parent)] if css_file_path.exists() else None,
     )
+
+    import uvicorn
+    uvicorn.run(app, host=settings.gradio_server_name, port=settings.gradio_server_port)

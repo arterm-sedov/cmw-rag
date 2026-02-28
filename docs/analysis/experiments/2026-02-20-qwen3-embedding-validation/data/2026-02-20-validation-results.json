@@ -1,0 +1,173 @@
+{
+  "timestamp": "20260220_113942",
+  "config": {
+    "models": {
+      "0.6B": {
+        "path": "Qwen/Qwen3-Embedding-0.6B",
+        "dim": 1024
+      },
+      "4B": {
+        "path": "Qwen/Qwen3-Embedding-4B",
+        "dim": 2560
+      },
+      "8B": {
+        "path": "Qwen/Qwen3-Embedding-8B",
+        "dim": 4096
+      }
+    },
+    "test_text": "What is machine learning and how does it work?",
+    "instruction": "Given a web search query, retrieve relevant passages that answer the query"
+  },
+  "results": [
+    {
+      "provider": "direct",
+      "model_size": "0.6B",
+      "status": "SUCCESS",
+      "dimensions": 1024,
+      "latency_ms": 121.49262428283691,
+      "load_time_sec": 1.9944944381713867,
+      "error": ""
+    },
+    {
+      "provider": "vllm",
+      "model_size": "0.6B",
+      "status": "SUCCESS",
+      "dimensions": 1024,
+      "latency_ms": 11.40284538269043,
+      "load_time_sec": 12.450485229492188,
+      "error": ""
+    },
+    {
+      "provider": "openrouter",
+      "model_size": "0.6B",
+      "status": "SKIPPED",
+      "dimensions": 0,
+      "latency_ms": 0,
+      "load_time_sec": 0,
+      "error": "Not available"
+    },
+    {
+      "provider": "mosec",
+      "model_size": "0.6B",
+      "status": "SUCCESS",
+      "dimensions": 1024,
+      "latency_ms": 21.636486053466797,
+      "load_time_sec": 0.0,
+      "error": ""
+    },
+    {
+      "provider": "direct",
+      "model_size": "4B",
+      "status": "SUCCESS",
+      "dimensions": 2560,
+      "latency_ms": 14.27316665649414,
+      "load_time_sec": 2.9475600719451904,
+      "error": ""
+    },
+    {
+      "provider": "vllm",
+      "model_size": "4B",
+      "status": "FAILED",
+      "dimensions": 0,
+      "latency_ms": 0,
+      "load_time_sec": 0,
+      "error": "Engine core initialization failed. See root cause above. Failed core proc(s): {}"
+    },
+    {
+      "provider": "openrouter",
+      "model_size": "4B",
+      "status": "SUCCESS",
+      "dimensions": 2560,
+      "latency_ms": 2131.638526916504,
+      "load_time_sec": 0.0,
+      "error": ""
+    },
+    {
+      "provider": "mosec",
+      "model_size": "4B",
+      "status": "FAILED",
+      "dimensions": 0,
+      "latency_ms": 0,
+      "load_time_sec": 0,
+      "error": "HTTP 400"
+    },
+    {
+      "provider": "direct",
+      "model_size": "8B",
+      "status": "SUCCESS",
+      "dimensions": 4096,
+      "latency_ms": 187.96586990356445,
+      "load_time_sec": 3.411503314971924,
+      "error": ""
+    },
+    {
+      "provider": "vllm",
+      "model_size": "8B",
+      "status": "FAILED",
+      "dimensions": 0,
+      "latency_ms": 0,
+      "load_time_sec": 0,
+      "error": "Engine core initialization failed. See root cause above. Failed core proc(s): {}"
+    },
+    {
+      "provider": "openrouter",
+      "model_size": "8B",
+      "status": "SUCCESS",
+      "dimensions": 4096,
+      "latency_ms": 724.0245342254639,
+      "load_time_sec": 0.0,
+      "error": ""
+    },
+    {
+      "provider": "mosec",
+      "model_size": "8B",
+      "status": "FAILED",
+      "dimensions": 0,
+      "latency_ms": 0,
+      "load_time_sec": 0,
+      "error": "HTTP 400"
+    }
+  ],
+  "comparisons": [
+    {
+      "model_size": "0.6B",
+      "provider_a": "direct",
+      "provider_b": "vllm",
+      "cosine_sim": 0.9998595094611018,
+      "rel_error": 0.00044633008484676253,
+      "status": "PASS"
+    },
+    {
+      "model_size": "0.6B",
+      "provider_a": "direct",
+      "provider_b": "mosec",
+      "cosine_sim": 1.0,
+      "rel_error": 7.105363107586432e-05,
+      "status": "PASS"
+    },
+    {
+      "model_size": "0.6B",
+      "provider_a": "vllm",
+      "provider_b": "mosec",
+      "cosine_sim": 0.9998304424526825,
+      "rel_error": 0.0004538587565893845,
+      "status": "PASS"
+    },
+    {
+      "model_size": "4B",
+      "provider_a": "direct",
+      "provider_b": "openrouter",
+      "cosine_sim": 0.9999945797786781,
+      "rel_error": 0.00025853991700557983,
+      "status": "PASS"
+    },
+    {
+      "model_size": "8B",
+      "provider_a": "direct",
+      "provider_b": "openrouter",
+      "cosine_sim": 1.0,
+      "rel_error": 0.0001374756355961011,
+      "status": "PASS"
+    }
+  ]
+}
