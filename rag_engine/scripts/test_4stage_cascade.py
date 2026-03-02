@@ -161,7 +161,20 @@ MODELS = {
 
 ENTITY_MAPS = {
     'dslim': {'PER': 'PERSON', 'LOC': 'LOCATION', 'ORG': 'ORGANIZATION', 'MISC': 'MISC'},
-    'gherman': {'PER': 'PERSON', 'PERSON': 'PERSON', 'LOC': 'LOCATION', 'ORG': 'ORGANIZATION'},
+    'gherman': {
+        'PER': 'PERSON', 
+        'PERSON': 'PERSON', 
+        'FIRST_NAME': 'PERSON', 
+        'LAST_NAME': 'PERSON',
+        'MIDDLE_NAME': 'PERSON',
+        'LOC': 'LOCATION', 
+        'CITY': 'LOCATION',
+        'REGION': 'LOCATION',
+        'STREET': 'ADDRESS',
+        'HOUSE': 'ADDRESS',
+        'ORGANIZATION': 'ORGANIZATION', 
+        'ORG': 'ORGANIZATION',
+    },
     'eu_pii': {'PERSON': 'PERSON', 'EMAIL_ADDRESS': 'EMAIL', 'PHONE_NUMBER': 'PHONE', 'LOCATION': 'LOCATION', 'ORGANIZATION': 'ORGANIZATION'},
 }
 
@@ -274,33 +287,47 @@ def is_fragment(text, entity, all_text):
     - Single/two char fragment (BERT subword artifacts)
     - Wrong script for the context (e.g., Cyrillic 'т' in English-dominant text)
     - Low BERT confidence
+    - Entity detected by wrong-language NER model
+    - Partial word (surrounded by letters)
     """
     clean = entity['text'].replace('##', '').strip()
+    source = entity.get('source', '')
     
     # ALWAYS filter single characters - almost always garbage
     if len(clean) <= 1:
         return True
     
-    # Filter 2-char fragments with low confidence OR wrong script context
+    # Filter 2-char fragments - almost always BERT subword artifacts
     if len(clean) <= 2:
-        # Check confidence
-        if entity.get('confidence', 1.0) < 0.85:
+        return True
+    
+    # If detected by dslim (English model) on Russian text, filter aggressively
+    if source == 'dslim':
+        if is_cyrillic(clean):
             return True
-        
-        # Check if it's in wrong-script context
-        ctx_start = max(0, entity['start'] - 5)
-        ctx_end = min(len(all_text), entity['end'] + 5)
+        ctx_start = max(0, entity['start'] - 10)
+        ctx_end = min(len(all_text), entity['end'] + 10)
         context = all_text[ctx_start:ctx_end]
-        
-        entity_is_cyrillic = is_cyrillic(clean)
-        context_cyrillic = is_cyrillic(context.replace(clean, ''))
-        context_latin = is_latin(context.replace(clean, ''))
-        
-        # If entity is Cyrillic but context is mostly Latin, it's garbage
-        if entity_is_cyrillic and context_latin and not context_cyrillic:
+        if is_cyrillic(context):
             return True
-        # If entity is Latin but context is mostly Cyrillic, it's garbage  
-        if is_latin(clean) and context_cyrillic and not context_latin:
+    
+    # Filter low confidence fragments
+    if entity.get('confidence', 1.0) < 0.5:
+        return True
+    
+    # NEW: Check if it's surrounded by the same letters - likely a partial word
+    # This catches "вский" which is part of "Невский"
+    if len(clean) > 2:
+        start = entity['start']
+        end = entity['end']
+        
+        # Get context before and after
+        before = all_text[max(0, start-1):start] if start > 0 else ''
+        after = all_text[end:min(len(all_text), end+1)] if end < len(all_text) else ''
+        
+        # If the entity is surrounded by letters (not spaces/punctuation), it's a fragment
+        # E.g., "вский" in "Невский" - starts with 'в' and preceded by 'Не'
+        if before.isalpha() or after.isalpha():
             return True
     
     return False
