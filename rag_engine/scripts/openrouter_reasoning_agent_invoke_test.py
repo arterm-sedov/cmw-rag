@@ -22,7 +22,7 @@ def main() -> None:
     """Invoke the same Chat model the agent uses and inspect reasoning fields."""
     load_dotenv()
 
-    model_name = settings.default_model or "openai/gpt-oss-120b"
+    model_name = settings.default_model
     manager = LLMManager(
         provider="openrouter",
         model=model_name,
