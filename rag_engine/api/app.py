@@ -1491,7 +1491,7 @@ async def agent_chat_handler(
         reasoning_stream_text: str = ""
         reasoning_enabled: bool = getattr(settings, "llm_reasoning_enabled", False)
         in_think_block: bool = False
-        answer_stream_text: str = ""
+        content_stream_text: str = ""
         reasoning_bubble_id: str | None = None
         last_reasoning_bubble_text: str = ""
         # Harmony format (GPT-OSS) — stateful parser for streaming channel separation.
@@ -2089,7 +2089,12 @@ async def agent_chat_handler(
                                 if not tool_executing:
                                     # We handled text via content_blocks, skip fallback token.content.
                                     text_chunk_found = True
-                                    text_chunk = block["text"]
+                                    raw_text_chunk = str(block["text"])
+                                    text_chunk, content_stream_text = _extract_stream_delta(
+                                        raw_text_chunk, content_stream_text
+                                    )
+                                    if not text_chunk:
+                                        continue
                                     if reasoning_enabled and text_chunk:
                                         (
                                             text_chunk,
@@ -2120,12 +2125,6 @@ async def agent_chat_handler(
                                                 yield list(gradio_history)
                                         if not text_chunk:
                                             continue
-
-                                    text_chunk, answer_stream_text = _extract_stream_delta(
-                                        text_chunk, answer_stream_text
-                                    )
-                                    if not text_chunk:
-                                        continue
 
                                     # On first text chunk: finalize reasoning bubble and inject disclaimer as separate message (UI only), then stream answer
                                     if not answer:
@@ -2196,6 +2195,12 @@ async def agent_chat_handler(
                     if not text_chunk_found and is_ai_message and not tool_executing:
                         token_content = str(getattr(token, "content", ""))
                         if token_content:
+                            token_content, content_stream_text = _extract_stream_delta(
+                                token_content, content_stream_text
+                            )
+                            if not token_content:
+                                continue
+
                             if reasoning_enabled and token_content:
                                 (
                                     token_content,
@@ -2227,11 +2232,7 @@ async def agent_chat_handler(
                             if not token_content:
                                 continue
 
-                            # LangChain streaming provides incremental chunks, but handle both cases for robustness
-                            new_chunk, answer_stream_text = _extract_stream_delta(
-                                token_content, answer_stream_text
-                            )
-
+                            new_chunk = token_content
                             if new_chunk:
                                 # As soon as answer text starts streaming, remove the generating-answer spinner.
                                 if not answer and has_seen_tool_results:
