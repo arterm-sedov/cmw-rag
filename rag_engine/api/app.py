@@ -113,7 +113,6 @@ def format_confidence_badge_from_value(confidence: float | None) -> str:
 
 def format_queries_badge(query_traces: list[dict]) -> str:
     """Format queries count as colored HTML badge (localized)."""
-    label = i18n_resolve("queries_badge_label")
     count = len(query_traces) if query_traces else 0
     return format_queries_badge_from_count(count)
 
@@ -632,6 +631,7 @@ def _is_ui_only_message(msg: dict) -> bool:
             "cancelled",
             "user_intent_display",
             "disclaimer_display",
+            "reasoning",
         }:
             return True
 
@@ -1321,6 +1321,10 @@ async def agent_chat_handler(
         # Only stream text content when NOT executing tools
         tool_executing = False
 
+        # Accumulate model reasoning tokens (if enabled) for optional UI bubble and diagnostics
+        reasoning_buffer: str = ""
+        reasoning_enabled: bool = getattr(settings, "llm_reasoning_enabled", False)
+
         # Pass accumulated context to agent via typed context parameter
         # Tools can access this via runtime.context (typed, clean!)
         agent_context = AgentContext(
@@ -1859,6 +1863,21 @@ async def agent_chat_handler(
                                 # Skip displaying the tool call itself and any content
                                 continue
 
+                            elif block.get("type") == "reasoning" and reasoning_enabled:
+                                # Capture reasoning tokens for optional UI display and diagnostics.
+                                reasoning_text = (
+                                    block.get("reasoning")
+                                    or block.get("text")
+                                    or ""
+                                )
+                                if reasoning_text:
+                                    # Separate chunks with a newline for readability.
+                                    if reasoning_buffer:
+                                        reasoning_buffer += "\n"
+                                    reasoning_buffer += str(reasoning_text)
+                                # Do not stream reasoning as part of the main answer.
+                                continue
+
                             elif block.get("type") == "text" and block.get("text"):
                                 # Only stream text if we're not currently executing tools
                                 # This prevents streaming the agent's "reasoning" about tool calls
@@ -2111,11 +2130,14 @@ async def agent_chat_handler(
             yield list(gradio_history)
             try:
                 agent_context.final_answer = incomplete_response or ""
-                agent_context.diagnostics = {
+                cancelled_diagnostics: dict[str, Any] = {
                     "model": current_model,
                     "cancelled": True,
                     "tool_results_count": len(tool_results),
                 }
+                if getattr(settings, "llm_reasoning_enabled", False) and reasoning_buffer.strip():
+                    cancelled_diagnostics["reasoning"] = reasoning_buffer.strip()
+                agent_context.diagnostics = cancelled_diagnostics
             except Exception:
                 pass
             yield agent_context
@@ -2169,7 +2191,10 @@ async def agent_chat_handler(
             logger.info(f"Saved complete response to memory ({len(final_response)} chars)")
 
         # Remove transient blocks and mark pending spinners done before final yield
-        from rag_engine.api.stream_helpers import update_message_status_in_history
+        from rag_engine.api.stream_helpers import (
+            update_message_status_in_history,
+            yield_reasoning_bubble,
+        )
 
         remove_message_by_id(gradio_history, thinking_id)
         remove_message_by_id(gradio_history, generating_answer_id)
@@ -2184,6 +2209,16 @@ async def agent_chat_handler(
         update_message_status_in_history(gradio_history, "search_started", "done")
         # Note: sgr_planning is marked done by SGR section itself, don't mark here
         logger.info("Marked search spinner as done")
+
+        # === Reasoning bubble (optional, UI-only) ===
+        if getattr(settings, "llm_reasoning_enabled", False) and reasoning_buffer.strip():
+            try:
+                gradio_history.append(yield_reasoning_bubble(reasoning_buffer))
+                logger.info(
+                    "Injected reasoning bubble (length=%d)", len(reasoning_buffer.strip())
+                )
+            except Exception:
+                logger.warning("Failed to inject reasoning bubble", exc_info=True)
 
         # ========== SRP (Support Resolution Plan) - if enabled ==========
         resolution_plan = None
@@ -2321,7 +2356,8 @@ async def agent_chat_handler(
                 logger.debug(
                     f"agent_chat_handler: sample rerank_scores from final_articles: {scores}"
                 )
-            agent_context.diagnostics = {
+            # Preserve diagnostics and include optional reasoning trace if present.
+            diagnostics: dict[str, Any] = {
                 "model": current_model,
                 "stream_chunks": stream_chunk_count,
                 "tool_results_count": len(tool_results),
@@ -2329,6 +2365,9 @@ async def agent_chat_handler(
                 "accumulated_tool_tokens": agent_context.accumulated_tool_tokens,
                 "guard": guard_debug_info,
             }
+            if getattr(settings, "llm_reasoning_enabled", False) and reasoning_buffer.strip():
+                diagnostics["reasoning"] = reasoning_buffer.strip()
+            agent_context.diagnostics = diagnostics
             logger.info(
                 f"agent_chat_handler: yielding AgentContext - "
                 f"sgr_plan_present={agent_context.sgr_plan is not None}, "

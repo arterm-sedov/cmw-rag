@@ -254,6 +254,115 @@ def test_chat_handler_appends_footer_and_saves_to_memory(monkeypatch):
     assert any(h in final_text for h in ("## Источники:", "## Sources:"))
 
 
+def test_agent_stream_injects_reasoning_bubble_and_diagnostics(monkeypatch):
+    """Agent stream should capture reasoning tokens and surface them via UI bubble and diagnostics."""
+    import importlib
+
+    class FakeEmbedder:
+        def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
+            pass
+
+    class FakeStore:
+        def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
+            pass
+
+    class FakeLLMManager:
+        def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
+            from types import SimpleNamespace
+            from unittest.mock import Mock
+
+            self._conversations = SimpleNamespace(append=lambda *a, **k: None)
+            self._mock_chat_model = Mock()
+
+        def _chat_model(self, provider=None):  # noqa: ANN001
+            return self._mock_chat_model
+
+        def stream_response(self, message, docs, **kwargs):  # noqa: ANN001, ANN003
+            yield "answer"
+
+        def generate(self, question, docs, provider=None):  # noqa: ANN001
+            return "answer"
+
+    class FakeRetriever:
+        def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
+            pass
+
+        def retrieve(self, query, top_k=None):  # noqa: ANN001, ANN002
+            from types import SimpleNamespace
+
+            doc = SimpleNamespace(
+                metadata={
+                    "kbId": "123",
+                    "title": "Doc",
+                    "url": "https://example.com",
+                    "section_anchor": "#a",
+                }
+            )
+            return [doc]
+
+    monkeypatch.setattr("rag_engine.retrieval.embedder.FRIDAEmbedder", FakeEmbedder)
+    monkeypatch.setattr("rag_engine.storage.vector_store.ChromaStore", FakeStore)
+    monkeypatch.setattr("rag_engine.llm.llm_manager.LLMManager", FakeLLMManager)
+    monkeypatch.setattr("rag_engine.retrieval.retriever.RAGRetriever", FakeRetriever)
+    monkeypatch.setattr("rag_engine.utils.logging_manager.setup_logging", lambda: None)
+
+    app = importlib.reload(importlib.import_module("rag_engine.api.app"))
+
+    # Enable reasoning at runtime
+    from rag_engine.config import settings as settings_mod
+
+    # Pydantic Settings instance – flip the flag directly for the duration of this test.
+    monkeypatch.setattr(
+        settings_mod,
+        "llm_reasoning_enabled",
+        True,
+        raising=False,
+    )
+
+    # Patch agent to emit a reasoning block followed by a text block
+    def fake_agent_stream(*args, **kwargs):  # noqa: ANN001, ANN003
+        class AiMsg:
+            type = "ai"
+            tool_calls = None
+            content_blocks = [
+                {"type": "reasoning", "reasoning": "Step 1: think."},
+                {"type": "text", "text": "Final answer."},
+            ]
+
+        yield ("messages", (AiMsg(), {}))
+
+    class FakeAgent:
+        async def astream(self, *a, **k):  # noqa: ANN001, ANN003
+            for item in fake_agent_stream():
+                yield item
+
+    app._create_rag_agent = lambda *a, **k: FakeAgent()  # type: ignore
+
+    class R:
+        session_hash = "sess-reasoning"
+
+    outs = asyncio.run(_collect_async(app.agent_chat_handler("Question?", [], request=R())))
+
+    # Last list yield is the final Gradio history
+    final_hist = next((x for x in reversed(outs) if isinstance(x, list)), [])
+    reasoning_msgs = [
+        msg
+        for msg in final_hist
+        if isinstance(msg, dict)
+        and isinstance(msg.get("metadata"), dict)
+        and msg["metadata"].get("ui_type") == "reasoning"
+    ]
+    assert reasoning_msgs, "Reasoning bubble should be present in final history"
+    assert "Step 1: think." in reasoning_msgs[0].get("content", "")
+
+    from rag_engine.utils.context_tracker import AgentContext
+
+    final_ctx = next((x for x in outs if isinstance(x, AgentContext)), None)
+    assert final_ctx is not None
+    assert "reasoning" in final_ctx.diagnostics
+    assert "Step 1: think." in final_ctx.diagnostics["reasoning"]
+
+
 def test_session_salting_new_chat(monkeypatch):
     """Test session salting for new chats uses current message."""
     received_session_ids = []

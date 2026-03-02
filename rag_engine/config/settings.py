@@ -106,6 +106,13 @@ class Settings(BaseSettings):
     # Optional overrides for model config (if set, overrides model_configs.py values)
     llm_token_limit: int | None = None  # Optional override for token_limit from model config
 
+    # Reasoning / thinking tokens (OpenRouter-style)
+    # These settings are passed via the unified `reasoning` object for OpenAI-compatible providers.
+    llm_reasoning_enabled: bool = False
+    llm_reasoning_effort: str | None = None
+    llm_reasoning_max_tokens: int | None = None
+    llm_reasoning_exclude_from_response: bool = False
+
     # LangChain Configuration
     langchain_recursion_limit: int = 100  # Max steps for LangGraph StateGraph
 

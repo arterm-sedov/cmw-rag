@@ -3,8 +3,11 @@ from __future__ import annotations
 
 import pytest
 
-from rag_engine.llm.llm_manager import MODEL_CONFIGS, LLMManager
-from rag_engine.config import settings as settings_mod
+from rag_engine.llm.llm_manager import (
+    MODEL_CONFIGS,
+    LLMManager,
+    _build_reasoning_extra_body,
+)
 
 
 class TestModelConfigs:
@@ -205,6 +208,59 @@ class TestFallbackProviderInference:
         monkeypatch.setattr("rag_engine.llm.llm_manager.settings", type("S", (), {"llm_fallback_provider": "gemini"})())
         fb_mgr = mgr._create_manager_for("qwen/qwen3-max")
         assert fb_mgr.provider == "gemini"
+
+
+class TestReasoningConfig:
+    def test_build_reasoning_extra_body_disabled(self, monkeypatch):
+        """When reasoning is disabled, helper should explicitly disable reasoning."""
+
+        dummy_settings = type(
+            "S",
+            (),
+            {
+                "llm_reasoning_enabled": False,
+                "llm_reasoning_effort": None,
+                "llm_reasoning_max_tokens": None,
+                "llm_reasoning_exclude_from_response": False,
+            },
+        )()
+
+        monkeypatch.setattr(
+            "rag_engine.llm.llm_manager.settings",
+            dummy_settings,
+        )
+
+        body = _build_reasoning_extra_body()
+        assert isinstance(body, dict)
+        assert body.get("reasoning", {}).get("effort") == "none"
+        assert body.get("reasoning", {}).get("exclude") is True
+
+    def test_build_reasoning_extra_body_enabled(self, monkeypatch):
+        """When reasoning is enabled, helper should map effort / max_tokens / exclude."""
+
+        dummy_settings = type(
+            "S",
+            (),
+            {
+                "llm_reasoning_enabled": True,
+                "llm_reasoning_effort": "high",
+                "llm_reasoning_max_tokens": 2048,
+                "llm_reasoning_exclude_from_response": True,
+            },
+        )()
+
+        monkeypatch.setattr(
+            "rag_engine.llm.llm_manager.settings",
+            dummy_settings,
+        )
+
+        body = _build_reasoning_extra_body()
+        assert isinstance(body, dict)
+        reasoning = body.get("reasoning", {})
+        assert reasoning.get("enabled") is True
+        assert reasoning.get("effort") == "high"
+        assert reasoning.get("max_tokens") == 2048
+        assert reasoning.get("exclude") is True
 
 
 class TestDynamicContextBudgeting:
