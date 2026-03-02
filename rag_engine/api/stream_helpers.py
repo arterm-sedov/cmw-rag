@@ -571,6 +571,7 @@ def yield_reasoning_bubble(reasoning: str) -> dict:
         "metadata": {
             "title": title,
             "ui_type": "reasoning",
+            "status": "pending",
             "id": short_uid(),
         },
     }

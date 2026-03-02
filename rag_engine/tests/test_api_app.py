@@ -199,6 +199,50 @@ def test_strip_thinking_tags_from_chunk_across_chunks():
     assert in_block2 is False
 
 
+def test_extract_stream_delta_handles_cumulative_chunks():
+    from rag_engine.api.app import _extract_stream_delta
+
+    seen = ""
+    delta, seen = _extract_stream_delta("Hello", seen)
+    assert delta == "Hello"
+    delta, seen = _extract_stream_delta("Hello world", seen)
+    assert delta == " world"
+    delta, seen = _extract_stream_delta("Hello world", seen)
+    assert delta == ""
+
+
+def test_extract_stream_delta_handles_incremental_chunks():
+    from rag_engine.api.app import _extract_stream_delta
+
+    seen = ""
+    delta, seen = _extract_stream_delta("Hello", seen)
+    assert delta == "Hello"
+    delta, seen = _extract_stream_delta(" ", seen)
+    assert delta == " "
+    delta, seen = _extract_stream_delta("world", seen)
+    assert delta == "world"
+    assert seen == "Hello world"
+
+
+def test_extract_stream_delta_handles_partial_overlap_chunks():
+    from rag_engine.api.app import _extract_stream_delta
+
+    seen = "latest release"
+    delta, seen = _extract_stream_delta("release as of 31.12.2025", seen)
+    assert delta == " as of 31.12.2025"
+    assert seen == "latest release as of 31.12.2025"
+
+
+def test_extract_stream_delta_ignores_tiny_overlap():
+    from rag_engine.api.app import _extract_stream_delta
+
+    seen = "abc"
+    delta, seen = _extract_stream_delta("cdef", seen)
+    # 1-char overlap is ignored to avoid false-positive trimming.
+    assert delta == "cdef"
+    assert seen == "abccdef"
+
+
 def test_chat_interface_initialization(monkeypatch):
     class FakeEmbedder:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
