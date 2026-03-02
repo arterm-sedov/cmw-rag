@@ -266,6 +266,54 @@ stage1_regex:
     # Note: AGE detection handled by NER models (Stage 2: Gherman, Stage 3: EU-PII)
     # Regex age patterns are too rigid/unreliable for Russian
 
+# =============================================================================
+# US/ENGLISH PATTERNS (Stage 1, optional - for English text)
+# =============================================================================
+# These patterns supplement Russian patterns for US/English PII detection.
+# They can be enabled/disabled independently via config.
+# =============================================================================
+stage1_regex_us:
+  enabled: false  # Enable for English text processing
+  
+  # US-specific patterns
+  patterns:
+    # US Phone (multiple formats)
+    us_phone_1: '\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'  # (555) 123-4567, 555-123-4567, +1...
+    us_phone_2: '\+?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4}'  # International
+    
+    # US Social Security Number
+    us_ssn: '\b\d{3}-\d{2}-\d{4}\b'
+    
+    # US Individual Taxpayer Identification Number
+    us_itin: '\b9\d{2}-\d{7}\b'
+    
+    # US Employer Identification Number
+    us_ein: '\b\d{2}-\d{7}\b'
+    
+    # US ZIP Code
+    us_zip: '\b\d{5}(-\d{4})?\b'
+    
+    # US Driver License (generic - varies by state)
+    us_driver_license: '\b[A-Z]{1,2}\d{5,8}\b'
+    
+    # US DEA Number
+    us_dea: '\b[A-Z]{2}\d{7}\b'
+    
+    # US Passport
+    us_passport: '\bA\d{8}\b'
+    
+    # US NPI (National Provider Identifier)
+    us_npi: '\b[1-2]\d{9}\b'
+    
+    # US ABA Routing Number
+    us_aba_routing: '\b\d{9}\b'
+    
+    # US Street Address (common suffixes)
+    us_street_address: '\b\d+\s+[A-Za-z0-9\s,.]+\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Way|Lane|Ln|Pkwy|Circle|Cir)\b'
+    
+    # US State (abbreviations)
+    us_state: '\b(?:AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b'
+
 # Stage 2: Gherman Russian NER
 # =============================================================================
 # Gherman/bert-base-NER-Russian provides accurate detection of:
@@ -522,6 +570,19 @@ class EntityType(Enum):
     
     # Vehicle
     CAR_NUMBER = "CAR_NUMBER"
+    
+    # US/English identifiers
+    US_SSN = "US_SSN"
+    US_ITIN = "US_ITIN"
+    US_EIN = "US_EIN"
+    US_ZIP = "US_ZIP"
+    US_DRIVER_LICENSE = "US_DRIVER_LICENSE"
+    US_DEA = "US_DEA"
+    US_PASSPORT = "US_PASSPORT"
+    US_NPI = "US_NPI"
+    US_ABA_ROUTING = "US_ABA_ROUTING"
+    US_STREET_ADDRESS = "US_STREET_ADDRESS"
+    US_STATE = "US_STATE"
     
     # Other
     DATE = "DATE"
