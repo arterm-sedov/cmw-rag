@@ -354,10 +354,17 @@ def merge_and_dedupe(all_entities, text):
         same_group = group_last == group_curr
         gap = e['start'] - last['end']
         
+        # Check what separates the entities
+        separator = text[last['end']:e['start']] if gap > 0 else ""
+        surrounded_by_letters = (
+            gap == 0 or  # Adjacent with no gap
+            (gap > 0 and len(separator.strip()) == 0)  # Only punctuation/spaces
+        )
+        
         # Merge conditions:
         # 1. Same group AND
-        # 2. (Gap ≤ 3 for punctuation/spaces OR gap = 0 for adjacent)
-        if same_group and gap <= 3:
+        # 2. (Surrounded by letters = fragmented word OR gap ≤ 3 for punctuation)
+        if same_group and (surrounded_by_letters or gap <= 3):
             last['end'] = max(last['end'], e['end'])
             last['text'] = text[last['start']:last['end']]
             last['confidence'] = max(last['confidence'], e['confidence'])
