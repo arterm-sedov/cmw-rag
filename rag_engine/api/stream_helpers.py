@@ -552,6 +552,30 @@ def yield_generating_answer(block_id: str | None = None) -> dict:
     }
 
 
+def yield_reasoning_bubble(reasoning: str) -> dict:
+    """Yield a UI-only bubble with the model's internal reasoning/trace.
+
+    The bubble is collapsible in the UI and is excluded from the LLM context
+    via ui_type=\"reasoning\".
+    """
+    title = get_text("reasoning_title")
+    text = (reasoning or "").strip()
+    # Hard cap to keep the bubble readable; the full trace remains in diagnostics.
+    max_len = 4000
+    if len(text) > max_len:
+        text = text[:max_len].rstrip() + "\n\n...[обрезано для краткости]"
+
+    return {
+        "role": "assistant",
+        "content": text,
+        "metadata": {
+            "title": title,
+            "ui_type": "reasoning",
+            "id": short_uid(),
+        },
+    }
+
+
 def yield_cancelled() -> dict:
     """Yield metadata message for cancelled generation (stays open for visibility).
 

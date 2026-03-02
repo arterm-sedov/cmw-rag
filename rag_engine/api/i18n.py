@@ -27,6 +27,7 @@ i18n = gr.I18n(
         "thinking_content": "Using tool: {tool_name}",
         "generating_answer_title": "✍️ Generating answer",
         "generating_answer_content": "Composing response based on retrieved information...",
+        "reasoning_title": "💭 Model reasoning trace",
         "sgr_planning_title": "🧭 Analyzing request",
         "sgr_planning_content": "Building spam score and subqueries...",
         "model_switch_title": "⚡ Switched to {model} (requires more context)",
@@ -130,6 +131,7 @@ i18n = gr.I18n(
         "thinking_content": "Использую инструмент: {tool_name}",
         "generating_answer_title": "✍️ Генерация ответа",
         "generating_answer_content": "Формирую ответ на основе найденной информации...",
+        "reasoning_title": "💭 Внутренние рассуждения модели",
         "sgr_planning_title": "🧭 Анализ запроса",
         "sgr_planning_content": "Определяю спам-рейтинг и подзапросы...",
         "model_switch_title": "⚡ Переключение на {model} (требуется больше контекста)",
@@ -164,7 +166,6 @@ i18n = gr.I18n(
         "topic_label": "Тема",
         "category_label": "Категория",
         "intent_confidence_label": "Понимание SGR",
-        "guardian_badge_label": "Guardian",
         # SRP badges
         "srp_badge_label": "SRP",
         "srp_intervention_needed_label": "Вмешательство",

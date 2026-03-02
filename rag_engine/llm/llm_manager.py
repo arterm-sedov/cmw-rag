@@ -80,6 +80,39 @@ def get_model_config(model_name: str) -> dict:
     return config
 
 
+def _build_reasoning_extra_body() -> dict[str, Any] | None:
+    """Build OpenRouter-style reasoning configuration from env settings.
+
+    Returns a dict suitable for ChatOpenAI(extra_body=...) or None.
+    """
+    enabled = getattr(settings, "llm_reasoning_enabled", False)
+
+    # When disabled, explicitly request no reasoning to avoid surprise thinking traces.
+    if not enabled:
+        return {
+            "reasoning": {
+                "effort": "none",
+                "exclude": True,
+            }
+        }
+
+    cfg: dict[str, Any] = {"enabled": True}
+
+    effort = getattr(settings, "llm_reasoning_effort", None)
+    if effort:
+        cfg["effort"] = effort
+
+    max_tokens = getattr(settings, "llm_reasoning_max_tokens", None)
+    if max_tokens:
+        cfg["max_tokens"] = max_tokens
+
+    exclude = getattr(settings, "llm_reasoning_exclude_from_response", False)
+    if exclude:
+        cfg["exclude"] = True
+
+    return {"reasoning": cfg}
+
+
 def get_context_window(model_name: str, default: int = 262144) -> int:
     """Get context window size for a model.
 
@@ -173,6 +206,7 @@ class LLMManager:
         It's only used for context size estimation.
         """
         p = (provider or self.provider).lower()
+        reasoning_body = _build_reasoning_extra_body()
         if p == "gemini":
             model = ChatGoogleGenerativeAI(
                 model=self.model_name,
@@ -206,6 +240,7 @@ class LLMManager:
                     "HTTP-Referer": f"http://{settings.gradio_server_name}:{settings.gradio_server_port}",
                     "X-Title": "CMW RAG Engine",
                 },
+                extra_body=reasoning_body,
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "vllm":
@@ -226,6 +261,7 @@ class LLMManager:
                 temperature=self.temperature,
                 # Note: streaming is controlled at call site (.stream() vs .invoke()),
                 # not at model construction time, to avoid issues with LangChain agents
+                extra_body=reasoning_body,
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         # default fallback to Gemini
