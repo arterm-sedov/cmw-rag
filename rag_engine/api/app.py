@@ -787,6 +787,95 @@ def _process_text_chunk_for_streaming(
     return answer, disclaimer_prepended
 
 
+def _strip_thinking_tags_from_chunk(
+    text_chunk: str,
+    reasoning_buffer: str,
+    in_think_block: bool,
+) -> tuple[str, str, bool]:
+    """Strip <think>...</think> blocks from a text chunk and accumulate them as reasoning.
+
+    Many reasoning-style models (for example DeepSeek-style) emit chain-of-thought wrapped
+    in <think>...</think> tags inside the main content. This helper moves such tagged
+    content into the reasoning buffer so it can be shown in a separate UI bubble instead
+    of leaking into the final answer text.
+    """
+    if "<think>" not in text_chunk and "</think>" not in text_chunk and not in_think_block:
+        return text_chunk, reasoning_buffer, in_think_block
+
+    cleaned_parts: list[str] = []
+    i = 0
+    length = len(text_chunk)
+
+    while i < length:
+        if in_think_block:
+            end_tag_index = text_chunk.find("</think>", i)
+            if end_tag_index == -1:
+                thinking_segment = text_chunk[i:]
+                if thinking_segment:
+                    if reasoning_buffer:
+                        reasoning_buffer += "\n"
+                    reasoning_buffer += thinking_segment
+                i = length
+                break
+
+            thinking_segment = text_chunk[i:end_tag_index]
+            if thinking_segment:
+                if reasoning_buffer:
+                    reasoning_buffer += "\n"
+                reasoning_buffer += thinking_segment
+            i = end_tag_index + len("</think>")
+            in_think_block = False
+        else:
+            start_tag_index = text_chunk.find("<think>", i)
+            if start_tag_index == -1:
+                cleaned_parts.append(text_chunk[i:])
+                break
+
+            if start_tag_index > i:
+                cleaned_parts.append(text_chunk[i:start_tag_index])
+            i = start_tag_index + len("<think>")
+            in_think_block = True
+
+    cleaned_text = "".join(cleaned_parts)
+    return cleaned_text, reasoning_buffer, in_think_block
+
+
+def _truncate_reasoning_text(reasoning: str, max_len: int = 4000) -> str:
+    """Truncate reasoning text for UI bubble, keeping full trace in diagnostics."""
+    text = (reasoning or "").strip()
+    if len(text) <= max_len:
+        return text
+    return text[:max_len].rstrip() + "\n\n...[обрезано для краткости]"
+
+
+def _split_harmony_analysis_and_final(text: str) -> tuple[str, str]:
+    """Split Harmony-formatted GPT-OSS output into analysis and final parts.
+
+    GPT-OSS models often emit a single string like:
+        analysisWe ...assistantfinal<final answer>
+
+    This helper returns (analysis_part, final_part). If no assistantfinal marker
+    is present, returns ("", text).
+    """
+    if not text:
+        return "", ""
+
+    marker = "assistantfinal"
+    idx = text.find(marker)
+    if idx == -1:
+        return "", text
+
+    analysis_part = text[:idx]
+    final_part = text[idx + len(marker) :]
+
+    # Strip leading 'analysis' prefix from analysis channel, if present.
+    stripped_analysis = analysis_part.lstrip()
+    if stripped_analysis.startswith("analysis"):
+        stripped_analysis = stripped_analysis[len("analysis") :].lstrip()
+
+    return stripped_analysis, final_part.lstrip()
+
+
 def _extract_content_string(content: str | list | None) -> str:
     """Extract plain text string from Gradio message content.
 
@@ -1301,6 +1390,7 @@ async def agent_chat_handler(
         remove_message_by_id,
         short_uid,
         update_search_bubble_by_id,
+        yield_reasoning_bubble,
         yield_search_bubble,
         yield_thinking_block,
     )
@@ -1324,6 +1414,15 @@ async def agent_chat_handler(
         # Accumulate model reasoning tokens (if enabled) for optional UI bubble and diagnostics
         reasoning_buffer: str = ""
         reasoning_enabled: bool = getattr(settings, "llm_reasoning_enabled", False)
+        in_think_block: bool = False
+        reasoning_bubble_id: str | None = None
+        last_reasoning_bubble_text: str = ""
+        # Harmony format (GPT-OSS) handling: split analysis vs assistantfinal when enabled
+        from rag_engine.llm.model_configs import MODEL_CONFIGS
+
+        harmony_enabled = bool(
+            MODEL_CONFIGS.get(current_model or "", {}).get("harmony_format", False)
+        )
 
         # Pass accumulated context to agent via typed context parameter
         # Tools can access this via runtime.context (typed, clean!)
@@ -1875,6 +1974,30 @@ async def agent_chat_handler(
                                     if reasoning_buffer:
                                         reasoning_buffer += "\n"
                                     reasoning_buffer += str(reasoning_text)
+
+                                    # Stream/update reasoning bubble as it is being populated.
+                                    truncated = _truncate_reasoning_text(reasoning_buffer)
+                                    if truncated and truncated != last_reasoning_bubble_text:
+                                        if reasoning_bubble_id is None:
+                                            bubble = yield_reasoning_bubble(truncated)
+                                            reasoning_bubble_id = (bubble.get("metadata") or {}).get("id")
+                                            last_reasoning_bubble_text = bubble["content"]
+                                            gradio_history.append(bubble)
+                                        else:
+                                            for i in range(len(gradio_history) - 1, -1, -1):
+                                                msg = gradio_history[i]
+                                                if not isinstance(msg, dict):
+                                                    continue
+                                                md = msg.get("metadata") or {}
+                                                if (
+                                                    md.get("ui_type") == "reasoning"
+                                                    and md.get("id") == reasoning_bubble_id
+                                                ):
+                                                    msg["content"] = truncated
+                                                    last_reasoning_bubble_text = truncated
+                                                    break
+                                        yield list(gradio_history)
+
                                 # Do not stream reasoning as part of the main answer.
                                 continue
 
@@ -1883,18 +2006,95 @@ async def agent_chat_handler(
                                 # This prevents streaming the agent's "reasoning" about tool calls
                                 if not tool_executing:
                                     text_chunk = block["text"]
+                                    if reasoning_enabled and text_chunk:
+                                        (
+                                            text_chunk,
+                                            reasoning_buffer,
+                                            in_think_block,
+                                        ) = _strip_thinking_tags_from_chunk(
+                                            text_chunk,
+                                            reasoning_buffer,
+                                            in_think_block,
+                                        )
+                                        if harmony_enabled and text_chunk:
+                                            analysis_part, final_part = (
+                                                _split_harmony_analysis_and_final(
+                                                    text_chunk
+                                                )
+                                            )
+                                            if analysis_part:
+                                                if reasoning_buffer:
+                                                    reasoning_buffer += "\n"
+                                                reasoning_buffer += analysis_part
+                                            text_chunk = final_part
+                                        if reasoning_buffer:
+                                            truncated = _truncate_reasoning_text(
+                                                reasoning_buffer
+                                            )
+                                            if truncated and truncated != last_reasoning_bubble_text:
+                                                if reasoning_bubble_id is None:
+                                                    bubble = yield_reasoning_bubble(
+                                                        truncated
+                                                    )
+                                                    reasoning_bubble_id = (
+                                                        bubble.get("metadata") or {}
+                                                    ).get("id")
+                                                    last_reasoning_bubble_text = bubble[
+                                                        "content"
+                                                    ]
+                                                    gradio_history.append(bubble)
+                                                else:
+                                                    for i in range(
+                                                        len(gradio_history) - 1, -1, -1
+                                                    ):
+                                                        msg = gradio_history[i]
+                                                        if not isinstance(msg, dict):
+                                                            continue
+                                                        md = msg.get("metadata") or {}
+                                                        if (
+                                                            md.get("ui_type") == "reasoning"
+                                                            and md.get("id")
+                                                            == reasoning_bubble_id
+                                                        ):
+                                                            msg["content"] = truncated
+                                                            last_reasoning_bubble_text = (
+                                                                truncated
+                                                            )
+                                                            break
+                                            yield list(gradio_history)
+                                        if not text_chunk:
+                                            continue
 
-                                    # On first text chunk: inject disclaimer as separate message (UI only), then stream answer
+                                    # On first text chunk: finalize reasoning bubble and inject disclaimer as separate message (UI only), then stream answer
                                     if not answer:
+                                        if reasoning_bubble_id is not None:
+                                            for i in range(
+                                                len(gradio_history) - 1, -1, -1
+                                            ):
+                                                msg = gradio_history[i]
+                                                if not isinstance(msg, dict):
+                                                    continue
+                                                md = msg.get("metadata") or {}
+                                                if (
+                                                    md.get("ui_type") == "reasoning"
+                                                    and md.get("id")
+                                                    == reasoning_bubble_id
+                                                ):
+                                                    md["status"] = "done"
+                                                    break
                                         if (
                                             not disclaimer_prepended
-                                            and not _disclaimer_injected_in_history(gradio_history)
+                                            and not _disclaimer_injected_in_history(
+                                                gradio_history
+                                            )
                                         ):
                                             from rag_engine.api.stream_helpers import (
                                                 yield_disclaimer_display,
                                             )
 
-                                            gradio_history.append(yield_disclaimer_display())
+                                            gradio_history.append(
+                                                yield_disclaimer_display()
+                                            )
                                             disclaimer_prepended = True
                                             yield list(gradio_history)
                                         remove_message_by_id(gradio_history, thinking_id)
@@ -1933,7 +2133,9 @@ async def agent_chat_handler(
                                         )
                                     )
                                     # Update last message (answer) in history and yield full history
-                                    _update_or_append_assistant_message(gradio_history, answer)
+                                    _update_or_append_assistant_message(
+                                        gradio_history, answer
+                                    )
                                     yield list(gradio_history)
                                     text_chunk_found = True
 
@@ -1943,6 +2145,58 @@ async def agent_chat_handler(
                     if not text_chunk_found and is_ai_message and not tool_executing:
                         token_content = str(getattr(token, "content", ""))
                         if token_content:
+                            if reasoning_enabled and token_content:
+                                (
+                                    token_content,
+                                    reasoning_buffer,
+                                    in_think_block,
+                                ) = _strip_thinking_tags_from_chunk(
+                                    token_content,
+                                    reasoning_buffer,
+                                    in_think_block,
+                                )
+                                if harmony_enabled and token_content:
+                                    analysis_part, final_part = (
+                                        _split_harmony_analysis_and_final(token_content)
+                                    )
+                                    if analysis_part:
+                                        if reasoning_buffer:
+                                            reasoning_buffer += "\n"
+                                        reasoning_buffer += analysis_part
+                                    token_content = final_part
+                                if reasoning_buffer:
+                                    truncated = _truncate_reasoning_text(reasoning_buffer)
+                                    if truncated and truncated != last_reasoning_bubble_text:
+                                        if reasoning_bubble_id is None:
+                                            from rag_engine.api.stream_helpers import (
+                                                yield_reasoning_bubble,
+                                            )
+
+                                            bubble = yield_reasoning_bubble(truncated)
+                                            reasoning_bubble_id = (
+                                                bubble.get("metadata") or {}
+                                            ).get("id")
+                                            last_reasoning_bubble_text = bubble["content"]
+                                            gradio_history.append(bubble)
+                                        else:
+                                            for i in range(
+                                                len(gradio_history) - 1, -1, -1
+                                            ):
+                                                msg = gradio_history[i]
+                                                if not isinstance(msg, dict):
+                                                    continue
+                                                md = msg.get("metadata") or {}
+                                                if (
+                                                    md.get("ui_type") == "reasoning"
+                                                    and md.get("id") == reasoning_bubble_id
+                                                ):
+                                                    msg["content"] = truncated
+                                                    last_reasoning_bubble_text = truncated
+                                                    break
+                                        yield list(gradio_history)
+                            if not token_content:
+                                continue
+
                             # LangChain streaming provides incremental chunks, but handle both cases for robustness
                             new_chunk = None
                             if answer and token_content.startswith(answer):
@@ -3555,8 +3809,8 @@ if __name__ == "__main__":
 
     # Build FastAPI app with CMW Platform endpoint
     from fastapi import FastAPI, Request
-    from pydantic import BaseModel
     from gradio import mount_gradio_app
+    from pydantic import BaseModel
 
     fastapi_app = FastAPI(title="CMW RAG API")
 
