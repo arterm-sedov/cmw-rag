@@ -1327,10 +1327,17 @@ async def agent_chat_handler(
             logger.info("Calling SGR planning LLM with %d messages", len(messages))
             yield list(gradio_history)
 
+            from rag_engine.llm.model_configs import MODEL_CONFIGS
             from rag_engine.tools.analyse_user_request import analyse_user_request
 
+            sgr_model = selected_model or settings.default_model
+            sgr_cfg = MODEL_CONFIGS.get(sgr_model, {})
+            sgr_supports_forced = sgr_cfg.get("supports_forced_tool_choice", True)
+            sgr_tool_choice = (
+                "analyse_user_request" if sgr_supports_forced else "auto"
+            )
             sgr_llm_forced = sgr_llm.bind_tools(
-                [analyse_user_request], tool_choice="analyse_user_request"
+                [analyse_user_request], tool_choice=sgr_tool_choice
             )
             response = await sgr_llm_forced.ainvoke(messages)
             logger.info("SGR LLM returned: %s", type(response))
@@ -2560,10 +2567,17 @@ async def agent_chat_handler(
                 )._chat_model()
 
                 # Use bind_tools + tool_choice for forced tool execution
+                from rag_engine.llm.model_configs import MODEL_CONFIGS
                 from rag_engine.tools.generate_resolution_plan import generate_resolution_plan
 
+                srp_model = current_model or settings.default_model
+                srp_cfg = MODEL_CONFIGS.get(srp_model, {})
+                srp_supports_forced = srp_cfg.get("supports_forced_tool_choice", True)
+                srp_tool_choice = (
+                    "generate_resolution_plan" if srp_supports_forced else "auto"
+                )
                 srp_llm_forced = srp_llm.bind_tools(
-                    [generate_resolution_plan], tool_choice="generate_resolution_plan"
+                    [generate_resolution_plan], tool_choice=srp_tool_choice
                 )
                 logger.info("Calling SRP LLM...")
                 response = await srp_llm_forced.ainvoke(srp_messages)
