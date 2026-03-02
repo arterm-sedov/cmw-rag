@@ -13,6 +13,62 @@ async def _collect_async(gen):
     return out
 
 
+def test_split_harmony_analysis_and_final_basic():
+    from rag_engine.api.app import _split_harmony_analysis_and_final
+
+    raw = (
+        "analysisWe need to explain quantum entanglement clearly."
+        "assistantfinal**Final answer**"
+    )
+    analysis, final = _split_harmony_analysis_and_final(raw)
+
+    assert "analysis" not in analysis
+    assert "quantum entanglement" in analysis
+    assert final.startswith("**Final answer**")
+
+
+def test_split_harmony_analysis_and_final_no_marker():
+    from rag_engine.api.app import _split_harmony_analysis_and_final
+
+    raw = "Just a normal answer without harmony markers."
+    analysis, final = _split_harmony_analysis_and_final(raw)
+
+    assert analysis == ""
+    assert final == raw
+
+
+def test_strip_thinking_tags_from_chunk_single_block():
+    from rag_engine.api.app import _strip_thinking_tags_from_chunk
+
+    text = "Hello <think>internal\nreasoning</think> world"
+    cleaned, reasoning, in_block = _strip_thinking_tags_from_chunk(text, "", False)
+
+    assert "internal" not in cleaned
+    assert "reasoning" not in cleaned
+    assert "Hello" in cleaned and "world" in cleaned
+    assert "internal" in reasoning and "reasoning" in reasoning
+    assert in_block is False
+
+
+def test_strip_thinking_tags_from_chunk_across_chunks():
+    from rag_engine.api.app import _strip_thinking_tags_from_chunk
+
+    first = "prefix <think>partial"
+    cleaned1, reasoning1, in_block1 = _strip_thinking_tags_from_chunk(first, "", False)
+    assert "partial" not in cleaned1
+    assert reasoning1 == "partial"
+    assert in_block1 is True
+
+    second = " continued</think> suffix"
+    cleaned2, reasoning2, in_block2 = _strip_thinking_tags_from_chunk(
+        second, reasoning1, in_block1
+    )
+    assert "continued" not in cleaned2
+    assert "suffix" in cleaned2
+    assert "partial" in reasoning2 and "continued" in reasoning2
+    assert in_block2 is False
+
+
 def test_chat_interface_initialization(monkeypatch):
     class FakeEmbedder:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003

@@ -81,11 +81,13 @@ MODEL_CONFIGS: dict[str, dict] = {
         "token_limit": 1_000_000,  # 1M context window as per OpenRouter model card
         "max_tokens": 65_536,
         "temperature": 0,
+        "supports_forced_tool_choice": False,  # OpenRouter Qwen 3.5 models don't honor explicit tool_choice
     },
     "qwen/qwen3.5-122b-a10b": {
         "token_limit": 262_144,  # 262,144 context window as per OpenRouter model card
         "max_tokens": 65_536,
         "temperature": 0,
+        "supports_forced_tool_choice": False,  # OpenRouter Qwen 3.5 models don't honor explicit tool_choice
     },
     # Additional Qwen Models
     "qwen/qwen3-235b-a22b": {
@@ -116,6 +118,7 @@ MODEL_CONFIGS: dict[str, dict] = {
         "token_limit": 40000,  # Matches vLLM max_model_len configuration
         "max_tokens": 40000,  # Matches vLLM max_model_len configuration
         "temperature": 0,
+        "harmony_format": True,  # GPT-OSS models use Harmony response format
     },
     # vLLM GigaChat3 model (MoE: 10B total, 1.8B active params)
     # Supports up to 256K context window, optimized for high throughput
@@ -163,11 +166,13 @@ MODEL_CONFIGS: dict[str, dict] = {
         "token_limit": 131_072,
         "max_tokens": 32_768,
         "temperature": 0,
+        "harmony_format": True,  # GPT-OSS models use Harmony response format
     },
     "openai/gpt-oss-120b:exacto": {
         "token_limit": 131_072,
         "max_tokens": 32_768,
         "temperature": 0,
+        "harmony_format": True,  # GPT-OSS models use Harmony response format
     },
     "openai/gpt-5-mini": {
         "token_limit": 400_000,
