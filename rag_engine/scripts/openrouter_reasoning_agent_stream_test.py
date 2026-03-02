@@ -24,7 +24,7 @@ async def run_stream_reasoning_test() -> None:
     load_dotenv()
 
     # Use the same provider/model path as the agent: LLMManager -> _chat_model() with OpenRouter.
-    model_name = settings.default_model or "openai/gpt-oss-120b"
+    model_name = settings.default_model
     manager = LLMManager(
         provider="openrouter",
         model=model_name,

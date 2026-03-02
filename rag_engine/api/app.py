@@ -848,32 +848,6 @@ def _truncate_reasoning_text(reasoning: str, max_len: int = 4000) -> str:
     return text[:max_len].rstrip() + "\n\n...[обрезано для краткости]"
 
 
-def _split_harmony_analysis_and_final(text: str) -> tuple[str, str]:
-    """Split Harmony-formatted GPT-OSS output into analysis and final parts.
-
-    GPT-OSS models often emit a single string like:
-        analysisWe ...assistantfinal<final answer>
-
-    This helper returns (analysis_part, final_part). If no assistantfinal marker
-    is present, returns ("", text).
-    """
-    if not text:
-        return "", ""
-
-    marker = "assistantfinal"
-    idx = text.find(marker)
-    if idx == -1:
-        return "", text
-
-    analysis_part = text[:idx]
-    final_part = text[idx + len(marker) :]
-
-    # Strip leading 'analysis' prefix from analysis channel, if present.
-    stripped_analysis = analysis_part.lstrip()
-    if stripped_analysis.startswith("analysis"):
-        stripped_analysis = stripped_analysis[len("analysis") :].lstrip()
-
-    return stripped_analysis, final_part.lstrip()
 
 
 def _extract_content_string(content: str | list | None) -> str:
@@ -1417,11 +1391,15 @@ async def agent_chat_handler(
         in_think_block: bool = False
         reasoning_bubble_id: str | None = None
         last_reasoning_bubble_text: str = ""
-        # Harmony format (GPT-OSS) handling: split analysis vs assistantfinal when enabled
+        # Harmony format (GPT-OSS) — stateful parser for streaming channel separation.
+        from rag_engine.api.harmony_parser import HarmonyStreamParser
         from rag_engine.llm.model_configs import MODEL_CONFIGS
 
         harmony_enabled = bool(
             MODEL_CONFIGS.get(current_model or "", {}).get("harmony_format", False)
+        )
+        harmony_parser: HarmonyStreamParser | None = (
+            HarmonyStreamParser() if harmony_enabled else None
         )
 
         # Pass accumulated context to agent via typed context parameter
@@ -2016,17 +1994,13 @@ async def agent_chat_handler(
                                             reasoning_buffer,
                                             in_think_block,
                                         )
-                                        if harmony_enabled and text_chunk:
-                                            analysis_part, final_part = (
-                                                _split_harmony_analysis_and_final(
-                                                    text_chunk
-                                                )
-                                            )
-                                            if analysis_part:
+                                        if harmony_parser:
+                                            h_reasoning, h_final = harmony_parser.feed(text_chunk)
+                                            if h_reasoning:
                                                 if reasoning_buffer:
                                                     reasoning_buffer += "\n"
-                                                reasoning_buffer += analysis_part
-                                            text_chunk = final_part
+                                                reasoning_buffer += h_reasoning
+                                            text_chunk = h_final
                                         if reasoning_buffer:
                                             truncated = _truncate_reasoning_text(
                                                 reasoning_buffer
@@ -2155,15 +2129,13 @@ async def agent_chat_handler(
                                     reasoning_buffer,
                                     in_think_block,
                                 )
-                                if harmony_enabled and token_content:
-                                    analysis_part, final_part = (
-                                        _split_harmony_analysis_and_final(token_content)
-                                    )
-                                    if analysis_part:
+                                if harmony_parser:
+                                    h_reasoning, h_final = harmony_parser.feed(token_content)
+                                    if h_reasoning:
                                         if reasoning_buffer:
                                             reasoning_buffer += "\n"
-                                        reasoning_buffer += analysis_part
-                                    token_content = final_part
+                                        reasoning_buffer += h_reasoning
+                                    token_content = h_final
                                 if reasoning_buffer:
                                     truncated = _truncate_reasoning_text(reasoning_buffer)
                                     if truncated and truncated != last_reasoning_bubble_text:
@@ -2463,6 +2435,17 @@ async def agent_chat_handler(
         update_message_status_in_history(gradio_history, "search_started", "done")
         # Note: sgr_planning is marked done by SGR section itself, don't mark here
         logger.info("Marked search spinner as done")
+
+        # Flush any remaining Harmony buffer content held back for partial-marker safety.
+        if harmony_parser:
+            h_reasoning, h_final = harmony_parser.flush()
+            if h_reasoning:
+                if reasoning_buffer:
+                    reasoning_buffer += "\n"
+                reasoning_buffer += h_reasoning
+            if h_final:
+                answer += h_final
+                _update_or_append_assistant_message(gradio_history, answer)
 
         # === Reasoning bubble (optional, UI-only) ===
         if getattr(settings, "llm_reasoning_enabled", False) and reasoning_buffer.strip():

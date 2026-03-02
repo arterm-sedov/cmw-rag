@@ -13,28 +13,158 @@ async def _collect_async(gen):
     return out
 
 
-def test_split_harmony_analysis_and_final_basic():
-    from rag_engine.api.app import _split_harmony_analysis_and_final
+def test_harmony_split_basic():
+    from rag_engine.api.harmony_parser import split as harmony_split
 
     raw = (
         "analysisWe need to explain quantum entanglement clearly."
         "assistantfinal**Final answer**"
     )
-    analysis, final = _split_harmony_analysis_and_final(raw)
+    analysis, final = harmony_split(raw)
 
-    assert "analysis" not in analysis
     assert "quantum entanglement" in analysis
     assert final.startswith("**Final answer**")
 
 
-def test_split_harmony_analysis_and_final_no_marker():
-    from rag_engine.api.app import _split_harmony_analysis_and_final
+def test_harmony_split_no_marker():
+    from rag_engine.api.harmony_parser import split as harmony_split
 
     raw = "Just a normal answer without harmony markers."
-    analysis, final = _split_harmony_analysis_and_final(raw)
+    analysis, final = harmony_split(raw)
 
     assert analysis == ""
     assert final == raw
+
+
+def test_harmony_split_analysis_only():
+    from rag_engine.api.harmony_parser import split as harmony_split
+
+    raw = "analysisWe need to retrieve context and think."
+    analysis, final = harmony_split(raw)
+
+    assert "We need to retrieve context" in analysis
+    assert final == ""
+
+
+def test_harmony_split_multichannel():
+    """All Harmony channels (analysis, commentary, assistantfinal) are parsed."""
+    from rag_engine.api.harmony_parser import split as harmony_split
+
+    raw = (
+        "analysisWe need to retrieve context."
+        'assistantcommentary to=functions.retrieve_context json{"query":"install"}'
+        'assistantcommentary{"articles":[{"kb_id":"4521"}]}'
+        "assistantanalysisNow retrieve latest version."
+        'assistantcommentary to=functions.retrieve_context json{"query":"version"}'
+        'assistantcommentary{"articles":[{"kb_id":"4600"}]}'
+        "assistantanalysisNow we have all info."
+        "assistantfinal## Installation\nFollow these steps."
+    )
+    reasoning, final = harmony_split(raw)
+
+    assert "We need to retrieve context" in reasoning
+    assert "Now retrieve latest version" in reasoning
+    assert "Now we have all info" in reasoning
+    assert "retrieve_context" in reasoning
+
+    assert "## Installation" in final
+    assert "Follow these steps" in final
+
+    for marker in ("assistantfinal", "assistantcommentary", "assistantanalysis"):
+        assert marker not in reasoning
+        assert marker not in final
+
+
+def test_harmony_split_tool_response_false_positive():
+    """Tool response headers containing 'to=assistantcommentary' are not false splits."""
+    from rag_engine.api.harmony_parser import split as harmony_split
+
+    raw = (
+        "analysisNeed weather data."
+        'assistantcommentary to=functions.get_weather json{"city":"Tokyo"}'
+        'functions.get_weather to=assistantcommentary{"temp":20}'
+        "assistantanalysisGot it, now answer."
+        "assistantfinalThe weather in Tokyo is 20C."
+    )
+    reasoning, final = harmony_split(raw)
+
+    assert "Need weather data" in reasoning
+    assert "Got it, now answer" in reasoning
+    assert final == "The weather in Tokyo is 20C."
+    assert "temp" in reasoning
+
+
+def test_harmony_stream_parser_cross_chunk():
+    """HarmonyStreamParser handles markers split across streaming chunks."""
+    from rag_engine.api.harmony_parser import HarmonyStreamParser
+
+    parser = HarmonyStreamParser()
+    all_reasoning = ""
+    all_final = ""
+
+    for chunk in [
+        "analysisThinking about this.",
+        "assistant",  # partial marker
+        "final",  # completes "assistantfinal"
+        "Here is the answer.",
+    ]:
+        r_delta, f_delta = parser.feed(chunk)
+        all_reasoning += r_delta
+        all_final += f_delta
+
+    r_delta, f_delta = parser.flush()
+    all_reasoning += r_delta
+    all_final += f_delta
+
+    assert "Thinking about this" in all_reasoning
+    assert "Here is the answer" in all_final
+    assert "assistantfinal" not in all_final
+    assert "assistantfinal" not in all_reasoning
+
+
+def test_harmony_stream_parser_no_markers():
+    """Plain text without Harmony markers passes through as final content."""
+    from rag_engine.api.harmony_parser import HarmonyStreamParser
+
+    parser = HarmonyStreamParser()
+    all_final = ""
+
+    for chunk in ["Hello ", "world ", "how are you?"]:
+        _, f_delta = parser.feed(chunk)
+        all_final += f_delta
+
+    _, f_delta = parser.flush()
+    all_final += f_delta
+
+    assert "Hello world how are you?" in all_final
+
+
+def test_harmony_stream_parser_streams_reasoning_live():
+    """Reasoning deltas arrive incrementally, not just at flush time."""
+    from rag_engine.api.harmony_parser import HarmonyStreamParser
+
+    parser = HarmonyStreamParser()
+    reasoning_deltas: list[str] = []
+
+    # Feed a long analysis that clearly exceeds the tail holdback.
+    for chunk in [
+        "analysisThis is the chain of thought. ",
+        "We need to figure out the answer carefully. ",
+        "Let me think step by step about this problem. ",
+        "assistantfinalThe answer is 42.",
+    ]:
+        r_delta, _ = parser.feed(chunk)
+        if r_delta:
+            reasoning_deltas.append(r_delta)
+
+    r_delta, _ = parser.flush()
+    if r_delta:
+        reasoning_deltas.append(r_delta)
+
+    # Reasoning should have been emitted BEFORE the flush (live streaming).
+    assert len(reasoning_deltas) >= 1
+    full_reasoning = "".join(reasoning_deltas)
+    assert "chain of thought" in full_reasoning
 
 
 def test_strip_thinking_tags_from_chunk_single_block():
@@ -338,6 +468,10 @@ def test_agent_stream_injects_reasoning_bubble_and_diagnostics(monkeypatch):
 
         def generate(self, question, docs, provider=None):  # noqa: ANN001
             return "answer"
+
+        def save_assistant_turn(self, session_id, content):  # noqa: ANN001
+            # No-op for tests; real implementation persists conversation turns.
+            pass
 
     class FakeRetriever:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
