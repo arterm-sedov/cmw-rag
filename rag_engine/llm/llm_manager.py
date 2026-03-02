@@ -98,13 +98,16 @@ def _build_reasoning_extra_body() -> dict[str, Any] | None:
 
     cfg: dict[str, Any] = {"enabled": True}
 
-    effort = getattr(settings, "llm_reasoning_effort", None)
-    if effort:
-        cfg["effort"] = effort
-
+    # OpenRouter requires that only ONE of reasoning.effort or reasoning.max_tokens
+    # is specified in a single request. Prefer an explicit max_tokens budget when
+    # both are set, otherwise fall back to effort.
     max_tokens = getattr(settings, "llm_reasoning_max_tokens", None)
+    effort = getattr(settings, "llm_reasoning_effort", None)
+
     if max_tokens:
         cfg["max_tokens"] = max_tokens
+    elif effort:
+        cfg["effort"] = effort
 
     exclude = getattr(settings, "llm_reasoning_exclude_from_response", False)
     if exclude:
