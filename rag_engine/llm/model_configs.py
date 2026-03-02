@@ -18,6 +18,11 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 65_536,
         "temperature": 0,
     },
+    "google/gemini-3-flash-preview": {
+        "token_limit": 1_048_576,  # 1M context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
     # OpenRouter models (matching cmw-platform-agent)
     # DeepSeek Models
     "deepseek/deepseek-v3.1-terminus": {
@@ -70,6 +75,16 @@ MODEL_CONFIGS: dict[str, dict] = {
     "qwen/qwen3-max": {
         "token_limit": 256_000,
         "max_tokens": 32_768,
+        "temperature": 0,
+    },
+    "qwen/qwen3.5-flash-02-23": {
+        "token_limit": 1_000_000,  # 1M context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "qwen/qwen3.5-122b-a10b": {
+        "token_limit": 262_144,  # 262,144 context window as per OpenRouter model card
+        "max_tokens": 65_536,
         "temperature": 0,
     },
     # Additional Qwen Models
