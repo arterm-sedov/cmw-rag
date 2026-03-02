@@ -3530,6 +3530,17 @@ if __name__ == "__main__":
         return cmw_process_support_request(req.request_id, http_req)
 
     # Mount Gradio with all options including MCP
+    # Configure static file access for Gradio (see https://www.gradio.app/guides/file-access)
+    # We keep the scope narrow by only allowing:
+    # - The internal `rag_engine/resources` directory (theme, logo, etc.)
+    # - An optional top-level `resources` directory (for shared fonts like OpenSans)
+    allowed_paths_list: list[str] = []
+    if RESOURCES_DIR.exists():
+        allowed_paths_list.append(str(RESOURCES_DIR))
+    project_resources_dir = Path.cwd() / "resources"
+    if project_resources_dir.exists():
+        allowed_paths_list.append(str(project_resources_dir))
+
     app = mount_gradio_app(
         fastapi_app,
         demo,
@@ -3538,7 +3549,7 @@ if __name__ == "__main__":
         footer_links=["api"],
         theme=gr.themes.Soft(),
         css_paths=[css_file_path] if css_file_path.exists() else [],
-        allowed_paths=[str(css_file_path.parent)] if css_file_path.exists() else None,
+        allowed_paths=allowed_paths_list or None,
     )
 
     import uvicorn
