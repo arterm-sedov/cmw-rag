@@ -191,27 +191,205 @@ def run_model(text, model_key):
 
 
 # =============================================================================
-# MERGE FUNCTION
+# LANGUAGE DETECTION - Smart routing to appropriate NER
 # =============================================================================
 
+def detect_language(text):
+    """Detect if text contains Russian (Cyrillic) or is primarily English."""
+    # Count Cyrillic characters
+    cyrillic_count = len(re.findall(r'[А-Яа-яЁё]', text))
+    # Count ASCII letters
+    latin_count = len(re.findall(r'[A-Za-z]', text))
+    
+    total = cyrillic_count + latin_count
+    if total == 0:
+        return 'en'  # Default to English
+    
+    cyrillic_ratio = cyrillic_count / total
+    
+    # If more than 30% Cyrillic, treat as Russian
+    if cyrillic_ratio > 0.3:
+        return 'ru'
+    return 'en'
+
+
+def smart_ner_stage(text, config):
+    """Run appropriate NER based on language detection per sentence.
+    
+    For mixed EN+RU text, we detect language for each segment
+    and route to the appropriate NER model.
+    """
+    config = config or 'smart_split'
+    
+    if config == 'smart_split':
+        # Split into sentences/segments and detect language per segment
+        import re
+        segments = re.split(r'[,.\n]+', text)
+        
+        all_results = []
+        
+        for segment in segments:
+            segment = segment.strip()
+            if not segment:
+                continue
+            
+            lang = detect_language(segment)
+            
+            if lang == 'ru':
+                # Use Gherman for Russian
+                all_results.extend(run_model(segment, 'gherman'))
+            else:
+                # Use dslim for English
+                all_results.extend(run_model(segment, 'dslim'))
+        
+        return all_results
+    
+    elif config == 'gherman_only':
+        return run_model(text, 'gherman')
+    
+    elif config == 'dslim_only':
+        return run_model(text, 'dslim')
+    
+    else:
+        # Default: dslim only
+        return run_model(text, 'dslim')
+
+
+# =============================================================================
+# MERGE FUNCTION - Smart fragmentation handling
+# =============================================================================
+
+def is_cyrillic(s):
+    """Check if text contains Cyrillic characters."""
+    return bool(re.search(r'[А-Яа-яЁё]', s))
+
+def is_latin(s):
+    """Check if text contains Latin characters."""
+    return bool(re.search(r'[A-Za-z]', s))
+
+def is_fragment(text, entity, all_text):
+    """Check if entity is a fragmented piece of a larger word.
+    
+    Heuristics:
+    - Single/two char fragment (BERT subword artifacts)
+    - Wrong script for the context (e.g., Cyrillic 'т' in English-dominant text)
+    - Low BERT confidence
+    """
+    clean = entity['text'].replace('##', '').strip()
+    
+    # ALWAYS filter single characters - almost always garbage
+    if len(clean) <= 1:
+        return True
+    
+    # Filter 2-char fragments with low confidence OR wrong script context
+    if len(clean) <= 2:
+        # Check confidence
+        if entity.get('confidence', 1.0) < 0.85:
+            return True
+        
+        # Check if it's in wrong-script context
+        ctx_start = max(0, entity['start'] - 5)
+        ctx_end = min(len(all_text), entity['end'] + 5)
+        context = all_text[ctx_start:ctx_end]
+        
+        entity_is_cyrillic = is_cyrillic(clean)
+        context_cyrillic = is_cyrillic(context.replace(clean, ''))
+        context_latin = is_latin(context.replace(clean, ''))
+        
+        # If entity is Cyrillic but context is mostly Latin, it's garbage
+        if entity_is_cyrillic and context_latin and not context_cyrillic:
+            return True
+        # If entity is Latin but context is mostly Cyrillic, it's garbage  
+        if is_latin(clean) and context_cyrillic and not context_latin:
+            return True
+    
+    return False
+
+
 def merge_and_dedupe(all_entities, text):
+    """
+    Advanced merging with smart fragmentation handling:
+    1. Filter obvious garbage (single-char, low confidence, wrong script)
+    2. Cluster adjacent same-type entities (handles fragments and multi-word hits)
+    3. Resolve overlaps (Longest Match First)
+    4. Final cleanup
+    """
     if not all_entities:
         return []
     
-    sorted_ents = sorted(all_entities, key=lambda x: (x['end'] - x['start'], -x['start']), reverse=True)
+    # Pre-clean: Ensure text is synced with offsets
+    for e in all_entities:
+        e['text'] = text[e['start']:e['end']]
+    
+    # Step 1: Filter obvious garbage
+    filtered = []
+    for e in all_entities:
+        if is_fragment(text, e, text):
+            continue  # Skip garbage
+        filtered.append(e)
+    
+    # Step 2: Sort by start position
+    filtered.sort(key=lambda x: (x['start'], x['end']))
+    
+    # Step 3: Type grouping
+    type_groups = {
+        'LOCATION': 'LOC', 'ADDRESS': 'LOC', 'LOC': 'LOC',
+        'PERSON': 'PER', 'NAME': 'PER', 'PER': 'PER',
+        'ORGANIZATION': 'ORG', 'COMPANY': 'ORG', 'ORG': 'ORG',
+        'PHONE': 'PHONE', 'EMAIL': 'EMAIL'
+    }
+    
+    # Step 4: Cluster adjacent same-type entities
+    clustered = []
+    for e in filtered:
+        if not clustered:
+            clustered.append(e.copy())
+            continue
+        
+        last = clustered[-1]
+        
+        group_last = type_groups.get(last['type'], last['type'])
+        group_curr = type_groups.get(e['type'], e['type'])
+        
+        same_group = group_last == group_curr
+        gap = e['start'] - last['end']
+        
+        # Merge conditions:
+        # 1. Same group AND
+        # 2. (Gap ≤ 3 for punctuation/spaces OR gap = 0 for adjacent)
+        if same_group and gap <= 3:
+            last['end'] = max(last['end'], e['end'])
+            last['text'] = text[last['start']:last['end']]
+            last['confidence'] = max(last['confidence'], e['confidence'])
+            if e['source'] not in last['source']:
+                last['source'] = f"{last['source']}+{e['source']}"
+        else:
+            clustered.append(e.copy())
+            
+    # Step 5: Resolve remaining overlaps (Longest Match First)
+    clustered.sort(key=lambda x: (x['end'] - x['start'], -x['start']), reverse=True)
     
     covered = [False] * len(text)
     final = []
     
-    for e in sorted_ents:
+    for e in clustered:
         start, end = e['start'], e['end']
-        overlaps = any(covered[i] for i in range(start, min(end, len(text))))
+        if end <= start:
+            continue
+        
+        overlaps = any(covered[i] for i in range(max(0, start), min(end, len(text))))
         
         if not overlaps:
+            # Final cleanup: if too short and low confidence, skip
+            clean = e['text'].replace('#', '').strip()
+            if len(clean) < 2 and e.get('confidence', 1.0) < 0.8:
+                continue
+                
             final.append(e)
-            for i in range(start, min(end, len(text))):
+            for i in range(max(0, start), min(end, len(text))):
                 covered[i] = True
     
+    # Sort by position for final output
     return sorted(final, key=lambda x: x['start'])
 
 
@@ -233,14 +411,20 @@ def test_cascade(stages, samples, name):
             all_entities.extend(CombinedRegexPatterns.detect_all(sample))
             total_time += time.time() - t0
         
-        # Stage 2: dslim (English)
-        if 'dslim' in stages:
+        # Smart NER: Language-aware routing
+        if 'smart_ner' in stages:
+            t0 = time.time()
+            all_entities.extend(smart_ner_stage(sample, 'smart_split'))
+            total_time += time.time() - t0
+        
+        # Stage 2: dslim (English) - only if not using smart_ner
+        if 'dslim' in stages and 'smart_ner' not in stages:
             t0 = time.time()
             all_entities.extend(run_model(sample, 'dslim'))
             total_time += time.time() - t0
         
-        # Stage 3: Gherman (Russian)
-        if 'gherman' in stages:
+        # Stage 3: Gherman (Russian) - only if not using smart_ner
+        if 'gherman' in stages and 'smart_ner' not in stages:
             t0 = time.time()
             all_entities.extend(run_model(sample, 'gherman'))
             total_time += time.time() - t0
@@ -275,11 +459,10 @@ def main():
     # Define cascades to test
     cascades = [
         (["regex"], "1. Regex Only (US+RU)"),
-        (["regex", "dslim"], "2. Regex + dslim"),
-        (["regex", "dslim", "gherman"], "3. Regex + dslim + Gherman"),
-        (["regex", "dslim", "gherman", "eu_pii"], "4. FULL: Regex + dslim + Gherman + EU-PII"),
-        (["regex", "dslim", "eu_pii"], "5. Regex + dslim + EU-PII"),
-        (["regex", "gherman", "eu_pii"], "6. Regex + Gherman + EU-PII"),
+        (["regex", "dslim"], "2. Regex + dslim (EN only)"),
+        (["regex", "gherman", "eu_pii"], "3. Regex + Gherman + EU-PII (RU biased)"),
+        (["regex", "smart_ner", "eu_pii"], "4. SMART: Regex + LangDetect → dslim/Gherman + EU-PII"),
+        (["regex", "dslim", "gherman", "eu_pii"], "5. FULL: Regex + dslim + Gherman + EU-PII"),
     ]
     
     results = []
