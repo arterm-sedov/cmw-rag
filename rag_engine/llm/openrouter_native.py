@@ -470,6 +470,7 @@ def create_openrouter_native_model(
     base_url: str | None = None,
     api_key: str | None = None,
     max_tokens: int | None = None,
+    callbacks: list | None = None,
 ) -> OpenRouterNativeFullChatModel:
     """Create OpenRouter native model with project settings."""
     url = base_url or settings.openrouter_base_url
@@ -492,4 +493,5 @@ def create_openrouter_native_model(
         max_tokens=max_tokens,
         extra_body=build_reasoning_extra_body(),
         default_headers=default_headers,
+        callbacks=callbacks or [],
     )

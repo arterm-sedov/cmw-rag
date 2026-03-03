@@ -14,6 +14,7 @@ from rag_engine.llm.model_configs import MODEL_CONFIGS
 from rag_engine.llm.openrouter_native import create_openrouter_native_model
 from rag_engine.llm.prompts import get_system_prompt
 from rag_engine.llm.token_utils import estimate_tokens_for_request
+from rag_engine.llm.usage_accounting import UsageAccountingCallback
 from rag_engine.utils.conversation_store import ConversationStore
 from rag_engine.utils.metadata_utils import extract_numeric_kbid
 
@@ -255,6 +256,7 @@ class LLMManager:
                 base_url=settings.openrouter_base_url,
                 api_key=api_key,
                 max_tokens=self._model_config.get("max_tokens"),
+                callbacks=[UsageAccountingCallback()],
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "vllm":
@@ -276,6 +278,7 @@ class LLMManager:
                 # Note: streaming is controlled at call site (.stream() vs .invoke()),
                 # not at model construction time, to avoid issues with LangChain agents
                 extra_body=reasoning_body,
+                callbacks=[UsageAccountingCallback()],
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         # default fallback to Gemini

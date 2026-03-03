@@ -27,6 +27,7 @@ from rag_engine.config.settings import get_allowed_fallback_models, settings  # 
 from rag_engine.llm.fallback import check_context_fallback
 from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.llm.schemas import StructuredAgentResult
+from rag_engine.llm.usage_accounting import accumulate_conversation_usage
 from rag_engine.retrieval.embedder import create_embedder
 from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
@@ -2783,6 +2784,7 @@ async def agent_chat_handler(
                 "conversation_tokens": agent_context.conversation_tokens,
                 "accumulated_tool_tokens": agent_context.accumulated_tool_tokens,
                 "guard": guard_debug_info,
+                "session_id": session_id,
             }
             if getattr(settings, "llm_reasoning_enabled", False) and rctx.buffer.strip():
                 diagnostics["reasoning"] = rctx.buffer.strip()
@@ -3344,7 +3346,7 @@ async def ask_comindware_structured(
 
     from pydantic import ValidationError
 
-    from rag_engine.llm.schemas import SGRPlanResult
+    from rag_engine.llm.schemas import SGRPlanResult, UsageBlock, UsageTotals
 
     plan_dict = context.sgr_plan or {}
     try:
@@ -3373,15 +3375,33 @@ async def ask_comindware_structured(
         if scores:
             answer_confidence = sum(scores) / len(scores)
 
+    # Build usage block from AgentContext (per-turn); conversation total currently equals turn total.
+    usage_turn_summary = getattr(context, "usage_turn_summary", {}) or {}
+    if isinstance(usage_turn_summary, dict):
+        usage_turn = UsageTotals(
+            prompt_tokens=int(usage_turn_summary.get("prompt_tokens", 0) or 0),
+            completion_tokens=int(usage_turn_summary.get("completion_tokens", 0) or 0),
+            total_tokens=int(usage_turn_summary.get("total_tokens", 0) or 0),
+            reasoning_tokens=int(usage_turn_summary.get("reasoning_tokens", 0) or 0),
+            cached_tokens=int(usage_turn_summary.get("cached_tokens", 0) or 0),
+            cache_write_tokens=int(usage_turn_summary.get("cache_write_tokens", 0) or 0),
+            cost=float(usage_turn_summary.get("cost", 0.0) or 0.0),
+            upstream_cost=float(usage_turn_summary.get("upstream_cost", 0.0) or 0.0),
+        )
+        usage_block: UsageBlock | None = UsageBlock(turn=usage_turn, conversation=usage_turn)
+    else:
+        usage_block = None
+
     return StructuredAgentResult(
         plan=plan,
-        resolution_plan=getattr(context, 'resolution_plan', None),
-        executed_queries=getattr(context, 'executed_queries', []),
+        resolution_plan=getattr(context, "resolution_plan", None),
+        executed_queries=getattr(context, "executed_queries", []),
         answer_confidence=answer_confidence,
         per_query_results=context.query_traces if include_per_query_trace else [],
         final_articles=context.final_articles,
         answer_text=context.final_answer,
         diagnostics=context.diagnostics,
+        usage=usage_block,
     )
 
 
@@ -3543,6 +3563,16 @@ async def chat_with_metadata(
         has_action_plan = bool(isinstance(action_plan, list) and len(action_plan) > 0)
         has_articles = bool(isinstance(articles_df_data, list) and len(articles_df_data) > 0)
 
+        # Usage accounting (per-turn) from AgentContext, if available
+        usage_turn_summary = getattr(ctx, "usage_turn_summary", {}) or {}
+
+        # Accumulate per-session conversation usage using salted session_id from diagnostics
+        session_id = (ctx.diagnostics or {}).get("session_id") if ctx.diagnostics else None
+        usage_conversation_summary = accumulate_conversation_usage(
+            session_id=session_id,
+            turn_summary=usage_turn_summary,
+        )
+
         # Always show user_intent if we have a user message (even if SGR plan is missing/empty)
         # This ensures metadata appears for math/date questions that don't call retrieve_context
         if not has_user_intent and user_message:
@@ -3591,6 +3621,8 @@ async def chat_with_metadata(
             "has_action_plan": has_action_plan,
             "articles_df_data": articles_df_data,
             "has_articles": has_articles,
+            "usage_turn": usage_turn_summary,
+            "usage_conversation": usage_conversation_summary,
         }
 
         logger.info(
@@ -3609,6 +3641,8 @@ async def chat_with_metadata(
                 "confidence": search_confidence,
                 "queries_count": search_count,
                 "queries": executed_queries,
+                "usage_turn": usage_turn_summary,
+                "usage_conversation": usage_conversation_summary,
             }
             yield yield_badge_updates(
                 last_history,

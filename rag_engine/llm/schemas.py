@@ -12,6 +12,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from rag_engine.cmw_platform.category_enum import (
+    get_category_choices_with_descriptions,
+    load_category_enum,
+)
+
 
 class SGRAction(str, Enum):
     """Routing actions for request handling."""
@@ -19,13 +24,6 @@ class SGRAction(str, Enum):
     PROCEED = "proceed"
     ASK_CLARIFICATION = "ask_clarification"
     DECLINE = "decline"
-
-
-# Load dynamic category enum from YAML config
-from rag_engine.cmw_platform.category_enum import (
-    load_category_enum, 
-    get_category_choices_with_descriptions
-)
 
 
 def _get_category_enum() -> type[Enum]:
@@ -326,6 +324,26 @@ class ResolutionPlanResult(BaseModel):
     )
 
 
+class UsageTotals(BaseModel):
+    """Aggregated usage metrics (tokens and cost) for a scope (turn or conversation)."""
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    reasoning_tokens: int = 0
+    cached_tokens: int = 0
+    cache_write_tokens: int = 0
+    cost: float = 0.0
+    upstream_cost: float = 0.0
+
+
+class UsageBlock(BaseModel):
+    """Usage for the current turn and conversation."""
+
+    turn: UsageTotals | None = None
+    conversation: UsageTotals | None = None
+
+
 class StructuredAgentResult(BaseModel):
     """Structured output from `ask_comindware_structured()`.
 
@@ -348,3 +366,7 @@ class StructuredAgentResult(BaseModel):
     final_articles: list[dict[str, Any]] = Field(default_factory=list)
     answer_text: str = ""
     diagnostics: dict[str, Any] = Field(default_factory=dict)
+    usage: UsageBlock | None = Field(
+        default=None,
+        description="Usage accounting (tokens, cost) for this turn and conversation.",
+    )

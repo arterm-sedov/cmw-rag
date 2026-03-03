@@ -7,7 +7,7 @@ enabling progressive budgeting and preventing context overflow.
 from __future__ import annotations
 
 import logging
-import threading
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
@@ -16,9 +16,6 @@ if TYPE_CHECKING:
     from rag_engine.retrieval.retriever import Article
 
 logger = logging.getLogger(__name__)
-
-# Thread-local storage for AgentContext (workaround for LangChain streaming bug where runtime.context is None)
-_thread_local_context = threading.local()
 
 
 class AgentContext(BaseModel):
@@ -109,21 +106,37 @@ class AgentContext(BaseModel):
         description="IDs of UI-only messages already emitted in this turn (dedupe).",
     )
 
+    # --- Usage accounting (per-turn) ---
+    # These fields are populated by usage_accounting.UsageAccountingCallback and are
+    # excluded from the LLM context. They are intended for diagnostics, UI metadata,
+    # and downstream integration (e.g., Comindware Platform).
+    usage_calls: list[dict[str, Any]] = Field(
+        default_factory=list,
+        exclude=True,
+        description="Raw usage samples per LLM call (for diagnostics).",
+    )
+    usage_turn_summary: dict[str, Any] = Field(
+        default_factory=dict,
+        exclude=True,
+        description="Aggregated per-turn usage summary (tokens, cost, caching).",
+    )
 
-def set_current_context(context: AgentContext) -> None:
-    """Set the current AgentContext for this thread (workaround for LangChain streaming bug).
 
-    This allows tools to access the context even when runtime.context is None during streaming.
+# ContextVar propagates across async/await; threading.local does not (UsageAccountingCallback runs in same task)
+_agent_context_var: ContextVar[AgentContext | None] = ContextVar("agent_context", default=None)
+
+
+def set_current_context(context: AgentContext | None) -> None:
+    """Set the current AgentContext for this execution context.
+
+    Uses ContextVar so it propagates across async/await (callbacks, LLM streaming).
     """
-    _thread_local_context.agent_context = context
+    _agent_context_var.set(context)
 
 
 def get_current_context() -> AgentContext | None:
-    """Get the current AgentContext for this thread (workaround for LangChain streaming bug).
-
-    Returns None if no context has been set for this thread.
-    """
-    return getattr(_thread_local_context, "agent_context", None)
+    """Get the current AgentContext for this execution context."""
+    return _agent_context_var.get()
 
 
 def compute_context_tokens(
