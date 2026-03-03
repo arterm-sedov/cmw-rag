@@ -167,36 +167,85 @@ def test_harmony_stream_parser_streams_reasoning_live():
     assert "chain of thought" in full_reasoning
 
 
-def test_strip_thinking_tags_from_chunk_single_block():
-    from rag_engine.api.app import _strip_thinking_tags_from_chunk
+def test_parse_think_tags_single_block():
+    from rag_engine.api.app import _parse_think_tags
 
     text = "Hello <think>internal\nreasoning</think> world"
-    cleaned, reasoning, in_block = _strip_thinking_tags_from_chunk(text, "", False)
+    cleaned, reasoning, in_block, saw_orphan = _parse_think_tags(text, "", False)
 
     assert "internal" not in cleaned
     assert "reasoning" not in cleaned
     assert "Hello" in cleaned and "world" in cleaned
     assert "internal" in reasoning and "reasoning" in reasoning
     assert in_block is False
+    assert saw_orphan is False
 
 
-def test_strip_thinking_tags_from_chunk_across_chunks():
-    from rag_engine.api.app import _strip_thinking_tags_from_chunk
+def test_parse_think_tags_across_chunks():
+    from rag_engine.api.app import _parse_think_tags
 
     first = "prefix <think>partial"
-    cleaned1, reasoning1, in_block1 = _strip_thinking_tags_from_chunk(first, "", False)
+    cleaned1, reasoning1, in_block1, saw_orphan1 = _parse_think_tags(first, "", False)
     assert "partial" not in cleaned1
     assert reasoning1 == "partial"
     assert in_block1 is True
 
     second = " continued</think> suffix"
-    cleaned2, reasoning2, in_block2 = _strip_thinking_tags_from_chunk(
-        second, reasoning1, in_block1
-    )
+    cleaned2, reasoning2, in_block2, saw_orphan2 = _parse_think_tags(second, reasoning1, in_block1)
     assert "continued" not in cleaned2
     assert "suffix" in cleaned2
     assert "partial" in reasoning2 and "continued" in reasoning2
     assert in_block2 is False
+
+
+def test_parse_think_tags_orphan_close_signals_reclassification():
+    from rag_engine.api.app import _parse_think_tags
+
+    # Qwen pattern: orphan </think> with surrounding whitespace
+    text = "\n</think>\n\n"
+    cleaned, reasoning, in_block, saw_orphan = _parse_think_tags(text, "", False)
+
+    assert saw_orphan is True
+    assert in_block is False
+    # The </think> tag itself is consumed; whitespace around it is in clean output
+    assert "</think>" not in cleaned
+
+
+def test_parse_think_tags_orphan_preserves_preceding_text():
+    from rag_engine.api.app import _parse_think_tags
+
+    text = "planning text </think> "
+    cleaned, reasoning, in_block, saw_orphan = _parse_think_tags(text, "", False)
+
+    assert saw_orphan is True
+    # Text before the orphan tag is kept in clean (caller decides to reclassify it)
+    assert "planning text" in cleaned
+    assert "</think>" not in cleaned
+
+
+def test_parse_think_tags_normalized_escaped_open():
+    from rag_engine.api.app import _parse_think_tags
+
+    # JSON-escaped opening tag paired with literal closing tag
+    text = "\\u003cthink\\u003ereasoninghere\\u003c/think\\u003e"
+    cleaned, reasoning, in_block, saw_orphan = _parse_think_tags(text, "", False)
+
+    assert "reasoninghere" in reasoning
+    assert "reasoninghere" not in cleaned
+    assert saw_orphan is False
+
+
+def test_parse_think_tags_normalized_mixed_escapes():
+    from rag_engine.api.app import _parse_think_tags
+
+    # Mixed escaping: only angle brackets are escaped.
+    text = "\\u003cthink>abc\\u003c/think>"
+    cleaned, reasoning, in_block, saw_orphan = _parse_think_tags(text, "", False)
+
+    assert cleaned == ""
+    assert reasoning == "abc"
+    assert in_block is False
+    assert saw_orphan is False
 
 
 def test_extract_stream_delta_handles_cumulative_chunks():
