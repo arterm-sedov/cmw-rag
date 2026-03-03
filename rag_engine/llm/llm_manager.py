@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from rag_engine.config.settings import settings
 from rag_engine.llm.model_configs import MODEL_CONFIGS
+from rag_engine.llm.openrouter_native import create_openrouter_native_model
 from rag_engine.llm.prompts import get_system_prompt
 from rag_engine.llm.token_utils import estimate_tokens_for_request
 from rag_engine.utils.conversation_store import ConversationStore
@@ -216,34 +217,43 @@ class LLMManager:
                 temperature=self.temperature,
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
+        if p == "openai":
+            # True OpenAI API (api.openai.com)
+            api_key = settings.openai_api_key
+            if not api_key or not api_key.strip():
+                raise ValueError(
+                    "OPENAI_API_KEY is not set or empty. "
+                    "Set it in .env when using DEFAULT_LLM_PROVIDER=openai."
+                )
+            logger.info(
+                "Initializing OpenAI client: model=%s, api_key=%s...",
+                self.model_name,
+                api_key[:10] if api_key else "",
+            )
+            model = ChatOpenAI(
+                model=self.model_name,
+                api_key=api_key,
+                temperature=self.temperature,
+                extra_body=reasoning_body,
+            )
+            return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "openrouter":
-            # OpenRouter via OpenAI-compatible client
+            # OpenRouter via native model (full usage accounting in streaming)
             api_key = settings.openrouter_api_key
             if not api_key or not api_key.strip():
                 raise ValueError(
                     "OPENROUTER_API_KEY is not set or empty. "
                     "Please set it in your .env file."
                 )
-
-            base_url = settings.openrouter_base_url
             logger.info(
-                f"Initializing OpenRouter client: model={self.model_name}, "
-                f"base_url={base_url}, api_key={api_key[:10]}..."
+                "Initializing OpenRouter native model: model=%s, base_url=%s",
+                self.model_name,
+                settings.openrouter_base_url,
             )
-
-            model = ChatOpenAI(
-                model=self.model_name,
+            model = create_openrouter_native_model(
+                model_name=self.model_name,
+                base_url=settings.openrouter_base_url,
                 api_key=api_key,
-                base_url=base_url,
-                temperature=self.temperature,
-                # Note: streaming is controlled at call site (.stream() vs .invoke()),
-                # not at model construction time, to avoid issues with LangChain agents
-                default_headers={
-                    # OpenRouter recommends these headers for attribution/rate-limiting
-                    "HTTP-Referer": f"http://{settings.gradio_server_name}:{settings.gradio_server_port}",
-                    "X-Title": "CMW RAG Engine",
-                },
-                extra_body=reasoning_body,
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "vllm":

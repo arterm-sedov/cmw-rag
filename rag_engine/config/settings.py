@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     google_api_key: str
     openrouter_api_key: str
     openrouter_base_url: str
+    # OpenAI (true API, opt-in via DEFAULT_LLM_PROVIDER=openai)
+    openai_api_key: str | None = None
     # vLLM configuration (OpenAI-compatible API)
     vllm_base_url: str
     vllm_api_key: str
