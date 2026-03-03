@@ -1,8 +1,20 @@
 # Anonymization Pipeline Implementation Plan
 
-**Version:** 1.5 | **Date:** 2026-03-02 | **Status:** Draft for Review  
+**Version:** 1.6 | **Date:** 2026-03-03 | **Status:** Draft for Review  
 **Author:** OpenCode Agent  
-**Based on:** User requirements + rus-anonymizer + ru-smb-pd-anonymizer + Microsoft Presidio + tabularisai/eu-pii-safeguard + Gherman/bert-base-NER-Russian + dslim/bert-large-NER + Just AI Jay Guard research
+**Based on:** User requirements + rus-anonymizer + ru-smb-pd-anonymizer + Microsoft Presidio + tabularisai/eu-pii-safeguard + Gherman/bert-base-NER-Russian + dslim/bert-large-NER + Just AI Jay Guard research + Microsoft Recognizers-Text
+
+**Changes (v1.6):**
+- Added comprehensive regex patterns based on web research:
+  - **Phone**: Russian formats (+7-XXX-XXX-XX-XX), US/UK/DE/International formats
+  - **Email**: Standard RFC 5322 + Unicode support
+  - **IP Address**: IPv4, IPv6, Private ranges (10.x, 172.16-31.x, 192.168.x)
+  - **Bank Cards**: Generic, issuer-specific (Visa/MC/Amex/Discover), CVV, expiration
+  - **IBAN**: Generic + Russian correspondent accounts (20/30/40xxxxx format)
+  - **US-SSN**: With/without dashes
+- Added context keywords for improved precision
+- Added validation notes (Luhn, schwifty, context-aware)
+- Based on Microsoft Recognizers-Text phone patterns research
 
 **Changes (v1.5):**
 - Expanded evaluation dataset to **200 synthetic IT support samples** (153 RU, 47 EN).
@@ -288,9 +300,15 @@ stage1_regex:
 # =============================================================================
 # These patterns run directly (no Presidio framework).
 # Each pattern is a Python regex string.
-# Additional patterns borrowed from ru-smb-pd-anonymizer, rus-anonymizer
+# Additional patterns borrowed from ru-smb-pd-anonymizer, rus-anonymizer,
+# Microsoft Recognizers-Text, and Presidio.
 # =============================================================================
   patterns:
+    # =============================================================================
+    # PHONE NUMBERS - Russian formats
+    # Reference: Microsoft Recognizers-Text, rus-anonymizer
+    # Context keywords: телефон, тел, мобильный, звонить, позвонить, +7, 8
+    # =============================================================================
     # Russian phone patterns (6 formats from rus-anonymizer)
     phone_1: '\+7\s*\(\d{3}\)\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'  # +7 (XXX) XXX-XX-XX
     phone_2: '\+7\s*\d{3}\s*\d{3}[-\s]*\d{2}[-\s]*\d{2}'      # +7 XXX XXX-XX-XX
@@ -301,9 +319,76 @@ stage1_regex:
     # Additional phone formats (borrowed)
     phone_7: '\+7[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}'  # +7 XXX XXX XX XX with flexible separators
     phone_8: '7\d{10}'                                           # 7XXXXXXXXXX (no leading +)
+    # Russian phone with dash format (NEW - discovered during testing)
+    phone_ru_dash: '\+7-\d{3}-\d{3}-\d{2}-\d{2}'               # +7-XXX-XXX-XX-XX
     
-    # Email
+    # =============================================================================
+    # PHONE NUMBERS - International/English formats
+    # Reference: Microsoft Recognizers-Text (Base-PhoneNumbers.yaml)
+    # =============================================================================
+    # US Phone (multiple formats)
+    phone_us_1: '\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'  # (555) 123-4567, 555-123-4567, +1...
+    phone_us_2: '\+?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4}'  # International
+    # UK Phone
+    phone_uk: '(?:(?:\+44)|0)\s?\d{4}\s?\d{6}'  # +44 XXXX XXXXXX or 0XXXX XXXXXX
+    # Germany Phone
+    phone_de: '\+49[\s-]?\d{1,4}[\s-]?\d{3,11}'  # +49 XXX XXXXXXXX
+    # Generic international (flexible)
+    phone_intl: '(\+\d{1,3}[-.\s]?)?(\d{1,4}[-.\s]?)?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4}'
+    
+    # =============================================================================
+    # EMAIL ADDRESS
+    # Reference: Presidio email_recognizer.py
+    # Context keywords: email, e-mail, почта, адрес
+    # =============================================================================
+    # Standard email (RFC 5322 simplified)
     email: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    # Email with Unicode support
+    email_unicode: '[\w.+-]+@[\w-]+\.[\w.-]+'
+    
+    # =============================================================================
+    # IP ADDRESS
+    # Reference: Presidio ip_recognizer.py
+    # =============================================================================
+    # IPv4
+    ip_v4: '\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b'
+    # IPv6 (simplified)
+    ip_v6: '(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}'
+    # Private IP ranges (commonly used in corporate networks)
+    ip_private: '\b(?:10\.\d{1,3}|172\.(1[6-9]|2\d|3[01])|192\.168)\.\d{1,3}\.\d{1,3}\b'
+    
+    # =============================================================================
+    # BANK CARDS (Credit/Debit)
+    # Reference: Presidio, regex-snippets.com, kevva/credit-card-regex
+    # Note: Requires Luhn checksum validation for accuracy
+    # Context keywords: карта, card, credit, debit, оплата
+    # =============================================================================
+    # Generic card number (12-19 digits with separators)
+    bank_card: '\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4,9}\b'
+    # Card with issuer identification (Visa, MC, Amex, Discover)
+    bank_card_issuer: '(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})'
+    # CVV/CVC (3-4 digits, usually follows card number)
+    bank_card_cvv: '\b(?:cvv|cvc|cvc2|security code)[\s:]*(\d{3,4})\b'
+    # Card expiration (MM/YY or MM/YYYY)
+    bank_card_exp: '\b(?:valid thru|expires?|expiry)[\s:]*(?:0[1-9]|1[0-2])[/\-]?\d{2,4}\b'
+    
+    # =============================================================================
+    # IBAN (International Bank Account Number)
+    # Reference: schwifty, akndmr/iban-regex-gist, mp3monster.org
+    # Context keywords: iban, корреспондентский, correspondent
+    # =============================================================================
+    # Generic IBAN (country code + check digits + BBAN)
+    iban: '\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4,34}\b'
+    # Russian IBAN format (correspondent accounts)
+    iban_ru: '\b(20|30|40|50|60|70|80)\d{21}\b'  # Russian correspondent account format
+    
+    # =============================================================================
+    # US SSN (Social Security Number)
+    # Reference: Presidio us_ssn_recognizer.py
+    # Context keywords: ssn, social security, налог, инн
+    # =============================================================================
+    us_ssn: '\b\d{3}-\d{2}-\d{4}\b'  # XXX-XX-XXXX
+    us_ssn_nodash: '\b\d{9}\b'  # XXXXXXXXX (requires context validation)
     
     # Russian documents (borrowed from ru-smb-pd-anonymizer)
     passport: '\b\d{2}\s+\d{2}\s+\d{6}\b|\b\d{4}\s+\d{6}\b'
@@ -334,29 +419,35 @@ stage1_regex:
     api_key: '(api[_-]?key|apikey)[\s:=_]+(\S+)'
     internal_url: '(https?)://(intranet|internal|local|localhost|192\.168|10\.|172\.(1[6-9]|2|3[01])|127\.0\.0\.1)[^\s,]*'
     url: 'https?://[^\s/$.?#].[^\s,]*'
-    ip_address: '\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b'
+    # Note: IP addresses covered by ip_v4, ip_v6, ip_private above
     
     # Note: AGE detection handled by NER models (Stage 2: Gherman, Stage 3: EU-PII)
     # Regex age patterns are too rigid/unreliable for Russian
+    
+    # =============================================================================
+    # VALIDATION NOTES
+    # =============================================================================
+    # - Bank cards: Use Luhn algorithm for validation (python-stdnum or creditcards)
+    # - IBAN: Use schwifty library for country-specific validation
+    # - US-SSN: Consider adding context keyword validation ("ssn", "social security")
+    # - Email: Consider adding domain whitelist/blacklist for FP reduction
+    
+    # Context keywords for improved detection (used with context-aware validation):
+    # Russian: паспорт, снилс, инн, огрн, кпп, бик, телефон, email, адрес
+    # English: passport, ssn, itin, ein, phone, email, address
 
 # =============================================================================
-# US/ENGLISH PATTERNS (Stage 1, optional - for English text)
+# US/ENGLISH PATTERNS (Stage 1, supplementary - for English text)
 # =============================================================================
-# These patterns supplement Russian patterns for US/English PII detection.
-# They can be enabled/disabled independently via config.
+# These patterns supplement the main patterns above for US/English PII detection.
+# Note: Phone, email, IP, SSN patterns are now in the main patterns section above.
+# This section contains additional US-specific patterns that may need context validation.
 # =============================================================================
 stage1_regex_us:
   enabled: false  # Enable for English text processing
   
-  # US-specific patterns
+  # US-specific patterns (additional to main patterns)
   patterns:
-    # US Phone (multiple formats)
-    us_phone_1: '\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'  # (555) 123-4567, 555-123-4567, +1...
-    us_phone_2: '\+?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4}'  # International
-    
-    # US Social Security Number
-    us_ssn: '\b\d{3}-\d{2}-\d{4}\b'
-    
     # US Individual Taxpayer Identification Number
     us_itin: '\b9\d{2}-\d{7}\b'
     
