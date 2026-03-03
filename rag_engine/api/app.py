@@ -938,6 +938,8 @@ def _process_reasoning_chunk(
     reasoning_enabled: bool,
     harmony_parser,
     gradio_history: list,
+    *,
+    harmony_strip_only: bool = False,
 ) -> Generator[list, None, tuple[str, bool]]:
     # NOTE: agent_chat_handler is an async generator — ``yield from`` is not
     # allowed there.  Drive this generator with the helper below instead.
@@ -956,11 +958,24 @@ def _process_reasoning_chunk(
     saw_orphan = False
 
     if reasoning_enabled:
-        text, ctx.buffer, ctx.in_block, saw_orphan = _parse_think_tags(
+        old_buffer = ctx.buffer
+        text, parsed_reasoning, ctx.in_block, saw_orphan = _parse_think_tags(
             text, ctx.buffer, ctx.in_block
         )
+        if harmony_strip_only:
+            # Strip <think> from text but don't add Harmony reasoning. Still add think-tag
+            # content: content_blocks may end with `<think>`, next chunk is continuation.
+            if parsed_reasoning and parsed_reasoning != old_buffer:
+                ctx.buffer = parsed_reasoning
+            else:
+                ctx.buffer = old_buffer
         # Orphan </think> between tool calls → reclassify inter-tool chat text as reasoning.
-        if saw_orphan and has_seen_tool_results and ctx.inter_tool_text:
+        if (
+            saw_orphan
+            and not harmony_strip_only
+            and has_seen_tool_results
+            and ctx.inter_tool_text
+        ):
             sep = "\n" if ctx.buffer else ""
             ctx.buffer += sep + ctx.inter_tool_text
             answer = answer[: len(answer) - len(ctx.inter_tool_text)]
@@ -972,7 +987,7 @@ def _process_reasoning_chunk(
             yield list(gradio_history)
         if harmony_parser:
             h_reasoning, h_final = harmony_parser.feed(text)
-            if h_reasoning:
+            if h_reasoning and not harmony_strip_only:
                 ctx.buffer += h_reasoning
             text = h_final
         if ctx.buffer:
@@ -984,17 +999,9 @@ def _process_reasoning_chunk(
         if not text or saw_orphan:
             return text, True   # orphan context / empty chunk — caller must continue
 
-    # Route pre-tool-call text to reasoning bubble (never discard).
-    if not has_seen_tool_results:
-        ctx.buffer += text
-        ctx.bubble_id, ctx.bubble_text, changed = _upsert_reasoning_bubble(
-            gradio_history, ctx.buffer, ctx.bubble_id, ctx.bubble_text
-        )
-        if changed:
-            yield list(gradio_history)
-        return text, True       # routed — caller must continue
-
-    return text, False          # post-tool answer text — caller streams to chat
+    # Remaining text is user-facing answer (from Harmony assistantfinal or outside <think>).
+    # Stream it to chat; do not route to reasoning bubble (fixes no-tool turns eating the answer).
+    return text, False
 
 
 async def _apply_reasoning_chunk(
@@ -1005,6 +1012,8 @@ async def _apply_reasoning_chunk(
     reasoning_enabled: bool,
     harmony_parser,
     gradio_history: list,
+    *,
+    harmony_strip_only: bool = False,
 ) -> tuple[list, str, bool]:
     """Async-safe driver for ``_process_reasoning_chunk``.
 
@@ -1016,7 +1025,8 @@ async def _apply_reasoning_chunk(
     text has already been routed (caller must ``continue``).
     """
     gen = _process_reasoning_chunk(
-        text, ctx, answer, has_seen_tool_results, reasoning_enabled, harmony_parser, gradio_history
+        text, ctx, answer, has_seen_tool_results, reasoning_enabled, harmony_parser, gradio_history,
+        harmony_strip_only=harmony_strip_only,
     )
     frames: list[list] = []
     try:
@@ -1027,12 +1037,39 @@ async def _apply_reasoning_chunk(
     return frames, clean_text, should_skip
 
 
-def _truncate_reasoning_text(reasoning: str, max_len: int = 4000) -> str:
-    """Truncate reasoning text for UI bubble, keeping full trace in diagnostics."""
+def _truncate_reasoning_text(
+    reasoning: str,
+    max_chars: int = 4000,
+    *,
+    max_lines: int | None = None,
+    include_note: bool = False,
+) -> str:
+    """Render a tail slice of reasoning for the UI bubble.
+
+    The full reasoning trace stays in diagnostics; the bubble only shows a
+    short tail (by lines and/or characters), optionally with a footer note.
+    """
     text = (reasoning or "").strip()
-    if len(text) <= max_len:
+    if not text:
+        return ""
+
+    # Prefer trimming by last *max_lines* to give a rotating multi-line window.
+    if max_lines is not None and max_lines > 0:
+        lines = text.splitlines()
+        if len(lines) > max_lines:
+            tail_lines = lines[-max_lines:]
+            tail = "\n".join(tail_lines).lstrip()
+            if include_note:
+                return "…" + tail + "\n\n...[обрезано для краткости]"
+            return "…" + tail
+
+    # Fallback/secondary guard: trim by characters if needed.
+    if len(text) <= max_chars:
         return text
-    return text[:max_len].rstrip() + "\n\n...[обрезано для краткости]"
+    tail = text[-max_chars:].lstrip()
+    if include_note:
+        return "…" + tail + "\n\n...[обрезано для краткости]"
+    return "…" + tail
 
 
 def _find_ui_message_by_id(
@@ -1059,8 +1096,10 @@ def _upsert_reasoning_bubble(
 ) -> tuple[str | None, str, bool]:
     """Create or update the reasoning bubble, returning (id, last_text, changed)."""
     from rag_engine.api.stream_helpers import yield_reasoning_bubble
+    from rag_engine.config.settings import settings
 
-    truncated = _truncate_reasoning_text(reasoning_buffer)
+    tail_lines = max(settings.ui_reasoning_tail_lines, 1)
+    truncated = _truncate_reasoning_text(reasoning_buffer, max_lines=tail_lines)
     if not truncated or truncated == last_reasoning_bubble_text:
         return reasoning_bubble_id, last_reasoning_bubble_text, False
 
@@ -1082,10 +1121,18 @@ def _finalize_reasoning_bubble(
 ) -> str | None:
     """Mark reasoning bubble as done, creating one if needed."""
     from rag_engine.api.stream_helpers import yield_reasoning_bubble
+    from rag_engine.config.settings import settings
 
+    tail_lines = max(settings.ui_reasoning_tail_lines, 1)
     msg = _find_ui_message_by_id(gradio_history, "reasoning", reasoning_bubble_id)
     if msg is None and reasoning_buffer.strip():
-        bubble = yield_reasoning_bubble(_truncate_reasoning_text(reasoning_buffer))
+        bubble = yield_reasoning_bubble(
+            _truncate_reasoning_text(
+                reasoning_buffer,
+                max_lines=tail_lines,
+                include_note=True,
+            )
+        )
         (bubble.get("metadata") or {})["status"] = "done"
         gradio_history.append(bubble)
         return (bubble.get("metadata") or {}).get("id")
@@ -1093,11 +1140,13 @@ def _finalize_reasoning_bubble(
     if msg is not None:
         md = msg.get("metadata") or {}
         if reasoning_buffer.strip():
-            msg["content"] = _truncate_reasoning_text(reasoning_buffer)
+            msg["content"] = _truncate_reasoning_text(
+                reasoning_buffer,
+                max_lines=tail_lines,
+                include_note=True,
+            )
         md["status"] = "done"
     return reasoning_bubble_id
-
-
 
 
 def _extract_content_string(content: str | list | None) -> str:
@@ -1648,6 +1697,7 @@ async def agent_chat_handler(
         reasoning_stream_text: str = ""
         reasoning_enabled: bool = getattr(settings, "llm_reasoning_enabled", False)
         content_stream_text: str = ""
+        has_seen_content_blocks_reasoning: bool = False
         # Harmony format (GPT-OSS) — stateful parser for streaming channel separation.
         from rag_engine.api.harmony_parser import HarmonyStreamParser
         from rag_engine.llm.model_configs import MODEL_CONFIGS
@@ -2146,9 +2196,17 @@ async def agent_chat_handler(
                     # Process content blocks for final answer text streaming
                     text_chunk_found = False
 
-                    # OpenRouter native model: reasoning in additional_kwargs (no content_blocks)
+                    token_content_blocks = getattr(token, "content_blocks", None) or []
+                    has_reasoning_in_blocks = any(
+                        b.get("type") == "reasoning" for b in token_content_blocks
+                    )
+                    # Skip akw.reasoning_content when content_blocks has reasoning (avoid double-processing).
                     akw = getattr(token, "additional_kwargs", None) or {}
-                    if reasoning_enabled and (reasoning_content := akw.get("reasoning_content")):
+                    if (
+                        reasoning_enabled
+                        and not has_reasoning_in_blocks
+                        and (reasoning_content := akw.get("reasoning_content"))
+                    ):
                         reasoning_delta, reasoning_stream_text = _extract_stream_delta(
                             str(reasoning_content), reasoning_stream_text
                         )
@@ -2168,8 +2226,8 @@ async def agent_chat_handler(
                                 yield list(gradio_history)
                         # Do not add reasoning to answer; continue to process content_blocks or token.content
 
-                    if hasattr(token, "content_blocks") and token.content_blocks:
-                        for block in token.content_blocks:
+                    if token_content_blocks:
+                        for block in token_content_blocks:
                             if block.get("type") == "tool_call_chunk":
                                 # Tool call chunk detected - emit metadata if not already done
                                 if not tool_executing:
@@ -2223,7 +2281,7 @@ async def agent_chat_handler(
                                 continue
 
                             elif block.get("type") == "reasoning" and reasoning_enabled:
-                                # Capture reasoning tokens for optional UI display and diagnostics.
+                                has_seen_content_blocks_reasoning = True
                                 reasoning_text = str(
                                     block.get("reasoning")
                                     or block.get("text")
@@ -2236,13 +2294,8 @@ async def agent_chat_handler(
                                     reasoning_delta, reasoning_stream_text = _extract_stream_delta(
                                         reasoning_text, reasoning_stream_text
                                     )
-                                else:
-                                    reasoning_delta = ""
-
-                                if reasoning_delta:
-                                    # Streaming tokens arrive one word at a time — concatenate
-                                    # without newlines to produce readable prose.
-                                    rctx.buffer += reasoning_delta
+                                    if reasoning_delta:
+                                        rctx.buffer += reasoning_delta
 
                                     (
                                         rctx.bubble_id,
@@ -2274,10 +2327,18 @@ async def agent_chat_handler(
                                     )
                                     if not text_chunk:
                                         continue
+                                    strip_only = (
+                                        has_seen_content_blocks_reasoning or has_reasoning_in_blocks
+                                    )
+                                    # content_blocks reasoning may end with `<think>`; next chunk is continuation
+                                    if strip_only and rctx.buffer.rstrip().endswith(_THINK_OPEN):
+                                        rctx.in_block = True
                                     frames, text_chunk, should_skip = await _apply_reasoning_chunk(
                                         text_chunk, rctx, answer,
                                         has_seen_tool_results, reasoning_enabled,
-                                        harmony_parser, gradio_history,
+                                        harmony_parser,
+                                        gradio_history,
+                                        harmony_strip_only=strip_only,
                                     )
                                     for _frame in frames:
                                         yield _frame
@@ -2334,10 +2395,17 @@ async def agent_chat_handler(
                             if not token_content:
                                 continue
 
+                            strip_only = (
+                                has_seen_content_blocks_reasoning or has_reasoning_in_blocks
+                            )
+                            if strip_only and rctx.buffer.rstrip().endswith(_THINK_OPEN):
+                                rctx.in_block = True
                             frames, token_content, should_skip = await _apply_reasoning_chunk(
                                 token_content, rctx, answer,
                                 has_seen_tool_results, reasoning_enabled,
-                                harmony_parser, gradio_history,
+                                harmony_parser,
+                                gradio_history,
+                                harmony_strip_only=strip_only,
                             )
                             for _frame in frames:
                                 yield _frame
@@ -2615,7 +2683,7 @@ async def agent_chat_handler(
         # Flush any remaining Harmony buffer content held back for partial-marker safety.
         if harmony_parser:
             h_reasoning, h_final = harmony_parser.flush()
-            if h_reasoning:
+            if h_reasoning and not has_seen_content_blocks_reasoning:
                 rctx.buffer += h_reasoning
             if h_final:
                 answer += h_final

@@ -115,6 +115,10 @@ class Settings(BaseSettings):
     llm_reasoning_max_tokens: int | None = None
     llm_reasoning_exclude_from_response: bool = False
 
+    # Reasoning bubble UI (streaming)
+    # Number of reasoning lines to show in the UI bubble tail (full trace kept in diagnostics).
+    ui_reasoning_tail_lines: int = 4
+
     # LangChain Configuration
     langchain_recursion_limit: int = 100  # Max steps for LangGraph StateGraph
 
