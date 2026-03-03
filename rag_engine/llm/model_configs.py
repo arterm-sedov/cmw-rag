@@ -225,6 +225,11 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 32_768,  # Reasonable max output for large context model
         "temperature": 0,
     },
+    "z-ai/glm-5": {
+        "token_limit": 202_752,  # OpenRouter model card
+        "max_tokens": 32_768,
+        "temperature": 0,
+    },
     # Moonshot AI (Kimi) Models
     "moonshotai/kimi-k2.5": {
         "token_limit": 262_144,  # 262.1K context window
@@ -234,6 +239,11 @@ MODEL_CONFIGS: dict[str, dict] = {
     # Minimax Models
     "minimax/minimax-m2.1": {
         "token_limit": 196_608,  # 196.6K context window
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "minimax/minimax-m2.5": {
+        "token_limit": 196_608,  # OpenRouter model card
         "max_tokens": 65_536,
         "temperature": 0,
     },
