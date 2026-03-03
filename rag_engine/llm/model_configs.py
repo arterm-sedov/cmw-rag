@@ -162,6 +162,31 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 64_000,
         "temperature": 0,
     },
+    "anthropic/claude-haiku-4.5": {
+        "token_limit": 200_000,  # OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "anthropic/claude-sonnet-4.6": {
+        "token_limit": 1_000_000,  # OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "anthropic/claude-opus-4.6": {
+        "token_limit": 1_000_000,  # OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "openai/gpt-5.3-codex": {
+        "token_limit": 400_000,  # OpenRouter model card
+        "max_tokens": 32_768,
+        "temperature": 0,
+    },
+    "openai/gpt-5.3-chat": {
+        "token_limit": 128_000,  # OpenRouter model card
+        "max_tokens": 32_768,
+        "temperature": 0,
+    },
     "openai/gpt-oss-120b": {
         "token_limit": 131_072,
         "max_tokens": 32_768,
