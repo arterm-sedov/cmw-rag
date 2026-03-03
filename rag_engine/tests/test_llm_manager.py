@@ -165,15 +165,42 @@ class TestLLMManager:
             def __init__(self, *a, **k):
                 pass
 
-        # Cover openrouter branch
-        monkeypatch.setattr("rag_engine.llm.llm_manager.ChatOpenAI", Dummy)
+        # Cover openrouter branch (uses OpenRouterNativeFullChatModel)
+        monkeypatch.setattr(
+            "rag_engine.llm.llm_manager.create_openrouter_native_model", lambda *a, **k: Dummy()
+        )
         m = manager._chat_model("openrouter")
         assert isinstance(m, Dummy)
+
+        # Cover openai branch (true OpenAI API)
+        monkeypatch.setattr("rag_engine.llm.llm_manager.ChatOpenAI", Dummy)
+        monkeypatch.setattr(
+            "rag_engine.llm.llm_manager.settings.openai_api_key",
+            "sk-test",
+        )
+        m_openai = manager._chat_model("openai")
+        assert isinstance(m_openai, Dummy)
 
         # Cover unknown provider fallback to Gemini
         monkeypatch.setattr("rag_engine.llm.llm_manager.ChatGoogleGenerativeAI", Dummy)
         m2 = manager._chat_model("unknown")
         assert isinstance(m2, Dummy)
+
+    def test_openrouter_returns_native_model(self, monkeypatch):
+        """OpenRouter provider returns OpenRouterNativeFullChatModel with full usage accounting."""
+        from rag_engine.llm.openrouter_native import OpenRouterNativeFullChatModel
+
+        monkeypatch.setattr(
+            "rag_engine.llm.llm_manager.settings.openrouter_api_key", "sk-test"
+        )
+        monkeypatch.setattr(
+            "rag_engine.llm.llm_manager.settings.openrouter_base_url",
+            "https://openrouter.ai/api/v1",
+        )
+        manager = LLMManager("openrouter", "qwen/qwen3.5-flash-02-23")
+        model = manager._chat_model()
+        assert isinstance(model, OpenRouterNativeFullChatModel)
+        assert model._llm_type == "openrouter_native_full"
 
     @pytest.mark.parametrize(
         "model,expected_limit",
@@ -235,32 +262,51 @@ class TestReasoningConfig:
         assert body.get("reasoning", {}).get("effort") == "none"
         assert body.get("reasoning", {}).get("exclude") is True
 
-    def test_build_reasoning_extra_body_enabled(self, monkeypatch):
-        """When reasoning is enabled, helper should map effort / max_tokens / exclude."""
-
-        dummy_settings = type(
-            "S",
-            (),
-            {
-                "llm_reasoning_enabled": True,
-                "llm_reasoning_effort": "high",
-                "llm_reasoning_max_tokens": 2048,
-                "llm_reasoning_exclude_from_response": True,
-            },
-        )()
-
-        monkeypatch.setattr(
-            "rag_engine.llm.llm_manager.settings",
-            dummy_settings,
-        )
-
+    def test_build_reasoning_extra_body_effort_only(self, monkeypatch):
+        """When only effort is set, output uses effort (OpenRouter accepts one of effort/max_tokens)."""
+        dummy = type("S", (), {
+            "llm_reasoning_enabled": True,
+            "llm_reasoning_effort": "high",
+            "llm_reasoning_max_tokens": None,
+            "llm_reasoning_exclude_from_response": False,
+        })()
+        monkeypatch.setattr("rag_engine.llm.llm_manager.settings", dummy)
         body = _build_reasoning_extra_body()
-        assert isinstance(body, dict)
         reasoning = body.get("reasoning", {})
         assert reasoning.get("enabled") is True
         assert reasoning.get("effort") == "high"
+        assert "max_tokens" not in reasoning
+
+    def test_build_reasoning_extra_body_max_tokens_only(self, monkeypatch):
+        """When only max_tokens is set, output uses max_tokens."""
+        dummy = type("S", (), {
+            "llm_reasoning_enabled": True,
+            "llm_reasoning_effort": None,
+            "llm_reasoning_max_tokens": 2048,
+            "llm_reasoning_exclude_from_response": False,
+        })()
+        monkeypatch.setattr("rag_engine.llm.llm_manager.settings", dummy)
+        body = _build_reasoning_extra_body()
+        reasoning = body.get("reasoning", {})
+        assert reasoning.get("enabled") is True
+        assert reasoning.get("max_tokens") == 2048
+        assert "effort" not in reasoning
+
+    def test_build_reasoning_extra_body_max_tokens_wins_when_both_set(self, monkeypatch):
+        """When both effort and max_tokens are set, max_tokens wins (OpenRouter allows only one)."""
+        dummy = type("S", (), {
+            "llm_reasoning_enabled": True,
+            "llm_reasoning_effort": "high",
+            "llm_reasoning_max_tokens": 2048,
+            "llm_reasoning_exclude_from_response": True,
+        })()
+        monkeypatch.setattr("rag_engine.llm.llm_manager.settings", dummy)
+        body = _build_reasoning_extra_body()
+        reasoning = body.get("reasoning", {})
+        assert reasoning.get("enabled") is True
         assert reasoning.get("max_tokens") == 2048
         assert reasoning.get("exclude") is True
+        assert "effort" not in reasoning
 
 
 class TestDynamicContextBudgeting:

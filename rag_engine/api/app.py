@@ -2144,6 +2144,29 @@ async def agent_chat_handler(
 
                     # Process content blocks for final answer text streaming
                     text_chunk_found = False
+
+                    # OpenRouter native model: reasoning in additional_kwargs (no content_blocks)
+                    akw = getattr(token, "additional_kwargs", None) or {}
+                    if reasoning_enabled and (reasoning_content := akw.get("reasoning_content")):
+                        reasoning_delta, reasoning_stream_text = _extract_stream_delta(
+                            str(reasoning_content), reasoning_stream_text
+                        )
+                        if reasoning_delta:
+                            rctx.buffer += reasoning_delta
+                            (
+                                rctx.bubble_id,
+                                rctx.bubble_text,
+                                reasoning_changed,
+                            ) = _upsert_reasoning_bubble(
+                                gradio_history,
+                                rctx.buffer,
+                                rctx.bubble_id,
+                                rctx.bubble_text,
+                            )
+                            if reasoning_changed:
+                                yield list(gradio_history)
+                        # Do not add reasoning to answer; continue to process content_blocks or token.content
+
                     if hasattr(token, "content_blocks") and token.content_blocks:
                         for block in token.content_blocks:
                             if block.get("type") == "tool_call_chunk":
