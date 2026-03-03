@@ -254,6 +254,7 @@ class LLMManager:
                 model_name=self.model_name,
                 base_url=settings.openrouter_base_url,
                 api_key=api_key,
+                max_tokens=self._model_config.get("max_tokens"),
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "vllm":
