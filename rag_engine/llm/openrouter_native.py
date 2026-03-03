@@ -213,7 +213,7 @@ class OpenRouterNativeFullChatModel(BaseChatModel):
     base_url: str = ""
     api_key: str = ""
     temperature: float = 0.1
-    max_tokens: int = 512
+    max_tokens: int = 4096
     extra_body: dict[str, Any] = Field(default_factory=dict)
     default_headers: dict[str, str] = Field(default_factory=dict)
 
@@ -296,7 +296,9 @@ class OpenRouterNativeFullChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         body = self._get_request_body(messages, stop=stop, **kwargs)
-        aclient = self.async_client or AsyncOpenAI(base_url=self.base_url, api_key=self.api_key)
+        aclient = self.async_client or AsyncOpenAI(
+            base_url=self.base_url, api_key=self.api_key, default_headers=self.default_headers
+        )
         resp = await aclient.chat.completions.create(**body)
 
         usage_dict = _usage_to_dict(getattr(resp, "usage", None))
@@ -391,7 +393,9 @@ class OpenRouterNativeFullChatModel(BaseChatModel):
             "stream_options": {"include_usage": True},
         }
 
-        aclient = self.async_client or AsyncOpenAI(base_url=self.base_url, api_key=self.api_key)
+        aclient = self.async_client or AsyncOpenAI(
+            base_url=self.base_url, api_key=self.api_key, default_headers=self.default_headers
+        )
         stream = await aclient.chat.completions.create(**body)
         default_class: type[BaseMessageChunk] = AIMessageChunk
 
@@ -465,22 +469,27 @@ def create_openrouter_native_model(
     model_name: str | None = None,
     base_url: str | None = None,
     api_key: str | None = None,
+    max_tokens: int | None = None,
 ) -> OpenRouterNativeFullChatModel:
     """Create OpenRouter native model with project settings."""
     url = base_url or settings.openrouter_base_url
     key = api_key or settings.openrouter_api_key or ""
     name = model_name or settings.default_model
+    # Use config max_tokens; fallback to 4096 for full responses (avoids truncation)
+    if max_tokens is None:
+        max_tokens = getattr(settings, "llm_max_tokens", None) or 4096
+    default_headers = {
+        "HTTP-Referer": f"http://{getattr(settings, 'gradio_server_name', 'localhost')}:{getattr(settings, 'gradio_server_port', 7860)}",
+        "X-Title": "CMW RAG Engine",
+    }
     return OpenRouterNativeFullChatModel(
-        client=OpenAI(base_url=url, api_key=key),
-        async_client=AsyncOpenAI(base_url=url, api_key=key),
+        client=OpenAI(base_url=url, api_key=key, default_headers=default_headers),
+        async_client=AsyncOpenAI(base_url=url, api_key=key, default_headers=default_headers),
         model_name=name,
         base_url=url,
         api_key=key,
         temperature=settings.llm_temperature,
-        max_tokens=512,
+        max_tokens=max_tokens,
         extra_body=build_reasoning_extra_body(),
-        default_headers={
-            "HTTP-Referer": f"http://{getattr(settings, 'gradio_server_name', 'localhost')}:{getattr(settings, 'gradio_server_port', 7860)}",
-            "X-Title": "CMW RAG Engine",
-        },
+        default_headers=default_headers,
     )
