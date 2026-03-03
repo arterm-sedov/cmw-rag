@@ -194,3 +194,7 @@ Follow the twelve-factor methodology:
 - **Tests:** Put tests in `rag_engine/tests`.
 - **Updates:** Always update `README.md` if changes affect it.
 - **Refactoring:** When refactoring, change only the relevant parts.
+
+## IMPORTANT
+
+**Make sure: code is:** clean, lean, brilliant, dry, minimalistic, abstract, non-duplicating, non-breaking, perfect, genius, and pythonic.
