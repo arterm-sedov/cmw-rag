@@ -80,7 +80,7 @@ category_enum:
   logs: "Accessing or interpreting system log files"
   main_services_unavailable: "Critical downtime of core platform services"
   maps: "GIS and map visualization integration"
-  migration_4.2_4.7._5.0.: "Migration 4.2   4.7/5.0"
+  migration_4.2_4.7._5.0.: "Migration from 4.2 to 4.7/5.0"
   mobile_app: "Comindware mobile application usage"
   navigation: "Main menu and navigation bar configuration"
   new_build: "Requests for specific platform build versions"
