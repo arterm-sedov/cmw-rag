@@ -35,6 +35,11 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 65_536,
         "temperature": 0,
     },
+    "deepseek/deepseek-v3.2-speciale": {
+        "token_limit": 163_840,  # OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
     "deepseek/deepseek-chat-v3.1:free": {
         "token_limit": 163_840,
         "max_tokens": 4_096,

@@ -136,6 +136,14 @@ models:
       openrouter:
         model_id: "qwen/qwen3-32b"
 
+  deepseek/deepseek-v3.2-speciale:
+    type: llm
+    dimensions: 4096
+    description: "DeepSeek V3.2 Speciale – high-compute variant for max reasoning and agentic performance (163K context)"
+    provider_formats:
+      openrouter:
+        model_id: "deepseek/deepseek-v3.2-speciale"
+
   # ============ GUARDIAN (CONTENT MODERATION) MODELS ============
 
   Qwen/Qwen3Guard-Gen-0.6B:
