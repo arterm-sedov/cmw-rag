@@ -248,6 +248,32 @@ def test_parse_think_tags_normalized_mixed_escapes():
     assert saw_orphan is False
 
 
+def test_process_reasoning_chunk_strip_only_merges_think_continuation():
+    """When content_blocks has reasoning ending with <think>, text-block continuation goes to buffer."""
+    from rag_engine.api.app import _ReasoningCtx, _process_reasoning_chunk
+
+    ctx = _ReasoningCtx(buffer="content_blocks_reasoning<think>", in_block=True)
+    gen = _process_reasoning_chunk(
+        "continuation</think>",
+        ctx,
+        "",
+        has_seen_tool_results=True,
+        reasoning_enabled=True,
+        harmony_parser=None,
+        gradio_history=[],
+        harmony_strip_only=True,
+    )
+    try:
+        while True:
+            next(gen)
+    except StopIteration as e:
+        text, should_skip = e.value
+
+    assert "continuation" in ctx.buffer
+    assert "content_blocks_reasoning" in ctx.buffer
+    assert should_skip is True
+
+
 def test_extract_stream_delta_handles_cumulative_chunks():
     from rag_engine.api.app import _extract_stream_delta
 
