@@ -17,7 +17,7 @@ class TestSGRPlanResultSchema:
         result = SGRPlanResult()
         assert result.user_intent == ""
         assert result.topic == ""
-        assert result.answer_language == "ru"
+        assert result.answer_language == ""
         expected_default = SGRCategory.OTHER if hasattr(SGRCategory, "OTHER") else list(SGRCategory)[0]
         assert result.category == expected_default
         assert result.intent_confidence == 0.0

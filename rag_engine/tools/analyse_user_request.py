@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 def _get_answer_language(plan: dict) -> str:
-    """Normalize answer language code from plan (default to Russian)."""
+    """Normalize answer language code from plan (default to English)."""
     raw = (plan.get("answer_language") or "").strip().lower()
     if not raw:
-        return "ru"
+        return "en"
 
     # Accept both codes and full names, be forgiving about minor variants
     if raw in {"en", "eng", "english"}:
@@ -31,8 +31,8 @@ def _get_answer_language(plan: dict) -> str:
     if raw in {"ru", "rus", "russian", "русский", "русском"}:
         return "ru"
 
-    # Default: Russian (primary KB language)
-    return "ru"
+    # Default: English (avoid implicit Russian bias)
+    return "en"
 
 
 def _render_proceed_template(plan: dict, guardian_result: dict | None = None) -> str:
@@ -177,7 +177,7 @@ async def analyse_user_request(
     clarification_questions_to_ask: list[str] = None,
     spam_score: float = 0.0,
     spam_reason: str = "",
-    answer_language: str = "ru",
+    answer_language: str = "",
     knowledge_base_search_queries: list[str] = None,
     action_plan: list[str] = None,
     action: SGRAction = SGRAction.PROCEED,
