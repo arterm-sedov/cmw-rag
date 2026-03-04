@@ -247,13 +247,12 @@ class ResolutionPlanResult(BaseModel):
     5. Determine the resolution outcome
 
     Always fill these fields (for structured trace):
-    - issue_summary: 2-3 sentences (20-150 words) in Russian
-    - steps_completed: 2-5 items in Russian - what you did
-    - next_steps: 1-3 items in Russian - what engineer should do
+    - issue_summary: original user's request analysis, 2-3 sentences (20-150 words) in Russian
+    - steps_completed: what you did to resolve the user's issue, 2-5 items in Russian
+    - next_steps: what the engineer should do, 1-3 items in Russian
     - outcome: resolved / partially_resolved / escalation_required / user_followup_needed / not_applicable
-
-    Set engineer_intervention_needed=TRUE if human help needed.
-    Set FALSE if answer fully resolves request (version queries, simple how-tos with complete KB answers, factual lookups).
+    - engineer_intervention_needed: set TRUE if human help needed.
+        Set FALSE if answer fully resolves request (version queries, simple how-tos with complete KB answers, factual lookups).
     """
 
     engineer_intervention_needed: bool = Field(
@@ -276,7 +275,8 @@ class ResolutionPlanResult(BaseModel):
     issue_summary: str = Field(
         default="",
         description=(
-            "Describe the user's original issue/request/problem/task in 2-3 sentences (20-150 words). Russian. "
+            "Describe the user's original issue/request/problem/task in 2-3 sentences (20-150 words). "
+            "Russian. "
             "Always fill for structured trace."
         ),
     )
@@ -284,7 +284,8 @@ class ResolutionPlanResult(BaseModel):
     steps_completed: list[str] = Field(
         default_factory=list,
         description=(
-            "List the steps you took to resolve the issue (2-5 items). Russian. "
+            "List the steps you took to resolve the issue (2-5 items). "
+            "Russian. "
             "Always fill for structured trace."
         ),
     )
@@ -303,7 +304,8 @@ class ResolutionPlanResult(BaseModel):
     next_steps: list[str] = Field(
         default_factory=list,
         description=(
-            "List recommended actions for support engineer (1-3 items). Russian. "
+            "List recommended actions for support engineer (1-3 items). "
+            "Russian. "
             "Always fill for structured trace."
         ),
     )

@@ -273,7 +273,7 @@ def get_srp_suffix() -> str:
 
     Appended to system prompt when SRP planning is enabled.
     """
-    return """BEFORE calling the tool, analyze YOUR answer:
+    return """BEFORE calling the tool, analyze YOUR answer to the user's original request:
 
 1. Did you understand the user's specific problem?
 2. Is your answer tailored or generic?
@@ -286,4 +286,4 @@ Set engineer_intervention_needed=TRUE if:
 - Answer couldn't fully resolve problem
 - User frustration or issue persists
 
-Set FALSE if: answer fully resolves request."""
+Set engineer_intervention_needed=FALSE if: your answer fully resolves request."""
