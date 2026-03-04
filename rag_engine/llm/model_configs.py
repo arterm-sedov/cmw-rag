@@ -243,12 +243,12 @@ MODEL_CONFIGS: dict[str, dict] = {
     },
     # Minimax Models
     "minimax/minimax-m2.1": {
-        "token_limit": 196_608,  # 196.6K context window
+        "token_limit": 196_000,  # 196.6K context window
         "max_tokens": 65_536,
         "temperature": 0,
     },
     "minimax/minimax-m2.5": {
-        "token_limit": 196_608,  # OpenRouter model card
+        "token_limit": 196_000,  # OpenRouter model card
         "max_tokens": 65_536,
         "temperature": 0,
     },
