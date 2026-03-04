@@ -226,12 +226,12 @@ MODEL_CONFIGS: dict[str, dict] = {
         "temperature": 0,
     },
     "z-ai/glm-4.7-flash": {
-        "token_limit": 202_752,  # 202,752 context window as per OpenRouter API
+        "token_limit": 200_000,  # 202,752 context window as per OpenRouter API
         "max_tokens": 32_768,  # Reasonable max output for large context model
         "temperature": 0,
     },
     "z-ai/glm-5": {
-        "token_limit": 202_752,  # OpenRouter model card
+        "token_limit": 198_000,  # OpenRouter model card
         "max_tokens": 32_768,
         "temperature": 0,
     },

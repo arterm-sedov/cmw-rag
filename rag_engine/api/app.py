@@ -2819,11 +2819,16 @@ async def agent_chat_handler(
 
         # ========== Render Plan Section ==========
         plan_section = ""
-        if (
-            resolution_plan
-            and resolution_plan.get("engineer_intervention_needed", False)
-            and resolution_markdown
-        ):
+        srp_always = getattr(settings, "srp_always_render_plan", False)
+        if srp_always:
+            show_plan = bool(resolution_markdown)
+        else:
+            show_plan = bool(
+                resolution_plan
+                and resolution_plan.get("engineer_intervention_needed", False)
+                and resolution_markdown
+            )
+        if show_plan:
             plan_section = "\n\n---\n\n" + resolution_markdown
             logger.info("Plan section rendered")
 
@@ -3218,7 +3223,7 @@ else:
     # For standalone app
     chatbot_height = "70vh"  # 70% of viewport height for standalone
     chatbot_max_height = "70vh"  # Same as height for consistency
-    chat_title = "Ассистент базы знаний Comindware Platform"
+    chat_title = "Ассистент инженера поддержки"
 
 # Force agent-based handler; legacy direct handler removed.
 # handler_fn is assigned after chat_with_metadata is defined (below).

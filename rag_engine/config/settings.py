@@ -214,6 +214,8 @@ class Settings(BaseSettings):
     # SRP (Support Resolution Plan)
     # Generates resolution plan for human support engineers after answer generation
     srp_enabled: bool = False
+    # When True, inject SRP plan markdown into the answer even when engineer_intervention_needed=False
+    srp_always_render_plan: bool = False
 
     # CMW Platform Integration
     # Comindware Platform API credentials (required for platform integration)
