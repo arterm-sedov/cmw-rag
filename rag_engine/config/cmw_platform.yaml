@@ -221,3 +221,51 @@ templates:
         articles_found:
           type: text
           from_agent: _format_articles_html
+
+        usage_prompt_tokens:
+          type: decimal
+          from_agent: diagnostics.usage_conversation.prompt_tokens
+
+        usage_completion_tokens:
+          type: decimal
+          from_agent: diagnostics.usage_conversation.completion_tokens
+
+        usage_total_tokens:
+          type: decimal
+          from_agent: diagnostics.usage_conversation.total_tokens
+
+        usage_reasoning_tokens:
+          type: decimal
+          from_agent: diagnostics.usage_conversation.reasoning_tokens
+
+        usage_cached_tokens:
+          type: decimal
+          from_agent: diagnostics.usage_conversation.cached_tokens
+
+        usage_cache_write_tokens:
+          type: decimal
+          from_agent: diagnostics.usage_conversation.cache_write_tokens
+
+        usage_cost:
+          type: decimal
+          from_agent: diagnostics.usage_conversation.cost
+
+        usage_upstream_cost:
+          type: decimal
+          from_agent: diagnostics.usage_conversation.upstream_cost
+
+        usage_total_conversation_time_ms:
+          type: decimal
+          from_agent: diagnostics.usage_conversation.total_conversation_time_ms
+
+        last_turn_time_s:
+          type: decimal
+          from_agent: diagnostics.last_turn_time_s
+
+        total_conversation_time_s:
+          type: decimal
+          from_agent: diagnostics.total_conversation_time_s
+
+        model_used:
+          type: string
+          from_agent: diagnostics.model_used
