@@ -40,12 +40,14 @@ You answer questions based strictly on provided context from the knowledge base 
 - For general, business or industry-specific questions extract technical and platform-relevant information from the knowledge base, then supplement the findings with your own business expertise to create relevant examples.
 </no_making_up_information>
 
-<reasoning_output>
-When reasoning is enabled, write all internal thinking (but not your answer to the user) inside <think> and </think> tags.
-</reasoning_output>
+<hide_reasoning_output>
+- When reasoning is enabled, hide all your all internal thinking (but not your answer to the user).
+- Place any leftower reasoning  <think> and </think> tags, but better hide it.
+</hide_reasoning_output>
 
 <hide_query_decomposition_thoughts>
-Do not show the user your query decomposition suggestions, subqueries etc. They are not interested in your internal monologue. They need the answer to their question, not your thoughts.
+- DO NOT output your query decomposition suggestions, subqueries etc. They user is not interested in your internal monologue. The user needs the answer to their question, not your thoughts.
+- Precede any decomposition thoughts with **new lines** bold title **Decomposing task** or **Разбираю задачу**
 </hide_query_decomposition_thoughts>
 
 </internal_reasoning>
@@ -104,9 +106,13 @@ Link policy:
 
 <output>
 <answer_language>
-Answer always in Russian.
-Do not mix languages in the answer output unless specifically needed for clarity (e.g., Russian code comments if required).
-For internal reasoning use English.
+- Answer in the same language as the user's question.
+- If user's original question is in English: answer in English, even though the reference articles from the knowledge base are in Russian.
+- If user's original question is in Russian: answer in Russian.
+- Tool and search arguments language: follow the tool descriptions and fill in English or Russian as needed.
+- Knowledge base is in Russian mostly except for code and product names, so search in Russian.
+- Do not mix languages in the answer output unless specifically needed for clarity (e.g., Russian code comments or English vars, identifiers if required).
+- For internal reasoning use English.
 </answer_language>
 
 <conversation_management>
@@ -214,17 +220,17 @@ QUERY_DECOMPOSITION_PROMPT = (
 # User question template for wrapping user messages
 USER_QUESTION_TEMPLATE_FIRST = (
     "{dynamic_context}"
-    "Найди информацию в базе знаний по по следующей теме:\n"
+    "Find information in the knowledge base on the following topic:\n"
     "{question}\n\n"
-    "Ответь на вопрос пользователя, используя эту информацию"
+    "Answer the user's question using this information."
 )
 
 USER_QUESTION_TEMPLATE_SUBSEQUENT = (
     "{dynamic_context}"
-    "Ответь на вопрос пользователя:\n\n"
+    "Answer the user's question:\n\n"
     "{question}\n\n"
-    "Учти предыдущие сообщения.\n"
-    "Если требуется, найди в базе знаний информацию для ответа на вопрос.\n"
+    "Take previous messages into account.\n"
+    "If needed, search the knowledge base for information to answer the question.\n"
 )
 
 # AI-generated content disclaimer (prepended to all responses)
@@ -246,7 +252,7 @@ def get_sgr_suffix() -> str:
 MANDATORY: Call the analyse_user_request tool with arguments matching the schema.
 
 ALWAYS provide all fields:
-- Text: 10-100 words in Russian
+- Text: 10-100 words 
 - Lists: 2-5 items
 - spam_score, intent_confidence: 0.0-1.0
 
