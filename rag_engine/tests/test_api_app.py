@@ -318,6 +318,75 @@ def test_extract_stream_delta_ignores_tiny_overlap():
     assert seen == "abccdef"
 
 
+def test_update_or_append_assistant_message_qwen_style_disabled(monkeypatch):
+    """Qwen-style <think> block should not eat the final answer when reasoning is disabled."""
+    from rag_engine.config import settings as settings_mod
+    from rag_engine.api.app import _update_or_append_assistant_message
+
+    # Reasoning safety net is in strip-only mode when disabled.
+    monkeypatch.setattr(
+        settings_mod,
+        "llm_reasoning_enabled",
+        False,
+        raising=False,
+    )
+
+    history: list[dict] = []
+    _update_or_append_assistant_message(history, "<think>hidden</think>Visible answer")
+
+    assert history, "Assistant message should be appended"
+    msg = history[-1]
+    assert msg.get("role") == "assistant"
+    content = msg.get("content", "")
+    # Final answer must be preserved; hidden chain-of-thought must not leak.
+    assert "Visible answer" in content
+    assert "hidden" not in content
+
+
+def test_update_or_append_assistant_message_literal_think_preserved(monkeypatch):
+    """Literal <think> examples should pass through unchanged when not a leading block."""
+    from rag_engine.config import settings as settings_mod
+    from rag_engine.api.app import _update_or_append_assistant_message
+
+    monkeypatch.setattr(
+        settings_mod,
+        "llm_reasoning_enabled",
+        False,
+        raising=False,
+    )
+
+    text = "Qwen wraps thoughts in <think>...</think> before the final answer."
+    history: list[dict] = []
+    _update_or_append_assistant_message(history, text)
+
+    assert history, "Assistant message should be appended"
+    content = history[-1].get("content", "")
+    # Explanation text (including tag example) should not be truncated.
+    assert text in content
+
+
+def test_update_or_append_assistant_message_qwen_style_enabled(monkeypatch):
+    """When reasoning is enabled, Qwen-style <think> block should be stripped from UI."""
+    from rag_engine.config import settings as settings_mod
+    from rag_engine.api.app import _update_or_append_assistant_message
+
+    monkeypatch.setattr(
+        settings_mod,
+        "llm_reasoning_enabled",
+        True,
+        raising=False,
+    )
+
+    history: list[dict] = []
+    _update_or_append_assistant_message(history, "<think>hidden</think>Visible answer")
+
+    assert history, "Assistant message should be appended"
+    content = history[-1].get("content", "")
+    # UI must only show the final answer, never the hidden reasoning span.
+    assert "Visible answer" in content
+    assert "hidden" not in content
+
+
 def test_chat_interface_initialization(monkeypatch):
     class FakeEmbedder:
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
