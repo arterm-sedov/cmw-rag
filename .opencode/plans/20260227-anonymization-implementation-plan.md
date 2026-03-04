@@ -5,6 +5,14 @@
 **Based on:** User requirements + rus-anonymizer + ru-smb-pd-anonymizer + Microsoft Presidio + tabularisai/eu-pii-safeguard + Gherman/bert-base-NER-Russian + dslim/bert-large-NER + Just AI Jay Guard research + Microsoft Recognizers-Text
 
 **Changes (v1.6):**
+- **ARCHITECTURE CHANGE: 4-stage → 3-stage pipeline**
+  - Removed EU-PII stage (14+ false positives - garbage like "@magnit", partial addresses)
+  - Optimized 3-stage: Regex → dslim → Gherman
+  - Final results: TP=105, FP=1, FN=26, P=0.991, R=0.802, **F1=0.886**
+  - 18x fewer FPs than 4-stage (1 vs 19), with better F1
+- Added per-stage entity filters:
+  - dslim: Skip Cyrillic (English model produces garbage on Russian)
+  - Gherman: FIRST/LAST names only, skip detections containing "@" (detects "ivanov" from email)
 - Added comprehensive regex patterns based on web research:
   - **Phone**: Russian formats (+7-XXX-XXX-XX-XX), US/UK/DE/International formats
   - **Email**: Standard RFC 5322 + Unicode support
@@ -49,7 +57,7 @@ Implement a **cascaded reversible anonymization pipeline** that:
 4. Is **opt-in** via environment configuration
 5. Supports both **regular chat UI** and **Comindware platform integration**
 
-### Architecture Overview
+### Architecture Overview (Optimized 3-Stage Pipeline)
 
 ```
 User Message
@@ -57,29 +65,23 @@ User Message
 ┌─────────────────────────────────────────────────────────────┐
 │  Stage 1: Direct Regex Patterns (No Presidio)               │
 │  - Fast (0.1ms/sample), Reliable for structured IDs         │
-│  - Russian + US phones, emails, passports, SSN, credentials│
-│  - Why no Presidio: 200x slower, fewer detections          │
+│  - Russian + US phones (+7-XXX-XXX-XX-XX), emails, IPs      │
+│  - Bank cards, IBAN, Russian docs (passport, SNILS, INN)    │
+│  - Why no Presidio: 200x slower, fewer detections           │
 └─────────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │  Stage 2: English NER (dslim/bert-large-NER)               │
 │  - Moderate (~80ms/sample on CPU)                          │
 │  - Best for English names, locations, organizations         │
-│  - Filters Cyrillic (wrong-language detection)             │
+│  - FILTER: Skip detections containing Cyrillic              │
 └─────────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │  Stage 3: Russian NER (Gherman/bert-base-NER-Russian)      │
 │  - Moderate (50-70ms/sample on CPU)                         │
-│  - Highly accurate for Russian Names, Locations, Orgs        │
-│  - spaCy ru_core_news_lg NOT used: not trained for PII     │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 4: Multilingual NER (tabularisai/eu-pii-safeguard) │
-│  - Slow (~150-200ms/sample on CPU)                          │
-│  - Multilingual fallback for missed entities                  │
-│  - 42 entity types (Jobs, Addresses, etc.)                  │
+│  - Highly accurate for Russian FIRST_NAME, LAST_NAME        │
+│  - FILTER: Skip detections containing "@" (false positives) │
 └─────────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -87,48 +89,6 @@ User Message
 │  - Filter 2-char fragments (BERT subword artifacts)         │
 │  - Filter dslim on Cyrillic text                            │
 │  - Filter partial words (surrounded by letters)             │
-│  - Merge adjacent same-semantic-type entities                 │
-│  - Resolve overlaps: Longest Match First                     │
-│  - Normalize to unified semantic names                        │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-[Guardian Check - Content Moderation - existing]
-    ↓
-[LLM Processing - with anonymized content]
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Deanonymization                                           │
-│  - Restore original PII from mapping                        │
-│  - Handle LLM output containing placeholders               │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-User sees original text (transparent experience)
-```
-User Message
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 1: Direct Regex Patterns (No Presidio)               │
-│  - Fast (0.1ms/sample), Reliable for structured IDs         │
-│  - Russian phones, emails, passports, SNILS, INN, credentials│
-│  - Why no Presidio: 200x slower, fewer detections          │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 2: Russian NER (Gherman/bert-base-NER-Russian)      │
-│  - Moderate (50-70ms/sample on CPU)                         │
-│  - Highly accurate for Russian Names, Locations, Orgs        │
-│  - spaCy ru_core_news_lg NOT used: not trained for PII     │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Stage 3: Multilingual NER (tabularisai/eu-pii-safeguard)  │
-│  - Slow (~150-200ms/sample on CPU)                          │
-│  - Multilingual fallback for missed entities                  │
-│  - 42 entity types (Jobs, Addresses, etc.)                  │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Post-Processing: Merge & Resolve Overlaps                  │
 │  - Merge adjacent same-semantic-type entities                 │
 │  - Resolve overlaps: Longest Match First                     │
 │  - Normalize to unified semantic names                        │
@@ -166,7 +126,7 @@ rag_engine/
 │  │   ├── stage1_regex.py       # Direct regex patterns (no Presidio)
 │  │   ├── stage2_dslim.py       # dslim/bert-large-NER (English)
 │  │   ├── stage3_gherman.py     # Gherman Russian NER
-│  │   └── stage4_eu_pii.py      # EU-PII-Safeguard
+│  │   └── stage4_eu_pii.py      # EU-PII-Safeguard (DISABLED - high FP)
 │   ├── serving/
 │   │   ├── __init__.py
 │   │   ├── factory.py           # Inference provider factory
@@ -588,15 +548,16 @@ stage3_gherman:
     HOUSE: "ADDRESS"
     ORGANIZATION: "COMPANY"
 
-# Stage 4: EU-PII-Safeguard
+# Stage 4: EU-PII-Safeguard (DISABLED - too many false positives)
 # =============================================================================
-# Multilingual NER as final fallback:
-# - 42 entity types across 26 European languages
-# - Catches entities missed by Stage 1 (regex), Stage 2 (dslim), Stage 3 (Gherman)
-# - Works well for non-Russian text mixed in Russian documents
+# NOTE: EU-PII is DISABLED in the optimized pipeline due to high FP rate:
+# - 14+ false positives detected (garbage emails like "@magnit", partial addresses)
+# - FP outweigh benefits (only catches 1-2 entities that others miss)
+# - 3-stage pipeline (Regex → dslim → Gherman) achieves better F1 (0.886 vs 0.881)
+# - Kept here for reference, set enabled: false in production
 # =============================================================================
 stage4_eu_pii:
-  enabled: true
+  enabled: false
   
   # Model configuration
   model:
@@ -676,7 +637,7 @@ ANONYMIZER_MODE=cascade              # cascade | parallel
 ANONYMIZER_STAGE1_ENABLED=true       # Regex (US + RU patterns)
 ANONYMIZER_STAGE2_ENABLED=true       # dslim (English NER)
 ANONYMIZER_STAGE3_ENABLED=true       # Gherman (Russian NER)
-ANONYMIZER_STAGE4_ENABLED=true       # EU-PII (multilingual fallback)
+ANONYMIZER_STAGE4_ENABLED=false      # EU-PII - DISABLED (too many FPs)
 
 # Stage 2: dslim English NER
 ANONYMIZER_DSLIM_PROVIDER=local      # local | vllm | mosec
