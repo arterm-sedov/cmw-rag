@@ -406,23 +406,63 @@ class OpenAICompatibleEmbedder:
         return all_embeddings
 
     def _embed_documents_remote(self, texts: list[str]) -> list[list[float]]:
-        """OpenAI SDK for remote providers with fallback to smaller batches."""
+        """OpenAI SDK for remote providers with fallback to smaller batches.
+
+        Some providers (or misconfigured routes) may occasionally return a number of
+        embedding vectors that does not match the number of input texts. We treat this
+        as an error and fall back to a safer per-item embedding path to preserve the
+        invariant len(embeddings) == len(texts).
+        """
+
+        def _embed_batch(inputs: list[str]) -> list[list[float]]:
+            """Embed a batch and enforce 1:1 mapping between inputs and outputs."""
+            response = self.client.embeddings.create(model=self.config.model, input=inputs)
+            data = list(response.data or [])
+            if len(data) != len(inputs):
+                logger.warning(
+                    "Embedding batch size mismatch from provider %s (model=%s): "
+                    "got %d embeddings for %d inputs; falling back to per-item embedding",
+                    self.config.provider,
+                    self.config.model,
+                    len(data),
+                    len(inputs),
+                )
+                per_item_embeddings: list[list[float]] = []
+                for text in inputs:
+                    single = self.client.embeddings.create(
+                        model=self.config.model,
+                        input=[text],
+                    )
+                    if not single.data:
+                        raise RuntimeError(
+                            "Provider returned no embedding for a single input during fallback"
+                        )
+                    per_item_embeddings.append(single.data[0].embedding)
+                return per_item_embeddings
+            return [d.embedding for d in data]
+
         try:
-            response = self.client.embeddings.create(model=self.config.model, input=texts)
-            return [d.embedding for d in response.data]
+            # Fast path: single batch
+            return _embed_batch(texts)
         except Exception:
             logger.warning("Remote batch failed, trying in batches of 20")
-            all_embeddings = []
+            all_embeddings: list[list[float]] = []
             for i in range(0, len(texts), 20):
                 batch = texts[i : i + 20]
                 try:
-                    response = self.client.embeddings.create(model=self.config.model, input=batch)
-                    all_embeddings.extend([d.embedding for d in response.data])
+                    all_embeddings.extend(_embed_batch(batch))
                 except Exception:
                     logger.info("Remote batch failed, embedding individually")
                     for text in batch:
-                        response = self.client.embeddings.create(model=self.config.model, input=[text])
-                        all_embeddings.append(response.data[0].embedding)
+                        single = self.client.embeddings.create(
+                            model=self.config.model,
+                            input=[text],
+                        )
+                        if not single.data:
+                            raise RuntimeError(
+                                "Provider returned no embedding for a single input during fallback"
+                            )
+                        all_embeddings.append(single.data[0].embedding)
             return all_embeddings
 
     def get_embedding_dim(self) -> int:

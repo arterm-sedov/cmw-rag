@@ -35,6 +35,12 @@ async def run_async() -> None:
         help="Force reindex: delete existing chunks per doc and re-embed",
     )
     parser.add_argument(
+        "--start-index",
+        type=int,
+        default=None,
+        help="1-based document index to start (skip earlier docs in this run)",
+    )
+    parser.add_argument(
         "--prune-missing",
         action="store_true",
         help="Delete records from vector store whose kbId is not present in the source set",
@@ -124,6 +130,7 @@ async def run_async() -> None:
         chunk_overlap=settings.chunk_overlap,
         max_files=args.max_files,
         force_reindex=args.reindex,
+        start_index=args.start_index,
     )
     deleted_docs = 0
 
