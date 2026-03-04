@@ -75,6 +75,14 @@ def _article_to_dict(article) -> dict:
     }
 
 
+def _set_turn_timing_and_model(
+    agent_context: AgentContext, turn_start: float, current_model: str
+) -> None:
+    """Set turn_time_ms and model_used on AgentContext before yielding."""
+    agent_context.turn_time_ms = (time.perf_counter() - turn_start) * 1000
+    agent_context.model_used = f"{settings.default_llm_provider}: {current_model}"
+
+
 def _badge_html(*, label: str, value: str, color: str) -> str:
     return (
         f'<span style="background:{color};padding:2px 8px;border-radius:4px;">'
@@ -1267,6 +1275,7 @@ async def agent_chat_handler(
     # This ensures we start from ChatInterface's current state and build incrementally
     # Then we always yield the full working_history list
     gradio_history = list(history) if history else []
+    turn_start = time.perf_counter()
 
     # Log history state for debugging memory issues
     logger.info(
@@ -2857,6 +2866,7 @@ async def agent_chat_handler(
             if getattr(settings, "llm_reasoning_enabled", False) and rctx.buffer.strip():
                 diagnostics["reasoning"] = rctx.buffer.strip()
             agent_context.diagnostics = diagnostics
+            _set_turn_timing_and_model(agent_context, turn_start, current_model)
             logger.info(
                 f"agent_chat_handler: yielding AgentContext - "
                 f"sgr_plan_present={agent_context.sgr_plan is not None}, "
@@ -3098,6 +3108,7 @@ async def agent_chat_handler(
                             agent_context.sgr_plan = sgr_plan_dict
                     except Exception:
                         pass
+                    _set_turn_timing_and_model(agent_context, turn_start, current_model)
                     yield agent_context
                     return
             except Exception as retry_exc:  # If fallback retry fails, emit original-style error
@@ -3636,9 +3647,13 @@ async def chat_with_metadata(
 
         # Accumulate per-session conversation usage using salted session_id from diagnostics
         session_id = (ctx.diagnostics or {}).get("session_id") if ctx.diagnostics else None
+        turn_summary = {
+            **(usage_turn_summary or {}),
+            "turn_time_ms": getattr(ctx, "turn_time_ms", 0) or 0,
+        }
         usage_conversation_summary = accumulate_conversation_usage(
             session_id=session_id,
-            turn_summary=usage_turn_summary,
+            turn_summary=turn_summary,
         )
 
         # Always show user_intent if we have a user message (even if SGR plan is missing/empty)
@@ -3704,13 +3719,18 @@ async def chat_with_metadata(
         )
 
         try:
-            # Build analysis data for JSON field
+            # Build analysis data for JSON field (times in seconds, 4 decimal places)
+            last_turn_ms = getattr(ctx, "turn_time_ms", 0) or 0
+            total_conv_ms = usage_conversation_summary.get("total_conversation_time_ms", 0) or 0
             analysis_data = {
                 "confidence": search_confidence,
                 "queries_count": search_count,
                 "queries": executed_queries,
                 "usage_turn": usage_turn_summary,
                 "usage_conversation": usage_conversation_summary,
+                "last_turn_time_s": round(last_turn_ms / 1000, 4),
+                "total_conversation_time_s": round(total_conv_ms / 1000, 4),
+                "model_used": getattr(ctx, "model_used", "") or "",
             }
             yield yield_badge_updates(
                 last_history,
