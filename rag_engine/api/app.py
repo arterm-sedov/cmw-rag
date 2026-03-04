@@ -2760,7 +2760,7 @@ async def agent_chat_handler(
 
                 srp_analysis_request = {
                     "role": "user",
-                    "content": srp_context + "Analyze the above assistant answer quality.",
+                    "content": srp_context,
                 }
                 srp_messages.append(srp_analysis_request)
 
