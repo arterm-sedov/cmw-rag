@@ -133,12 +133,17 @@ def accumulate_conversation_usage(
 
     This is a lightweight in-memory accumulator keyed by salted session_id.
     It is intentionally side-effect free for None / empty inputs.
+    Also accumulates turn_time_ms into total_conversation_time_ms per session.
     """
     if not session_id:
         # No stable session identifier; return turn summary as-is.
         if isinstance(turn_summary, dict):
-            return {key: float(turn_summary.get(key, 0.0) or 0.0) for key in USAGE_NUMERIC_FIELDS}
-        return dict.fromkeys(USAGE_NUMERIC_FIELDS, 0.0)
+            out = {key: float(turn_summary.get(key, 0.0) or 0.0) for key in USAGE_NUMERIC_FIELDS}
+            out["total_conversation_time_ms"] = float(turn_summary.get("turn_time_ms", 0.0) or 0.0)
+            return out
+        result = dict.fromkeys(USAGE_NUMERIC_FIELDS, 0.0)
+        result["total_conversation_time_ms"] = 0.0
+        return result
 
     if not isinstance(turn_summary, dict):
         turn_summary = {}
@@ -152,6 +157,15 @@ def accumulate_conversation_usage(
         prev = float(existing.get(key, 0.0) or 0.0)
         delta = float(turn_summary.get(key, 0.0) or 0.0)
         updated[key] = prev + delta
+
+    turn_time_ms = turn_summary.get("turn_time_ms")
+    if turn_time_ms is not None and isinstance(turn_time_ms, (int, float)):
+        prev_total = float(existing.get("total_conversation_time_ms", 0.0) or 0.0)
+        updated["total_conversation_time_ms"] = prev_total + float(turn_time_ms)
+    else:
+        updated["total_conversation_time_ms"] = float(
+            existing.get("total_conversation_time_ms", 0.0) or 0.0
+        )
 
     _conversation_usage_totals[session_id] = updated
     return updated.copy()

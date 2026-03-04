@@ -121,6 +121,18 @@ class AgentContext(BaseModel):
         description="Aggregated per-turn usage summary (tokens, cost, caching).",
     )
 
+    # --- Turn timing and model (excluded from LLM) ---
+    turn_time_ms: float = Field(
+        default=0.0,
+        exclude=True,
+        description="Last turn execution time in milliseconds (end - start).",
+    )
+    model_used: str = Field(
+        default="",
+        exclude=True,
+        description="Model used this turn as 'provider: slug' (e.g. openrouter: deepseek/...).",
+    )
+
 
 # ContextVar propagates across async/await; threading.local does not (UsageAccountingCallback runs in same task)
 _agent_context_var: ContextVar[AgentContext | None] = ContextVar("agent_context", default=None)
