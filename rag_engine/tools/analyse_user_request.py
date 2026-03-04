@@ -20,10 +20,16 @@ logger = logging.getLogger(__name__)
 
 
 def _get_answer_language(plan: dict) -> str:
-    """Normalize answer language code from plan (default to English)."""
+    """Normalize answer language code from plan.
+
+    Returns:
+        "en" or "ru" when the model explicitly sets a supported language.
+        "" (empty string) when language is missing or unrecognized, so that
+        the top-level system prompt controls answer language.
+    """
     raw = (plan.get("answer_language") or "").strip().lower()
     if not raw:
-        return "en"
+        return ""
 
     # Accept both codes and full names, be forgiving about minor variants
     if raw in {"en", "eng", "english"}:
@@ -31,8 +37,8 @@ def _get_answer_language(plan: dict) -> str:
     if raw in {"ru", "rus", "russian", "русский", "русском"}:
         return "ru"
 
-    # Default: English (avoid implicit Russian bias)
-    return "en"
+    # Unknown value: let the main system prompt decide language
+    return ""
 
 
 def _render_proceed_template(plan: dict, guardian_result: dict | None = None) -> str:
@@ -68,17 +74,26 @@ Confidence: {plan["intent_confidence"] * 100:.0f}%
             f"({categories}). Отвечай нейтрально, опираясь только на факты из документации."
         )
 
-    return f"""**Анализ запроса**
-Язык ответа: русский. Отвечай пользователю на русском языке.
-Намерение: {plan["user_intent"]}
-Категория: {plan["category"]}
-Уверенность: {plan["intent_confidence"] * 100:.0f}%
-{advisory}
+    # For non-English / non-Russian or empty language, we still use the Russian
+    # planning template (internal to the model) but do NOT restate an explicit
+    # "answer language" line. This lets the global system prompt control user-facing
+    # language when the model didn't confidently choose one here.
+    heading = "**Анализ запроса**"
+    lang_line = ""
+    if lang == "ru":
+        lang_line = "Язык ответа: русский. Отвечай пользователю на русском языке.\n"
 
-**Следующие шаги**
-1. Вызови инструмент retrieve_context с такими запросами:
-   - {queries}
-2. Изучи результаты и ответь на вопрос на основе найденной документации."""
+    return (
+        f"""{heading}
+{lang_line}Намерение: {plan["user_intent"]}
+Категория: {plan["category"]}
+Уверенность: {plan["intent_confidence"] * 100:.0f}%"""
+        f"{advisory}\n\n"
+        "**Следующие шаги**\n"
+        "1. Вызови инструмент retrieve_context с такими запросами:\n"
+        f"   - {queries}\n"
+        "2. Изучи результаты и ответь на вопрос на основе найденной документации."
+    )
 
 
 def _render_clarify_template(plan: dict) -> str:
@@ -99,9 +114,15 @@ Confidence: {plan["intent_confidence"] * 100:.0f}% (low)
    - [+ add any additional questions if needed]
 2. Wait for user response before proceeding."""
 
-    return f"""**Анализ запроса**
-Язык ответа: русский. Отвечай пользователю на русском языке.
-Намерение: {plan["user_intent"]}
+    # For empty/unknown language, use Russian planning template but skip explicit lang line.
+    heading = "**Анализ запроса**"
+    lang_line = ""
+    if lang == "ru":
+        lang_line = "Язык ответа: русский. Отвечай пользователю на русском языке.\n"
+
+    return (
+        f"""{heading}
+{lang_line}Намерение: {plan["user_intent"]}
 Категория: {plan["category"]}
 Уверенность: {plan["intent_confidence"] * 100:.0f}% (низкая)
 
@@ -110,6 +131,7 @@ Confidence: {plan["intent_confidence"] * 100:.0f}% (low)
    - {questions}
    - [+ добавь дополнительные вопросы при необходимости]
 2. Дождись ответа пользователя перед тем, как продолжить."""
+    )
 
 
 def _render_decline_template(plan: dict) -> str:
@@ -132,9 +154,16 @@ Do not process this request. Use this refusal message:
 "{refusal}"."""
 
     refusal = "Извините, я не могу помочь с этим запросом. Он не относится к Comindware Platform."
-    return f"""**Анализ запроса**
-Язык ответа: русский. Отвечай пользователю на русском языке.
-Оценка: запрос не относится к Comindware Platform.
+
+    # For empty/unknown language, use Russian planning template but skip explicit lang line.
+    heading = "**Анализ запроса**"
+    lang_line = ""
+    if lang == "ru":
+        lang_line = "Язык ответа: русский. Отвечай пользователю на русском языке.\n"
+
+    return (
+        f"""{heading}
+{lang_line}Оценка: запрос не относится к Comindware Platform.
 Причина: {plan["spam_reason"]}
 Оценка спама: {plan["spam_score"]}
 
@@ -142,6 +171,7 @@ Do not process this request. Use this refusal message:
 Не обрабатывай этот запрос. Используй такое сообщение отказа:
 
 "{refusal}"."""
+    )
 
 
 def render_sgr_template(
