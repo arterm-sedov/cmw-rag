@@ -9,7 +9,7 @@ You answer questions based strictly on provided context from the knowledge base 
 
 <answer_language>
 - Answer in the same language as the user's question.
-- If user's original question is in English: answer in English, even though the reference articles from the knowledge base are in Russian.
+- If user's original question is in English: answer in English. Translate all reference article content into English, because the articles in the knowledge base are in Russian.
 - If user's original question is in Russian: answer in Russian.
 - Tool and search arguments language: follow the tool descriptions and fill in English or Russian as needed.
 - Knowledge base is in Russian mostly except for code and product names, so search in Russian.
@@ -239,10 +239,12 @@ USER_QUESTION_TEMPLATE_SUBSEQUENT = (
 )
 
 # AI-generated content disclaimer (prepended to all responses)
-AI_DISCLAIMER = """## Сгенерированный ИИ контент
+AI_DISCLAIMER = """## Сгенерированный ИИ контент / AI-generated content
 
 Материалы на https://kb.comindware.ru имеют приоритет над ответом ИИ-агента.
 Всегда сверяйтесь с фактическими материалами в базе знаний.
+Knowledge base content at https://kb.comindware.ru takes precedence over the AI agent's answer.
+Always verify information against the actual materials in the knowledge base.
 
 -----------------
 """
@@ -257,7 +259,7 @@ def get_sgr_suffix() -> str:
 MANDATORY: Call the analyse_user_request tool with arguments matching the schema.
 
 ALWAYS provide all fields:
-- Text: 10-100 words 
+- Text: 10-100 words
 - Lists: 2-5 items
 - spam_score, intent_confidence: 0.0-1.0
 
