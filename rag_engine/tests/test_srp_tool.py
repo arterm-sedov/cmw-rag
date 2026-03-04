@@ -2,10 +2,10 @@
 
 import pytest
 
-from rag_engine.llm.schemas import ResolutionOutcome, ResolutionPlanResult
+from rag_engine.llm.schemas import ResolutionPlanResult
 from rag_engine.tools.generate_resolution_plan import (
-    generate_resolution_plan,
     _render_plan_markdown,
+    generate_resolution_plan,
 )
 
 
@@ -105,8 +105,8 @@ class TestGenerateResolutionPlanTool:
         assert "Test issue" in result["markdown"]
 
     @pytest.mark.asyncio
-    async def test_no_intervention_returns_empty_markdown(self):
-        """When engineer_intervention_needed=False, markdown should be empty."""
+    async def test_no_intervention_still_returns_rendered_markdown(self):
+        """When engineer_intervention_needed=False, markdown is still rendered (for srp_always_render_plan)."""
         result = await generate_resolution_plan.ainvoke(
             {
                 "engineer_intervention_needed": False,
@@ -114,7 +114,8 @@ class TestGenerateResolutionPlanTool:
             }
         )
         assert result["json"]["engineer_intervention_needed"] is False
-        assert result["markdown"] == ""
+        assert result["markdown"]
+        assert "Resolved issue" in result["markdown"]
 
     @pytest.mark.asyncio
     async def test_intervention_returns_rendered_markdown(self):
@@ -156,7 +157,7 @@ class TestRenderPlanMarkdown:
         assert "reset password" in result
 
     def test_handles_empty_lists(self):
-        """Should handle empty steps gracefully."""
+        """Should skip sections for empty steps/next_steps (conditional headings)."""
         plan = {
             "issue_summary": "Test issue",
             "steps_completed": [],
@@ -165,9 +166,11 @@ class TestRenderPlanMarkdown:
         }
         result = _render_plan_markdown(plan)
         assert "Test issue" in result
+        # Empty lists: only issue_summary section (one ## heading besides title)
+        assert result.count("## ") == 1
 
     def test_handles_none_outcome(self):
-        """Should handle None outcome."""
+        """Should skip outcome section when outcome is None."""
         plan = {
             "issue_summary": "Test",
             "steps_completed": [],
@@ -176,3 +179,15 @@ class TestRenderPlanMarkdown:
         }
         result = _render_plan_markdown(plan)
         assert "Test" in result
+
+    def test_all_empty_returns_only_title(self):
+        """When all fields empty, output is only the main section title."""
+        plan = {
+            "issue_summary": "",
+            "steps_completed": [],
+            "next_steps": [],
+            "outcome": None,
+        }
+        result = _render_plan_markdown(plan)
+        assert result.startswith("# ")
+        assert result.count("## ") == 0
