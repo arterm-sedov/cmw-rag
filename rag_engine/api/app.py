@@ -1216,8 +1216,30 @@ def _update_or_append_assistant_message(gradio_history: list[dict], content: str
         gradio_history: List of Gradio message dictionaries
         content: Content to set for the assistant message
     """
-    # Final safety net: never render leaked <think> tags in chat bubbles.
-    sanitized_content, _, _, _ = _parse_think_tags(str(content), "", False)
+    # Final safety net: never render leaked <think> tags in chat bubbles, but avoid
+    # corrupting normal answers or literal <think> examples.
+    text = str(content)
+    # Fast path: no think-tags present.
+    if _THINK_OPEN not in text and _THINK_CLOSE not in text and "\\u003cthink" not in text:
+        sanitized_content = text
+    else:
+        # Minimal heuristic:
+        # - When reasoning is enabled, strip all <think> content from UI (reasoning is
+        #   already captured structurally elsewhere).
+        # - When disabled, treat only a leading or whole-turn <think> block as
+        #   reasoning; leave mid-sentence tag examples untouched.
+        reasoning_enabled = getattr(settings, "llm_reasoning_enabled", False)
+        if reasoning_enabled:
+            sanitized_content, _, _, _ = _parse_think_tags(text, "", False)
+        else:
+            # Leading-block heuristic: preserve prefix before the first <think>;
+            # if text starts directly with <think>, rely on parser to drop that
+            # block and keep any following final answer.
+            stripped = text.lstrip()
+            if stripped.startswith(_THINK_OPEN):
+                sanitized_content, _, _, _ = _parse_think_tags(text, "", False)
+            else:
+                sanitized_content = text
     if (
         gradio_history
         and gradio_history[-1].get("role") == "assistant"
