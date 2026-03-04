@@ -159,9 +159,8 @@ class SGRPlanResult(BaseModel):
     answer_language: str = Field(
         default="",
         description=(
-            "Determine language to answer the user's request, based on the user's original question language. "
+            "Determine the language of the original user's request. "
             "Use plain names: 'Russian' or 'English'. Short codes 'ru'/'en' are also accepted. "
-            "Default: English, but fill it per the user's question language."
         ),
     )
 
