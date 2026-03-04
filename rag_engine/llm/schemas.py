@@ -63,7 +63,7 @@ class SGRPlanResult(BaseModel):
             "What does the user actually want to achieve? "
             "Think beyond keywords: What is their underlying goal? "
             "What business problem are they trying to solve? "
-            "Write in Russian, 10-100 words."
+            "Write in the user's question original language, 10-100 words."
         ),
     )
 
@@ -153,6 +153,15 @@ class SGRPlanResult(BaseModel):
             "Brief explanation of spam_score in 10-20 words. "
             "Write in Russian. "
             "Leave empty if spam_score < 0.3."
+        ),
+    )
+
+    answer_language: str = Field(
+        default="ru",
+        description=(
+            "Preferred language for answering the user's request, based on the original question. "
+            "Use plain names: 'Russian' or 'English'. Short codes 'ru'/'en' are also accepted. "
+            "This controls SGR markdown localization and guides the model response language."
         ),
     )
 
