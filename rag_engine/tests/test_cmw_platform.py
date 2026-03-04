@@ -304,7 +304,8 @@ class TestPlatformConnector:
         result = connector.start_request("record-123")
 
         assert result.success is True
-        assert result.message == "Request fetched, agent started"
+        assert result.message is not None
+        assert result.message.startswith("Request fetched, agent started at ")
         assert result.error is None
         mock_thread.assert_called_once()
 

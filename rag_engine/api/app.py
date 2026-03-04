@@ -3476,9 +3476,21 @@ async def ask_comindware_structured(
         if scores:
             answer_confidence = sum(scores) / len(scores)
 
-    # Build usage block from AgentContext (per-turn); conversation total currently equals turn total.
+    # Build usage block from AgentContext (per-turn) and accumulate per-session conversation usage.
     usage_turn_summary = getattr(context, "usage_turn_summary", {}) or {}
+    usage_conversation_summary: dict[str, float] | None = None
     if isinstance(usage_turn_summary, dict):
+        # Compute per-session conversation totals (including total_conversation_time_ms).
+        session_id = (context.diagnostics or {}).get("session_id") if context.diagnostics else None
+        turn_summary = {
+            **(usage_turn_summary or {}),
+            "turn_time_ms": getattr(context, "turn_time_ms", 0) or 0,
+        }
+        usage_conversation_summary = accumulate_conversation_usage(
+            session_id=session_id,
+            turn_summary=turn_summary,
+        )
+
         usage_turn = UsageTotals(
             prompt_tokens=int(usage_turn_summary.get("prompt_tokens", 0) or 0),
             completion_tokens=int(usage_turn_summary.get("completion_tokens", 0) or 0),
@@ -3489,9 +3501,46 @@ async def ask_comindware_structured(
             cost=float(usage_turn_summary.get("cost", 0.0) or 0.0),
             upstream_cost=float(usage_turn_summary.get("upstream_cost", 0.0) or 0.0),
         )
-        usage_block: UsageBlock | None = UsageBlock(turn=usage_turn, conversation=usage_turn)
+        if isinstance(usage_conversation_summary, dict):
+            usage_conversation = UsageTotals(
+                prompt_tokens=int(usage_conversation_summary.get("prompt_tokens", 0) or 0),
+                completion_tokens=int(
+                    usage_conversation_summary.get("completion_tokens", 0) or 0
+                ),
+                total_tokens=int(usage_conversation_summary.get("total_tokens", 0) or 0),
+                reasoning_tokens=int(
+                    usage_conversation_summary.get("reasoning_tokens", 0) or 0
+                ),
+                cached_tokens=int(usage_conversation_summary.get("cached_tokens", 0) or 0),
+                cache_write_tokens=int(
+                    usage_conversation_summary.get("cache_write_tokens", 0) or 0
+                ),
+                cost=float(usage_conversation_summary.get("cost", 0.0) or 0.0),
+                upstream_cost=float(
+                    usage_conversation_summary.get("upstream_cost", 0.0) or 0.0
+                ),
+            )
+        else:
+            usage_conversation = usage_turn
+        usage_block: UsageBlock | None = UsageBlock(
+            turn=usage_turn,
+            conversation=usage_conversation,
+        )
     else:
         usage_block = None
+        usage_conversation_summary = None
+
+    # Augment diagnostics with usage_conversation and timing/model metadata for downstream mapping.
+    diagnostics = dict(getattr(context, "diagnostics", {}) or {})
+    last_turn_ms = getattr(context, "turn_time_ms", 0) or 0
+    total_conv_ms = (
+        (usage_conversation_summary or {}).get("total_conversation_time_ms", last_turn_ms) or 0
+    )
+    if isinstance(usage_conversation_summary, dict):
+        diagnostics["usage_conversation"] = usage_conversation_summary
+    diagnostics["last_turn_time_s"] = round(float(last_turn_ms) / 1000.0, 6)
+    diagnostics["total_conversation_time_s"] = round(float(total_conv_ms) / 1000.0, 6)
+    diagnostics["model_used"] = getattr(context, "model_used", "") or ""
 
     return StructuredAgentResult(
         plan=plan,
@@ -3501,7 +3550,7 @@ async def ask_comindware_structured(
         per_query_results=context.query_traces if include_per_query_trace else [],
         final_articles=context.final_articles,
         answer_text=context.final_answer,
-        diagnostics=context.diagnostics,
+        diagnostics=diagnostics,
         usage=usage_block,
     )
 

@@ -116,7 +116,7 @@ class SGRPlanResult(BaseModel):
         description=(
             "If intent_confidence < 0.7, "
             "what specific questions would help you understand user request better? "
-            "Write in Russian, be polite and specific. "
+            "Write in the user's language, be polite and specific. "
             "These questions will be shown to the user to get clarification. "
             "Example: ['вас интересует инструкция для Linux или Windows?', 'какой именно интерфейс вас интересует?', 'какая версия платформы у вас установлена?']"
             "Empty list if intent_confidence >= 0.7."
@@ -185,8 +185,8 @@ class SGRPlanResult(BaseModel):
         max_length=10,
         description=(
             "How will you answer this request? "
-            "Egsample steps: ['понять запрос пользователя', 'найти статьи', 'оценить релевантность статей', 'составить ответ', 'запросить уточнение', 'составить план для инженера поддержки']. "
-            "Write in Russian as actionable instructions to yourself."
+            "Example steps: ['понять запрос пользователя', 'найти статьи', 'оценить релевантность статей', 'составить ответ', 'запросить уточнение', 'составить план для инженера поддержки']. "
+            "Write as actionable instructions to yourself."
         ),
     )
 
