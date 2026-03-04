@@ -38,3 +38,6 @@ ui/index.php
 *.pid
 *.log
 *.swp
+
+# Node.js
+node_modules/
