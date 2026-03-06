@@ -23,6 +23,11 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 65_536,
         "temperature": 0,
     },
+    "google/gemini-3.1-flash-lite-preview": {
+        "token_limit": 1_048_576,  # 1M context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
     # OpenRouter models (matching cmw-platform-agent)
     # DeepSeek Models
     "deepseek/deepseek-v3.1-terminus": {
