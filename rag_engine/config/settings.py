@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     google_api_key: str
     openrouter_api_key: str
     openrouter_base_url: str
+    # OpenAI (true API, opt-in via DEFAULT_LLM_PROVIDER=openai)
+    openai_api_key: str | None = None
     # vLLM configuration (OpenAI-compatible API)
     vllm_base_url: str
     vllm_api_key: str
@@ -105,6 +107,17 @@ class Settings(BaseSettings):
     )
     # Optional overrides for model config (if set, overrides model_configs.py values)
     llm_token_limit: int | None = None  # Optional override for token_limit from model config
+
+    # Reasoning / thinking tokens (OpenRouter-style)
+    # These settings are passed via the unified `reasoning` object for OpenAI-compatible providers.
+    llm_reasoning_enabled: bool = False
+    llm_reasoning_effort: str | None = None
+    llm_reasoning_max_tokens: int | None = None
+    llm_reasoning_exclude_from_response: bool = False
+
+    # Reasoning bubble UI (streaming)
+    # Number of reasoning lines to show in the UI bubble tail (full trace kept in diagnostics).
+    ui_reasoning_tail_lines: int = 4
 
     # LangChain Configuration
     langchain_recursion_limit: int = 100  # Max steps for LangGraph StateGraph
@@ -201,6 +214,8 @@ class Settings(BaseSettings):
     # SRP (Support Resolution Plan)
     # Generates resolution plan for human support engineers after answer generation
     srp_enabled: bool = False
+    # When True, inject SRP plan markdown into the answer even when engineer_intervention_needed=False
+    srp_always_render_plan: bool = False
 
     # CMW Platform Integration
     # Comindware Platform API credentials (required for platform integration)

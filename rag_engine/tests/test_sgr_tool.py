@@ -2,7 +2,7 @@
 
 import pytest
 
-from rag_engine.llm.schemas import SGRPlanResult, SGRAction, SGRCategory
+from rag_engine.llm.schemas import SGRAction, SGRCategory, SGRPlanResult
 from rag_engine.tools.analyse_user_request import (
     analyse_user_request,
     render_sgr_template,
@@ -17,6 +17,7 @@ class TestSGRPlanResultSchema:
         result = SGRPlanResult()
         assert result.user_intent == ""
         assert result.topic == ""
+        assert result.answer_language == ""
         expected_default = SGRCategory.OTHER if hasattr(SGRCategory, "OTHER") else list(SGRCategory)[0]
         assert result.category == expected_default
         assert result.intent_confidence == 0.0
@@ -142,6 +143,7 @@ class TestRenderSGRTemplate:
         base = {
             "user_intent": "test intent",
             "topic": "test topic",
+            "answer_language": "ru",
             "category": SGRCategory.DOCUMENTATION,
             "intent_confidence": 0.9,
 
@@ -179,7 +181,24 @@ class TestRenderSGRTemplate:
         )
         result = render_sgr_template("decline", plan)
         assert "off-topic" in result
-        assert "Request Analysis" in result
+        # Russian heading is expected by default (answer_language="ru")
+        assert "Анализ запроса" in result
+
+    def test_answer_language_controls_template_language(self):
+        """Answer language in plan should control template localization."""
+        plan_ru = self._make_complete_plan(
+            knowledge_base_search_queries=["q1"],
+            answer_language="ru",
+        )
+        result_ru = render_sgr_template("proceed", plan_ru)
+        assert "Язык ответа: русский" in result_ru
+
+        plan_en = self._make_complete_plan(
+            knowledge_base_search_queries=["q1"],
+            answer_language="en",
+        )
+        result_en = render_sgr_template("proceed", plan_en)
+        assert "Answer language: English" in result_en
 
     def test_empty_queries_no_error(self):
         """Template should handle empty query list."""

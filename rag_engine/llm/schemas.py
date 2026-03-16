@@ -12,6 +12,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from rag_engine.cmw_platform.category_enum import (
+    get_category_choices_with_descriptions,
+    load_category_enum,
+)
+
 
 class SGRAction(str, Enum):
     """Routing actions for request handling."""
@@ -19,13 +24,6 @@ class SGRAction(str, Enum):
     PROCEED = "proceed"
     ASK_CLARIFICATION = "ask_clarification"
     DECLINE = "decline"
-
-
-# Load dynamic category enum from YAML config
-from rag_engine.cmw_platform.category_enum import (
-    load_category_enum, 
-    get_category_choices_with_descriptions
-)
 
 
 def _get_category_enum() -> type[Enum]:
@@ -62,10 +60,10 @@ class SGRPlanResult(BaseModel):
     user_intent: str = Field(
         default="",
         description=(
-            "What does the user actually want to achieve? "
+            "Determine: What does the user actually want to achieve? "
             "Think beyond keywords: What is their underlying goal? "
             "What business problem are they trying to solve? "
-            "Write in Russian, 10-100 words."
+            "Write in the user's question original language, 10-100 words."
         ),
     )
 
@@ -104,7 +102,7 @@ class SGRPlanResult(BaseModel):
         ge=0.0,
         le=1.0,
         description=(
-            "How confident are you in understanding what the user wants? "
+            "Decide: How confident are you in understanding what the user wants? "
             "Think: Is the request clear? Do you understand the context? "
             "0.0-0.4: Very unclear, major uncertainties; "
             "0.5-0.7: Somewhat clear but some gaps; "
@@ -117,8 +115,8 @@ class SGRPlanResult(BaseModel):
         max_length=5,
         description=(
             "If intent_confidence < 0.7, "
-            "what specific questions would help you understand user request better? "
-            "Write in Russian, be polite and specific. "
+            "determine specific questions that would help you understand user request better. "
+            "Write in the user's language, be polite and specific. "
             "These questions will be shown to the user to get clarification. "
             "Example: ['вас интересует инструкция для Linux или Windows?', 'какой именно интерфейс вас интересует?', 'какая версия платформы у вас установлена?']"
             "Empty list if intent_confidence >= 0.7."
@@ -141,7 +139,7 @@ class SGRPlanResult(BaseModel):
         ge=0.0,
         le=1.0,
         description=(
-            "Is this request appropriate for Comindware Platform support? "
+            "Determine: Is this request appropriate for Comindware Platform support? "
             "0.0-0.2: Clearly relevant; "
             "0.3-0.5: Ambiguous or partially related; "
             "0.6-0.8: Likely irrelevant; "
@@ -152,9 +150,17 @@ class SGRPlanResult(BaseModel):
     spam_reason: str = Field(
         default="",
         description=(
-            "Brief explanation of spam_score in 10-20 words. "
+            "Provide brief explanation of spam_score in 10-20 words. "
             "Write in Russian. "
-            "Leave empty if spam_score < 0.3."
+            "Set 'Not spam' if spam_score < 0.3."
+        ),
+    )
+
+    answer_language: str = Field(
+        default="",
+        description=(
+            "Determine the language of the original user's request. "
+            "Use plain names: 'Russian' or 'English'. Short codes 'ru'/'en' are also accepted. "
         ),
     )
 
@@ -162,7 +168,7 @@ class SGRPlanResult(BaseModel):
         default_factory=list,
         max_length=10,
         description=(
-            "What specific terms to search in the articles the knowledge base? "
+            "Devise specific terms to search in the articles the knowledge. "
             "Include: feature names, technical terms, error messages, relevant keywords. "
             "Example: ['сведения о выпуске', 'развёртывание ПО', 'справочник по API']"
             "Write in Russian, avoid duplicates. "
@@ -186,9 +192,9 @@ class SGRPlanResult(BaseModel):
         default_factory=list,
         max_length=10,
         description=(
-            "How will you answer this request? "
-            "Egsample steps: ['понять запрос пользователя', 'найти статьи', 'оценить релевантность статей', 'составить ответ', 'запросить уточнение', 'составить план для инженера поддержки']. "
-            "Write in Russian as actionable instructions to yourself."
+            "Plan. How will you answer this request? "
+            "Example steps: ['понять запрос пользователя', 'найти статьи', 'оценить релевантность статей', 'составить ответ', 'запросить уточнение', 'составить план для инженера поддержки']. "
+            "Write as actionable instructions to yourself."
         ),
     )
 
@@ -206,7 +212,7 @@ class SGRPlanResult(BaseModel):
     action: SGRAction = Field(
         default=SGRAction.PROCEED,
         description=(
-            "Based on all previous reasoning, what action to take? "
+            "Based on all previous reasoning, determine what action to take? "
             "'proceed': request is relevant and clear - assist normally; "
             "'ask_clarification': request needs clarification from user; "
             "'decline': request is off-topic or inappropriate - do not assist; "
@@ -229,24 +235,24 @@ class ResolutionOutcome(str, Enum):
 class ResolutionPlanResult(BaseModel):
     """Generate a support engineer resolution plan for Comindware Platform.
 
-    Analyze the conversation and YOUR final answer.
+    Analyze the original user's request/question, the whole conversation,
+    and YOUR final answer.
 
     Reason step by step and fill the arguments with meaningful data:
 
-    1. Critique your answer: Did you solve the user's specific problem?
-    2. Describe the user's issue clearly
+    1. Critique your answer: Did you solve the user's original specific problem?
+    2. Describe the user's original issue clearly
     3. List the steps you took to resolve it
     4. Define next steps for the support engineer (if any)
     5. Determine the resolution outcome
 
     Always fill these fields (for structured trace):
-    - issue_summary: 2-3 sentences (20-150 words) in Russian
-    - steps_completed: 2-5 items in Russian - what you did
-    - next_steps: 1-3 items in Russian - what engineer should do
+    - issue_summary: original user's request analysis, 2-3 sentences (20-150 words) in Russian
+    - steps_completed: what you did to resolve the user's issue, 2-5 items in Russian
+    - next_steps: what the engineer should do, 1-3 items in Russian
     - outcome: resolved / partially_resolved / escalation_required / user_followup_needed / not_applicable
-
-    Set engineer_intervention_needed=TRUE if human help needed.
-    Set FALSE if answer fully resolves request (version queries, simple how-tos with complete KB answers, factual lookups).
+    - engineer_intervention_needed: set TRUE if human help needed.
+        Set FALSE if answer fully resolves request (version queries, simple how-tos with complete KB answers, factual lookups).
     """
 
     engineer_intervention_needed: bool = Field(
@@ -269,7 +275,8 @@ class ResolutionPlanResult(BaseModel):
     issue_summary: str = Field(
         default="",
         description=(
-            "User's issue description in 2-3 sentences (20-150 words). Russian. "
+            "Describe the user's original issue/request/problem/task in 2-3 sentences (20-150 words). "
+            "Russian. "
             "Always fill for structured trace."
         ),
     )
@@ -277,7 +284,8 @@ class ResolutionPlanResult(BaseModel):
     steps_completed: list[str] = Field(
         default_factory=list,
         description=(
-            "Steps you took to resolve the issue (2-5 items). Russian. "
+            "List the steps you took to resolve the issue (2-5 items). "
+            "Russian. "
             "Always fill for structured trace."
         ),
     )
@@ -296,7 +304,8 @@ class ResolutionPlanResult(BaseModel):
     next_steps: list[str] = Field(
         default_factory=list,
         description=(
-            "Recommended actions for support engineer (1-3 items). Russian. "
+            "List recommended actions for support engineer (1-3 items). "
+            "Russian. "
             "Always fill for structured trace."
         ),
     )
@@ -315,7 +324,7 @@ class ResolutionPlanResult(BaseModel):
     outcome: ResolutionOutcome | None = Field(
         default=None,
         description=(
-            "Resolution status based on the answer provided. "
+            "Give resolution status based on the answer provided. "
             "Use English enum value: "
             "'resolved': Fully resolved; "
             "'partially_resolved': Additional actions needed; "
@@ -324,6 +333,26 @@ class ResolutionPlanResult(BaseModel):
             "'not_applicable': Engineer plan not needed (engineer_intervention_needed=False)."
         ),
     )
+
+
+class UsageTotals(BaseModel):
+    """Aggregated usage metrics (tokens and cost) for a scope (turn or conversation)."""
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    reasoning_tokens: int = 0
+    cached_tokens: int = 0
+    cache_write_tokens: int = 0
+    cost: float = 0.0
+    upstream_cost: float = 0.0
+
+
+class UsageBlock(BaseModel):
+    """Usage for the current turn and conversation."""
+
+    turn: UsageTotals | None = None
+    conversation: UsageTotals | None = None
 
 
 class StructuredAgentResult(BaseModel):
@@ -348,3 +377,7 @@ class StructuredAgentResult(BaseModel):
     final_articles: list[dict[str, Any]] = Field(default_factory=list)
     answer_text: str = ""
     diagnostics: dict[str, Any] = Field(default_factory=dict)
+    usage: UsageBlock | None = Field(
+        default=None,
+        description="Usage accounting (tokens, cost) for this turn and conversation.",
+    )

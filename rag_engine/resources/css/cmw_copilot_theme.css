@@ -212,19 +212,36 @@
     }
 }
 
-/* Font-face declarations matching platform (paths must exist to take effect) */
+/* Open Sans – self-hosted via Gradio static file access.
+ * Files are stored under rag_engine/resources/fonts/OpenSans and served via
+ * /gradio_api/file=... according to Gradio's file access rules:
+ * https://www.gradio.app/guides/file-access
+ */
 @font-face {
     font-family: OpenSans;
-    src: local('Open Sans'),
-        url('/gradio_api/file=resources/fonts/OpenSans/OpenSans-Regular.ttf') format('truetype');
-    font-weight: 400;
+    src:
+        local('Open Sans Light'),
+        url('/gradio_api/file=rag_engine/resources/fonts/OpenSans/OpenSans-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
     font-display: fallback;
 }
 
 @font-face {
     font-family: OpenSans;
-    src: local('Open Sans Italic'),
-        url('/gradio_api/file=resources/fonts/OpenSans/OpenSans-Italic.ttf') format('truetype');
+    src:
+        local('Open Sans'),
+        url('/gradio_api/file=rag_engine/resources/fonts/OpenSans/OpenSans-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: fallback;
+}
+
+@font-face {
+    font-family: OpenSans;
+    src:
+        local('Open Sans Italic'),
+        url('/gradio_api/file=rag_engine/resources/fonts/OpenSans/OpenSans-Italic.ttf') format('truetype');
     font-weight: 400;
     font-style: italic;
     font-display: fallback;
@@ -232,25 +249,21 @@
 
 @font-face {
     font-family: OpenSans;
-    src: local('Open Sans Medium'),
-        url('/gradio_api/file=resources/fonts/OpenSans/OpenSans-Medium.ttf') format('truetype');
+    src:
+        local('Open Sans Medium'),
+        url('/gradio_api/file=rag_engine/resources/fonts/OpenSans/OpenSans-Medium.ttf') format('truetype');
     font-weight: 500;
+    font-style: normal;
     font-display: fallback;
 }
 
 @font-face {
     font-family: OpenSans;
-    src: local('Open Sans Light'),
-        url('/gradio_api/file=resources/fonts/OpenSans/OpenSans-Light.ttf') format('truetype');
-    font-weight: 300;
-    font-display: fallback;
-}
-
-@font-face {
-    font-family: OpenSans;
-    src: local('Open Sans Bold'),
-        url('/gradio_api/file=resources/fonts/OpenSans/OpenSans-Bold.ttf') format('truetype');
+    src:
+        local('Open Sans Bold'),
+        url('/gradio_api/file=rag_engine/resources/fonts/OpenSans/OpenSans-Bold.ttf') format('truetype');
     font-weight: 600;
+    font-style: normal;
     font-display: fallback;
 }
 

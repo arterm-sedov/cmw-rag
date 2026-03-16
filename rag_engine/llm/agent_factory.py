@@ -116,16 +116,28 @@ def create_rag_agent(
         modulus,
     ]
 
-    # Set tool_choice based on force_tool_choice parameter
-    # If True, force retrieve_context; if False, allow model to choose (None = auto)
-    tool_choice_value = (
-        {
+    # Set tool_choice based on force_tool_choice parameter and model capabilities.
+    # Some providers (e.g., OpenRouter Qwen 3.5) ignore or error on explicit tool_choice;
+    # for those models, we always fall back to automatic tool selection.
+    from rag_engine.llm.model_configs import MODEL_CONFIGS
+
+    cfg = MODEL_CONFIGS.get(selected_model, {})
+    supports_forced_tool_choice = cfg.get("supports_forced_tool_choice", True)
+
+    effective_force_tool_choice = bool(force_tool_choice and supports_forced_tool_choice)
+
+    if effective_force_tool_choice:
+        tool_choice_value: Any | None = {
             "type": "function",
             "function": {"name": "retrieve_context"},
         }
-        if force_tool_choice
-        else None
-    )
+    elif not supports_forced_tool_choice:
+        # For models that do not support explicit tool_choice routing (e.g. Qwen 3.5 on OpenRouter),
+        # make the intent explicit by using auto tool selection.
+        tool_choice_value = "auto"
+    else:
+        # Default: let the provider decide when to call tools.
+        tool_choice_value = None
 
     model_with_tools = base_model.bind_tools(
         all_tools,
@@ -170,7 +182,7 @@ def create_rag_agent(
         middleware=middleware_list,
     )
 
-    tool_choice_status = "forced" if force_tool_choice else "optional"
+    tool_choice_status = "forced" if effective_force_tool_choice else "optional"
     if override_model:
         logger.info(
             "RAG agent created with FALLBACK MODEL %s: tool choice=%s, "

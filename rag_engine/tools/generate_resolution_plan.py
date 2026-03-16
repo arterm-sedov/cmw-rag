@@ -17,49 +17,35 @@ logger = logging.getLogger(__name__)
 
 
 def _render_plan_markdown(plan: dict) -> str:
-    """Render resolution plan as markdown string."""
+    """Render resolution plan as markdown string. Skips headings for empty fields."""
     from rag_engine.api.i18n import get_text
 
+    parts = [f"# {get_text('srp_section_title')}"]
+
+    issue_summary = (plan.get("issue_summary") or "").strip()
+    if issue_summary:
+        parts.append(f"## {get_text('srp_issue_summary')}\n{issue_summary}")
+
+    steps = plan.get("steps_completed") or []
+    if steps:
+        steps_text = "\n".join(f"{i + 1}. {step}" for i, step in enumerate(steps))
+        parts.append(f"## {get_text('srp_steps_completed')}\n{steps_text}")
+
+    next_steps = plan.get("next_steps") or []
+    if next_steps:
+        next_steps_text = "\n".join(f"{i + 1}. {step}" for i, step in enumerate(next_steps))
+        parts.append(f"## {get_text('srp_next_steps')}\n{next_steps_text}")
+
     outcome = plan.get("outcome")
-    if outcome:
-        # Handle both enum value ("escalation_required") and full string ("ResolutionOutcome.ESCALATION_REQUIRED")
+    if outcome is not None:
         outcome_str = str(outcome)
         if "." in outcome_str:
-            outcome_str = outcome_str.split(".")[
-                -1
-            ].lower()  # Extract "ESCALATION_REQUIRED" -> "escalation_required"
+            outcome_str = outcome_str.split(".")[-1].lower()
         outcome_key = f"srp_outcome_{outcome_str}"
         outcome_text = get_text(outcome_key)
-    else:
-        outcome_text = get_text("srp_outcome_unknown")
+        parts.append(f"## {get_text('srp_result')}\n{outcome_text}")
 
-    steps = plan.get("steps_completed", [])
-    steps_text = (
-        "\n".join(f"{i + 1}. {step}" for i, step in enumerate(steps))
-        if steps
-        else get_text("srp_no_steps")
-    )
-
-    next_steps = plan.get("next_steps", [])
-    next_steps_text = (
-        "\n".join(f"{i + 1}. {step}" for i, step in enumerate(next_steps))
-        if next_steps
-        else get_text("srp_no_next_steps")
-    )
-
-    return f"""# {get_text("srp_section_title")}
-
-## {get_text("srp_issue_summary")}
-{plan.get("issue_summary", "")}
-
-## {get_text("srp_steps_completed")}
-{steps_text}
-
-## {get_text("srp_next_steps")}
-{next_steps_text}
-
-## {get_text("srp_result")}
-{outcome_text}"""
+    return "\n\n".join(parts)
 
 
 @tool(
@@ -91,5 +77,5 @@ async def generate_resolution_plan(
 
     return {
         "json": plan,
-        "markdown": _render_plan_markdown(plan) if engineer_intervention_needed else "",
+        "markdown": _render_plan_markdown(plan),
     }
