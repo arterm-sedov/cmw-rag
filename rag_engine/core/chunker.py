@@ -5,6 +5,8 @@ from typing import Iterable, List
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from rag_engine.llm.token_utils import TOKEN_ENCODING_NAME
+
 
 def create_code_safe_text_splitter(chunk_size: int, chunk_overlap: int) -> RecursiveCharacterTextSplitter:
     """Create a code-safe splitter using sensible separators.
@@ -22,6 +24,7 @@ def create_code_safe_text_splitter(chunk_size: int, chunk_overlap: int) -> Recur
         "",
     ]
     return RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        encoding_name=TOKEN_ENCODING_NAME,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         separators=separators,
