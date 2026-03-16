@@ -9,7 +9,8 @@ question, context, and reserved output/overhead.
 
 import tiktoken
 
-_ENCODING = tiktoken.get_encoding("cl100k_base")
+TOKEN_ENCODING_NAME = "cl100k_base"
+_ENCODING = tiktoken.get_encoding(TOKEN_ENCODING_NAME)
 
 
 def count_tokens(content: str) -> int:
