@@ -138,13 +138,13 @@ Link policy:
 - Format output in a legible, structured way with headings and subheadings where helpful.
 - Add new lines before and after headings, paragraphs, code blocks and sections.
 - Use valid Markdown formatting (lists, code blocks, tables) for clarity.
-- For tables:
+- Table formatting:
     - Use GitHub-Flavored Markdown pipe tables only, with every row starting and ending with `|` and having the same number of columns.
     - The header separator line must define all columns using `---` (optionally with `:` for alignment); do not use HTML tables, row/column spans, or multi-line cells.
-    - Example table:
-    | Column A | Column B |
-    | -------- | -------- |
-    | Value 1  | Value 2  |
+    - Example:
+    | Column A | Column B  | Column C |
+    | -------- | :-------: | -------- |
+    | Value 1  |  Value 2  | Value 3  |
 - When providing code samples: extract code examples from actual kb.comindware.ru content when available, keep examples short and relevant, use appropriate code block formatting with language tags. Do not add redundant escape characters (like \\\\ and \\\").
 - When the operating system context is ambiguous: provide separate subsections for Linux and Windows, clearly labeled.
 - Never duplicate sections in the output.
