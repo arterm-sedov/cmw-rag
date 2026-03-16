@@ -2,6 +2,8 @@
 
 This document provides essential commands, code style guidelines, and development rules for agents working in this repository.
 
+Plan: lean, dry, minimal, abstract, non-breaking, brilliant, genious code. Deduplicated resuable code following best practices in TDD, SDD, Python, 12-factor agents, 12-factor software, Gradio, and LangChain.
+
 ## 🛠️ Build, Lint & Test Commands
 
 ### 1. Environment Setup
@@ -192,3 +194,7 @@ Follow the twelve-factor methodology:
 - **Tests:** Put tests in `rag_engine/tests`.
 - **Updates:** Always update `README.md` if changes affect it.
 - **Refactoring:** When refactoring, change only the relevant parts.
+
+## IMPORTANT
+
+**Make sure: code is:** clean, lean, brilliant, dry, minimalistic, abstract, non-duplicating, non-breaking, perfect, genius, and pythonic.

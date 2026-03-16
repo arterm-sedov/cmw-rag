@@ -3,13 +3,14 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import logging
 import os
 import sys
 import time
 import uuid
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ from rag_engine.config.settings import get_allowed_fallback_models, settings  # 
 from rag_engine.llm.fallback import check_context_fallback
 from rag_engine.llm.llm_manager import LLMManager
 from rag_engine.llm.schemas import StructuredAgentResult
+from rag_engine.llm.usage_accounting import accumulate_conversation_usage
 from rag_engine.retrieval.embedder import create_embedder
 from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
@@ -73,6 +75,14 @@ def _article_to_dict(article) -> dict:
     }
 
 
+def _set_turn_timing_and_model(
+    agent_context: AgentContext, turn_start: float, current_model: str
+) -> None:
+    """Set turn_time_ms and model_used on AgentContext before yielding."""
+    agent_context.turn_time_ms = (time.perf_counter() - turn_start) * 1000
+    agent_context.model_used = f"{settings.default_llm_provider}: {current_model}"
+
+
 def _badge_html(*, label: str, value: str, color: str) -> str:
     return (
         f'<span style="background:{color};padding:2px 8px;border-radius:4px;">'
@@ -113,7 +123,6 @@ def format_confidence_badge_from_value(confidence: float | None) -> str:
 
 def format_queries_badge(query_traces: list[dict]) -> str:
     """Format queries count as colored HTML badge (localized)."""
-    label = i18n_resolve("queries_badge_label")
     count = len(query_traces) if query_traces else 0
     return format_queries_badge_from_count(count)
 
@@ -632,6 +641,7 @@ def _is_ui_only_message(msg: dict) -> bool:
             "cancelled",
             "user_intent_display",
             "disclaimer_display",
+            "reasoning",
         }:
             return True
 
@@ -787,6 +797,366 @@ def _process_text_chunk_for_streaming(
     return answer, disclaimer_prepended
 
 
+def _extract_stream_delta(chunk: str, accumulated: str) -> tuple[str, str]:
+    """Normalize provider chunking differences (incremental vs cumulative).
+
+    Some providers stream incremental deltas, others resend the full accumulated
+    text on each token. This helper returns only the new delta and updated
+    accumulated value for both modes.
+    """
+    if not chunk:
+        return "", accumulated
+
+    if not accumulated:
+        return chunk, chunk
+
+    # Cumulative content (common in some providers): full text re-sent each step.
+    if chunk.startswith(accumulated):
+        return chunk[len(accumulated) :], chunk
+    if accumulated.startswith("\n") and chunk.startswith(accumulated[1:]):
+        return chunk[len(accumulated) - 1 :], "\n" + chunk
+
+    # Exact or suffix duplicates: nothing new.
+    if chunk == accumulated or chunk == accumulated.lstrip("\n") or accumulated.endswith(chunk):
+        return "", accumulated
+
+    # Partial-overlap chunks: some providers resend tail + new content.
+    # Trim only meaningful overlaps to avoid false positives on tiny tokens.
+    max_k = min(len(accumulated), len(chunk))
+    overlap = 0
+    for k in range(max_k, 3, -1):
+        if accumulated.endswith(chunk[:k]):
+            overlap = k
+            break
+    if overlap:
+        delta = chunk[overlap:]
+        return delta, accumulated + delta
+
+    # Incremental chunk.
+    return chunk, accumulated + chunk
+
+
+# ── Think-tag constants ─────────────────────────────────────────────────────────
+_THINK_OPEN = "<think>"
+_THINK_CLOSE = "</think>"
+
+
+def _normalize_think_tags(text: str) -> str:
+    """Normalize escaped think-tag variants to canonical ASCII form.
+
+    Some providers emit JSON-escaped or HTML-escaped angle brackets, producing mixed
+    tag pairs like ``\\u003cthink>`` … ``</think>`` or ``<think>`` … ``&lt;/think&gt;``.
+    We only normalize when the chunk includes the substring "think" to avoid touching
+    unrelated escaped content.
+    """
+    if "think" not in text.lower():
+        return text
+    if "\\u003c" in text or "\\u003e" in text:
+        text = text.replace("\\u003c", "<").replace("\\u003e", ">")
+    if "&lt;" in text or "&gt;" in text:
+        text = text.replace("&lt;", "<").replace("&gt;", ">")
+    return text
+
+
+def _parse_think_tags(
+    text: str,
+    reasoning: str,
+    in_block: bool,
+) -> tuple[str, str, bool, bool]:
+    """Parse <think>...</think> tags from a streamed text chunk.
+
+    Content inside paired tags is accumulated in ``reasoning``.
+    An orphan ``</think>`` (no matching open in current state) signals the caller
+    to reclassify buffered inter-tool assistant text from chat to the reasoning bubble.
+    Escaped tag variants are normalised before parsing.
+
+    Returns:
+        (clean_text, reasoning, in_block, saw_orphan_close)
+    """
+    text = _normalize_think_tags(text)
+    if _THINK_OPEN not in text and _THINK_CLOSE not in text and not in_block:
+        return text, reasoning, in_block, False
+
+    clean: list[str] = []
+    saw_orphan = False
+    i = 0
+
+    while i < len(text):
+        if in_block:
+            end = text.find(_THINK_CLOSE, i)
+            if end == -1:
+                seg = text[i:]
+                if seg:
+                    reasoning = (reasoning + "\n" + seg) if reasoning else seg
+                break
+            seg = text[i:end]
+            if seg:
+                reasoning = (reasoning + "\n" + seg) if reasoning else seg
+            i = end + len(_THINK_CLOSE)
+            in_block = False
+        else:
+            open_i = text.find(_THINK_OPEN, i)
+            close_i = text.find(_THINK_CLOSE, i)
+            if close_i != -1 and (open_i == -1 or close_i < open_i):
+                # Orphan </think>: caller must reclassify buffered inter-tool text as reasoning.
+                saw_orphan = True
+                if close_i > i:
+                    clean.append(text[i:close_i])
+                i = close_i + len(_THINK_CLOSE)
+                continue
+            if open_i == -1:
+                clean.append(text[i:])
+                break
+            if open_i > i:
+                clean.append(text[i:open_i])
+            i = open_i + len(_THINK_OPEN)
+            in_block = True
+
+    return "".join(clean), reasoning, in_block, saw_orphan
+
+
+# ── Per-turn reasoning state ────────────────────────────────────────────────────
+
+@dataclasses.dataclass
+class _ReasoningCtx:
+    """Mutable per-turn state for streaming reasoning extraction and routing."""
+
+    buffer: str = ""            # accumulated reasoning text
+    in_block: bool = False      # currently inside a <think> block
+    inter_tool_text: str = ""   # text added to `answer` since last tool boundary
+    bubble_id: str | None = None
+    bubble_text: str = ""       # last content shown in the reasoning bubble
+
+
+def _has_generating_spinner(gradio_history: list, generating_answer_id: str) -> bool:
+    """Return True if the generating-answer spinner is already present in history."""
+    return any(
+        isinstance(msg, dict)
+        and msg.get("role") == "assistant"
+        and (msg.get("metadata") or {}).get("id") == generating_answer_id
+        for msg in gradio_history
+    )
+
+
+def _process_reasoning_chunk(
+    text: str,
+    ctx: _ReasoningCtx,
+    answer: str,
+    has_seen_tool_results: bool,
+    reasoning_enabled: bool,
+    harmony_parser,
+    gradio_history: list,
+    *,
+    harmony_strip_only: bool = False,
+) -> Generator[list, None, tuple[str, bool]]:
+    # NOTE: agent_chat_handler is an async generator — ``yield from`` is not
+    # allowed there.  Drive this generator with the helper below instead.
+    """Parse think tags, handle orphan reclassification, run harmony, route pre-tool text.
+
+    Mutates *ctx* in place. Yields ``list(gradio_history)`` on every UI change.
+    Use as::
+
+        text, should_skip = yield from _process_reasoning_chunk(...)
+        if should_skip:
+            continue          # text already routed to reasoning — skip chat streaming
+
+    ``should_skip=True`` means the chunk has been fully handled (routed to the
+    reasoning bubble or consumed as orphan context); the caller must ``continue``.
+    """
+    saw_orphan = False
+
+    if reasoning_enabled:
+        old_buffer = ctx.buffer
+        text, parsed_reasoning, ctx.in_block, saw_orphan = _parse_think_tags(
+            text, ctx.buffer, ctx.in_block
+        )
+        if harmony_strip_only:
+            # Strip <think> from text but don't add Harmony reasoning. Still add think-tag
+            # content: content_blocks may end with `<think>`, next chunk is continuation.
+            if parsed_reasoning and parsed_reasoning != old_buffer:
+                ctx.buffer = parsed_reasoning
+            else:
+                ctx.buffer = old_buffer
+        # Orphan </think> between tool calls → reclassify inter-tool chat text as reasoning.
+        if (
+            saw_orphan
+            and not harmony_strip_only
+            and has_seen_tool_results
+            and ctx.inter_tool_text
+        ):
+            sep = "\n" if ctx.buffer else ""
+            ctx.buffer += sep + ctx.inter_tool_text
+            answer = answer[: len(answer) - len(ctx.inter_tool_text)]
+            ctx.inter_tool_text = ""
+            ctx.bubble_id, ctx.bubble_text, _ = _upsert_reasoning_bubble(
+                gradio_history, ctx.buffer, ctx.bubble_id, ctx.bubble_text
+            )
+            _update_or_append_assistant_message(gradio_history, answer)
+            yield list(gradio_history)
+        if harmony_parser:
+            h_reasoning, h_final = harmony_parser.feed(text)
+            if h_reasoning and not harmony_strip_only:
+                ctx.buffer += h_reasoning
+            text = h_final
+        if ctx.buffer:
+            ctx.bubble_id, ctx.bubble_text, changed = _upsert_reasoning_bubble(
+                gradio_history, ctx.buffer, ctx.bubble_id, ctx.bubble_text
+            )
+            if changed:
+                yield list(gradio_history)
+        if not text or saw_orphan:
+            return text, True   # orphan context / empty chunk — caller must continue
+
+    # Remaining text is user-facing answer (from Harmony assistantfinal or outside <think>).
+    # Stream it to chat; do not route to reasoning bubble (fixes no-tool turns eating the answer).
+    return text, False
+
+
+async def _apply_reasoning_chunk(
+    text: str,
+    ctx: _ReasoningCtx,
+    answer: str,
+    has_seen_tool_results: bool,
+    reasoning_enabled: bool,
+    harmony_parser,
+    gradio_history: list,
+    *,
+    harmony_strip_only: bool = False,
+) -> tuple[list, str, bool]:
+    """Async-safe driver for ``_process_reasoning_chunk``.
+
+    ``yield from`` is forbidden inside async generators; this wrapper manually
+    iterates the sync helper and collects intermediate history yields.
+
+    Returns ``(history_frames, clean_text, should_skip)`` where *history_frames*
+    are the UI updates to yield in the caller, and *should_skip* signals that the
+    text has already been routed (caller must ``continue``).
+    """
+    gen = _process_reasoning_chunk(
+        text, ctx, answer, has_seen_tool_results, reasoning_enabled, harmony_parser, gradio_history,
+        harmony_strip_only=harmony_strip_only,
+    )
+    frames: list[list] = []
+    try:
+        while True:
+            frames.append(next(gen))
+    except StopIteration as exc:
+        clean_text, should_skip = exc.value
+    return frames, clean_text, should_skip
+
+
+def _truncate_reasoning_text(
+    reasoning: str,
+    max_chars: int = 4000,
+    *,
+    max_lines: int | None = None,
+    include_note: bool = False,
+) -> str:
+    """Render a tail slice of reasoning for the UI bubble.
+
+    The full reasoning trace stays in diagnostics; the bubble only shows a
+    short tail (by lines and/or characters), optionally with a footer note.
+    """
+    text = (reasoning or "").strip()
+    if not text:
+        return ""
+
+    # Prefer trimming by last *max_lines* to give a rotating multi-line window.
+    if max_lines is not None and max_lines > 0:
+        lines = text.splitlines()
+        if len(lines) > max_lines:
+            tail_lines = lines[-max_lines:]
+            tail = "\n".join(tail_lines).lstrip()
+            if include_note:
+                return "…" + tail + "\n\n...[обрезано для краткости]"
+            return "…" + tail
+
+    # Fallback/secondary guard: trim by characters if needed.
+    if len(text) <= max_chars:
+        return text
+    tail = text[-max_chars:].lstrip()
+    if include_note:
+        return "…" + tail + "\n\n...[обрезано для краткости]"
+    return "…" + tail
+
+
+def _find_ui_message_by_id(
+    gradio_history: list[dict], ui_type: str, message_id: str | None
+) -> dict | None:
+    """Find UI message by type and metadata id."""
+    if not message_id:
+        return None
+    for i in range(len(gradio_history) - 1, -1, -1):
+        msg = gradio_history[i]
+        if not isinstance(msg, dict):
+            continue
+        md = msg.get("metadata") or {}
+        if md.get("ui_type") == ui_type and md.get("id") == message_id:
+            return msg
+    return None
+
+
+def _upsert_reasoning_bubble(
+    gradio_history: list[dict],
+    reasoning_buffer: str,
+    reasoning_bubble_id: str | None,
+    last_reasoning_bubble_text: str,
+) -> tuple[str | None, str, bool]:
+    """Create or update the reasoning bubble, returning (id, last_text, changed)."""
+    from rag_engine.api.stream_helpers import yield_reasoning_bubble
+    from rag_engine.config.settings import settings
+
+    tail_lines = max(settings.ui_reasoning_tail_lines, 1)
+    truncated = _truncate_reasoning_text(reasoning_buffer, max_lines=tail_lines)
+    if not truncated or truncated == last_reasoning_bubble_text:
+        return reasoning_bubble_id, last_reasoning_bubble_text, False
+
+    msg = _find_ui_message_by_id(gradio_history, "reasoning", reasoning_bubble_id)
+    if msg is None:
+        bubble = yield_reasoning_bubble(truncated)
+        reasoning_bubble_id = (bubble.get("metadata") or {}).get("id")
+        gradio_history.append(bubble)
+        return reasoning_bubble_id, bubble["content"], True
+
+    msg["content"] = truncated
+    return reasoning_bubble_id, truncated, True
+
+
+def _finalize_reasoning_bubble(
+    gradio_history: list[dict],
+    reasoning_bubble_id: str | None,
+    reasoning_buffer: str = "",
+) -> str | None:
+    """Mark reasoning bubble as done, creating one if needed."""
+    from rag_engine.api.stream_helpers import yield_reasoning_bubble
+    from rag_engine.config.settings import settings
+
+    tail_lines = max(settings.ui_reasoning_tail_lines, 1)
+    msg = _find_ui_message_by_id(gradio_history, "reasoning", reasoning_bubble_id)
+    if msg is None and reasoning_buffer.strip():
+        bubble = yield_reasoning_bubble(
+            _truncate_reasoning_text(
+                reasoning_buffer,
+                max_lines=tail_lines,
+                include_note=True,
+            )
+        )
+        (bubble.get("metadata") or {})["status"] = "done"
+        gradio_history.append(bubble)
+        return (bubble.get("metadata") or {}).get("id")
+
+    if msg is not None:
+        md = msg.get("metadata") or {}
+        if reasoning_buffer.strip():
+            msg["content"] = _truncate_reasoning_text(
+                reasoning_buffer,
+                max_lines=tail_lines,
+                include_note=True,
+            )
+        md["status"] = "done"
+    return reasoning_bubble_id
+
+
 def _extract_content_string(content: str | list | None) -> str:
     """Extract plain text string from Gradio message content.
 
@@ -846,14 +1216,38 @@ def _update_or_append_assistant_message(gradio_history: list[dict], content: str
         gradio_history: List of Gradio message dictionaries
         content: Content to set for the assistant message
     """
+    # Final safety net: never render leaked <think> tags in chat bubbles, but avoid
+    # corrupting normal answers or literal <think> examples.
+    text = str(content)
+    # Fast path: no think-tags present.
+    if _THINK_OPEN not in text and _THINK_CLOSE not in text and "\\u003cthink" not in text:
+        sanitized_content = text
+    else:
+        # Minimal heuristic:
+        # - When reasoning is enabled, strip all <think> content from UI (reasoning is
+        #   already captured structurally elsewhere).
+        # - When disabled, treat only a leading or whole-turn <think> block as
+        #   reasoning; leave mid-sentence tag examples untouched.
+        reasoning_enabled = getattr(settings, "llm_reasoning_enabled", False)
+        if reasoning_enabled:
+            sanitized_content, _, _, _ = _parse_think_tags(text, "", False)
+        else:
+            # Leading-block heuristic: preserve prefix before the first <think>;
+            # if text starts directly with <think>, rely on parser to drop that
+            # block and keep any following final answer.
+            stripped = text.lstrip()
+            if stripped.startswith(_THINK_OPEN):
+                sanitized_content, _, _, _ = _parse_think_tags(text, "", False)
+            else:
+                sanitized_content = text
     if (
         gradio_history
         and gradio_history[-1].get("role") == "assistant"
         and not gradio_history[-1].get("metadata")
     ):
-        gradio_history[-1] = {"role": "assistant", "content": content}
+        gradio_history[-1] = {"role": "assistant", "content": sanitized_content}
     else:
-        gradio_history.append({"role": "assistant", "content": content})
+        gradio_history.append({"role": "assistant", "content": sanitized_content})
 
 
 async def agent_chat_handler(
@@ -903,6 +1297,7 @@ async def agent_chat_handler(
     # This ensures we start from ChatInterface's current state and build incrementally
     # Then we always yield the full working_history list
     gradio_history = list(history) if history else []
+    turn_start = time.perf_counter()
 
     # Log history state for debugging memory issues
     logger.info(
@@ -1162,10 +1557,17 @@ async def agent_chat_handler(
             logger.info("Calling SGR planning LLM with %d messages", len(messages))
             yield list(gradio_history)
 
+            from rag_engine.llm.model_configs import MODEL_CONFIGS
             from rag_engine.tools.analyse_user_request import analyse_user_request
 
+            sgr_model = selected_model or settings.default_model
+            sgr_cfg = MODEL_CONFIGS.get(sgr_model, {})
+            sgr_supports_forced = sgr_cfg.get("supports_forced_tool_choice", True)
+            sgr_tool_choice = (
+                "analyse_user_request" if sgr_supports_forced else "auto"
+            )
             sgr_llm_forced = sgr_llm.bind_tools(
-                [analyse_user_request], tool_choice="analyse_user_request"
+                [analyse_user_request], tool_choice=sgr_tool_choice
             )
             response = await sgr_llm_forced.ainvoke(messages)
             logger.info("SGR LLM returned: %s", type(response))
@@ -1321,6 +1723,23 @@ async def agent_chat_handler(
         # Only stream text content when NOT executing tools
         tool_executing = False
 
+        # Per-turn reasoning state: think-tag parser + bubble management.
+        rctx = _ReasoningCtx()
+        reasoning_stream_text: str = ""
+        reasoning_enabled: bool = getattr(settings, "llm_reasoning_enabled", False)
+        content_stream_text: str = ""
+        has_seen_content_blocks_reasoning: bool = False
+        # Harmony format (GPT-OSS) — stateful parser for streaming channel separation.
+        from rag_engine.api.harmony_parser import HarmonyStreamParser
+        from rag_engine.llm.model_configs import MODEL_CONFIGS
+
+        harmony_enabled = bool(
+            MODEL_CONFIGS.get(current_model or "", {}).get("harmony_format", False)
+        )
+        harmony_parser: HarmonyStreamParser | None = (
+            HarmonyStreamParser() if harmony_enabled else None
+        )
+
         # Pass accumulated context to agent via typed context parameter
         # Tools can access this via runtime.context (typed, clean!)
         agent_context = AgentContext(
@@ -1458,6 +1877,7 @@ async def agent_chat_handler(
                         logger.debug("Tool result received, %d total results", len(tool_results))
                         tool_executing = False
                         has_seen_tool_results = True
+                        rctx.inter_tool_text = ""  # new inter-tool phase; reset reclassification window
 
                         # Flush any middleware-enqueued UI messages BEFORE we mutate bubbles to completed.
                         # This guarantees the user sees pending -> complete as two yields,
@@ -1745,6 +2165,7 @@ async def agent_chat_handler(
 
                         if not tool_executing:
                             tool_executing = True
+                            rctx.inter_tool_text = ""  # tool boundary; reset reclassification window
                             # Remove generating_answer block when a new tool call is detected
                             # So the next generating_answer block can appear after this tool completes
                             if has_seen_tool_results:
@@ -1805,8 +2226,39 @@ async def agent_chat_handler(
 
                     # Process content blocks for final answer text streaming
                     text_chunk_found = False
-                    if hasattr(token, "content_blocks") and token.content_blocks:
-                        for block in token.content_blocks:
+
+                    token_content_blocks = getattr(token, "content_blocks", None) or []
+                    has_reasoning_in_blocks = any(
+                        b.get("type") == "reasoning" for b in token_content_blocks
+                    )
+                    # Skip akw.reasoning_content when content_blocks has reasoning (avoid double-processing).
+                    akw = getattr(token, "additional_kwargs", None) or {}
+                    if (
+                        reasoning_enabled
+                        and not has_reasoning_in_blocks
+                        and (reasoning_content := akw.get("reasoning_content"))
+                    ):
+                        reasoning_delta, reasoning_stream_text = _extract_stream_delta(
+                            str(reasoning_content), reasoning_stream_text
+                        )
+                        if reasoning_delta:
+                            rctx.buffer += reasoning_delta
+                            (
+                                rctx.bubble_id,
+                                rctx.bubble_text,
+                                reasoning_changed,
+                            ) = _upsert_reasoning_bubble(
+                                gradio_history,
+                                rctx.buffer,
+                                rctx.bubble_id,
+                                rctx.bubble_text,
+                            )
+                            if reasoning_changed:
+                                yield list(gradio_history)
+                        # Do not add reasoning to answer; continue to process content_blocks or token.content
+
+                    if token_content_blocks:
+                        for block in token_content_blocks:
                             if block.get("type") == "tool_call_chunk":
                                 # Tool call chunk detected - emit metadata if not already done
                                 if not tool_executing:
@@ -1859,17 +2311,78 @@ async def agent_chat_handler(
                                 # Skip displaying the tool call itself and any content
                                 continue
 
+                            elif block.get("type") == "reasoning" and reasoning_enabled:
+                                has_seen_content_blocks_reasoning = True
+                                reasoning_text = str(
+                                    block.get("reasoning")
+                                    or block.get("text")
+                                    or ""
+                                )
+                                # Strip Harmony channel label that may leak into reasoning blocks.
+                                if not rctx.buffer and reasoning_text.lstrip().startswith("analysis"):
+                                    reasoning_text = reasoning_text.lstrip().removeprefix("analysis")
+                                if reasoning_text:
+                                    reasoning_delta, reasoning_stream_text = _extract_stream_delta(
+                                        reasoning_text, reasoning_stream_text
+                                    )
+                                    if reasoning_delta:
+                                        rctx.buffer += reasoning_delta
+
+                                    (
+                                        rctx.bubble_id,
+                                        rctx.bubble_text,
+                                        reasoning_changed,
+                                    ) = _upsert_reasoning_bubble(
+                                        gradio_history,
+                                        rctx.buffer,
+                                        rctx.bubble_id,
+                                        rctx.bubble_text,
+                                    )
+                                    if reasoning_changed:
+                                        yield list(gradio_history)
+
+                                # Prevent fallback token.content path from re-processing.
+                                text_chunk_found = True
+                                # Do not stream reasoning as part of the main answer.
+                                continue
+
                             elif block.get("type") == "text" and block.get("text"):
                                 # Only stream text if we're not currently executing tools
                                 # This prevents streaming the agent's "reasoning" about tool calls
                                 if not tool_executing:
-                                    text_chunk = block["text"]
+                                    # We handled text via content_blocks, skip fallback token.content.
+                                    text_chunk_found = True
+                                    raw_text_chunk = str(block["text"])
+                                    text_chunk, content_stream_text = _extract_stream_delta(
+                                        raw_text_chunk, content_stream_text
+                                    )
+                                    if not text_chunk:
+                                        continue
+                                    strip_only = (
+                                        has_seen_content_blocks_reasoning or has_reasoning_in_blocks
+                                    )
+                                    # content_blocks reasoning may end with `<think>`; next chunk is continuation
+                                    if strip_only and rctx.buffer.rstrip().endswith(_THINK_OPEN):
+                                        rctx.in_block = True
+                                    frames, text_chunk, should_skip = await _apply_reasoning_chunk(
+                                        text_chunk, rctx, answer,
+                                        has_seen_tool_results, reasoning_enabled,
+                                        harmony_parser,
+                                        gradio_history,
+                                        harmony_strip_only=strip_only,
+                                    )
+                                    for _frame in frames:
+                                        yield _frame
+                                    if should_skip:
+                                        continue
 
-                                    # On first text chunk: inject disclaimer as separate message (UI only), then stream answer
+                                    # First answer chunk: finalize bubble, disclaimer, spinners.
                                     if not answer:
-                                        if (
-                                            not disclaimer_prepended
-                                            and not _disclaimer_injected_in_history(gradio_history)
+                                        rctx.bubble_id = _finalize_reasoning_bubble(
+                                            gradio_history, rctx.bubble_id, rctx.buffer,
+                                        )
+                                        if not disclaimer_prepended and not _disclaimer_injected_in_history(
+                                            gradio_history
                                         ):
                                             from rag_engine.api.stream_helpers import (
                                                 yield_disclaimer_display,
@@ -1879,44 +2392,27 @@ async def agent_chat_handler(
                                             disclaimer_prepended = True
                                             yield list(gradio_history)
                                         remove_message_by_id(gradio_history, thinking_id)
-                                        update_message_status_in_history(
-                                            gradio_history, "search_started", "done"
-                                        )
-                                        update_message_status_in_history(
-                                            gradio_history, "sgr_planning", "done"
-                                        )
-                                        # Show "Generating Answer" spinner while answer is being generated
-                                        if has_seen_tool_results:
+                                        update_message_status_in_history(gradio_history, "search_started", "done")
+                                        update_message_status_in_history(gradio_history, "sgr_planning", "done")
+                                        if has_seen_tool_results and not _has_generating_spinner(
+                                            gradio_history, generating_answer_id
+                                        ):
                                             from rag_engine.api.stream_helpers import (
                                                 yield_generating_answer,
                                             )
 
-                                            has_generating = any(
-                                                isinstance(msg, dict)
-                                                and msg.get("role") == "assistant"
-                                                and (msg.get("metadata") or {}).get("id")
-                                                == generating_answer_id
-                                                for msg in gradio_history
+                                            gradio_history.append(
+                                                yield_generating_answer(block_id=generating_answer_id)
                                             )
-                                            if not has_generating:
-                                                generating_msg = yield_generating_answer(
-                                                    block_id=generating_answer_id
-                                                )
-                                                gradio_history.append(generating_msg)
-                                                yield list(gradio_history)
+                                            yield list(gradio_history)
 
-                                    answer, disclaimer_prepended = (
-                                        _process_text_chunk_for_streaming(
-                                            text_chunk,
-                                            answer,
-                                            disclaimer_prepended,
-                                            has_seen_tool_results,
-                                        )
+                                    prev_answer_len = len(answer)
+                                    answer, disclaimer_prepended = _process_text_chunk_for_streaming(
+                                        text_chunk, answer, disclaimer_prepended, has_seen_tool_results,
                                     )
-                                    # Update last message (answer) in history and yield full history
+                                    rctx.inter_tool_text += answer[prev_answer_len:]
                                     _update_or_append_assistant_message(gradio_history, answer)
                                     yield list(gradio_history)
-                                    text_chunk_found = True
 
                     # Fallback: If no text found in content_blocks, check token.content directly
                     # This handles vLLM and other providers that provide text directly in token.content
@@ -1924,25 +2420,38 @@ async def agent_chat_handler(
                     if not text_chunk_found and is_ai_message and not tool_executing:
                         token_content = str(getattr(token, "content", ""))
                         if token_content:
-                            # LangChain streaming provides incremental chunks, but handle both cases for robustness
-                            new_chunk = None
-                            if answer and token_content.startswith(answer):
-                                # Cumulative content - extract only the new part
-                                new_chunk = token_content[len(answer) :]
-                            elif token_content != answer:
-                                # Incremental chunk - use as-is (typical case)
-                                new_chunk = token_content
+                            token_content, content_stream_text = _extract_stream_delta(
+                                token_content, content_stream_text
+                            )
+                            if not token_content:
+                                continue
 
-                            if new_chunk:
-                                # As soon as answer text starts streaming, remove the generating-answer spinner.
-                                if not answer and has_seen_tool_results:
+                            strip_only = (
+                                has_seen_content_blocks_reasoning or has_reasoning_in_blocks
+                            )
+                            if strip_only and rctx.buffer.rstrip().endswith(_THINK_OPEN):
+                                rctx.in_block = True
+                            frames, token_content, should_skip = await _apply_reasoning_chunk(
+                                token_content, rctx, answer,
+                                has_seen_tool_results, reasoning_enabled,
+                                harmony_parser,
+                                gradio_history,
+                                harmony_strip_only=strip_only,
+                            )
+                            for _frame in frames:
+                                yield _frame
+                            if should_skip or not token_content:
+                                continue
+
+                            # First answer chunk: remove spinner, finalize bubble, disclaimer.
+                            if not answer:
+                                if has_seen_tool_results:
                                     remove_message_by_id(gradio_history, generating_answer_id)
-
-                                # On first text chunk: inject disclaimer as separate message (UI only)
-                                if (
-                                    not answer
-                                    and not disclaimer_prepended
-                                    and not _disclaimer_injected_in_history(gradio_history)
+                                rctx.bubble_id = _finalize_reasoning_bubble(
+                                    gradio_history, rctx.bubble_id, rctx.buffer,
+                                )
+                                if not disclaimer_prepended and not _disclaimer_injected_in_history(
+                                    gradio_history
                                 ):
                                     from rag_engine.api.stream_helpers import (
                                         yield_disclaimer_display,
@@ -1951,35 +2460,27 @@ async def agent_chat_handler(
                                     gradio_history.append(yield_disclaimer_display())
                                     disclaimer_prepended = True
                                     yield list(gradio_history)
-                                # Show "Generating Answer" spinner on first chunk after tool results
-                                if not answer and has_seen_tool_results:
+                                if has_seen_tool_results and not _has_generating_spinner(
+                                    gradio_history, generating_answer_id
+                                ):
                                     from rag_engine.api.stream_helpers import (
                                         yield_generating_answer,
                                     )
 
-                                    has_generating = any(
-                                        isinstance(msg, dict)
-                                        and msg.get("role") == "assistant"
-                                        and (msg.get("metadata") or {}).get("id")
-                                        == generating_answer_id
-                                        for msg in gradio_history
+                                    gradio_history.append(
+                                        yield_generating_answer(block_id=generating_answer_id)
                                     )
-                                    if not has_generating:
-                                        generating_msg = yield_generating_answer(
-                                            block_id=generating_answer_id
-                                        )
-                                        gradio_history.append(generating_msg)
-                                        yield list(gradio_history)
+                                    yield list(gradio_history)
 
-                                answer, disclaimer_prepended = _process_text_chunk_for_streaming(
-                                    new_chunk, answer, disclaimer_prepended, has_seen_tool_results
-                                )
-                                # Update last message (answer) in history and yield full history
-                                _update_or_append_assistant_message(gradio_history, answer)
-                                # Track incomplete response for memory saving if cancelled (pattern from test script)
-                                incomplete_response = answer
-                                final_response = answer  # Update final response as we stream
-                                yield list(gradio_history)
+                            prev_answer_len = len(answer)
+                            answer, disclaimer_prepended = _process_text_chunk_for_streaming(
+                                token_content, answer, disclaimer_prepended, has_seen_tool_results
+                            )
+                            rctx.inter_tool_text += answer[prev_answer_len:]
+                            _update_or_append_assistant_message(gradio_history, answer)
+                            incomplete_response = answer
+                            final_response = answer
+                            yield list(gradio_history)
 
                 # Handle "updates" mode for agent state updates
                 elif stream_mode == "updates":
@@ -2074,6 +2575,26 @@ async def agent_chat_handler(
                         gradio_history.append(chunk)
                         yield list(gradio_history)
                     elif isinstance(chunk, str):
+                        chunk, rctx.buffer, rctx.in_block, _ = _parse_think_tags(
+                            chunk,
+                            rctx.buffer,
+                            rctx.in_block,
+                        )
+                        if reasoning_enabled and rctx.buffer:
+                            (
+                                rctx.bubble_id,
+                                rctx.bubble_text,
+                                reasoning_changed,
+                            ) = _upsert_reasoning_bubble(
+                                gradio_history,
+                                rctx.buffer,
+                                rctx.bubble_id,
+                                rctx.bubble_text,
+                            )
+                            if reasoning_changed:
+                                yield list(gradio_history)
+                        if not chunk:
+                            continue
                         # Text chunk - remove generating_answer block on first chunk
                         if not answer and has_seen_tool_results:
                             remove_message_by_id(gradio_history, generating_answer_id)
@@ -2111,11 +2632,14 @@ async def agent_chat_handler(
             yield list(gradio_history)
             try:
                 agent_context.final_answer = incomplete_response or ""
-                agent_context.diagnostics = {
+                cancelled_diagnostics: dict[str, Any] = {
                     "model": current_model,
                     "cancelled": True,
                     "tool_results_count": len(tool_results),
                 }
+                if getattr(settings, "llm_reasoning_enabled", False) and rctx.buffer.strip():
+                    cancelled_diagnostics["reasoning"] = rctx.buffer.strip()
+                agent_context.diagnostics = cancelled_diagnostics
             except Exception:
                 pass
             yield agent_context
@@ -2169,7 +2693,9 @@ async def agent_chat_handler(
             logger.info(f"Saved complete response to memory ({len(final_response)} chars)")
 
         # Remove transient blocks and mark pending spinners done before final yield
-        from rag_engine.api.stream_helpers import update_message_status_in_history
+        from rag_engine.api.stream_helpers import (
+            update_message_status_in_history,
+        )
 
         remove_message_by_id(gradio_history, thinking_id)
         remove_message_by_id(gradio_history, generating_answer_id)
@@ -2184,6 +2710,27 @@ async def agent_chat_handler(
         update_message_status_in_history(gradio_history, "search_started", "done")
         # Note: sgr_planning is marked done by SGR section itself, don't mark here
         logger.info("Marked search spinner as done")
+
+        # Flush any remaining Harmony buffer content held back for partial-marker safety.
+        if harmony_parser:
+            h_reasoning, h_final = harmony_parser.flush()
+            if h_reasoning and not has_seen_content_blocks_reasoning:
+                rctx.buffer += h_reasoning
+            if h_final:
+                answer += h_final
+                _update_or_append_assistant_message(gradio_history, answer)
+
+        # === Reasoning bubble (optional, UI-only) ===
+        if getattr(settings, "llm_reasoning_enabled", False) and rctx.buffer.strip():
+            try:
+                rctx.bubble_id = _finalize_reasoning_bubble(
+                    gradio_history,
+                    rctx.bubble_id,
+                    rctx.buffer,
+                )
+                logger.info("Finalized reasoning bubble (length=%d)", len(rctx.buffer.strip()))
+            except Exception:
+                logger.warning("Failed to inject reasoning bubble", exc_info=True)
 
         # ========== SRP (Support Resolution Plan) - if enabled ==========
         resolution_plan = None
@@ -2213,7 +2760,7 @@ async def agent_chat_handler(
 
                 srp_analysis_request = {
                     "role": "user",
-                    "content": srp_context + "Analyze the above assistant answer quality.",
+                    "content": srp_context,
                 }
                 srp_messages.append(srp_analysis_request)
 
@@ -2228,10 +2775,17 @@ async def agent_chat_handler(
                 )._chat_model()
 
                 # Use bind_tools + tool_choice for forced tool execution
+                from rag_engine.llm.model_configs import MODEL_CONFIGS
                 from rag_engine.tools.generate_resolution_plan import generate_resolution_plan
 
+                srp_model = current_model or settings.default_model
+                srp_cfg = MODEL_CONFIGS.get(srp_model, {})
+                srp_supports_forced = srp_cfg.get("supports_forced_tool_choice", True)
+                srp_tool_choice = (
+                    "generate_resolution_plan" if srp_supports_forced else "auto"
+                )
                 srp_llm_forced = srp_llm.bind_tools(
-                    [generate_resolution_plan], tool_choice="generate_resolution_plan"
+                    [generate_resolution_plan], tool_choice=srp_tool_choice
                 )
                 logger.info("Calling SRP LLM...")
                 response = await srp_llm_forced.ainvoke(srp_messages)
@@ -2265,11 +2819,16 @@ async def agent_chat_handler(
 
         # ========== Render Plan Section ==========
         plan_section = ""
-        if (
-            resolution_plan
-            and resolution_plan.get("engineer_intervention_needed", False)
-            and resolution_markdown
-        ):
+        srp_always = getattr(settings, "srp_always_render_plan", False)
+        if srp_always:
+            show_plan = bool(resolution_markdown)
+        else:
+            show_plan = bool(
+                resolution_plan
+                and resolution_plan.get("engineer_intervention_needed", False)
+                and resolution_markdown
+            )
+        if show_plan:
             plan_section = "\n\n---\n\n" + resolution_markdown
             logger.info("Plan section rendered")
 
@@ -2321,14 +2880,20 @@ async def agent_chat_handler(
                 logger.debug(
                     f"agent_chat_handler: sample rerank_scores from final_articles: {scores}"
                 )
-            agent_context.diagnostics = {
+            # Preserve diagnostics and include optional reasoning trace if present.
+            diagnostics: dict[str, Any] = {
                 "model": current_model,
                 "stream_chunks": stream_chunk_count,
                 "tool_results_count": len(tool_results),
                 "conversation_tokens": agent_context.conversation_tokens,
                 "accumulated_tool_tokens": agent_context.accumulated_tool_tokens,
                 "guard": guard_debug_info,
+                "session_id": session_id,
             }
+            if getattr(settings, "llm_reasoning_enabled", False) and rctx.buffer.strip():
+                diagnostics["reasoning"] = rctx.buffer.strip()
+            agent_context.diagnostics = diagnostics
+            _set_turn_timing_and_model(agent_context, turn_start, current_model)
             logger.info(
                 f"agent_chat_handler: yielding AgentContext - "
                 f"sgr_plan_present={agent_context.sgr_plan is not None}, "
@@ -2429,6 +2994,7 @@ async def agent_chat_handler(
                             if hasattr(token, "type") and token.type == "tool":
                                 tool_results.append(token.content)
                                 has_seen_tool_results = True
+                                rctx.inter_tool_text = ""  # new inter-tool phase; reset reclassification window
                                 # keep agent_context.accumulated_tool_tokens updated
                                 _, acc_tool_toks = estimate_accumulated_tokens([], tool_results)
                                 agent_context.accumulated_tool_tokens = acc_tool_toks
@@ -2458,7 +3024,29 @@ async def agent_chat_handler(
                             if hasattr(token, "content_blocks") and token.content_blocks:
                                 for block in token.content_blocks:
                                     if block.get("type") == "text" and block.get("text"):
-                                        text_chunk = block["text"]
+                                        text_chunk = str(block["text"])
+                                        text_chunk, rctx.buffer, rctx.in_block, _ = (
+                                            _parse_think_tags(
+                                                text_chunk,
+                                                rctx.buffer,
+                                                rctx.in_block,
+                                            )
+                                        )
+                                        if reasoning_enabled and rctx.buffer:
+                                            (
+                                                rctx.bubble_id,
+                                                rctx.bubble_text,
+                                                reasoning_changed,
+                                            ) = _upsert_reasoning_bubble(
+                                                gradio_history,
+                                                rctx.buffer,
+                                                rctx.bubble_id,
+                                                rctx.bubble_text,
+                                            )
+                                            if reasoning_changed:
+                                                yield list(gradio_history)
+                                        if not text_chunk:
+                                            continue
 
                                         # Remove generating_answer block on first text chunk
                                         if not answer and has_seen_tool_results:
@@ -2547,6 +3135,7 @@ async def agent_chat_handler(
                             agent_context.sgr_plan = sgr_plan_dict
                     except Exception:
                         pass
+                    _set_turn_timing_and_model(agent_context, turn_start, current_model)
                     yield agent_context
                     return
             except Exception as retry_exc:  # If fallback retry fails, emit original-style error
@@ -2634,7 +3223,7 @@ else:
     # For standalone app
     chatbot_height = "70vh"  # 70% of viewport height for standalone
     chatbot_max_height = "70vh"  # Same as height for consistency
-    chat_title = "Ассистент базы знаний Comindware Platform"
+    chat_title = "Ассистент инженера поддержки"
 
 # Force agent-based handler; legacy direct handler removed.
 # handler_fn is assigned after chat_with_metadata is defined (below).
@@ -2863,7 +3452,7 @@ async def ask_comindware_structured(
 
     from pydantic import ValidationError
 
-    from rag_engine.llm.schemas import SGRPlanResult
+    from rag_engine.llm.schemas import SGRPlanResult, UsageBlock, UsageTotals
 
     plan_dict = context.sgr_plan or {}
     try:
@@ -2892,15 +3481,82 @@ async def ask_comindware_structured(
         if scores:
             answer_confidence = sum(scores) / len(scores)
 
+    # Build usage block from AgentContext (per-turn) and accumulate per-session conversation usage.
+    usage_turn_summary = getattr(context, "usage_turn_summary", {}) or {}
+    usage_conversation_summary: dict[str, float] | None = None
+    if isinstance(usage_turn_summary, dict):
+        # Compute per-session conversation totals (including total_conversation_time_ms).
+        session_id = (context.diagnostics or {}).get("session_id") if context.diagnostics else None
+        turn_summary = {
+            **(usage_turn_summary or {}),
+            "turn_time_ms": getattr(context, "turn_time_ms", 0) or 0,
+        }
+        usage_conversation_summary = accumulate_conversation_usage(
+            session_id=session_id,
+            turn_summary=turn_summary,
+        )
+
+        usage_turn = UsageTotals(
+            prompt_tokens=int(usage_turn_summary.get("prompt_tokens", 0) or 0),
+            completion_tokens=int(usage_turn_summary.get("completion_tokens", 0) or 0),
+            total_tokens=int(usage_turn_summary.get("total_tokens", 0) or 0),
+            reasoning_tokens=int(usage_turn_summary.get("reasoning_tokens", 0) or 0),
+            cached_tokens=int(usage_turn_summary.get("cached_tokens", 0) or 0),
+            cache_write_tokens=int(usage_turn_summary.get("cache_write_tokens", 0) or 0),
+            cost=float(usage_turn_summary.get("cost", 0.0) or 0.0),
+            upstream_cost=float(usage_turn_summary.get("upstream_cost", 0.0) or 0.0),
+        )
+        if isinstance(usage_conversation_summary, dict):
+            usage_conversation = UsageTotals(
+                prompt_tokens=int(usage_conversation_summary.get("prompt_tokens", 0) or 0),
+                completion_tokens=int(
+                    usage_conversation_summary.get("completion_tokens", 0) or 0
+                ),
+                total_tokens=int(usage_conversation_summary.get("total_tokens", 0) or 0),
+                reasoning_tokens=int(
+                    usage_conversation_summary.get("reasoning_tokens", 0) or 0
+                ),
+                cached_tokens=int(usage_conversation_summary.get("cached_tokens", 0) or 0),
+                cache_write_tokens=int(
+                    usage_conversation_summary.get("cache_write_tokens", 0) or 0
+                ),
+                cost=float(usage_conversation_summary.get("cost", 0.0) or 0.0),
+                upstream_cost=float(
+                    usage_conversation_summary.get("upstream_cost", 0.0) or 0.0
+                ),
+            )
+        else:
+            usage_conversation = usage_turn
+        usage_block: UsageBlock | None = UsageBlock(
+            turn=usage_turn,
+            conversation=usage_conversation,
+        )
+    else:
+        usage_block = None
+        usage_conversation_summary = None
+
+    # Augment diagnostics with usage_conversation and timing/model metadata for downstream mapping.
+    diagnostics = dict(getattr(context, "diagnostics", {}) or {})
+    last_turn_ms = getattr(context, "turn_time_ms", 0) or 0
+    total_conv_ms = (
+        (usage_conversation_summary or {}).get("total_conversation_time_ms", last_turn_ms) or 0
+    )
+    if isinstance(usage_conversation_summary, dict):
+        diagnostics["usage_conversation"] = usage_conversation_summary
+    diagnostics["last_turn_time_s"] = round(float(last_turn_ms) / 1000.0, 6)
+    diagnostics["total_conversation_time_s"] = round(float(total_conv_ms) / 1000.0, 6)
+    diagnostics["model_used"] = getattr(context, "model_used", "") or ""
+
     return StructuredAgentResult(
         plan=plan,
-        resolution_plan=getattr(context, 'resolution_plan', None),
-        executed_queries=getattr(context, 'executed_queries', []),
+        resolution_plan=getattr(context, "resolution_plan", None),
+        executed_queries=getattr(context, "executed_queries", []),
         answer_confidence=answer_confidence,
         per_query_results=context.query_traces if include_per_query_trace else [],
         final_articles=context.final_articles,
         answer_text=context.final_answer,
-        diagnostics=context.diagnostics,
+        diagnostics=diagnostics,
+        usage=usage_block,
     )
 
 
@@ -3062,6 +3718,20 @@ async def chat_with_metadata(
         has_action_plan = bool(isinstance(action_plan, list) and len(action_plan) > 0)
         has_articles = bool(isinstance(articles_df_data, list) and len(articles_df_data) > 0)
 
+        # Usage accounting (per-turn) from AgentContext, if available
+        usage_turn_summary = getattr(ctx, "usage_turn_summary", {}) or {}
+
+        # Accumulate per-session conversation usage using salted session_id from diagnostics
+        session_id = (ctx.diagnostics or {}).get("session_id") if ctx.diagnostics else None
+        turn_summary = {
+            **(usage_turn_summary or {}),
+            "turn_time_ms": getattr(ctx, "turn_time_ms", 0) or 0,
+        }
+        usage_conversation_summary = accumulate_conversation_usage(
+            session_id=session_id,
+            turn_summary=turn_summary,
+        )
+
         # Always show user_intent if we have a user message (even if SGR plan is missing/empty)
         # This ensures metadata appears for math/date questions that don't call retrieve_context
         if not has_user_intent and user_message:
@@ -3110,6 +3780,8 @@ async def chat_with_metadata(
             "has_action_plan": has_action_plan,
             "articles_df_data": articles_df_data,
             "has_articles": has_articles,
+            "usage_turn": usage_turn_summary,
+            "usage_conversation": usage_conversation_summary,
         }
 
         logger.info(
@@ -3123,11 +3795,18 @@ async def chat_with_metadata(
         )
 
         try:
-            # Build analysis data for JSON field
+            # Build analysis data for JSON field (times in seconds, 4 decimal places)
+            last_turn_ms = getattr(ctx, "turn_time_ms", 0) or 0
+            total_conv_ms = usage_conversation_summary.get("total_conversation_time_ms", 0) or 0
             analysis_data = {
                 "confidence": search_confidence,
                 "queries_count": search_count,
                 "queries": executed_queries,
+                "usage_turn": usage_turn_summary,
+                "usage_conversation": usage_conversation_summary,
+                "last_turn_time_s": round(last_turn_ms / 1000, 4),
+                "total_conversation_time_s": round(total_conv_ms / 1000, 4),
+                "model_used": getattr(ctx, "model_used", "") or "",
             }
             yield yield_badge_updates(
                 last_history,
@@ -3516,8 +4195,8 @@ if __name__ == "__main__":
 
     # Build FastAPI app with CMW Platform endpoint
     from fastapi import FastAPI, Request
-    from pydantic import BaseModel
     from gradio import mount_gradio_app
+    from pydantic import BaseModel
 
     fastapi_app = FastAPI(title="CMW RAG API")
 
@@ -3530,6 +4209,17 @@ if __name__ == "__main__":
         return cmw_process_support_request(req.request_id, http_req)
 
     # Mount Gradio with all options including MCP
+    # Configure static file access for Gradio (see https://www.gradio.app/guides/file-access)
+    # We keep the scope narrow by only allowing:
+    # - The internal `rag_engine/resources` directory (theme, logo, etc.)
+    # - An optional top-level `resources` directory (for shared fonts like OpenSans)
+    allowed_paths_list: list[str] = []
+    if RESOURCES_DIR.exists():
+        allowed_paths_list.append(str(RESOURCES_DIR))
+    project_resources_dir = Path.cwd() / "resources"
+    if project_resources_dir.exists():
+        allowed_paths_list.append(str(project_resources_dir))
+
     app = mount_gradio_app(
         fastapi_app,
         demo,
@@ -3538,7 +4228,7 @@ if __name__ == "__main__":
         footer_links=["api"],
         theme=gr.themes.Soft(),
         css_paths=[css_file_path] if css_file_path.exists() else [],
-        allowed_paths=[str(css_file_path.parent)] if css_file_path.exists() else None,
+        allowed_paths=allowed_paths_list or None,
     )
 
     import uvicorn

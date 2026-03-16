@@ -38,3 +38,7 @@ ui/index.php
 *.pid
 *.log
 *.swp
+
+# Node.js
+node_modules/
+rag_engine/data/synthetic_cmw_support_tickets_v1_with_pii.json

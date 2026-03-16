@@ -43,6 +43,24 @@ class RAGIndexer:
         self.store = vector_store
         logger.info("RAGIndexer initialized")
 
+    @staticmethod
+    def _assert_embedding_batch_sizes(
+        texts: list[str],
+        embeddings: list[list[float]],
+        kb_id: str,
+        doc_stable_id: str,
+        *,
+        async_mode: bool,
+    ) -> None:
+        """Ensure 1:1 mapping between input texts and embedding vectors."""
+        if len(embeddings) != len(texts):
+            mode = "async" if async_mode else "sync"
+            raise ValueError(
+                "Embedding provider returned mismatched batch sizes "
+                f"({mode} mode): embeddings={len(embeddings)} vs texts={len(texts)} "
+                f"(kbId={kb_id}, doc_stable_id={doc_stable_id})"
+            )
+
     def index_documents(
         self,
         documents: list[Any],
@@ -50,6 +68,7 @@ class RAGIndexer:
         chunk_overlap: int,
         max_files: int | None = None,
         force_reindex: bool = False,
+        start_index: int | None = None,
     ) -> dict[str, int]:
         """Index documents incrementally with immediate database writes.
 
@@ -79,6 +98,14 @@ class RAGIndexer:
         new_docs = 0
 
         for doc_idx, doc in enumerate(documents, start=1):
+            if start_index is not None and doc_idx < start_index:
+                logger.info(
+                    "Skipping document %d/%d due to start_index=%d",
+                    doc_idx,
+                    total_docs,
+                    start_index,
+                )
+                continue
             base_meta = dict(getattr(doc, "metadata", {}))
             kb_id = base_meta.get("kbId")
             if not kb_id:
@@ -233,6 +260,13 @@ class RAGIndexer:
 
             # Embed chunks for this (deduplicated) document
             embeddings = self.embedder.embed_documents(dedup_texts, show_progress=False)
+            self._assert_embedding_batch_sizes(
+                dedup_texts,
+                embeddings,
+                kb_id=str(kb_id),
+                doc_stable_id=doc_stable_id,
+                async_mode=False,
+            )
 
             # Write immediately to vector store
             self.store.add(
@@ -272,6 +306,7 @@ class RAGIndexer:
         chunk_overlap: int,
         max_files: int | None = None,
         force_reindex: bool = False,
+        start_index: int | None = None,
     ) -> dict[str, int]:
         """Async: index documents incrementally with immediate database writes.
 
@@ -300,6 +335,14 @@ class RAGIndexer:
         new_docs = 0
 
         for doc_idx, doc in enumerate(documents, start=1):
+            if start_index is not None and doc_idx < start_index:
+                logger.info(
+                    "Skipping document %d/%d due to start_index=%d",
+                    doc_idx,
+                    total_docs,
+                    start_index,
+                )
+                continue
             base_meta = dict(getattr(doc, "metadata", {}))
             kb_id = base_meta.get("kbId")
             if not kb_id:
@@ -450,6 +493,13 @@ class RAGIndexer:
 
             # Embed chunks for this (deduplicated) document (keep sync - CPU-bound)
             embeddings = self.embedder.embed_documents(dedup_texts, show_progress=False)
+            self._assert_embedding_batch_sizes(
+                dedup_texts,
+                embeddings,
+                kb_id=str(kb_id),
+                doc_stable_id=doc_stable_id,
+                async_mode=True,
+            )
 
             # Write immediately to vector store (async)
             await self.store.add_async(

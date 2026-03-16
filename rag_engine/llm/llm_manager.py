@@ -11,8 +11,10 @@ from pydantic import BaseModel
 
 from rag_engine.config.settings import settings
 from rag_engine.llm.model_configs import MODEL_CONFIGS
+from rag_engine.llm.openrouter_native import create_openrouter_native_model
 from rag_engine.llm.prompts import get_system_prompt
 from rag_engine.llm.token_utils import estimate_tokens_for_request
+from rag_engine.llm.usage_accounting import UsageAccountingCallback
 from rag_engine.utils.conversation_store import ConversationStore
 from rag_engine.utils.metadata_utils import extract_numeric_kbid
 
@@ -78,6 +80,42 @@ def get_model_config(model_name: str) -> dict:
         config["max_tokens"] = settings.llm_max_tokens
 
     return config
+
+
+def _build_reasoning_extra_body() -> dict[str, Any] | None:
+    """Build OpenRouter-style reasoning configuration from env settings.
+
+    Returns a dict suitable for ChatOpenAI(extra_body=...) or None.
+    """
+    enabled = getattr(settings, "llm_reasoning_enabled", False)
+
+    # When disabled, explicitly request no reasoning to avoid surprise thinking traces.
+    if not enabled:
+        return {
+            "reasoning": {
+                "effort": "none",
+                "exclude": True,
+            }
+        }
+
+    cfg: dict[str, Any] = {"enabled": True}
+
+    # OpenRouter requires that only ONE of reasoning.effort or reasoning.max_tokens
+    # is specified in a single request. Prefer an explicit max_tokens budget when
+    # both are set, otherwise fall back to effort.
+    max_tokens = getattr(settings, "llm_reasoning_max_tokens", None)
+    effort = getattr(settings, "llm_reasoning_effort", None)
+
+    if max_tokens:
+        cfg["max_tokens"] = max_tokens
+    elif effort:
+        cfg["effort"] = effort
+
+    exclude = getattr(settings, "llm_reasoning_exclude_from_response", False)
+    if exclude:
+        cfg["exclude"] = True
+
+    return {"reasoning": cfg}
 
 
 def get_context_window(model_name: str, default: int = 262144) -> int:
@@ -173,39 +211,52 @@ class LLMManager:
         It's only used for context size estimation.
         """
         p = (provider or self.provider).lower()
+        reasoning_body = _build_reasoning_extra_body()
         if p == "gemini":
             model = ChatGoogleGenerativeAI(
                 model=self.model_name,
                 temperature=self.temperature,
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
+        if p == "openai":
+            # True OpenAI API (api.openai.com)
+            api_key = settings.openai_api_key
+            if not api_key or not api_key.strip():
+                raise ValueError(
+                    "OPENAI_API_KEY is not set or empty. "
+                    "Set it in .env when using DEFAULT_LLM_PROVIDER=openai."
+                )
+            logger.info(
+                "Initializing OpenAI client: model=%s, api_key=%s...",
+                self.model_name,
+                api_key[:10] if api_key else "",
+            )
+            model = ChatOpenAI(
+                model=self.model_name,
+                api_key=api_key,
+                temperature=self.temperature,
+                extra_body=reasoning_body,
+            )
+            return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "openrouter":
-            # OpenRouter via OpenAI-compatible client
+            # OpenRouter via native model (full usage accounting in streaming)
             api_key = settings.openrouter_api_key
             if not api_key or not api_key.strip():
                 raise ValueError(
                     "OPENROUTER_API_KEY is not set or empty. "
                     "Please set it in your .env file."
                 )
-
-            base_url = settings.openrouter_base_url
             logger.info(
-                f"Initializing OpenRouter client: model={self.model_name}, "
-                f"base_url={base_url}, api_key={api_key[:10]}..."
+                "Initializing OpenRouter native model: model=%s, base_url=%s",
+                self.model_name,
+                settings.openrouter_base_url,
             )
-
-            model = ChatOpenAI(
-                model=self.model_name,
+            model = create_openrouter_native_model(
+                model_name=self.model_name,
+                base_url=settings.openrouter_base_url,
                 api_key=api_key,
-                base_url=base_url,
-                temperature=self.temperature,
-                # Note: streaming is controlled at call site (.stream() vs .invoke()),
-                # not at model construction time, to avoid issues with LangChain agents
-                default_headers={
-                    # OpenRouter recommends these headers for attribution/rate-limiting
-                    "HTTP-Referer": f"http://{settings.gradio_server_name}:{settings.gradio_server_port}",
-                    "X-Title": "CMW RAG Engine",
-                },
+                max_tokens=self._model_config.get("max_tokens"),
+                callbacks=[UsageAccountingCallback()],
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         if p == "vllm":
@@ -226,6 +277,8 @@ class LLMManager:
                 temperature=self.temperature,
                 # Note: streaming is controlled at call site (.stream() vs .invoke()),
                 # not at model construction time, to avoid issues with LangChain agents
+                extra_body=reasoning_body,
+                callbacks=[UsageAccountingCallback()],
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         # default fallback to Gemini

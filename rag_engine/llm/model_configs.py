@@ -18,6 +18,16 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 65_536,
         "temperature": 0,
     },
+    "google/gemini-3-flash-preview": {
+        "token_limit": 1_048_576,  # 1M context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "google/gemini-3.1-flash-lite-preview": {
+        "token_limit": 1_048_576,  # 1M context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
     # OpenRouter models (matching cmw-platform-agent)
     # DeepSeek Models
     "deepseek/deepseek-v3.1-terminus": {
@@ -27,6 +37,11 @@ MODEL_CONFIGS: dict[str, dict] = {
     },
     "deepseek/deepseek-v3.1-terminus:exacto": {
         "token_limit": 163_840,
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "deepseek/deepseek-v3.2-speciale": {
+        "token_limit": 163_840,  # OpenRouter model card
         "max_tokens": 65_536,
         "temperature": 0,
     },
@@ -72,6 +87,30 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 32_768,
         "temperature": 0,
     },
+    "qwen/qwen3.5-flash-02-23": {
+        "token_limit": 1_000_000,  # 1M context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+        "supports_forced_tool_choice": False,  # OpenRouter Qwen 3.5 models don't honor explicit tool_choice
+    },
+    "qwen/qwen3.5-122b-a10b": {
+        "token_limit": 262_144,  # 262,144 context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+        "supports_forced_tool_choice": False,  # OpenRouter Qwen 3.5 models don't honor explicit tool_choice
+    },
+    "qwen/qwen3.5-35b-a3b": {
+        "token_limit": 262_144,  # 262,144 context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+        "supports_forced_tool_choice": False,  # OpenRouter Qwen 3.5 models don't honor explicit tool_choice
+    },
+    "qwen/qwen3.5-27b": {
+        "token_limit": 262_144,  # 262,144 context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+        "supports_forced_tool_choice": False,  # OpenRouter Qwen 3.5 models don't honor explicit tool_choice
+    },
     # Additional Qwen Models
     "qwen/qwen3-235b-a22b": {
         # Native window ~40,960; some routes may extend via scaling
@@ -101,6 +140,7 @@ MODEL_CONFIGS: dict[str, dict] = {
         "token_limit": 40000,  # Matches vLLM max_model_len configuration
         "max_tokens": 40000,  # Matches vLLM max_model_len configuration
         "temperature": 0,
+        "harmony_format": True,  # GPT-OSS models use Harmony response format
     },
     # vLLM GigaChat3 model (MoE: 10B total, 1.8B active params)
     # Supports up to 256K context window, optimized for high throughput
@@ -144,15 +184,42 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 64_000,
         "temperature": 0,
     },
+    "anthropic/claude-haiku-4.5": {
+        "token_limit": 200_000,  # OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "anthropic/claude-sonnet-4.6": {
+        "token_limit": 1_000_000,  # OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "anthropic/claude-opus-4.6": {
+        "token_limit": 1_000_000,  # OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "openai/gpt-5.3-codex": {
+        "token_limit": 400_000,  # OpenRouter model card
+        "max_tokens": 32_768,
+        "temperature": 0,
+    },
+    "openai/gpt-5.3-chat": {
+        "token_limit": 128_000,  # OpenRouter model card
+        "max_tokens": 32_768,
+        "temperature": 0,
+    },
     "openai/gpt-oss-120b": {
         "token_limit": 131_072,
         "max_tokens": 32_768,
         "temperature": 0,
+        "harmony_format": True,  # GPT-OSS models use Harmony response format
     },
     "openai/gpt-oss-120b:exacto": {
         "token_limit": 131_072,
         "max_tokens": 32_768,
         "temperature": 0,
+        "harmony_format": True,  # GPT-OSS models use Harmony response format
     },
     "openai/gpt-5-mini": {
         "token_limit": 400_000,
@@ -176,8 +243,13 @@ MODEL_CONFIGS: dict[str, dict] = {
         "temperature": 0,
     },
     "z-ai/glm-4.7-flash": {
-        "token_limit": 202_752,  # 202,752 context window as per OpenRouter API
+        "token_limit": 200_000,  # 202,752 context window as per OpenRouter API
         "max_tokens": 32_768,  # Reasonable max output for large context model
+        "temperature": 0,
+    },
+    "z-ai/glm-5": {
+        "token_limit": 198_000,  # OpenRouter model card
+        "max_tokens": 32_768,
         "temperature": 0,
     },
     # Moonshot AI (Kimi) Models
@@ -188,7 +260,12 @@ MODEL_CONFIGS: dict[str, dict] = {
     },
     # Minimax Models
     "minimax/minimax-m2.1": {
-        "token_limit": 196_608,  # 196.6K context window
+        "token_limit": 196_000,  # 196.6K context window
+        "max_tokens": 65_536,
+        "temperature": 0,
+    },
+    "minimax/minimax-m2.5": {
+        "token_limit": 196_000,  # OpenRouter model card
         "max_tokens": 65_536,
         "temperature": 0,
     },

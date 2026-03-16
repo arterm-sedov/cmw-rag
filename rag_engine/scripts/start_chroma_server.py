@@ -36,7 +36,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import os
 import subprocess
 import sys
 import time
@@ -68,7 +67,7 @@ def read_env_file(env_path: Path) -> dict[str, str]:
         print(f"⚠️  Warning: {env_path} not found. Using defaults.")
         return env_vars
 
-    with open(env_path, "r", encoding="utf-8") as f:
+    with open(env_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             # Skip comments and empty lines
@@ -132,7 +131,7 @@ def get_running_pid() -> int | None:
         return None
 
     try:
-        with open(pid_file, "r") as f:
+        with open(pid_file) as f:
             pid = int(f.read().strip())
         # Check if process actually exists
         import psutil
@@ -198,7 +197,7 @@ def tail_logs(lines: int = 50, follow: bool = False) -> None:
 
     try:
         # Read the file and show last N lines
-        with open(log_file, "r", encoding="utf-8") as f:
+        with open(log_file, encoding="utf-8") as f:
             if follow:
                 # Follow mode: show existing content then follow
                 import time
@@ -279,14 +278,21 @@ def start_chroma_server(foreground: bool = True, verbose: bool = False) -> None:
         sys.exit(1)
 
     if verbose or foreground:
-        print(f"🔧 Configuration:")
+        print("🔧 Configuration:")
         print(f"   Host: {config['host']}")
         print(f"   Port: {config['port']}")
         print(f"   Data path: {config['persist_dir']}")
 
-    # Build command - derive chroma from sys.executable
+    # Build command - derive chroma from sys.executable (cross-platform)
     venv_dir = Path(sys.executable).parent.parent
-    chroma_path = venv_dir / "bin" / "chroma"
+    if sys.platform == "win32":
+        chroma_executable = "chroma.exe"
+        bin_dir = venv_dir / "Scripts"
+    else:
+        chroma_executable = "chroma"
+        bin_dir = venv_dir / "bin"
+
+    chroma_path = bin_dir / chroma_executable
 
     cmd = [
         str(chroma_path),

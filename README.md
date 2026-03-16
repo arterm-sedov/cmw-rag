@@ -18,6 +18,7 @@ Chat with DeepWiki to get answers about this repo:
 - **Advanced retrieval**: Vector search with optional cross-encoder reranking
 - **Multi-vector queries**: Split long queries into token-aware segments, retrieve per segment, union + rerank
 - **Multi-LLM support**: Gemini (default) and OpenRouter with streaming responses
+- **Reasoning tokens (optional)**: Unified reasoning-token control (OpenRouter-style `reasoning` config) for OpenAI-compatible chat models, with an optional UI bubble that shows the model's internal reasoning trace
 - **Dynamic context budgeting**: Summarization-first trimming guided by the user question; falls back to lightweight stitching when needed
 - **Immediate model fallback**: Optional auto-fallback to allowed larger-context models when estimated tokens exceed the current model
 - **Consistent token accounting**: Shared `token_utils` for system + question + context + output budgeting
