@@ -31,8 +31,7 @@ from rag_engine.llm.usage_accounting import accumulate_conversation_usage
 from rag_engine.retrieval.embedder import create_embedder
 from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
-from rag_engine.tools import retrieve_context
-from rag_engine.tools.retrieve_context import set_app_retriever
+from rag_engine.tools.retrieve_context import _retrieve_context_core, set_app_retriever
 from rag_engine.utils.context_tracker import (
     AgentContext,
     compute_context_tokens,
@@ -3291,8 +3290,17 @@ def get_knowledge_base_articles(
         if converted_top_k <= 0:
             raise ValueError(f"top_k must be a positive integer, got: {converted_top_k}")
 
-    # Access the underlying function from the StructuredTool
-    return retrieve_context.func(query=query, top_k=converted_top_k, exclude_kb_ids=exclude_kb_ids)
+    # Delegate to the shared async core used by the LangChain tool
+    import asyncio
+
+    return asyncio.run(
+        _retrieve_context_core(
+            query=query,
+            top_k=converted_top_k,
+            exclude_kb_ids=exclude_kb_ids,
+            runtime=None,
+        )
+    )
 
 
 # MCP-compatible wrapper for agent_chat_handler
