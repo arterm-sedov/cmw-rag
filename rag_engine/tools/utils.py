@@ -43,6 +43,15 @@ def parse_tool_result_to_articles(tool_result: str) -> list[Article]:
         )
         return []
 
+    if not isinstance(result, dict):
+        logger.warning(
+            "Tool result for article extraction is not a JSON object "
+            "(expected retrieve_context shape), got %s: %.60r",
+            type(result).__name__,
+            result,
+        )
+        return []
+
     articles = []
     for article_data in result.get("articles", []):
         try:
@@ -158,7 +167,19 @@ def extract_metadata_from_tool_result(tool_result: str) -> dict[str, Any]:
     """
     try:
         result = json.loads(tool_result)
-        return result.get("metadata", {})
     except json.JSONDecodeError:
-        logger.error("Failed to parse tool result metadata")
+        logger.error(
+            "Failed to parse retrieve_context tool result metadata (invalid JSON)"
+        )
         return {}
+
+    if not isinstance(result, dict):
+        logger.warning(
+            "Tool result for metadata extraction is not a JSON object "
+            "(expected retrieve_context shape), got %s: %.60r",
+            type(result).__name__,
+            result,
+        )
+        return {}
+
+    return result.get("metadata", {})
