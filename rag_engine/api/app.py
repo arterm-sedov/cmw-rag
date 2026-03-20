@@ -4194,6 +4194,24 @@ if __name__ == "__main__":
         logger.info(
             "Share link enabled. If share link creation fails, the app will still run locally."
         )
+        try:
+            from gradio import networking
+
+            share_url = networking.setup_tunnel(
+                local_host=settings.gradio_server_name,
+                local_port=settings.gradio_server_port,
+                share_token=demo.share_token,
+                share_server_address=None,
+                share_server_tls_certificate=None,
+            )
+            print(f"* Running on public URL: {share_url}")
+            print(
+                "\nThis share link expires in 1 week. For free permanent hosting and GPU upgrades, "
+                "run `gradio deploy` from the terminal in the working directory to deploy to "
+                "Hugging Face Spaces (https://huggingface.co/spaces)"
+            )
+        except Exception as e:
+            logger.warning("Could not create share link: %s", e)
 
     # Configure queue
     demo.queue(
