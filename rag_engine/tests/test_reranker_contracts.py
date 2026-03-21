@@ -1,10 +1,10 @@
-"""Test vLLM/Cohere contract compliance for reranker endpoints.
+"""Test RerankerAdapter with vLLM /v1/score endpoint.
 
-These tests verify the endpoint contracts defined in test_rerankers.yaml:
-- /v1/score returns vLLM format: {data: [{index, object, score}, ...]}
-- /v1/rerank returns Cohere format: {results: [{index, document, relevance_score}, ...]}
+The configured endpoint is /v1/score (vLLM format):
+- Request: {query, documents}
+- Response: {data: [{index, object, score}, ...]}
 
-Tests use mocks to verify behavior, not implementation.
+Tests verify behavior, not implementation.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ def dity_config() -> ServerRerankerConfig:
     return ServerRerankerConfig(
         type="server",
         provider="mosec",
-        endpoint="http://localhost:7998/v1/rerank",
+        endpoint="http://localhost:7998/v1/score",
         reranker_type="cross_encoder",
     )
 
@@ -32,7 +32,7 @@ def qwen3_config() -> ServerRerankerConfig:
     return ServerRerankerConfig(
         type="server",
         provider="mosec",
-        endpoint="http://localhost:7998/v1/rerank",
+        endpoint="http://localhost:7998/v1/score",
         reranker_type="llm_reranker",
         default_instruction="Given a web search query, retrieve relevant passages",
         formatting=RerankerFormatting(
@@ -52,149 +52,64 @@ class MockDocument:
         self.metadata = metadata or {}
 
 
-class TestScoreEndpointContract:
-    """Test /v1/score endpoint contract (vLLM format)."""
+class TestRerankEndpoint:
+    """Test rerank method using /v1/score endpoint (vLLM format)."""
 
-    def test_returns_data_array(self):
-        """Response has 'data' key with array of scores."""
+    def test_returns_sorted_results(self):
+        """Results are sorted by score descending."""
         config = dity_config()
         adapter = RerankerAdapter(config)
 
-        with patch.object(adapter, "session") as mock_session:
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
+        with patch.object(adapter, "_post") as mock_post:
+            mock_post.return_value = {
                 "data": [
-                    {"index": 0, "object": "score", "score": 0.95},
-                    {"index": 1, "object": "score", "score": 0.05},
-                ]
-            }
-            mock_session.post.return_value = mock_response
-
-            scores = adapter.score("query", ["doc1", "doc2"])
-
-            assert isinstance(scores, list)
-            assert len(scores) == 2
-            assert scores[0] == 0.95
-            assert scores[1] == 0.05
-
-    def test_preserves_original_order(self):
-        """Scores returned in original document order (by index)."""
-        config = dity_config()
-        adapter = RerankerAdapter(config)
-
-        with patch.object(adapter, "session") as mock_session:
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
-                "data": [
-                    {"index": 1, "object": "score", "score": 0.9},
                     {"index": 0, "object": "score", "score": 0.1},
+                    {"index": 1, "object": "score", "score": 0.95},
                 ]
             }
-            mock_session.post.return_value = mock_response
-
-            scores = adapter.score("query", ["doc1", "doc2"])
-
-            assert scores == [0.1, 0.9]
-
-    def test_score_values_are_floats(self):
-        """All score values are floats."""
-        config = dity_config()
-        adapter = RerankerAdapter(config)
-
-        with patch.object(adapter, "session") as mock_session:
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
-                "data": [
-                    {"index": 0, "object": "score", "score": 0.88},
-                    {"index": 1, "object": "score", "score": 0.12},
-                ]
-            }
-            mock_session.post.return_value = mock_response
-
-            scores = adapter.score("query", ["doc1", "doc2"])
-
-            assert all(isinstance(s, float) for s in scores)
-
-
-class TestRerankEndpointContract:
-    """Test /v1/rerank endpoint contract (Cohere format)."""
-
-    def test_returns_results_array(self):
-        """Response has 'results' key with array of ranked items."""
-        config = dity_config()
-        adapter = RerankerAdapter(config)
-
-        with patch.object(adapter, "session") as mock_session:
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
-                "results": [
-                    {"index": 1, "document": {"text": "doc2"}, "relevance_score": 0.95},
-                    {"index": 0, "document": {"text": "doc1"}, "relevance_score": 0.05},
-                ]
-            }
-            mock_session.post.return_value = mock_response
 
             candidates = [(MockDocument("doc1"), 0.0), (MockDocument("doc2"), 0.0)]
             results = adapter.rerank("query", candidates, top_k=2)
 
             assert len(results) == 2
-            assert results[0][1] == 0.95
+            assert results[0][1] == 0.95  # Highest first
+            assert results[1][1] == 0.1
 
-    def test_sorted_by_relevance(self):
-        """Results sorted by relevance_score descending."""
+    def test_preserves_documents(self):
+        """Documents are preserved correctly."""
         config = dity_config()
         adapter = RerankerAdapter(config)
 
-        with patch.object(adapter, "session") as mock_session:
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
-                "results": [
-                    {"index": 1, "document": {"text": "doc2"}, "relevance_score": 0.95},
-                    {"index": 0, "document": {"text": "doc1"}, "relevance_score": 0.05},
+        with patch.object(adapter, "_post") as mock_post:
+            mock_post.return_value = {
+                "data": [
+                    {"index": 0, "object": "score", "score": 0.9},
+                    {"index": 1, "object": "score", "score": 0.1},
                 ]
             }
-            mock_session.post.return_value = mock_response
 
-            candidates = [(MockDocument("doc1"), 0.0), (MockDocument("doc2"), 0.0)]
-            results = adapter.rerank("query", candidates, top_k=2)
+            candidates = [
+                (MockDocument("Python is a language"), 0.0),
+                (MockDocument("Java is also a language"), 0.0),
+            ]
+            results = adapter.rerank("What is Python?", candidates, top_k=2)
 
-            scores = [r[1] for r in results]
-            assert scores == sorted(scores, reverse=True)
+            assert results[0][0].page_content == "Python is a language"
+            assert results[1][0].page_content == "Java is also a language"
 
-    def test_includes_document_text(self):
-        """Each result maps back to original document."""
+    def test_top_k_limits_results(self):
+        """top_k parameter limits number of results."""
         config = dity_config()
         adapter = RerankerAdapter(config)
 
-        with patch.object(adapter, "session") as mock_session:
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
-                "results": [
-                    {"index": 1, "document": {"text": "doc2"}, "relevance_score": 0.95},
-                    {"index": 0, "document": {"text": "doc1"}, "relevance_score": 0.05},
+        with patch.object(adapter, "_post") as mock_post:
+            mock_post.return_value = {
+                "data": [
+                    {"index": 0, "object": "score", "score": 0.9},
+                    {"index": 1, "object": "score", "score": 0.5},
+                    {"index": 2, "object": "score", "score": 0.1},
                 ]
             }
-            mock_session.post.return_value = mock_response
-
-            candidates = [(MockDocument("doc1"), 0.0), (MockDocument("doc2"), 0.0)]
-            results = adapter.rerank("query", candidates, top_k=2)
-
-            assert results[0][0].page_content == "doc2"
-            assert results[1][0].page_content == "doc1"
-
-    def test_top_n_limits_results(self):
-        """top_n parameter limits number of results."""
-        config = dity_config()
-        adapter = RerankerAdapter(config)
-
-        with patch.object(adapter, "session") as mock_session:
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
-                "results": [
-                    {"index": 0, "document": {"text": "doc1"}, "relevance_score": 0.95},
-                ]
-            }
-            mock_session.post.return_value = mock_response
 
             candidates = [
                 (MockDocument("doc1"), 0.0),
@@ -204,6 +119,32 @@ class TestRerankEndpointContract:
             results = adapter.rerank("query", candidates, top_k=1)
 
             assert len(results) == 1
+            assert results[0][1] == 0.9
+
+    def test_metadata_boost_applied(self):
+        """Metadata boost is applied correctly."""
+        config = dity_config()
+        adapter = RerankerAdapter(config)
+
+        with patch.object(adapter, "_post") as mock_post:
+            mock_post.return_value = {
+                "data": [
+                    {"index": 0, "object": "score", "score": 0.5},
+                    {"index": 1, "object": "score", "score": 0.5},
+                ]
+            }
+
+            candidates = [
+                (MockDocument("doc1", metadata={"has_code": True}), 0.0),
+                (MockDocument("doc2", metadata={"has_code": False}), 0.0),
+            ]
+            results = adapter.rerank(
+                "query", candidates, top_k=2, metadata_boost_weights={"code_presence": 0.5}
+            )
+
+            assert results[0][0].page_content == "doc1"
+            assert results[0][1] == 0.75  # 0.5 * 1.5
+            assert results[1][1] == 0.5
 
 
 class TestCrossEncoderFormatting:
@@ -306,7 +247,7 @@ class TestBgeGemmaFormatting:
         config = ServerRerankerConfig(
             type="server",
             provider="mosec",
-            endpoint="http://localhost:7998/v1/rerank",
+            endpoint="http://localhost:7998/v1/score",
             reranker_type="llm_reranker",
             formatting=RerankerFormatting(
                 query_template="A: {query}",
@@ -326,17 +267,18 @@ class TestBgeGemmaFormatting:
         config = ServerRerankerConfig(
             type="server",
             provider="mosec",
-            endpoint="http://localhost:7998/v1/rerank",
+            endpoint="http://localhost:7998/v1/score",
             reranker_type="llm_reranker",
             formatting=RerankerFormatting(
                 query_template="A: {query}",
                 doc_template="B: {doc}\n{prompt}",
                 prefix="",
                 suffix="",
+                prompt="Is this relevant?",
             ),
         )
         adapter = RerankerAdapter(config)
 
         formatted = adapter.format_document("Python is a language")
 
-        assert formatted.startswith("B: Python is a language")
+        assert formatted == "B: Python is a language\nIs this relevant?"
