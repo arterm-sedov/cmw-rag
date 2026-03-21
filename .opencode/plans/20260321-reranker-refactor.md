@@ -8,6 +8,9 @@
 - `d63312c` - docs: add reranker refactoring plan
 - `82d8ecc` - feat: add RerankerAdapter with vLLM/Cohere endpoint contracts
 - `c23aa15` - fix: update deprecated loader for new schema changes
+- `983ab01` - docs: update plan status, add progress report, update README
+- `89ae231` - docs: clarify reranker endpoint configuration
+- `ad08762` - fix: use configured endpoint directly for reranker
 
 ---
 
@@ -17,30 +20,56 @@
 |------------|--------|
 | `test_reranker_factory.py` | 17 passed, 4 skipped |
 | `test_retrieval_reranker.py` | 5 passed |
-| `test_reranker_contracts.py` | 17 passed |
-| `test_config_loader.py` | 17 passed |
-| **Total** | **56 passed, 4 skipped** |
+| `test_reranker_contracts.py` | 13 passed |
+| `test_config_loader.py` | 18 passed |
+| **Total** | **53 passed, 4 skipped** |
 
 ### Live Server Verification (cmw-mosec port 7998)
 
 ```
-/v1/score:  [0.5051, 0.0014]  ✅ (vLLM format)
-/v1/rerank: top_score=0.5051  ✅ (Cohere format)
-Identical scores: True          ✅
+Endpoint: /v1/score (vLLM format)
+Request:  {query, documents}
+Response: {data: [{index, score}, ...]}
 ```
+
+### Architecture Decision
+
+The RAG engine uses `/v1/score` endpoint (NOT `/v1/rerank`) because:
+1. Documents are already local (ChromaDB)
+2. Metadata boosts require client-side processing
+3. Sorting is needed anyway after boost application
+4. `/v1/score` is lighter weight (no document text in response)
 
 ### Cross-Encoder Works
 - DiTy/BGE-m3: Raw query/documents (no transformation) ✅
-- `/v1/score` returns original order ✅
-- `/v1/rerank` returns sorted by relevance ✅
+- Client-side sorting with metadata boosts ✅
 
 ### LLM Reranker Works
 - Qwen3: Prefix + instruction + suffix formatting ✅
 - BGE-Gemma: A/B format with prompt ✅
+- Client-side formatting before sending to server ✅
 
 ---
 
----
+## Final Implementation
+
+### RerankerAdapter
+
+```python
+class RerankerAdapter(HTTPClientMixin):
+    """Client-side formatting adapter for server rerankers.
+    
+    Uses endpoint from config directly (e.g., http://localhost:7998/v1/score).
+    Expects vLLM format: {data: [{index, score}, ...]}
+    Client-side sorting with metadata boosts.
+    """
+    
+    def rerank(self, query, candidates, top_k, metadata_boost_weights, instruction):
+        # 1. Format query/documents
+        # 2. Call endpoint, get scores
+        # 3. Apply metadata boosts
+        # 4. Sort and return top_k
+```
 
 ## Executive Summary
 
