@@ -460,6 +460,17 @@ RERANK_SCORE_THRESHOLD=0.5                  # Minimum rerank score (articles bel
 
 Both endpoints return identical scores; use `/v1/score` for raw access or `/v1/rerank` for sorted results.
 
+**Endpoint Configuration:**
+
+```bash
+# Base URL - RerankerAdapter uses both endpoints internally
+MOSEC_RERANKER_ENDPOINT=http://localhost:7998/v1
+```
+
+The adapter derives the base URL and automatically uses:
+- `{base}/v1/score` for `score()` method
+- `{base}/v1/rerank` for `rerank()` method
+
 #### LLM Context Budgeting
 
 The engine uses summarization-first budgeting guided by the user question:
