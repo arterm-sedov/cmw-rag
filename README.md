@@ -446,6 +446,20 @@ RERANK_SCORE_THRESHOLD=0.5                  # Minimum rerank score (articles bel
 
 - `RERANK_SCORE_THRESHOLD`: Articles with rerank score below this threshold are excluded before loading from disk. Set to `0.0` to disable filtering (default).
 
+**Supported Reranker Types:**
+
+| Type | Models | Formatting |
+|------|--------|------------|
+| `cross_encoder` | DiTy, BGE-m3 | None (raw query/documents) |
+| `llm_reranker` | Qwen3-Reranker | ChatML prefix/suffix |
+
+**API Contracts (vLLM/Cohere compatible):**
+
+- `/v1/score` - Returns raw scores in original document order (vLLM format)
+- `/v1/rerank` - Returns results sorted by relevance (Cohere format)
+
+Both endpoints return identical scores; use `/v1/score` for raw access or `/v1/rerank` for sorted results.
+
 #### LLM Context Budgeting
 
 The engine uses summarization-first budgeting guided by the user question:
