@@ -2,10 +2,11 @@
 
 **Date:** 2026-03-21
 **Repositories:** cmw-mosec, cmw-rag
+**Status:** COMPLETED
 
 ## Executive Summary
 
-**No immediate updates required for cmw-rag.** The unified adapter pattern handles changes gracefully. However, sending `dimensions` from config to server is recommended for consistency.
+**Dimensions parameter fix completed.** CMW-RAG now sends `dimensions` from config to all embedding endpoints (mosec, infinity, vLLM, OpenRouter) ensuring consistency between config and server response.
 
 ---
 
@@ -296,35 +297,29 @@ resp = requests.post(
 - cmw-rag expects 512-dim vectors
 - **Mismatch or wasted storage**
 
-### Recommended Fix
+### Fix Applied (Commit 2a675d0)
+
+**All embedding paths now send dimensions:**
 
 ```python
-# In OpenAICompatibleEmbedder._embed_local()
-def _embed_local(self, text: str) -> list[float]:
-    payload = {
-        "input": text,
-        "model": self.config.model,
-        "dimensions": self.config.dimensions,  # Send from config
-    }
-    resp = requests.post(
-        self.config.endpoint,
-        json=payload,
-        timeout=self.config.timeout,
-    )
-    resp.raise_for_status()
-    return resp.json()["data"][0]["embedding"]
+# Local HTTP (mosec, infinity)
+payload = {"input": text, "model": self.config.model}
+if self.config.dimensions:
+    payload["dimensions"] = self.config.dimensions
+
+# Remote OpenAI SDK (OpenRouter, vLLM)
+params = {"model": self.config.model, "input": text}
+if self.config.dimensions:
+    params["dimensions"] = self.config.dimensions
+response = self.client.embeddings.create(**params)
 ```
 
-**Same for `_embed_documents_local()`:**
-```python
-def _embed_documents_local(self, texts: list[str]) -> list[list[float]]:
-    payload = {
-        "input": texts,
-        "model": self.config.model,
-        "dimensions": self.config.dimensions,
-    }
-    # ...
-```
+**Updated methods:**
+- `_embed_local()` - single query
+- `_embed_documents_local()` - batch documents
+- `_embed_remote()` - single query via SDK
+- `_embed_documents_remote()` - batch via SDK
+- All fallback paths within these methods
 
 **This ensures**:
 - Mosec truncates to expected dimension
@@ -335,11 +330,11 @@ def _embed_documents_local(self, texts: list[str]) -> list[list[float]]:
 
 ## Action Items
 
-### High Priority
+### Completed
 
-| Item | Repository | Benefit |
-|------|------------|---------|
-| Send `dimensions` from config | cmw-rag | Consistency, MRL support |
+| Item | Repository | Status |
+|------|------------|--------|
+| Send `dimensions` from config | cmw-rag | DONE (commit 2a675d0) |
 
 ### Low Priority (Optional)
 
@@ -355,5 +350,7 @@ def _embed_documents_local(self, texts: list[str]) -> list[list[float]]:
 1. **`max_length` does NOT pre-allocate memory** - it's a truncation ceiling
 2. **VRAM scales with actual input length**, not max_length config
 3. **`dimensions` (MRL) saves storage**, not VRAM (post-processing)
-4. **cmw-rag should send `dimensions` from config** for consistency
+4. **cmw-rag NOW sends `dimensions` from config** - fix applied to all embedding paths:
+   - Local HTTP (mosec, infinity)
+   - Remote OpenAI SDK (OpenRouter, vLLM)
 5. **`max_length` client override** only useful for forcing truncation of long inputs
