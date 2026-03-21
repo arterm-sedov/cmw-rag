@@ -1,0 +1,120 @@
+# Test harness config for reranker models
+# Single source of truth for test cases, formatting templates, and contracts
+#
+# Usage:
+#   pytest rag_engine/tests/test_reranker_contracts.py
+#   pytest rag_engine/tests/test_reranker_formatting.py
+#
+# Endpoint Contracts (industry-standard, vLLM/Cohere/Jina compatible):
+#   /v1/score - Raw scores in original order
+#     Request: {query, documents}
+#     Response: {data: [{index, object: "score", score}, ...]}
+#
+#   /v1/rerank - Sorted results with documents
+#     Request: {query, documents, top_n?}
+#     Response: {results: [{index, document: {text}, relevance_score}, ...]}
+
+################################################################################
+# CROSS-ENCODER MODELS (no formatting needed)
+################################################################################
+
+cross_encoder:
+  test_cases:
+    - name: "English - Machine Learning"
+      query: "What is machine learning?"
+      documents:
+        - "Machine learning is a method of data analysis that automates analytical model building."
+        - "The weather is sunny today in San Francisco."
+        - "Deep learning is a subset of machine learning using neural networks."
+      expected_ranking: [0, 2]
+
+    - name: "Russian - Car/Auto"
+      query: "машина"
+      documents:
+        - "Автомобиль для перевозки грузов и пассажиров."
+        - "Куриное блюдо из тушёной курицы с овощами."
+        - "Новый автомобиль Tesla model выпуск 2024 года."
+      expected_ranking: [0, 2]
+
+    - name: "English - Capital Cities"
+      query: "What is the capital of France?"
+      documents:
+        - "The capital of Brazil is Brasilia."
+        - "The capital of France is Paris, known for the Eiffel Tower."
+        - "Horses and cows are both animals found on farms."
+      expected_ranking: [1]
+
+################################################################################
+# LLM RERANKER MODELS (require client-side formatting)
+################################################################################
+
+llm_reranker:
+  # Qwen3-Reranker formatting (ChatML)
+  # Reference: https://huggingface.co/Qwen/Qwen3-Reranker-0.6B
+  qwen3:
+    query_template: "{prefix}<Instruct>: {instruction}\n<Query>: {query}\n"
+    doc_template: "<Document>: {doc}{suffix}"
+    prefix: "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n"
+    suffix: "<|im_end|>\n<|im_start|>assistant\n\n\n\n\n"
+    instructions:
+      - "Given a web search query, retrieve relevant passages that answer the query"
+      - "Given a question, retrieve documents that answer the question"
+    test_cases:
+      - name: "English - Capital Cities"
+        query: "What is the capital of France?"
+        documents:
+          - "The capital of Brazil is Brasilia."
+          - "The capital of France is Paris, known for the Eiffel Tower."
+          - "Horses and cows are both animals found on farms."
+        expected_ranking: [1]
+
+      - name: "English - Machine Learning"
+        query: "What is machine learning?"
+        documents:
+          - "Machine learning is a method of data analysis that automates analytical model building."
+          - "The weather is sunny today."
+          - "Deep learning is a subset of machine learning using neural networks."
+        expected_ranking: [0, 2]
+
+  # BGE-Gemma formatting
+  # Reference: https://huggingface.co/BAAI/bge-reranker-v2-gemma
+  bge_gemma:
+    query_template: "A: {query}"
+    doc_template: "B: {doc}\n{prompt}"
+    prompt: "Given a query A and a passage B, determine whether the passage contains an answer to the query by providing a prediction of either 'Yes' or 'No'."
+    test_cases:
+      - name: "English - Capital Cities"
+        query: "What is the capital of France?"
+        documents:
+          - "The capital of Brazil is Brasilia."
+          - "The capital of France is Paris, known for the Eiffel Tower."
+          - "Horses and cows are both animals found on farms."
+        expected_ranking: [1]
+
+################################################################################
+# MODEL REGISTRY MAPPINGS
+# Maps model slug to test config subtype
+################################################################################
+
+model_mappings:
+  DiTy/cross-encoder-russian-msmarco:
+    type: cross_encoder
+
+  BAAI/bge-reranker-v2-m3:
+    type: cross_encoder
+
+  Qwen/Qwen3-Reranker-0.6B:
+    type: llm_reranker
+    subtype: qwen3
+
+  Qwen/Qwen3-Reranker-4B:
+    type: llm_reranker
+    subtype: qwen3
+
+  Qwen/Qwen3-Reranker-8B:
+    type: llm_reranker
+    subtype: qwen3
+
+  BAAI/bge-reranker-v2-gemma:
+    type: llm_reranker
+    subtype: bge_gemma
