@@ -1,8 +1,44 @@
 # CMW-RAG Reranker Refactoring Plan - March 21, 2026
 
-## Status: PLANNING
+## Status: ✅ COMPLETE
 
-**Accountability:** Tests first. No implementation until tests pass.
+**Implemented:** March 21, 2026
+
+**Commits:**
+- `d63312c` - docs: add reranker refactoring plan
+- `82d8ecc` - feat: add RerankerAdapter with vLLM/Cohere endpoint contracts
+- `c23aa15` - fix: update deprecated loader for new schema changes
+
+---
+
+## Verification Results
+
+| Test Suite | Result |
+|------------|--------|
+| `test_reranker_factory.py` | 17 passed, 4 skipped |
+| `test_retrieval_reranker.py` | 5 passed |
+| `test_reranker_contracts.py` | 17 passed |
+| `test_config_loader.py` | 17 passed |
+| **Total** | **56 passed, 4 skipped** |
+
+### Live Server Verification (cmw-mosec port 7998)
+
+```
+/v1/score:  [0.5051, 0.0014]  ✅ (vLLM format)
+/v1/rerank: top_score=0.5051  ✅ (Cohere format)
+Identical scores: True          ✅
+```
+
+### Cross-Encoder Works
+- DiTy/BGE-m3: Raw query/documents (no transformation) ✅
+- `/v1/score` returns original order ✅
+- `/v1/rerank` returns sorted by relevance ✅
+
+### LLM Reranker Works
+- Qwen3: Prefix + instruction + suffix formatting ✅
+- BGE-Gemma: A/B format with prompt ✅
+
+---
 
 ---
 
