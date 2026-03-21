@@ -57,7 +57,7 @@ models:
     type: embedding
     dimensions: 4096
     description: "Large Qwen3 embedding model (8B params, best quality)"
-    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    default_instruction: "Найди релевантную техническую документацию"
     provider_formats:
       direct:
         device: auto
@@ -94,7 +94,7 @@ models:
     reranker_type: llm_reranker
     dimensions: 1
     description: "Lightweight Qwen3 reranker"
-    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    default_instruction: "Найди релевантную техническую документацию"
     formatting:
       query_template: "{prefix}<Instruct>: {instruction}\n<Query>: {query}\n"
       doc_template: "<Document>: {doc}{suffix}"
