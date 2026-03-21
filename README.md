@@ -451,25 +451,20 @@ RERANK_SCORE_THRESHOLD=0.5                  # Minimum rerank score (articles bel
 | Type | Models | Formatting |
 |------|--------|------------|
 | `cross_encoder` | DiTy, BGE-m3 | None (raw query/documents) |
-| `llm_reranker` | Qwen3-Reranker | ChatML prefix/suffix |
+| `llm_reranker` | Qwen3-Reranker | ChatML prefix/suffix (see `models.yaml`) |
 
-**API Contracts (vLLM/Cohere compatible):**
+**Endpoint:** Uses `/v1/score` (vLLM format). The RAG engine has documents locally and applies metadata boosts client-side, so the lightweight score endpoint is sufficient.
 
-- `/v1/score` - Returns raw scores in original document order (vLLM format)
-- `/v1/rerank` - Returns results sorted by relevance (Cohere format)
-
-Both endpoints return identical scores; use `/v1/score` for raw access or `/v1/rerank` for sorted results.
-
-**Endpoint Configuration:**
-
-```bash
-# Base URL - RerankerAdapter uses both endpoints internally
-MOSEC_RERANKER_ENDPOINT=http://localhost:7998/v1
+**API Format:**
+```json
+// Request: {query, documents}
+// Response: {data: [{index, score}, ...]}
 ```
 
-The adapter derives the base URL and automatically uses:
-- `{base}/v1/score` for `score()` method
-- `{base}/v1/rerank` for `rerank()` method
+**Configuration:**
+```bash
+MOSEC_RERANKER_ENDPOINT=http://localhost:7998/v1/score
+```
 
 #### LLM Context Budgeting
 
