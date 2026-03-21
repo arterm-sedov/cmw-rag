@@ -1,0 +1,80 @@
+{
+  "metrics": {
+    "default_web": {
+      "avg_score": 0.08977807292622098,
+      "variance": 0.03548079586759262,
+      "count": 181,
+      "min": 0.00020313262939453125,
+      "max": 0.9921875
+    },
+    "tech_docs": {
+      "avg_score": 0.17304478429299033,
+      "variance": 0.044130608861296015,
+      "count": 181,
+      "min": 0.00136566162109375,
+      "max": 0.921875
+    },
+    "platform": {
+      "avg_score": 0.4010226845082657,
+      "variance": 0.14102482725598206,
+      "count": 181,
+      "min": 0.00150299072265625,
+      "max": 1.0
+    },
+    "code_snippets": {
+      "avg_score": 0.15926141896959167,
+      "variance": 0.04122885898721059,
+      "count": 181,
+      "min": 0.00096893310546875,
+      "max": 0.875
+    },
+    "detailed": {
+      "avg_score": 0.3387654446765204,
+      "variance": 0.12480629152412936,
+      "count": 181,
+      "min": 0.0002613067626953125,
+      "max": 1.0
+    },
+    "tech_docs_ru": {
+      "avg_score": 0.22469717626413588,
+      "variance": 0.05971685530209337,
+      "count": 181,
+      "min": 0.000667572021484375,
+      "max": 0.89453125
+    },
+    "platform_ru": {
+      "avg_score": 0.3733320288895243,
+      "variance": 0.12195817640230469,
+      "count": 181,
+      "min": 0.00070953369140625,
+      "max": 1.0
+    },
+    "bilingual_full": {
+      "avg_score": 0.17509071603005763,
+      "variance": 0.06148384957211091,
+      "count": 181,
+      "min": 0.0002956390380859375,
+      "max": 0.96875
+    },
+    "bilingual_natural": {
+      "avg_score": 0.1646302154709621,
+      "variance": 0.04334322245391035,
+      "count": 181,
+      "min": 0.000518798828125,
+      "max": 0.890625
+    }
+  },
+  "instructions": {
+    "default_web": "Given a web search query, retrieve relevant passages that answer the query",
+    "tech_docs": "Find technical documentation and code examples that answer the question",
+    "platform": "Find documentation about Comindware Platform features, configurations, and APIs",
+    "code_snippets": "Retrieve documents with code examples, configurations, and technical explanations",
+    "detailed": "Retrieve Comindware Platform documentation: integration guides, API references, configuration examples",
+    "tech_docs_ru": "Найдите техническую документацию и примеры кода",
+    "platform_ru": "Найдите документацию по платформе Comindware: руководства, примеры кода, конфигурации",
+    "bilingual_full": "Find relevant documentation (Russian: Найдите релевантную документацию) in Russian or English",
+    "bilingual_natural": "Find technical documentation - документация, примеры кода, API на русском и английском"
+  },
+  "total_questions": 54,
+  "timestamp": "20260321_142256"
+}
