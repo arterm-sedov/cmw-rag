@@ -32,7 +32,7 @@ Use `pytest` for testing. Configuration is in `pyproject.toml`.
   pytest --cov=rag_engine --cov-report=term-missing
   ```
 
-### 5. Test Practices
+### 3. Test Practices
 
 Following industry best practices from Google Test Primer and IBM Unit Testing Guidelines:
 
@@ -106,7 +106,42 @@ def test_infinity_embeddings_returns_vector_of_expected_size(infinity_client):
 - [Google Test Primer](https://google.github.io/googletest/primer.html)
 - [IBM Unit Testing Best Practices](https://www.ibm.com/think/insights/unit-testing-best-practices)
 
-### 4. Running the Application
+#### Integration Tests
+
+For endpoints, test actual HTTP requests. Use pytest markers for slow/integration tests:
+```bash
+pytest -m "not slow"         # Run fast unit tests only
+pytest -m integration        # Run integration tests only
+```
+
+#### Cross-Model Testing
+
+Test multiple models/configurations with same logic. Don't duplicate test code. Use parametrized tests for different configs or inputs.
+
+#### Shared Logic Verification
+
+When multiple endpoints compute the same thing, verify they produce identical results.
+
+### 4. Design Principles
+
+- **TDD:** Write tests first, define behavior contracts before implementation
+- **SDD:** Plan with specs, understand requirements before coding
+- **Non-breaking:** Never break existing functionality - verify all endpoints still work
+- **Lean:** Minimal code, no overengineering, delete unnecessary complexity
+- **Pythonic:** Follow Python idioms, use standard library, prefer clarity over cleverness
+- **Brilliant:** Simple solutions that work, not complex ones that impress
+
+### 5. Verification Checklist
+
+Before considering work complete:
+
+1. Tests pass
+2. Lint passes
+3. Shared logic (DRY)
+4. All endpoints unchanged (no breakage)
+5. README updated if applicable
+
+### 6. Running the Application
 - **Start App (Bash):** `bash rag_engine/scripts/start_app.sh`
 - **Start App (Python):** `python rag_engine/api/app.py`
 - **Build Index:** `python rag_engine/scripts/build_index.py --source "path/to/docs" --mode folder`
