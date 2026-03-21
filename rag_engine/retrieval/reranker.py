@@ -245,18 +245,16 @@ class RerankerAdapter(HTTPClientMixin):
     """Client-side formatting adapter for server rerankers.
 
     Handles both cross-encoder (no formatting) and LLM reranker (formatting required).
-    Uses industry-standard vLLM/Cohere contracts:
-    - /v1/score: returns {data: [{index, object, score}, ...]} (vLLM format)
-    - /v1/rerank: returns {results: [{index, document, relevance_score}, ...]} (Cohere format)
+    Uses the endpoint configured in .env - uses it directly for scoring.
+
+    The endpoint is expected to be /v1/score (vLLM format):
+    - Request: {query, documents}
+    - Response: {data: [{index, score}, ...]}
     """
 
     def __init__(self, config: ServerRerankerConfig):
-        # Derive base URL from endpoint (e.g., http://localhost:7998/v1/rerank -> http://localhost:7998)
-        base_url = (
-            config.endpoint.rsplit("/v1/", 1)[0] if "/v1/" in config.endpoint else config.endpoint
-        )
         super().__init__(
-            endpoint=base_url,
+            endpoint=config.endpoint,
             timeout=config.timeout,
             max_retries=config.max_retries,
         )
@@ -303,38 +301,23 @@ class RerankerAdapter(HTTPClientMixin):
             prompt=self.config.formatting.prompt or "",
         )
 
-    def score(
+    def _get_scores(
         self, query: str, documents: list[str], instruction: str | None = None
-    ) -> list[float]:
-        """Get raw scores via /v1/score endpoint.
+    ) -> list[tuple[int, float]]:
+        """Get scores from endpoint (vLLM format).
 
-        Returns scores in original document order (vLLM format).
+        Returns list of (index, score) tuples in original order.
         """
         formatted_query = self.format_query(query, instruction)
         formatted_docs = [self.format_document(d) for d in documents]
 
-        # Use /v1/score endpoint
-        url = f"{self.endpoint}/v1/score"
-        try:
-            response = self.session.post(
-                url,
-                json={"query": formatted_query, "documents": formatted_docs},
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            data = response.json()["data"]
-        except requests.exceptions.Timeout:
-            logger.error(f"Request to {url} timed out after {self.timeout}s")
-            raise RuntimeError(f"Server at {url} not responding")
-        except requests.exceptions.ConnectionError:
-            logger.error(f"Cannot connect to {url}")
-            raise RuntimeError(f"Server at {url} is not running")
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"HTTP error from {url}: {e.response.status_code} - {e.response.text}")
-            raise RuntimeError(f"Server returned error: {e.response.status_code}")
+        response = self._post(
+            {"query": formatted_query, "documents": formatted_docs},
+        )
 
-        sorted_data = sorted(data, key=lambda x: x["index"])
-        return [item["score"] for item in sorted_data]
+        # Parse vLLM format: {data: [{index, score}, ...]}
+        data = response["data"]
+        return [(item["index"], item["score"]) for item in data]
 
     def rerank(
         self,
@@ -344,42 +327,22 @@ class RerankerAdapter(HTTPClientMixin):
         metadata_boost_weights: Optional[dict[str, float]] = None,
         instruction: Optional[str] = None,
     ) -> list[tuple[Any, float]]:
-        """Rerank candidates using /v1/rerank endpoint.
+        """Rerank candidates using configured endpoint.
 
+        Uses /v1/score endpoint (vLLM format), then sorts client-side.
         Returns (document, score) tuples sorted by relevance.
         """
         documents = [
             doc.page_content if hasattr(doc, "page_content") else str(doc) for doc, _ in candidates
         ]
 
-        formatted_query = self.format_query(query, instruction)
-        formatted_docs = [self.format_document(d) for d in documents]
+        # Get scores from endpoint
+        indexed_scores = self._get_scores(query, documents, instruction)
 
-        payload: dict = {"query": formatted_query, "documents": formatted_docs}
-        if top_k:
-            payload["top_n"] = top_k
-
-        # Use /v1/rerank endpoint
-        url = f"{self.endpoint}/v1/rerank"
-        try:
-            response = self.session.post(url, json=payload, timeout=self.timeout)
-            response.raise_for_status()
-            results = response.json()["results"]
-        except requests.exceptions.Timeout:
-            logger.error(f"Request to {url} timed out after {self.timeout}s")
-            raise RuntimeError(f"Server at {url} not responding")
-        except requests.exceptions.ConnectionError:
-            logger.error(f"Cannot connect to {url}")
-            raise RuntimeError(f"Server at {url} is not running")
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"HTTP error from {url}: {e.response.status_code} - {e.response.text}")
-            raise RuntimeError(f"Server returned error: {e.response.status_code}")
-
+        # Apply metadata boosts and create scored list
         scored: list[tuple[Any, float]] = []
-        for result in results:
-            idx = result["index"]
+        for idx, score in indexed_scores:
             doc, _ = candidates[idx]
-            score = result["relevance_score"]
 
             boost = 0.0
             if metadata_boost_weights and hasattr(doc, "metadata"):
@@ -394,6 +357,7 @@ class RerankerAdapter(HTTPClientMixin):
             final_score = float(score) * (1.0 + boost)
             scored.append((doc, final_score))
 
+        # Sort by score (highest first) and return top_k
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored[:top_k]
 
