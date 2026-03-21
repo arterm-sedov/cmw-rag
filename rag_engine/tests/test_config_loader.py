@@ -19,10 +19,9 @@ from rag_engine.config.loader import (
     load_reranker_config,
 )
 from rag_engine.config.schemas import (
-    ApiEmbeddingConfig,
     DirectEmbeddingConfig,
     DirectRerankerConfig,
-    ServerEmbeddingConfig,
+    OpenAIEmbeddingConfig,
     ServerRerankerConfig,
 )
 
@@ -44,11 +43,10 @@ class TestLoadEmbeddingConfig:
         """Test loading Infinity FRIDA config."""
         config = load_embedding_config("infinity_frida")
 
-        assert isinstance(config, ServerEmbeddingConfig)
-        assert config.type == "server"
-        # Verify endpoint is a valid localhost URL (not testing specific port)
-        assert config.endpoint.startswith("http://localhost:")
-        assert "/v1" in config.endpoint
+        assert isinstance(config, OpenAIEmbeddingConfig)
+        assert config.type == "openai_compatible"
+        assert config.provider == "infinity"
+        assert config.local is True
         assert config.query_prefix == "search_query: "
         assert config.doc_prefix == "search_document: "
         assert config.default_instruction is None
@@ -57,43 +55,38 @@ class TestLoadEmbeddingConfig:
         """Test loading OpenRouter Qwen3 config."""
         config = load_embedding_config("openrouter_qwen3")
 
-        assert isinstance(config, ApiEmbeddingConfig)
-        assert config.type == "api"
-        assert config.endpoint == "https://openrouter.ai/api/v1"
-        assert config.model == "qwen/qwen3-embedding-8b"
-        assert config.timeout == 60.0
-        assert config.max_retries == 3
+        assert isinstance(config, OpenAIEmbeddingConfig)
+        assert config.type == "openai_compatible"
+        assert config.provider == "openrouter"
+        assert config.local is False
         assert "Given a web search query" in config.default_instruction
 
     def test_load_infinity_qwen3_8b(self):
         """Test loading Infinity Qwen3-8B config."""
         config = load_embedding_config("infinity_qwen3_8b")
 
-        assert isinstance(config, ServerEmbeddingConfig)
-        assert config.type == "server"
-        # Verify endpoint is a valid localhost URL
-        assert config.endpoint.startswith("http://localhost:")
-        assert "/v1" in config.endpoint
+        assert isinstance(config, OpenAIEmbeddingConfig)
+        assert config.type == "openai_compatible"
+        assert config.provider == "infinity"
+        assert config.local is True
         assert config.default_instruction is not None
-        assert config.query_prefix is None  # Qwen3 uses instruction, not prefix
+        assert config.query_prefix is None
 
     def test_load_infinity_qwen3_4b(self):
         """Test loading Infinity Qwen3-4B config."""
         config = load_embedding_config("infinity_qwen3_4b")
 
-        assert isinstance(config, ServerEmbeddingConfig)
-        # Verify endpoint is a valid localhost URL
-        assert config.endpoint.startswith("http://localhost:")
-        assert "/v1" in config.endpoint
+        assert isinstance(config, OpenAIEmbeddingConfig)
+        assert config.type == "openai_compatible"
+        assert config.provider == "infinity"
 
     def test_load_infinity_qwen3_0_6b(self):
         """Test loading Infinity Qwen3-0.6B config."""
         config = load_embedding_config("infinity_qwen3_0_6b")
 
-        assert isinstance(config, ServerEmbeddingConfig)
-        # Verify endpoint is a valid localhost URL
-        assert config.endpoint.startswith("http://localhost:")
-        assert "/v1" in config.endpoint
+        assert isinstance(config, OpenAIEmbeddingConfig)
+        assert config.type == "openai_compatible"
+        assert config.provider == "infinity"
 
     def test_load_unknown_provider(self):
         """Test loading unknown provider raises error."""
@@ -212,7 +205,7 @@ class TestConfigCaching:
 
         # Verify all load correctly
         assert isinstance(config1, DirectEmbeddingConfig)
-        assert isinstance(config2, ServerEmbeddingConfig)
+        assert isinstance(config2, OpenAIEmbeddingConfig)
         assert isinstance(config3, DirectEmbeddingConfig)
 
         # config1 and config3 should have same values
