@@ -356,7 +356,10 @@ class OpenAICompatibleEmbedder:
 
     def _embed_remote(self, text: str) -> list[float]:
         """OpenAI SDK for remote providers."""
-        response = self.client.embeddings.create(model=self.config.model, input=text)
+        params = {"model": self.config.model, "input": text}
+        if self.config.dimensions:
+            params["dimensions"] = self.config.dimensions
+        response = self.client.embeddings.create(**params)
         return response.data[0].embedding
 
     def _embed_documents_local(self, texts: list[str]) -> list[list[float]]:
@@ -428,7 +431,10 @@ class OpenAICompatibleEmbedder:
 
         def _embed_batch(inputs: list[str]) -> list[list[float]]:
             """Embed a batch and enforce 1:1 mapping between inputs and outputs."""
-            response = self.client.embeddings.create(model=self.config.model, input=inputs)
+            params = {"model": self.config.model, "input": inputs}
+            if self.config.dimensions:
+                params["dimensions"] = self.config.dimensions
+            response = self.client.embeddings.create(**params)
             data = list(response.data or [])
             if len(data) != len(inputs):
                 logger.warning(
@@ -441,10 +447,10 @@ class OpenAICompatibleEmbedder:
                 )
                 per_item_embeddings: list[list[float]] = []
                 for text in inputs:
-                    single = self.client.embeddings.create(
-                        model=self.config.model,
-                        input=[text],
-                    )
+                    single_params = {"model": self.config.model, "input": [text]}
+                    if self.config.dimensions:
+                        single_params["dimensions"] = self.config.dimensions
+                    single = self.client.embeddings.create(**single_params)
                     if not single.data:
                         raise RuntimeError(
                             "Provider returned no embedding for a single input during fallback"
@@ -466,10 +472,10 @@ class OpenAICompatibleEmbedder:
                 except Exception:
                     logger.info("Remote batch failed, embedding individually")
                     for text in batch:
-                        single = self.client.embeddings.create(
-                            model=self.config.model,
-                            input=[text],
-                        )
+                        single_params = {"model": self.config.model, "input": [text]}
+                        if self.config.dimensions:
+                            single_params["dimensions"] = self.config.dimensions
+                        single = self.client.embeddings.create(**single_params)
                         if not single.data:
                             raise RuntimeError(
                                 "Provider returned no embedding for a single input during fallback"
