@@ -882,3 +882,27 @@ class RerankerAdapter(HTTPClientMixin):
 5. **Lean/DRY**: Single source of truth in `models.yaml`
 6. **Identical scores**: Both endpoints return same values
 7. **All test cases pass**: `expected_ranking` matches for all models
+
+---
+
+## Instruction Optimization (2026-03-21)
+
+### Benchmark Results
+
+Tested 11 instructions on Russian/English technical documentation corpus (10,685 docs).
+
+**Winner:** `platform_ru` (0.3459 avg score)
+```
+Найдите документацию по платформе Comindware: руководства, примеры кода, конфигурации и API на русском или английском
+```
+
+**Key Findings:**
+1. Russian instructions outperform English for Russian corpus
+2. Platform-specific mentions improve relevance
+3. Code awareness ("примеры кода") helps
+4. Default generic instruction is 2.6x worse
+
+**Recommended Change:**
+Update `models.yaml` default_instruction from generic web search to corpus-specific instruction.
+
+**Full analysis:** `rag_engine/docs/analysis/reranker_instruction_analysis_20260321.md`
