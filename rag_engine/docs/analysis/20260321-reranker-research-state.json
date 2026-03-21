@@ -1,0 +1,1067 @@
+{
+  "questions_with_docs": [
+    {
+      "q": "интеграция 1С",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "### Интеграция",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4699-send_http_example.md"
+        },
+        {
+          "content": "### ИТ-функции и интеграции",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\870. Обучение\\892. Курс «Аналитик. Ознакомительный»\\5113-lesson_1.md"
+        },
+        {
+          "content": "# Интеграция с 1С по OData. Настройка для импорта данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4698-1c_integrations.md"
+        },
+        {
+          "content": "## Настройка интеграции",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4923-example_telegram_bot.md"
+        },
+        {
+          "content": "# Интеграции. Содержание раздела",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\4922-integrations_toc.md"
+        }
+      ]
+    },
+    {
+      "q": "OData синхронизация",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "# Синхронизация с веб-сервисом. Интеграция по OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Интеграция с 1С по OData. Настройка для импорта данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4698-1c_integrations.md"
+        },
+        {
+          "content": "### OData\n\nИнтеграция по протоколу OData обеспечивает автоматическую двустороннюю синхронизацию данных между **Comindware Platform** и внешними системами.\n\n**Преимущества**\n\n- **Автоматизация по расписанию:** данные обновляются без ручного вмешательства.\n- **Не требуется настройка сценариев:** достаточно настроить подключение, аутентификацию и параметры синхронизации.\n- **Полная синхронизация:** поддерживается массовая выгрузка и загрузка записей.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\5091-integration.md"
+        },
+        {
+          "content": "## Порядок настройки и использования интеграции с внешним сервисом посредством OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        }
+      ]
+    },
+    {
+      "q": "HTTP POST запрос",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "### Для работы с HTTP-запросами",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\5091-integration.md"
+        },
+        {
+          "content": "# HTTP-запросы POST. Отправка JSON/XML и обработка ответа с помощью C#-скриптов. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5141-send_http_example_csharp.md"
+        },
+        {
+          "content": "# HTTP-запросы с составным содержимым. Получение файлов. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5083-http_receive_file.md"
+        },
+        {
+          "content": "# HTTP-запросы типа POST. Отправка и получение ответа. Пример: настройка подключения, пути передачи данных и сценария\n\n## Введение\n\n**Comindware Platform** позволяет отправлять HTTP-запросы типа `POST` для взаимодействия с внешними системами.\n\nЗдесь представлен пример настройки подключения, пути передачи данных, шаблона записи и сценария для отправки HTTP-запросов типа `POST` на внешний сервер и записи данных из ответа сервера в атрибуты шаблона записи.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5075-http_send_post.md"
+        },
+        {
+          "content": "## Порядок настройки отправки и обработки HTTP-запросов с помощью сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5084-jpath_example.md"
+        }
+      ]
+    },
+    {
+      "q": "Keycloak настройка",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "auth",
+      "docs": [
+        {
+          "content": "## Настройка Keycloak\n\n1. Откройте консоль администратора Keycloak.\n2. В левом меню выберите область (realm) **master** или другую существующую область.\n\n   ![Переход к управлению областью master в Keycloak](/platform/v5.0/administration/connections_communication_routes/authentication/img/openid_manage_realms.png)\n\n   Переход к управлению областью master в Keycloak\n3. Если требуемая область (realm) отсутствует, нажмите кнопку **Create realm** (Создать область), введите имя области, например `<myKeycloakRealm>`, и нажмите кнопку **Create** (Создать).\n\n   ![Создание области (realm) в Keycloak](/platform/v5.0/administration/connections_communication_routes/authentication/img/openid_create_new_realm.png)",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        },
+        {
+          "content": "3. [Настройте службу Keycloak](#openid_connection_keycloak_configure).\n4. [Настройте ОС Linux](#openid_connection_linux_configure) с экземпляром **Comindware Platform**.\n5. [Инициализируйте **Comindware Platform**](#openid_connection_initialize) для входа через Keycloak.\n6. При необходимости [настройте время жизни JWT-токенов](#openid_connection_session_lifetime) в соответствии с правилами безопасности и бизнес-требованиями.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        },
+        {
+          "content": "- `<yourHost>` — адрес сервера из [глобальной конфигурации](#openid_connection_server_address) **Comindware Platform**;\n   - `<instanceName>.yml` — путь к файлу конфигурации экземпляра **Comindware Platform** (cм. *«[Пути и содержимое папок экземпляра ПО](https://kb.comindware.ru/article.php?id=4620)»*);\n   - `https://<myKeycloakHost>` — адрес сервера Keycloak;\n   - `<myKeycloak>` — наглядное название службы Keycloak;\n   - `<myKeycloakRealm>` — имя области (realm) Keycloak;\n   - `<myKeycloakClientId>` — ID клиента Keycloak.\n2. [Проверьте использование протокола HTTPS](#openid_connection_server_address) для доступа к **Comindware Platform**.\n3. [Настройте службу Keycloak](#openid_connection_keycloak_configure).",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        },
+        {
+          "content": "### Настройка приложения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\858. Настройка панели навигации\\4811-page_access_control.md"
+        },
+        {
+          "content": "![Создание нового клиента Keycloak](/platform/v5.0/administration/connections_communication_routes/authentication/img/openid_create_new_client.png)\n\n   Создание нового клиента Keycloak\n7. Нажмите кнопку **Next** (Далее).\n8. На шаге **Capability config** (Конфигурация функций) включите функции **Client authentication** (Аутентификация клиента) и **Direct access grants** (Прямое предоставление прав).\n\n   ![Настройка конфигурации функций клиента Keycloak](/platform/v5.0/administration/connections_communication_routes/authentication/img/openid_create_new_client_2.png)\n\n   Настройка конфигурации функций клиента Keycloak\n9. Нажмите кнопку **Next** (Далее).\n10. На шаге **Login settings** (Параметры входа) укажите:",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        }
+      ]
+    },
+    {
+      "q": "ошибка подключения",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "errors",
+      "docs": [
+        {
+          "content": "## Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4687-ad_connection.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        },
+        {
+          "content": "## Типы подключений",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\4675-connections.md"
+        },
+        {
+          "content": "# Подключения. Определения, типы, создание, настройка, удаление",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\4675-connections.md"
+        },
+        {
+          "content": "# Сервер каталогов. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4687-ad_connection.md"
+        }
+      ]
+    },
+    {
+      "q": "конфигурация атрибутов",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "config",
+      "docs": [
+        {
+          "content": "## Настройка полей атрибутов",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\847. Формы\\4785-form_dynamic_elements.md"
+        },
+        {
+          "content": "# Атрибуты. Определения, типы, настройка, архивирование, удаление",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\846. Атрибуты\\4772-attributes.md"
+        },
+        {
+          "content": "## Рекомендации по изменению свойств атрибута",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\887. Решение проблем\\4762-attribute_change_type.md"
+        },
+        {
+          "content": "### Attribute — атрибуты шаблона\n\n| POST | /webapi/Attribute/{solutionAlias} |\n| --- | --- |\n| **Описание** | Создает атрибут. |\n| **Параметры** | Системное имя приложения, объект свойств атрибута. |\n| **Ответ** | Объект с системным именем атрибута. |\n\n| PUT | /webapi/Attribute/{solutionAlias} |\n| --- | --- |\n| **Описание** | Изменяет свойства атрибута. |\n| **Параметры** | Системное имя приложения, объект свойств атрибута. |\n| **Ответ** | Объект статуса. |",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4861-api_web.md"
+        },
+        {
+          "content": "# Общие свойства атрибутов",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\846. Атрибуты\\4765-attribute_common_properties.md"
+        }
+      ]
+    },
+    {
+      "q": "C# скрипт",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "code",
+      "docs": [
+        {
+          "content": "## Образец скрипта",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\883. Язык C#\\5002-document_download_to_server_csharp.md"
+        },
+        {
+          "content": "**Образец скрипта**",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\833. Сценарии\\4718-scenario_elements.md"
+        },
+        {
+          "content": "# Отладка формул, выражений N3, сценариев и C#-скриптов",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\887. Решение проблем\\4929-expression_debug.md"
+        },
+        {
+          "content": "Контекст C#-скрипта\n\n   C#-скрипты можно использовать в следующих контекстах:\n\n   - на кнопках;\n   - в задачах-выполнении сценария;\n   - в сценариях.\n\n   В зависимости от контекста в C#-скрипте будут отличаться метод `Main()` и возвращаемое значение.\n\n   Чтобы применить описанный выше C#-скрипт в других контекстах, также понадобится изменить значение переменной `reсordId`, содержащей ID текущей записи:",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\883. Язык C#\\5081-document_download_archive_related_record_csharp.md"
+        },
+        {
+          "content": "# HTTP-запросы. Получение JSON-данных с помощью C#-скрипта. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5142-receive_http_example_csharp.md"
+        }
+      ]
+    },
+    {
+      "q": "сценарий кнопки",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "scripts",
+      "docs": [
+        {
+          "content": "_![Кнопки настройки элемента сценария](https://kb.comindware.ru/assets/scenario_element_buttons.png)_",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\833. Сценарии\\4717-scenarios.md"
+        },
+        {
+          "content": "**Образец скрипта**",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\833. Сценарии\\4718-scenario_elements.md"
+        },
+        {
+          "content": "### Свойства событий по типам\n\n#### Нажатие кнопки\n\nСценарий будет запускаться при нажатии указанной **кнопки** в **[контекстном шаблоне](#scenario_events_common_properties)**.\n\nПримечание\n\nСценарий по событию «**Нажатие кнопки**» может быть запущен при нажатии любой кнопки, кроме кнопки с операцией «**Создать**», так как для [**создания записи**](#scenario_actions_create_record) предусмотрено специальное событие.\n\n#### Создание записи\n\nСценарий будет запускаться при создании записи в **[контекстном шаблоне](#scenario_events_common_properties)**.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\833. Сценарии\\4718-scenario_elements.md"
+        },
+        {
+          "content": "## Событие сценария\n\nОпределения\n\n**Событие** — это элемент, наступление которого запускает сценарий.\n\nВсе остальные элементы сценария следуют за его событием.\n\nПредусмотрены следующие события сценария:\n\n- **[Нажатие кнопки](#scenario_events_button_clicked)**\n- **[Создание записи](#scenario_events_record_created)**\n- **[Изменение записи](#scenario_events_record_modified)**\n- **[Запуск процесса](#scenario_events_process_started)**\n- **[Получение сообщения](#scenario_events_message_received)**\n- **[Вход токена](#scenario_events_token_entry)**\n- **[Выход токена](#scenario_events_token_exit)**",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\833. Сценарии\\4718-scenario_elements.md"
+        },
+        {
+          "content": "## Образец скрипта",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\883. Язык C#\\5002-document_download_to_server_csharp.md"
+        }
+      ]
+    },
+    {
+      "q": "шаблон записи",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "config",
+      "docs": [
+        {
+          "content": "# Шаблон записи",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\845. Типы и свойства шаблонов\\4759-record_templates.md"
+        },
+        {
+          "content": "# Шаблон процесса",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\845. Типы и свойства шаблонов\\4758-process_templates.md"
+        },
+        {
+          "content": "Настройка шаблона записи с помощью диаграммы модели данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\870. Обучение\\893. Курс «Управление автопарком. Ознакомительный»\\4869-lesson_5.md"
+        },
+        {
+          "content": "_![Свойства шаблона записи](https://kb.comindware.ru/assets/record_templates_properties.png)_",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\845. Типы и свойства шаблонов\\4759-record_templates.md"
+        },
+        {
+          "content": "# Шаблон роли",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\845. Типы и свойства шаблонов\\4760-role_templates.md"
+        }
+      ]
+    },
+    {
+      "q": "REST API",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "api",
+      "docs": [
+        {
+          "content": "# Введение в API",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4860-api_intro.md"
+        },
+        {
+          "content": "## Описание методов Web API",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4861-api_web.md"
+        },
+        {
+          "content": "# HTTP-запросы. Получение и обработка данных с помощью JSONPath",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5084-jpath_example.md"
+        },
+        {
+          "content": "- **REST API** — это API, соответствующий архитектуре Representational State Transfer (передача репрезентативного состояния). Преимуществами REST API являются возможность оптимального использования протокола HTTP, масштабирования сервисов и разработки приложений с использованием практически любых языков программирования с соблюдением принципов проектирования REST:",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4860-api_intro.md"
+        },
+        {
+          "content": "- код по запросу — сервер может расширить возможности клиента, передав исполняемый код, например, для проверки введённых пользователем данных.\n- **RESTful** — это веб-служба, реализующая архитектуру **REST**.\n- **Ресурс** — это объект или информация в приложении, например шаблон, аккаунт или документ, доступ к которым предоставляет API.\n- **URI ресурса** — это универсальный идентификатор ресурса в API.\n- **Клиент** — это человек или система, которые осуществляют доступ к ресурсам посредством API.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4860-api_intro.md"
+        }
+      ]
+    },
+    {
+      "q": "развертывание сервера",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "infrastructure",
+      "docs": [
+        {
+          "content": "# Сервер каталогов. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4687-ad_connection.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        },
+        {
+          "content": "# Задача-вызов сервиса",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\834. Диаграммы\\835. Диаграмма процесса\\836. Элементы диаграммы процесса\\837. Действия\\4729-service_call_task.md"
+        },
+        {
+          "content": "### Интеграция",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4699-send_http_example.md"
+        },
+        {
+          "content": "### Группы на сервере каталогов",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4687-ad_connection.md"
+        }
+      ]
+    },
+    {
+      "q": "аутентификация OpenID",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "auth",
+      "docs": [
+        {
+          "content": "## Алгоритм авторизации",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4923-example_telegram_bot.md"
+        },
+        {
+          "content": "```\n   #### Настройки OpenID-аутентификации #####\n   # Имя сервиса OpenID, используемого для входа\n   auth.openId.displayName: <myKeycloak>\n   # Вкл./выкл. функции\n   auth.openId.enabled: true\n   # Адрес сервера OpenId Connect\n   auth.openId.server: https://<myKeycloakHost>\n   # Пространство имен или контекст,\n   # в котором происходит аутентификация пользователей.\n   # Используется для управления идентификацией\n   # и доступом в системе OpenID Connect\n   auth.openId.realm: <myKeycloakRealm>\n   # Уникальный идентификатор клиентского приложения,\n   # используемый для аутентификации и авторизации запросов",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        },
+        {
+          "content": "# Введение в API",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4860-api_intro.md"
+        },
+        {
+          "content": "# используемый для аутентификации и авторизации запросов\n   # в рамках протокола OpenID Connect\n   auth.openId.clientId: <myKeycloakClient>\n   # Секретный ключ OpenId Connect\n   # Это сохранённый ранее секрет клиента\n   auth.openId.clientSecret: <keyCloakClientSecret>\n   # Список идентификаторов целевой аудитории,\n   # для которой предназначены токены,\n   # используемые в процессе аутентификации и авторизации в OpenID Connect.\n   auth.openId.audience: myAudience\n   ```",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        },
+        {
+          "content": "| POST | /Base/GlobalConfigurationService/RegisterAuthChannel |\n| --- | --- |\n| **Описание** | Зарегистрировать канал аутентификации. |\n| **Параметры** | Канал. |\n| **Ответ** | Статус. |\n\n| POST | /Base/GlobalConfigurationService/UnregisterAuthChannel |\n| --- | --- |\n| **Описание** | Снимает регистрацию канала аутентификации. |\n| **Параметры** | Канал. |\n| **Ответ** | Статус. |\n\n| POST | /Base/GlobalConfigurationService/GetPlatformLanguageFromUserPreferredLanguages |\n| --- | --- |\n| **Описание** | Определяет язык интерфейса ПО из предпочтительных языков пользователя. |\n| **Параметры** | Список предпочтительных языков. |\n| **Ответ** | Выбранный язык интерфейса. |",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4862-api_system_core.md"
+        }
+      ]
+    },
+    {
+      "q": "BPM процессы",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "platform",
+      "docs": [
+        {
+          "content": "# Построение процессной архитектуры",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\861. Моделирование корпоративной архитектуры\\4833-architect_process_architecture_design.md"
+        },
+        {
+          "content": "# Урок 3. Создание бизнес-процесса",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\870. Обучение\\892. Курс «Аналитик. Ознакомительный»\\5115-lesson_3.md"
+        },
+        {
+          "content": "# Шаблон процесса",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\845. Типы и свойства шаблонов\\4758-process_templates.md"
+        },
+        {
+          "content": "## Создание элемента процессной архитектуры",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\861. Моделирование корпоративной архитектуры\\4833-architect_process_architecture_design.md"
+        },
+        {
+          "content": "### Создание процессной карты",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\861. Моделирование корпоративной архитектуры\\4826-architect_example.md"
+        }
+      ]
+    },
+    {
+      "q": "графовая база данных",
+      "type": "keyword",
+      "lang": "ru",
+      "topic": "platform",
+      "docs": [
+        {
+          "content": "## Преимущества графовой модели данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\877. Язык N3\\4584-elasticdata_description.md"
+        },
+        {
+          "content": "# Диаграммы. Определения, создание, просмотр, удаление",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\834. Диаграммы\\4710-diagrams.md"
+        },
+        {
+          "content": "### Управление данными",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\870. Обучение\\893. Курс «Управление автопарком. Ознакомительный»\\5085-intro.md"
+        },
+        {
+          "content": "# Технология Comindware ElasticData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\877. Язык N3\\4584-elasticdata_description.md"
+        },
+        {
+          "content": "_![Пример графовой модели данных](https://kb.comindware.ru/assets/elasticdata_description_graph_db_example.png)_\n\nТаким образом факты сохраняются в графовой базе данных:\n\n_![Способ хранения данных в графовой базе данных](https://kb.comindware.ru/assets/elasticdata_description_graph_storage_example.png)_\n\nБизнес-правила в **ElasticData** имеют расширенный вид по сравнению со стандартом N3 для работы с комплексными правилами. Пример.\n\n_![Сложные бизнес-правила в ElasticData](https://kb.comindware.ru/assets/elasticdata_description_compex_rules.png)_",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\877. Язык N3\\4584-elasticdata_description.md"
+        }
+      ]
+    },
+    {
+      "q": "Как настроить интеграцию с 1С?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "## Настройка интеграции",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4923-example_telegram_bot.md"
+        },
+        {
+          "content": "# Интеграция с 1С по OData. Настройка для импорта данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4698-1c_integrations.md"
+        },
+        {
+          "content": "### Интеграция",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4699-send_http_example.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Интеграция по OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        }
+      ]
+    },
+    {
+      "q": "Как отправить HTTP POST запрос из сценария?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "scripts",
+      "docs": [
+        {
+          "content": "## Порядок настройки отправки и обработки HTTP-запросов с помощью сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5084-jpath_example.md"
+        },
+        {
+          "content": "# HTTP-запросы POST. Отправка JSON/XML и обработка ответа с помощью C#-скриптов. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5141-send_http_example_csharp.md"
+        },
+        {
+          "content": "# HTTP-запросы. Получение JSON-данных. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4700-receive_http_example.md"
+        },
+        {
+          "content": "# HTTP-запросы с составным содержимым. Получение файлов. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5083-http_receive_file.md"
+        },
+        {
+          "content": "# HTTP-запросы. Отправка из сценария. Настройка подключения\n\n## Введение\n\n**Comindware Platform** позволяет отправлять HTTP-запросы типов `GET`, `POST`, `PUT`, `DELETE` для взаимодействия с внешними системами. Здесь представлены инструкции по настройке подключения для отправки HTTP-запросов из сценариев с помощью [действия «**Отправить сообщение**»](https://kb.comindware.ru/article.php?id=4718#scenario_actions_send_message).",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4703-send_http_connection.md"
+        }
+      ]
+    },
+    {
+      "q": "Как подключить аутентификацию через Keycloak?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "auth",
+      "docs": [
+        {
+          "content": "# Аутентификация через Keycloak и OpenID Connect. Настройка подключения и служб\n\n## Введение\n\nЗдесь представлены краткие инструкции по настройке аутентификации в **Comindware Platform** посредством Keycloak и OpenID Connect для ОС Linux.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        },
+        {
+          "content": "3. [Настройте службу Keycloak](#openid_connection_keycloak_configure).\n4. [Настройте ОС Linux](#openid_connection_linux_configure) с экземпляром **Comindware Platform**.\n5. [Инициализируйте **Comindware Platform**](#openid_connection_initialize) для входа через Keycloak.\n6. При необходимости [настройте время жизни JWT-токенов](#openid_connection_session_lifetime) в соответствии с правилами безопасности и бизнес-требованиями.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        },
+        {
+          "content": "## Настройка Keycloak\n\n1. Откройте консоль администратора Keycloak.\n2. В левом меню выберите область (realm) **master** или другую существующую область.\n\n   ![Переход к управлению областью master в Keycloak](/platform/v5.0/administration/connections_communication_routes/authentication/img/openid_manage_realms.png)\n\n   Переход к управлению областью master в Keycloak\n3. Если требуемая область (realm) отсутствует, нажмите кнопку **Create realm** (Создать область), введите имя области, например `<myKeycloakRealm>`, и нажмите кнопку **Create** (Создать).\n\n   ![Создание области (realm) в Keycloak](/platform/v5.0/administration/connections_communication_routes/authentication/img/openid_create_new_realm.png)",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        },
+        {
+          "content": "![Создание нового клиента Keycloak](/platform/v5.0/administration/connections_communication_routes/authentication/img/openid_create_new_client.png)\n\n   Создание нового клиента Keycloak\n7. Нажмите кнопку **Next** (Далее).\n8. На шаге **Capability config** (Конфигурация функций) включите функции **Client authentication** (Аутентификация клиента) и **Direct access grants** (Прямое предоставление прав).\n\n   ![Настройка конфигурации функций клиента Keycloak](/platform/v5.0/administration/connections_communication_routes/authentication/img/openid_create_new_client_2.png)\n\n   Настройка конфигурации функций клиента Keycloak\n9. Нажмите кнопку **Next** (Далее).\n10. На шаге **Login settings** (Параметры входа) укажите:",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        },
+        {
+          "content": "```\n   #### Настройки OpenID-аутентификации #####\n   # Имя сервиса OpenID, используемого для входа\n   auth.openId.displayName: <myKeycloak>\n   # Вкл./выкл. функции\n   auth.openId.enabled: true\n   # Адрес сервера OpenId Connect\n   auth.openId.server: https://<myKeycloakHost>\n   # Пространство имен или контекст,\n   # в котором происходит аутентификация пользователей.\n   # Используется для управления идентификацией\n   # и доступом в системе OpenID Connect\n   auth.openId.realm: <myKeycloakRealm>\n   # Уникальный идентификатор клиентского приложения,\n   # используемый для аутентификации и авторизации запросов",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4685-openid_connection_gostech.md"
+        }
+      ]
+    },
+    {
+      "q": "Как исправить ошибку подключения к базе данных?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "errors",
+      "docs": [
+        {
+          "content": "## Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4687-ad_connection.md"
+        },
+        {
+          "content": "# Сервер каталогов. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4687-ad_connection.md"
+        },
+        {
+          "content": "# Подключения. Определения, типы, создание, настройка, удаление",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\4675-connections.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        },
+        {
+          "content": "## Настройка подключения к Р7-Офис",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4689-r7_connection.md"
+        }
+      ]
+    },
+    {
+      "q": "Как создать шаблон записи?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "config",
+      "docs": [
+        {
+          "content": "# Шаблон записи",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\845. Типы и свойства шаблонов\\4759-record_templates.md"
+        },
+        {
+          "content": "### Создание шаблона записи\n\n1. Перейдите к [списку шаблонов приложения](#templates_view_in_app).\n2. Выберите вкладку «**Шаблоны записей**».\n3. Нажмите кнопку «**Создать**».\n4. Откроется окно «**Новый шаблон**».\n5. Настройте [свойства шаблона записи](https://kb.comindware.ru/article.php?id=4759#record_template_properties).\n6. Сохраните шаблон.\n\n_![Создание шаблона записи](/platform/v5.0/business_apps/templates/img/record_templates_create.png)_",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\4709-templates.md"
+        },
+        {
+          "content": "### RecordTemplate — шаблоны записей\n\n| POST | /webapi/RecordTemplate/{solutionAlias} |\n| --- | --- |\n| **Описание** | Создает шаблон записи. |\n| **Параметры** | Системное имя приложения, объект свойств шаблона записи. |\n| **Ответ** | Системное имя шаблона записи. |\n\n| PUT | /webapi/RecordTemplate/{solutionAlias} |\n| --- | --- |\n| **Описание** | Изменяет шаблон записи. |\n| **Параметры** | Системное имя приложения, объект свойств шаблона записи. |\n| **Ответ** | Объект статуса. |",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4861-api_web.md"
+        },
+        {
+          "content": "_![Свойства шаблона записи](https://kb.comindware.ru/assets/record_templates_properties.png)_",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\845. Типы и свойства шаблонов\\4759-record_templates.md"
+        },
+        {
+          "content": "![Создание шаблона записи](/platform/v5.0/tutorials/tutorial_fleet/img/lesson_2_record_template_configure.png)\n\n    Создание шаблона записи",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\870. Обучение\\893. Курс «Управление автопарком. Ознакомительный»\\4873-lesson_2.md"
+        }
+      ]
+    },
+    {
+      "q": "Как использовать C# скрипты в сценариях?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "scripts",
+      "docs": [
+        {
+          "content": "Контекст C#-скрипта\n\n   C#-скрипты можно использовать в следующих контекстах:\n\n   - на кнопках;\n   - в задачах-выполнении сценария;\n   - в сценариях.\n\n   В зависимости от контекста в C#-скрипте будут отличаться метод `Main()` и возвращаемое значение.\n\n   Чтобы применить описанный выше C#-скрипт в других контекстах, также понадобится изменить значение переменной `reсordId`, содержащей ID текущей записи:",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\883. Язык C#\\5081-document_download_archive_related_record_csharp.md"
+        },
+        {
+          "content": "# Локальная переменная в C#-скрипте и сценарии. Использование для копирования данных между шаблонами",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\871. Помощь в настройке. Практические примеры\\4914-script_using_local_variable.md"
+        },
+        {
+          "content": "# Отладка формул, выражений N3, сценариев и C#-скриптов",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\887. Решение проблем\\4929-expression_debug.md"
+        },
+        {
+          "content": "# Сценарии. Определения, создание, настройка, использование",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\833. Сценарии\\4717-scenarios.md"
+        },
+        {
+          "content": "# HTTP-запросы. Получение JSON-данных с помощью C#-скрипта. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5142-receive_http_example_csharp.md"
+        }
+      ]
+    },
+    {
+      "q": "Как настроить синхронизацию данных?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "# Синхронизация с веб-сервисом. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        },
+        {
+          "content": "## Настройка интеграции",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4923-example_telegram_bot.md"
+        },
+        {
+          "content": "## Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4687-ad_connection.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Интеграция по OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Синхронизация с сервером каталогов (Active Directory)",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\802. Руководство системного администратора\\813. Управление аккаунтами\\4655-accounts_dc_sync.md"
+        }
+      ]
+    },
+    {
+      "q": "Что такое OData и как его использовать?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "# Синхронизация с веб-сервисом. Интеграция по OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "## Порядок настройки и использования интеграции с внешним сервисом посредством OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Интеграция с 1С по OData. Настройка для импорта данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4698-1c_integrations.md"
+        },
+        {
+          "content": "### Сведения в журнале «Интеграция по OData»",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Введение в API",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4860-api_intro.md"
+        }
+      ]
+    },
+    {
+      "q": "Какие типы HTTP запросов поддерживаются?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "api",
+      "docs": [
+        {
+          "content": "### Для работы с HTTP-запросами",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\5091-integration.md"
+        },
+        {
+          "content": "### Пять видов запросов",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\877. Язык N3\\4852-n3_guide.md"
+        },
+        {
+          "content": "# HTTP-запросы типа GET. Отправка запроса и обработка ответа в формате JSON. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4699-send_http_example.md"
+        },
+        {
+          "content": "# HTTP-запросы с составным содержимым. Получение файлов. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5083-http_receive_file.md"
+        },
+        {
+          "content": "# HTTP-запросы. Отправка из сценария. Настройка подключения\n\n## Введение\n\n**Comindware Platform** позволяет отправлять HTTP-запросы типов `GET`, `POST`, `PUT`, `DELETE` для взаимодействия с внешними системами. Здесь представлены инструкции по настройке подключения для отправки HTTP-запросов из сценариев с помощью [действия «**Отправить сообщение**»](https://kb.comindware.ru/article.php?id=4718#scenario_actions_send_message).",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4703-send_http_connection.md"
+        }
+      ]
+    },
+    {
+      "q": "Как развернуть платформу на сервере?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "infrastructure",
+      "docs": [
+        {
+          "content": "# Сервер каталогов. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4687-ad_connection.md"
+        },
+        {
+          "content": "### Темы для дальнейшего изучения возможностей платформы",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\870. Обучение\\892. Курс «Аналитик. Ознакомительный»\\5121-outro.md"
+        },
+        {
+          "content": "# Развёртывание Comindware Platform. Содержание раздела\n\n- [Развёртывание Comindware Platform. Архитектура, ландшафт, программное и техническое обеспечение](https://kb.comindware.ru/article.php?id=4596)\n- [Системные требования Comindware Platform](https://kb.comindware.ru/article.php?id=4659)\n- [Обеспечение высокой доступности и отказоустойчивости Comindware Platform](https://kb.comindware.ru/article.php?id=5079)\n- [Кластер Comindware Platform. Обновление ПО](https://kb.comindware.ru/article.php?id=5134)\n- [Безопасность](https://kb.comindware.ru/article.php?id=4660)\n- [Инструкции для Linux](https://kb.comindware.ru/category.php?id=807)\n- [Инструкции для Windows](https://kb.comindware.ru/category.php?id=808)\n- [Развёртывание вспомогательного ПО](https://kb.comindware.ru/category.php?id=804)",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\802. Руководство системного администратора\\803. Развертывание Comindware Platform\\5101-toc.md"
+        },
+        {
+          "content": "# Хранилище S3. Настройка экземпляра ПО и подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4677-s3_connection.md"
+        },
+        {
+          "content": "### Создание единственного экземпляра ПО\n\n1. Перейдите в режим суперпользователя:\n\n   ```\n   sudo -s\n   ```\n\n   или\n\n   ```\n   su -\n   ```\n2. Перейдите в директорию со скриптами для развёртывания ПО **Comindware Platform**:\n\n   ```\n   cd <distPath>/CMW_<osname>_<versionNumber>/scripts\n   ```\n\n   Здесь: `<distPath>/CMW_<osname>_<versionNumber>/` — путь к распакованному дистрибутиву ПО.\n3. Разверните экземпляр ПО:\n\n   ```\n   sh instance_create.sh -n=<instanceName> -v=<versionNumber> [-p=<portNumber>]\n   ```\n\n   Ключи скрипта `instance_create.sh`:\n\n   - `-n=<instanceName>` — имя экземпляра ПО (**обязательный** ключ).\n   - `-v=<versionNumber>` — номер версии ПО вида `X.X.XXXXX.X` (например: 5.0.00000.0, **обязательный** ключ). Версия должна быть установлена, см. *«[Установка Comindware Platfor",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\802. Руководство системного администратора\\803. Развертывание Comindware Platform\\807. Linux\\4622-deploy_guide.md"
+        }
+      ]
+    },
+    {
+      "q": "Как настроить путь передачи данных?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "## Настройка путей передачи данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\871. Помощь в настройке. Практические примеры\\4691-process_email_configure.md"
+        },
+        {
+          "content": "# Пути передачи данных. Определения, типы, создание, настройка, удаление",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\4676-communication_routes.md"
+        },
+        {
+          "content": "_![Список путей передачи данных](/platform/v5.0/administration/connections_communication_routes/../architecture/img/communication_routes_page.png)_",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\4676-communication_routes.md"
+        },
+        {
+          "content": "## Настройка подключения к Telegram и пути передачи данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4926-telegram_send_notification.md"
+        },
+        {
+          "content": "## Типы путей передачи данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\4676-communication_routes.md"
+        }
+      ]
+    },
+    {
+      "q": "Как обработать JSON ответ сервера?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "scripts",
+      "docs": [
+        {
+          "content": "# HTTP-запросы. Получение и обработка данных с помощью JSONPath",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5084-jpath_example.md"
+        },
+        {
+          "content": "# HTTP-запросы. Получение JSON-данных. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4700-receive_http_example.md"
+        },
+        {
+          "content": "# HTTP-запросы типа GET. Отправка запроса и обработка ответа в формате JSON. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4699-send_http_example.md"
+        },
+        {
+          "content": "# HTTP-запросы. Получение JSON-данных с помощью C#-скрипта. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5142-receive_http_example_csharp.md"
+        },
+        {
+          "content": "- *[HTTP-запросы типа GET. Отправка запроса и обработка ответа в формате JSON](https://kb.comindware.ru/article.php?id=4699)*\n- *[HTTP-запросы. Получение JSON-данных в сценарии](https://kb.comindware.ru/article.php?id=4700)*\n- *[HTTP-запросы. Получение и обработка данных с помощью JSONPath](https://kb.comindware.ru/article.php?id=5084)*\n- *[HTTP-запросы типа POST. Отправка и получение ответа](https://kb.comindware.ru/article.php?id=5075)*\n- *[HTTP-запросы типа POST. Отправка составного содержимого и файлов](https://kb.comindware.ru/article.php?id=5066)*\n- *[HTTP-запросы с составным содержимым. Получение файлов в сценарии](https://kb.comindware.ru/article.php?id=5083)*",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\5091-integration.md"
+        }
+      ]
+    },
+    {
+      "q": "Какие атрибуты можно использовать в шаблоне?",
+      "type": "natural",
+      "lang": "ru",
+      "topic": "config",
+      "docs": [
+        {
+          "content": "# Общие свойства шаблонов",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\845. Типы и свойства шаблонов\\4756-template_common_properties.md"
+        },
+        {
+          "content": "# Атрибуты для поиска записей шаблона",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\846. Атрибуты\\4776-searchable_attribute.md"
+        },
+        {
+          "content": "## Ввод системного имени атрибута текущего шаблона\n\n1. Введите символ `$`.\n2. Отобразится список атрибутов текущего шаблона.\n   ![Список атрибутов текущего шаблона](/platform/v5.0/business_apps/expressions/expression_editor/formula_editor/img/formula_editor_template_attribute_autocomplete.png)\n\n   Список атрибутов текущего шаблона\n3. Дважды нажмите системное имя атрибута, чтобы вставить его в формулу.\n\nПример: формула, возвращающая целочисленное значение атрибута Passazhiry в текущей записи```\nINT($Passazhiry)\n```",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\884. Редактор выражений\\5035-formula_editor_autocomplete.md"
+        },
+        {
+          "content": "_![Общие свойства шаблонов](https://kb.comindware.ru/assets/common_properties.png)_",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\844. Шаблоны\\845. Типы и свойства шаблонов\\4756-template_common_properties.md"
+        },
+        {
+          "content": "| GET | /webapi/Attribute/List/{templateGlobalAlias} |\n| --- | --- |\n| **Описание** | Получает все атрибуты указанного шаблона. |\n| **Параметры** | Глобальный псевдоним шаблона: `Template@applicationSystemName.templateSystemName`. |\n| **Ответ** | Массив объектов с атрибутивными свойствами. |",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4861-api_web.md"
+        }
+      ]
+    },
+    {
+      "q": "REST API подключение",
+      "type": "keyword",
+      "lang": "mixed",
+      "topic": "api",
+      "docs": [
+        {
+          "content": "# Введение в API",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4860-api_intro.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Интеграция по OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "### Интеграция",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4699-send_http_example.md"
+        },
+        {
+          "content": "## Настройка подключения к Р7-Офис",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4689-r7_connection.md"
+        }
+      ]
+    },
+    {
+      "q": "webhook настройка",
+      "type": "keyword",
+      "lang": "mixed",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "## Настройка интеграции",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4923-example_telegram_bot.md"
+        },
+        {
+          "content": "# Системные уведомления. Настройка",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\871. Помощь в настройке. Практические примеры\\5136-system_notifications.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        },
+        {
+          "content": "### Интеграция",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4699-send_http_example.md"
+        },
+        {
+          "content": "_![Данные сообщения для пользовательской задачи](/platform/v5.0/business_apps/diagrams/process_diagram/process_diagram_elements/actions/img/message_data.png)_",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\834. Диаграммы\\835. Диаграмма процесса\\836. Элементы диаграммы процесса\\837. Действия\\4730-user_task.md"
+        }
+      ]
+    },
+    {
+      "q": "JSON данные в сценарии",
+      "type": "keyword",
+      "lang": "mixed",
+      "topic": "scripts",
+      "docs": [
+        {
+          "content": "# HTTP-запросы. Получение JSON-данных. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4700-receive_http_example.md"
+        },
+        {
+          "content": "# HTTP-запросы. Получение JSON-данных с помощью C#-скрипта. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5142-receive_http_example_csharp.md"
+        },
+        {
+          "content": "# Переменные в сценарии",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\832. Разработка приложений\\833. Сценарии\\4719-scenario_variables.md"
+        },
+        {
+          "content": "См. также *«[HTTP-запросы. Получение JSON-данных в сценарии](https://kb.comindware.ru/article.php?id=4700)»*",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5083-http_receive_file.md"
+        },
+        {
+          "content": "# HTTP-запросы. Получение и обработка данных с помощью JSONPath",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5084-jpath_example.md"
+        }
+      ]
+    },
+    {
+      "q": "Как настроить REST API в Comindware?",
+      "type": "natural",
+      "lang": "mixed",
+      "topic": "api",
+      "docs": [
+        {
+          "content": "- [*Справочник по API*](https://kb.comindware.ru/category.php?id=868)\n  - [*Справочник по языку N3*](https://kb.comindware.ru/category.php?id=867)\n- [*Помощь в настройке*](https://kb.comindware.ru/category.php?id=871) — статьи, описывающие настройку какого-либо решения для ПО.\n- [*Решение проблем*](https://kb.comindware.ru/category.php?id=887) — статьи, отвечающие на наиболее распространенные вопросы пользователей.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\4578-toc.md"
+        },
+        {
+          "content": "### Доступ к API Comindware Platform\n\n**Comindware Platform** предоставляет методы **REST API**, позволяющие манипулировать данными шаблонов записей, бизнес-процессов и других сущностей.\n\nЧтобы посмотреть и протестировать доступные методы в интерфейсе Swagger, откройте следующий URL в браузере:",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\5091-integration.md"
+        },
+        {
+          "content": "- **`![](https://kb.comindware.ru/images/marker.png)Введение в API {Article-ID:4860}`**\n  - **`![](https://kb.comindware.ru/images/marker.png)Методы System Core API {Article-ID:4862}`**\n  - **`![](https://kb.comindware.ru/images/marker.png)Методы Solution API {Article-ID:4863}`**\n  - **`![](https://kb.comindware.ru/images/marker.png)Методы Web API {Article-ID:4861}`**\n- **[Примеры интеграций](https://kb.comindware.ru/category.php?id=875)**",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\4922-integrations_toc.md"
+        },
+        {
+          "content": "- **`![](https://kb.comindware.ru/images/marker.png) Интеграция Comindware Platform с внешними системами. Общие рекомендации {Article-ID:5091}`**\n- **`![](https://kb.comindware.ru/images/marker.png)Подключения. Типы, создание, настройка, удаление {Article-ID:4675}`**\n- **`![](https://kb.comindware.ru/images/marker.png)Пути передачи данных. Типы, создание, настройка, удаление {Article-ID:4676}`**\n- [**OData. Синхронизация данных шаблонов**](https://kb.comindware.ru/category.php?id=874)\n- **[Использование API](https://kb.comindware.ru/category.php?id=873)**\n  - **`![](https://kb.comindware.ru/images/marker.png)Введение в API {Article-ID:4860}`**\n  - **`![](https://kb.comindware.ru/images/marker.png)Методы System Core API {Article-ID:4862}`**",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\4922-integrations_toc.md"
+        },
+        {
+          "content": "## Связанные статьи\n\n- [Общие сведения об API Comindware Platform](https://kb.comindware.ru/article.php?id=4860)\n- [Методы System Core API](https://kb.comindware.ru/article.php?id=4862)",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\887. Решение проблем\\5049-table_open_error.md"
+        }
+      ]
+    },
+    {
+      "q": "Пример C# скрипта для HTTP запроса",
+      "type": "natural",
+      "lang": "mixed",
+      "topic": "scripts",
+      "docs": [
+        {
+          "content": "# HTTP-запросы. Получение JSON-данных с помощью C#-скрипта. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5142-receive_http_example_csharp.md"
+        },
+        {
+          "content": "# HTTP-запросы POST. Отправка JSON/XML и обработка ответа с помощью C#-скриптов. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5141-send_http_example_csharp.md"
+        },
+        {
+          "content": "return true;\n       }\n   }\n\n   public class IncomingRootMessage\n   {\n       public string status {get; set;}\n   }\n   ```\n6. Результирующий сценарий должен выглядеть, как показано на следующей иллюстрации.\n\n   ![Сценарий для отправки HTTP-запроса с использованием C#-скриптов](/platform/v5.0/administration/connections_communication_routes/rest_odata_connections/img/send_http_example_csharp_scenario_send.png)\n\n   Сценарий для отправки HTTP-запроса с использованием C#-скриптов\n7. Проверьте работу приложения: сценарий должен отправлять HTTP-запрос с позициями заказа и получать статус заказа от внешнего сервера.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5141-send_http_example_csharp.md"
+        },
+        {
+          "content": "Сценарий для получения HTTP-запроса с использованием C#-скриптов\n5. Проверьте работу приложения.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5142-receive_http_example_csharp.md"
+        },
+        {
+          "content": "## Порядок настройки отправки и обработки HTTP-запросов с помощью сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5084-jpath_example.md"
+        }
+      ]
+    },
+    {
+      "q": "API для синхронизации данных",
+      "type": "natural",
+      "lang": "mixed",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "# Синхронизация с веб-сервисом. Интеграция по OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Настройка подключения",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        },
+        {
+          "content": "### Интеграция",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4699-send_http_example.md"
+        },
+        {
+          "content": "# Синхронизация с сервером каталогов (Active Directory)",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\802. Руководство системного администратора\\813. Управление аккаунтами\\4655-accounts_dc_sync.md"
+        },
+        {
+          "content": "# Введение в API",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\873. Использование API\\4860-api_intro.md"
+        }
+      ]
+    },
+    {
+      "q": "OData integration setup",
+      "type": "keyword",
+      "lang": "en",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "## Порядок настройки и использования интеграции с внешним сервисом посредством OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Интеграция по OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Интеграция с 1С по OData. Настройка для импорта данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4698-1c_integrations.md"
+        },
+        {
+          "content": "### Сведения в журнале «Интеграция по OData»",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "## Настройка подключения к OData-сервису\n\nПримечание\n\nПосле настройки подключения к OData-сервису настройте синхронизацию данных между ним и **Comindware Platform**. См.:\n\n- *[Синхронизация с веб-сервисом. Интеграция по OData](https://kb.comindware.ru/article.php?id=4697)*\n- *[Интеграция с 1С по OData. Настройка для импорта данных](https://kb.comindware.ru/article.php?id=4698)*\n\n1. На странице «**Администрирование**» выберите пункт «**Инфраструктура**» — «[**Подключения**](https://kb.comindware.ru/article.php?id=4675)» *‌*.\n2. Откройте или создайте подключение типа «**Подключения REST и OData**» — «**Синхронизация с веб-сервисом**».\n\n   ![Создание подключения для синхронизации с веб-сервисом](/platform/v5.0/administration/connections_communication_routes/rest_odata_connections/../img/odata",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\801. Руководства\\817. Руководство пользователя\\818. Администрирование\\821. Подключения и пути передачи данных\\827. Подключения REST и OData\\4702-odata_connection.md"
+        }
+      ]
+    },
+    {
+      "q": "HTTP POST request example",
+      "type": "keyword",
+      "lang": "en",
+      "topic": "scripts",
+      "docs": [
+        {
+          "content": "# HTTP-запросы типа POST. Отправка и получение ответа. Пример: настройка подключения, пути передачи данных и сценария\n\n## Введение\n\n**Comindware Platform** позволяет отправлять HTTP-запросы типа `POST` для взаимодействия с внешними системами.\n\nЗдесь представлен пример настройки подключения, пути передачи данных, шаблона записи и сценария для отправки HTTP-запросов типа `POST` на внешний сервер и записи данных из ответа сервера в атрибуты шаблона записи.",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5075-http_send_post.md"
+        },
+        {
+          "content": "# HTTP-запросы POST. Отправка JSON/XML и обработка ответа с помощью C#-скриптов. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5141-send_http_example_csharp.md"
+        },
+        {
+          "content": "Подробные примеры передачи данных с помощью HTTP см. в статьях:\n\n   - *[HTTP-запросы типа GET. Отправка запроса и обработка ответа в формате JSON](https://kb.comindware.ru/article.php?id=4699)*\n   - *[HTTP-запросы типа POST. Отправка и получение ответа](https://kb.comindware.ru/article.php?id=5075)*",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\876. Выражения для вычислений\\880. Язык формул\\881. Примеры формул\\4977-attribute_date_time_value_format.md"
+        },
+        {
+          "content": "### Для работы с HTTP-запросами",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\5091-integration.md"
+        },
+        {
+          "content": "- *[HTTP-запросы типа GET. Отправка запроса и обработка ответа в формате JSON](https://kb.comindware.ru/article.php?id=4699)*\n- *[HTTP-запросы. Получение JSON-данных в сценарии](https://kb.comindware.ru/article.php?id=4700)*\n- *[HTTP-запросы. Получение и обработка данных с помощью JSONPath](https://kb.comindware.ru/article.php?id=5084)*\n- *[HTTP-запросы типа POST. Отправка и получение ответа](https://kb.comindware.ru/article.php?id=5075)*\n- *[HTTP-запросы типа POST. Отправка составного содержимого и файлов](https://kb.comindware.ru/article.php?id=5066)*\n- *[HTTP-запросы с составным содержимым. Получение файлов в сценарии](https://kb.comindware.ru/article.php?id=5083)*",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\5091-integration.md"
+        }
+      ]
+    },
+    {
+      "q": "How to configure OData integration?",
+      "type": "natural",
+      "lang": "en",
+      "topic": "integration",
+      "docs": [
+        {
+          "content": "## Порядок настройки и использования интеграции с внешним сервисом посредством OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Синхронизация с веб-сервисом. Интеграция по OData",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "# Интеграция с 1С по OData. Настройка для импорта данных",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4698-1c_integrations.md"
+        },
+        {
+          "content": "### Сведения в журнале «Интеграция по OData»",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        },
+        {
+          "content": "## Настройка конфигурации интеграции по OData\n\n1. Настройте [подключение к OData-сервису](https://kb.comindware.ru/article.php?id=4702).\n2. Откройте приложение из списка [приложений](https://kb.comindware.ru/article.php?id=4714).\n3. На странице «**Администрирование**» приложения нажмите пункт «**Интеграции**» *‌*.\n4. В списке интеграций создайте или откройте имеющуюся интеграцию.\n5. Настройте конфигурацию интеграции:",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4697-odata_integration.md"
+        }
+      ]
+    },
+    {
+      "q": "How to send HTTP POST request?",
+      "type": "natural",
+      "lang": "en",
+      "topic": "scripts",
+      "docs": [
+        {
+          "content": "## Порядок настройки отправки и обработки HTTP-запросов с помощью сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5084-jpath_example.md"
+        },
+        {
+          "content": "### Для работы с HTTP-запросами",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\5091-integration.md"
+        },
+        {
+          "content": "# HTTP-запросы POST. Отправка JSON/XML и обработка ответа с помощью C#-скриптов. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5141-send_http_example_csharp.md"
+        },
+        {
+          "content": "# HTTP-запросы с составным содержимым. Получение файлов. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\5083-http_receive_file.md"
+        },
+        {
+          "content": "# HTTP-запросы. Получение JSON-данных. Настройка подключения, пути передачи данных и сценария",
+          "source": ".reference-repos\\.cbap-mkdocs\\phpkb_content_rag\\798. Версия 5.0. Текущая рекомендованная\\872. Интеграции\\875. Примеры интеграций\\4700-receive_http_example.md"
+        }
+      ]
+    }
+  ],
+  "results": {},
+  "processed": [
+    "baseline_default",
+    "en_platform",
+    "en_integration",
+    "en_code",
+    "en_troubleshooting",
+    "en_context_ru_docs",
+    "en_context_mixed",
+    "en_context_platform",
+    "en_context_bilingual",
+    "ru_platform",
+    "ru_integration",
+    "ru_code",
+    "ru_troubleshooting",
+    "bilingual_platform",
+    "bilingual_integration",
+    "bilingual_code",
+    "bilingual_context",
+    "bilingual_full",
+    "en_infrastructure",
+    "ru_infrastructure",
+    "en_errors",
+    "ru_errors",
+    "en_concise",
+    "ru_concise"
+  ]
+}

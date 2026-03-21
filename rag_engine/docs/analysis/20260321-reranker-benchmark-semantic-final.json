@@ -1,0 +1,86 @@
+{
+  "results": {
+    "default_web": {
+      "avg_score": 0.7472249348958333,
+      "instruction": "Given a web search query, retrieve relevant passages that answer the query"
+    },
+    "platform_en": {
+      "avg_score": 0.605419921875,
+      "instruction": "Find documentation about Comindware Platform features, configurations, and APIs"
+    },
+    "integration_en": {
+      "avg_score": 0.5227864583333334,
+      "instruction": "Find integration guides, API documentation, and configuration examples"
+    },
+    "code_en": {
+      "avg_score": 0.44656575520833336,
+      "instruction": "Find code examples, API references, and technical documentation"
+    },
+    "detailed_en": {
+      "avg_score": 0.5742648654513889,
+      "instruction": "Retrieve Comindware Platform documentation: integration guides, API references, configuration examples"
+    },
+    "platform_ru": {
+      "avg_score": 0.6052802191840277,
+      "instruction": "Найдите документацию по платформе Comindware: руководства, примеры кода, конфигурации"
+    },
+    "bilingual_hint": {
+      "avg_score": 0.601849365234375,
+      "instruction": "Find relevant documentation (Russian or English) with code examples and configuration guides"
+    }
+  },
+  "by_language": {
+    "en": {
+      "default_web": 0.8445109049479167,
+      "platform_en": 0.7028971354166667,
+      "integration_en": 0.5621500651041667,
+      "code_en": 0.4638916015625,
+      "detailed_en": 0.6673746744791667,
+      "platform_ru": 0.7023111979166666,
+      "bilingual_hint": 0.6807942708333333
+    },
+    "ru": {
+      "default_web": 0.7102213541666667,
+      "platform_en": 0.5438313802083333,
+      "integration_en": 0.4661458333333333,
+      "code_en": 0.39627278645833336,
+      "detailed_en": 0.5033365885416666,
+      "platform_ru": 0.5595621744791667,
+      "bilingual_hint": 0.5410481770833333
+    },
+    "mixed": {
+      "default_web": 0.6869425455729167,
+      "platform_en": 0.56953125,
+      "integration_en": 0.5400634765625,
+      "code_en": 0.4795328776041667,
+      "detailed_en": 0.5520833333333334,
+      "platform_ru": 0.55396728515625,
+      "bilingual_hint": 0.5837056477864583
+    }
+  },
+  "by_type": {
+    "keyword": {
+      "default_web": 0.6638047960069444,
+      "platform_en": 0.5381510416666667,
+      "integration_en": 0.4648491753472222,
+      "code_en": 0.38521592881944444,
+      "detailed_en": 0.5102430555555556,
+      "platform_ru": 0.5283284505208333,
+      "bilingual_hint": 0.49106580946180556
+    },
+    "natural": {
+      "default_web": 0.8306450737847222,
+      "platform_en": 0.6726888020833334,
+      "integration_en": 0.5807237413194445,
+      "code_en": 0.5079155815972223,
+      "detailed_en": 0.6382866753472223,
+      "platform_ru": 0.6822319878472223,
+      "bilingual_hint": 0.7126329210069444
+    }
+  },
+  "best": {
+    "name": "default_web",
+    "score": 0.7472249348958333
+  },
+  "timestamp": "20260321_202349"
+}
