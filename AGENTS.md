@@ -198,7 +198,7 @@ Before considering work complete:
 - **Information Gathering:**
     - Search docs/internet before coding. Digest best practices from official sources.
     - Do not read just one page; scan the docs, links, and hierarchy to ground actions in truth.
-- **Planning:** PLAN your course of action before implementing.
+- **Planning:** PLAN your course of action before implementing. Write a plan to `.opencode/plans/` (or `.cursor/plans/` for Cursor agent) that is lean, dry, TDD-first, and follows SDD/DDD/clean architecture principles.
 - **Verification:**
     - Run `ruff check <modified_file>` after making changes.
     - Run relevant tests after changes.
