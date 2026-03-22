@@ -380,6 +380,11 @@ retriever = RAGRetriever(
     top_k_retrieve=settings.top_k_retrieve,
     top_k_rerank=settings.top_k_rerank,
     rerank_enabled=settings.rerank_enabled,
+    metadata_boost_weights={
+        "tag_match": settings.rerank_boost_tag,
+        "code_presence": settings.rerank_boost_code,
+        "section_match": settings.rerank_boost_section,
+    },
 )
 # Use same retriever in retrieve_context tool so FRIDA/direct embedder is never
 # loaded in a worker thread (avoids crash when agent first calls the tool).
