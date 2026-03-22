@@ -31,7 +31,8 @@ models:
     type: embedding
     dimensions: 1024
     description: "Lightweight Qwen3 embedding model (1B params)"
-    default_instruction: "Найди релевантную техническую документацию"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
     provider_formats:
       direct:
         device: auto
@@ -45,7 +46,8 @@ models:
     type: embedding
     dimensions: 2560
     description: "Mid-size Qwen3 embedding model (4B params)"
-    default_instruction: "Найди релевантную техническую документацию"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
     provider_formats:
       direct:
         device: auto
@@ -112,7 +114,8 @@ models:
     reranker_type: llm_reranker
     dimensions: 1
     description: "Mid-size Qwen3 reranker"
-    default_instruction: "Найди релевантную техническую документацию"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
     formatting:
       query_template: "{prefix}<Instruct>: {instruction}\n<Query>: {query}\n"
       doc_template: "<Document>: {doc}{suffix}"
@@ -128,7 +131,8 @@ models:
     reranker_type: llm_reranker
     dimensions: 1
     description: "Large Qwen3 reranker"
-    default_instruction: "Найди релевантную техническую документацию"
+    default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
     formatting:
       query_template: "{prefix}<Instruct>: {instruction}\n<Query>: {query}\n"
       doc_template: "<Document>: {doc}{suffix}"
