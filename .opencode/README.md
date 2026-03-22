@@ -39,6 +39,32 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 | <plans_reranker_benchmark_20260321.md> | Mar 21 | Reranker benchmark session (ses_2efe) |
 | <../session-ses_2efe.md> | Mar 21 | Reranker benchmark session (ses_2efe, duplicate) |
 
+## Cursor Plans (`.cursor/plans/`)
+
+| File | Description |
+|------|-------------|
+| <../.cursor/plans/async_chroma_retriever_f90a0838.plan.md> | Async Chroma Retriever |
+| <../.cursor/plans/chat-7ca608fd.plan.md> | Conversational Memory, Citations, and Copy (Gradio-only) |
+| <../.cursor/plans/chunk_size_model_cap_rewire_1e8b497d.plan.md> | Chunk size model cap rewire |
+| <../.cursor/plans/context-budgeting-with-fallback-ea534041.plan.md> | Summarization-First Budgeting with Immediate Fallback |
+| <../.cursor/plans/direct-ml-cc8b035d.plan.md> | Add Optional DirectML Backend With CUDA-First Fallback |
+| <../.cursor/plans/floating-embedded-gradio-widget-966b8bcb.plan.md> | Floating Embedded Gradio Widget |
+| <../.cursor/plans/git-timestamps-with-file-fallback-03d4dbdb.plan.md> | Three-Tier Timestamp Fallback: Frontmatter, Git, File Modification |
+| <../.cursor/plans/incremental-indexing-optimization-014a8ce2.plan.md> | Incremental Indexing Optimization |
+| <../.cursor/plans/mk-c94e6ce4.plan.md> | Phase 1 — MkDocs RAG MVP (Chroma + FRIDA) with Lean Reranking |
+| <../.cursor/plans/mkdocs-rag-engine.plan.md> | MkDocs RAG Engine Implementation Plan |
+| <../.cursor/plans/multi-a9035e3d.plan.md> | Multi-vector + LLM Query Decomposition Retrieval |
+| <../.cursor/plans/phase-2-interfaces-evaluation-observability-87cc6fb0.plan.md> | Phase 2: Abstract Interfaces, Evaluation, and Observability |
+| <../.cursor/plans/rag-158a02a8.plan.md> | Add and run unit tests for rag_engine (WSL, real providers) |
+| <../.cursor/plans/reasoning-safety-net-alignment_5e883665.plan.md> | Align Harmony reasoning interception with think-tag safety net |
+| <../.cursor/plans/refactor-app.plan.md> | Refactor rag_engine/api/app.py (eliminate ~200-250 lines of duplication) |
+| <../.cursor/plans/remote-chromadb-support-and-vectorstore-interface-ed550de1.plan.md> | Remote ChromaDB Support and VectorStore Interface |
+| <../.cursor/plans/remove_fast_path_token_counting_ca73f0e3.plan.md> | Remove Fast Path Token Counting |
+| <../.cursor/plans/retriever-refactor.plan.md> | Retriever Refactor: Clean Separation of Concerns |
+| <../.cursor/plans/sgr_planning_extended_agent_6b047977.plan.md> | SGR Planning Extended Agent |
+| <../.cursor/plans/test-remote-chromadb-connection-83c91b11.plan.md> | Simple ChromaDB Remote Connection Test |
+| <../.cursor/plans/wrap-rag-context-retrieval-into-langchain-tool-8f6bd171.plan.md> | Wrap RAG Context Retrieval into LangChain Tool |
+
 ## Progress Reports
 
 | File | Date | Description |
