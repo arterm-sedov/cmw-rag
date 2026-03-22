@@ -41,29 +41,29 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 
 ## Cursor Plans (`.cursor/plans/`)
 
-| File | Description |
-|------|-------------|
-| <../.cursor/plans/async_chroma_retriever_f90a0838.plan.md> | Async Chroma Retriever |
-| <../.cursor/plans/chat-7ca608fd.plan.md> | Conversational Memory, Citations, and Copy (Gradio-only) |
-| <../.cursor/plans/chunk_size_model_cap_rewire_1e8b497d.plan.md> | Chunk size model cap rewire |
-| <../.cursor/plans/context-budgeting-with-fallback-ea534041.plan.md> | Summarization-First Budgeting with Immediate Fallback |
-| <../.cursor/plans/direct-ml-cc8b035d.plan.md> | Add Optional DirectML Backend With CUDA-First Fallback |
-| <../.cursor/plans/floating-embedded-gradio-widget-966b8bcb.plan.md> | Floating Embedded Gradio Widget |
-| <../.cursor/plans/git-timestamps-with-file-fallback-03d4dbdb.plan.md> | Three-Tier Timestamp Fallback: Frontmatter, Git, File Modification |
-| <../.cursor/plans/incremental-indexing-optimization-014a8ce2.plan.md> | Incremental Indexing Optimization |
-| <../.cursor/plans/mk-c94e6ce4.plan.md> | Phase 1 — MkDocs RAG MVP (Chroma + FRIDA) with Lean Reranking |
-| <../.cursor/plans/mkdocs-rag-engine.plan.md> | MkDocs RAG Engine Implementation Plan |
-| <../.cursor/plans/multi-a9035e3d.plan.md> | Multi-vector + LLM Query Decomposition Retrieval |
-| <../.cursor/plans/phase-2-interfaces-evaluation-observability-87cc6fb0.plan.md> | Phase 2: Abstract Interfaces, Evaluation, and Observability |
-| <../.cursor/plans/rag-158a02a8.plan.md> | Add and run unit tests for rag_engine (WSL, real providers) |
-| <../.cursor/plans/reasoning-safety-net-alignment_5e883665.plan.md> | Align Harmony reasoning interception with think-tag safety net |
-| <../.cursor/plans/refactor-app.plan.md> | Refactor rag_engine/api/app.py (eliminate ~200-250 lines of duplication) |
-| <../.cursor/plans/remote-chromadb-support-and-vectorstore-interface-ed550de1.plan.md> | Remote ChromaDB Support and VectorStore Interface |
-| <../.cursor/plans/remove_fast_path_token_counting_ca73f0e3.plan.md> | Remove Fast Path Token Counting |
-| <../.cursor/plans/retriever-refactor.plan.md> | Retriever Refactor: Clean Separation of Concerns |
-| <../.cursor/plans/sgr_planning_extended_agent_6b047977.plan.md> | SGR Planning Extended Agent |
-| <../.cursor/plans/test-remote-chromadb-connection-83c91b11.plan.md> | Simple ChromaDB Remote Connection Test |
-| <../.cursor/plans/wrap-rag-context-retrieval-into-langchain-tool-8f6bd171.plan.md> | Wrap RAG Context Retrieval into LangChain Tool |
+| File | Date | Description |
+|------|------|-------------|
+| <../.cursor/plans/chunk_size_model_cap_rewire_1e8b497d.plan.md> | Mar 4 | Chunk size model cap rewire |
+| <../.cursor/plans/reasoning-safety-net-alignment_5e883665.plan.md> | Mar 4 | Align Harmony reasoning interception with think-tag safety net |
+| <../.cursor/plans/sgr_planning_extended_agent_6b047977.plan.md> | Jan 21 | SGR Planning Extended Agent |
+| <../.cursor/plans/remove_fast_path_token_counting_ca73f0e3.plan.md> | Dec 9 | Remove Fast Path Token Counting |
+| <../.cursor/plans/refactor-app.plan.md> | Nov 3 | Refactor rag_engine/api/app.py (eliminate ~200-250 lines of duplication) |
+| <../.cursor/plans/retriever-refactor.plan.md> | Nov 3 | Retriever Refactor: Clean Separation of Concerns |
+| <../.cursor/plans/wrap-rag-context-retrieval-into-langchain-tool-8f6bd171.plan.md> | Nov 3 | Wrap RAG Context Retrieval into LangChain Tool |
+| <../.cursor/plans/direct-ml-cc8b035d.plan.md> | Nov 1 | Add Optional DirectML Backend With CUDA-First Fallback |
+| <../.cursor/plans/floating-embedded-gradio-widget-966b8bcb.plan.md> | Nov 1 | Floating Embedded Gradio Widget |
+| <../.cursor/plans/mkdocs-rag-engine.plan.md> | Nov 1 | MkDocs RAG Engine Implementation Plan |
+| <../.cursor/plans/phase-2-interfaces-evaluation-observability-87cc6fb0.plan.md> | Nov 1 | Phase 2: Abstract Interfaces, Evaluation, and Observability |
+| <../.cursor/plans/remote-chromadb-support-and-vectorstore-interface-ed550de1.plan.md> | Nov 1 | Remote ChromaDB Support and VectorStore Interface |
+| <../.cursor/plans/test-remote-chromadb-connection-83c91b11.plan.md> | Nov 1 | Simple ChromaDB Remote Connection Test |
+| <../.cursor/plans/chat-7ca608fd.plan.md> | Oct 31 | Conversational Memory, Citations, and Copy (Gradio-only) |
+| <../.cursor/plans/context-budgeting-with-fallback-ea534041.plan.md> | Oct 31 | Summarization-First Budgeting with Immediate Fallback |
+| <../.cursor/plans/git-timestamps-with-file-fallback-03d4dbdb.plan.md> | Oct 31 | Three-Tier Timestamp Fallback: Frontmatter, Git, File Modification |
+| <../.cursor/plans/multi-a9035e3d.plan.md> | Oct 31 | Multi-vector + LLM Query Decomposition Retrieval |
+| <../.cursor/plans/incremental-indexing-optimization-014a8ce2.plan.md> | Oct 29 | Incremental Indexing Optimization |
+| <../.cursor/plans/rag-158a02a8.plan.md> | Oct 29 | Add and run unit tests for rag_engine (WSL, real providers) |
+| <../.cursor/plans/mk-c94e6ce4.plan.md> | Oct 28 | Phase 1 — MkDocs RAG MVP (Chroma + FRIDA) with Lean Reranking |
+| <../.cursor/plans/async_chroma_retriever_f90a0838.plan.md> | Feb 3 | Async Chroma Retriever |
 
 ## Progress Reports
 
@@ -105,12 +105,12 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 | <../docs/progress_reports/2025-10-28-testing-and-verification.md> | Oct 28 | Testing & verification report |
 | <../docs/progress_reports/2025-10-28-implementation-audit-and-fixes.md> | Oct 28 | Implementation audit & fixes |
 | <../docs/progress_reports/2025-01-28-indexer-separation-validation.md> | Jan 28 | Indexer separation validation |
-| <../docs/progress_reports/VALIDATION_REPORT.md> | — | Async ChromaDB retriever validation (PASSED) |
-| <../docs/progress_reports/dynamic_tool_result_compression.md> | — | Dynamic tool result compression |
-| <../docs/progress_reports/json_overhead_safety_margin.md> | — | JSON overhead safety margin |
-| <../docs/progress_reports/typed_context_refactor.md> | — | Typed context refactor |
-| <../docs/progress_reports/summary_context_overflow_fix.md> | — | Context overflow fix summary |
-| <../docs/progress_reports/summary_typed_context_and_json_overhead.md> | — | Typed context + JSON overhead summary |
+| <../docs/progress_reports/VALIDATION_REPORT.md> | Feb 11 | Async ChromaDB retriever validation (PASSED) |
+| <../docs/progress_reports/dynamic_tool_result_compression.md> | Nov 3 | Dynamic tool result compression |
+| <../docs/progress_reports/json_overhead_safety_margin.md> | Nov 3 | JSON overhead safety margin |
+| <../docs/progress_reports/typed_context_refactor.md> | Nov 3 | Typed context refactor |
+| <../docs/progress_reports/summary_context_overflow_fix.md> | Nov 3 | Context overflow fix summary |
+| <../docs/progress_reports/summary_typed_context_and_json_overhead.md> | Nov 3 | Typed context + JSON overhead summary |
 | <rag_engine/docs/progress_reports/20260321-embedding-instruction-fix-applied.md> | Mar 21 | Embedding instruction fix applied to models.yaml |
 
 ## Analysis
