@@ -10,120 +10,120 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 
 | File | Date | Description |
 |------|------|-------------|
-| <plans/20260321-reranker-refactor.md> | Mar 21 | Reranker refactoring with vLLM/Cohere endpoint contracts |
-| <plans/20260321-cmw-rag-analysis.md> | Mar 21 | Model sizing and API parameters analysis |
-| <plans/20260321_reranker_instruction_optimize.md> | Mar 21 | Reranker instruction optimization session log |
-| <plans/20260306-slm-regex-pipeline-report.md> | Mar 7 | SLM + Regex pipeline evaluation (20 samples, 5 models) |
-| <plans/20260306-slm-evaluation-report.md> | Mar 6 | Small Language Model evaluation for Russian/English NER |
-| <plans/20260302-anonymization-research-geminy.md> | Mar 2 | Gemini research on English/USA NER models for anonymization |
-| <plans/20260227-anonymization-implementation-plan.md> | Mar 3 | Anonymization pipeline: 3-stage Regex → dslim → Gherman |
-| <plans/20260227_cmw_api_endpoint_plan.md> | Feb 27 | CMW Platform API endpoint implementation (COMPLETED) |
-| <plans/20260227_cmw_agent_pipeline_plan.md> | Feb 27 | CMW Platform agent pipeline script plan |
-| <plans/20260227_cmw_enum_attribute_handling_analysis.md> | Feb 27 | CMW Platform enum attribute handling analysis |
-| <plans/comindware_integration_plan.md> | Mar 3 | Comindware Platform API integration (read/create records) |
-| <plans/Anonymization.ipynb> | Mar 3 | Comparative analysis of Russian PII anonymization models |
-| <plans/openrouter_embedding_implementation_plan.md> | Feb 21 | Unified embedding & reranker provider support (Direct/Server/API) |
-| <plans/chromadb-http-migration.md> | Feb 21 | ChromaDB HTTP migration (eliminate 21s init delay) |
-| <plans/chroma_host_rename_plan.md> | Feb 21 | ChromaDB host variable rename (CHROMADB_HOST → client/server) |
-| <plans/scoring_system_enhancement_plan.md> | Feb 21 | RAG scoring enhancement (rerank_score_raw preservation) |
-| <plans/cacheable-system-prompt.md> | Feb 17 | Cacheable system prompt: 100% static, dynamic → user messages |
-| <plans/llm-architecture-skills.md> | Feb 17 | LLM architecture patterns: 3 focused skills |
-| <plans/support_resolution_plan_tool_plan.md> | Feb 14 | Support Resolution Plan (SRP) tool implementation |
-| <plans/sgr_synthetic_assistant_enhancement_plan.md> | Feb 13 | SGR formatted tool result enhancement |
-| <plans/reverse_normalized_rank.md> | Feb 18 | Reverse normalized rank (CANCELLED — semantic confusion) |
+| <plans/20260321-reranker-refactor.md> | 2026-03-21 | Reranker refactoring with vLLM/Cohere endpoint contracts |
+| <plans/20260321-cmw-rag-analysis.md> | 2026-03-21 | Model sizing and API parameters analysis |
+| <plans/20260321_reranker_instruction_optimize.md> | 2026-03-21 | Reranker instruction optimization session log |
+| <plans/20260306-slm-regex-pipeline-report.md> | 2026-03-07 | SLM + Regex pipeline evaluation (20 samples, 5 models) |
+| <plans/20260306-slm-evaluation-report.md> | 2026-03-06 | Small Language Model evaluation for Russian/English NER |
+| <plans/20260302-anonymization-research-geminy.md> | 2026-03-02 | Gemini research on English/USA NER models for anonymization |
+| <plans/20260227-anonymization-implementation-plan.md> | 2026-03-03 | Anonymization pipeline: 3-stage Regex → dslim → Gherman |
+| <plans/20260227_cmw_api_endpoint_plan.md> | 2026-02-27 | CMW Platform API endpoint implementation (COMPLETED) |
+| <plans/20260227_cmw_agent_pipeline_plan.md> | 2026-02-27 | CMW Platform agent pipeline script plan |
+| <plans/20260227_cmw_enum_attribute_handling_analysis.md> | 2026-02-27 | CMW Platform enum attribute handling analysis |
+| <plans/comindware_integration_plan.md> | 2026-03-03 | Comindware Platform API integration (read/create records) |
+| <plans/Anonymization.ipynb> | 2026-03-03 | Comparative analysis of Russian PII anonymization models |
+| <plans/openrouter_embedding_implementation_plan.md> | 2026-02-21 | Unified embedding & reranker provider support (Direct/Server/API) |
+| <plans/chromadb-http-migration.md> | 2026-02-21 | ChromaDB HTTP migration (eliminate 21s init delay) |
+| <plans/chroma_host_rename_plan.md> | 2026-02-21 | ChromaDB host variable rename (CHROMADB_HOST → client/server) |
+| <plans/scoring_system_enhancement_plan.md> | 2026-02-21 | RAG scoring enhancement (rerank_score_raw preservation) |
+| <plans/cacheable-system-prompt.md> | 2026-02-17 | Cacheable system prompt: 100% static, dynamic → user messages |
+| <plans/llm-architecture-skills.md> | 2026-02-17 | LLM architecture patterns: 3 focused skills |
+| <plans/support_resolution_plan_tool_plan.md> | 2026-02-14 | Support Resolution Plan (SRP) tool implementation |
+| <plans/sgr_synthetic_assistant_enhancement_plan.md> | 2026-02-13 | SGR formatted tool result enhancement |
+| <plans/reverse_normalized_rank.md> | 2026-02-18 | Reverse normalized rank (CANCELLED — semantic confusion) |
 
 ## Session Logs
 
 | File | Date | Description |
 |------|------|-------------|
-| <plans_reranker_benchmark_20260321.md> | Mar 21 | Reranker benchmark session (ses_2efe) |
-| <../session-ses_2efe.md> | Mar 21 | Reranker benchmark session (ses_2efe, duplicate) |
+| <plans_reranker_benchmark_20260321.md> | 2026-03-21 | Reranker benchmark session (ses_2efe) |
+| <../session-ses_2efe.md> | 2026-03-21 | Reranker benchmark session (ses_2efe, duplicate) |
 
 ## Cursor Plans (`.cursor/plans/`)
 
 | File | Date | Description |
 |------|------|-------------|
-| <../.cursor/plans/chunk_size_model_cap_rewire_1e8b497d.plan.md> | Mar 4 | Chunk size model cap rewire |
-| <../.cursor/plans/reasoning-safety-net-alignment_5e883665.plan.md> | Mar 4 | Align Harmony reasoning interception with think-tag safety net |
-| <../.cursor/plans/sgr_planning_extended_agent_6b047977.plan.md> | Jan 21 | SGR Planning Extended Agent |
-| <../.cursor/plans/remove_fast_path_token_counting_ca73f0e3.plan.md> | Dec 9 | Remove Fast Path Token Counting |
-| <../.cursor/plans/refactor-app.plan.md> | Nov 3 | Refactor rag_engine/api/app.py (eliminate ~200-250 lines of duplication) |
-| <../.cursor/plans/retriever-refactor.plan.md> | Nov 3 | Retriever Refactor: Clean Separation of Concerns |
-| <../.cursor/plans/wrap-rag-context-retrieval-into-langchain-tool-8f6bd171.plan.md> | Nov 3 | Wrap RAG Context Retrieval into LangChain Tool |
-| <../.cursor/plans/direct-ml-cc8b035d.plan.md> | Nov 1 | Add Optional DirectML Backend With CUDA-First Fallback |
-| <../.cursor/plans/floating-embedded-gradio-widget-966b8bcb.plan.md> | Nov 1 | Floating Embedded Gradio Widget |
-| <../.cursor/plans/mkdocs-rag-engine.plan.md> | Nov 1 | MkDocs RAG Engine Implementation Plan |
-| <../.cursor/plans/phase-2-interfaces-evaluation-observability-87cc6fb0.plan.md> | Nov 1 | Phase 2: Abstract Interfaces, Evaluation, and Observability |
-| <../.cursor/plans/remote-chromadb-support-and-vectorstore-interface-ed550de1.plan.md> | Nov 1 | Remote ChromaDB Support and VectorStore Interface |
-| <../.cursor/plans/test-remote-chromadb-connection-83c91b11.plan.md> | Nov 1 | Simple ChromaDB Remote Connection Test |
-| <../.cursor/plans/chat-7ca608fd.plan.md> | Oct 31 | Conversational Memory, Citations, and Copy (Gradio-only) |
-| <../.cursor/plans/context-budgeting-with-fallback-ea534041.plan.md> | Oct 31 | Summarization-First Budgeting with Immediate Fallback |
-| <../.cursor/plans/git-timestamps-with-file-fallback-03d4dbdb.plan.md> | Oct 31 | Three-Tier Timestamp Fallback: Frontmatter, Git, File Modification |
-| <../.cursor/plans/multi-a9035e3d.plan.md> | Oct 31 | Multi-vector + LLM Query Decomposition Retrieval |
-| <../.cursor/plans/incremental-indexing-optimization-014a8ce2.plan.md> | Oct 29 | Incremental Indexing Optimization |
-| <../.cursor/plans/rag-158a02a8.plan.md> | Oct 29 | Add and run unit tests for rag_engine (WSL, real providers) |
-| <../.cursor/plans/mk-c94e6ce4.plan.md> | Oct 28 | Phase 1 — MkDocs RAG MVP (Chroma + FRIDA) with Lean Reranking |
-| <../.cursor/plans/async_chroma_retriever_f90a0838.plan.md> | Feb 3 | Async Chroma Retriever |
+| <../.cursor/plans/chunk_size_model_cap_rewire_1e8b497d.plan.md> | 2026-03-04 | Chunk size model cap rewire |
+| <../.cursor/plans/reasoning-safety-net-alignment_5e883665.plan.md> | 2026-03-04 | Align Harmony reasoning interception with think-tag safety net |
+| <../.cursor/plans/sgr_planning_extended_agent_6b047977.plan.md> | 2026-01-21 | SGR Planning Extended Agent |
+| <../.cursor/plans/remove_fast_path_token_counting_ca73f0e3.plan.md> | 2025-12-09 | Remove Fast Path Token Counting |
+| <../.cursor/plans/refactor-app.plan.md> | 2025-11-03 | Refactor rag_engine/api/app.py (eliminate ~200-250 lines of duplication) |
+| <../.cursor/plans/retriever-refactor.plan.md> | 2025-11-03 | Retriever Refactor: Clean Separation of Concerns |
+| <../.cursor/plans/wrap-rag-context-retrieval-into-langchain-tool-8f6bd171.plan.md> | 2025-11-03 | Wrap RAG Context Retrieval into LangChain Tool |
+| <../.cursor/plans/direct-ml-cc8b035d.plan.md> | 2025-11-01 | Add Optional DirectML Backend With CUDA-First Fallback |
+| <../.cursor/plans/floating-embedded-gradio-widget-966b8bcb.plan.md> | 2025-11-01 | Floating Embedded Gradio Widget |
+| <../.cursor/plans/mkdocs-rag-engine.plan.md> | 2025-11-01 | MkDocs RAG Engine Implementation Plan |
+| <../.cursor/plans/phase-2-interfaces-evaluation-observability-87cc6fb0.plan.md> | 2025-11-01 | Phase 2: Abstract Interfaces, Evaluation, and Observability |
+| <../.cursor/plans/remote-chromadb-support-and-vectorstore-interface-ed550de1.plan.md> | 2025-11-01 | Remote ChromaDB Support and VectorStore Interface |
+| <../.cursor/plans/test-remote-chromadb-connection-83c91b11.plan.md> | 2025-11-01 | Simple ChromaDB Remote Connection Test |
+| <../.cursor/plans/chat-7ca608fd.plan.md> | 2025-10-31 | Conversational Memory, Citations, and Copy (Gradio-only) |
+| <../.cursor/plans/context-budgeting-with-fallback-ea534041.plan.md> | 2025-10-31 | Summarization-First Budgeting with Immediate Fallback |
+| <../.cursor/plans/git-timestamps-with-file-fallback-03d4dbdb.plan.md> | 2025-10-31 | Three-Tier Timestamp Fallback: Frontmatter, Git, File Modification |
+| <../.cursor/plans/multi-a9035e3d.plan.md> | 2025-10-31 | Multi-vector + LLM Query Decomposition Retrieval |
+| <../.cursor/plans/incremental-indexing-optimization-014a8ce2.plan.md> | 2025-10-29 | Incremental Indexing Optimization |
+| <../.cursor/plans/rag-158a02a8.plan.md> | 2025-10-29 | Add and run unit tests for rag_engine (WSL, real providers) |
+| <../.cursor/plans/mk-c94e6ce4.plan.md> | 2025-10-28 | Phase 1 — MkDocs RAG MVP (Chroma + FRIDA) with Lean Reranking |
+| <../.cursor/plans/async_chroma_retriever_f90a0838.plan.md> | 2026-02-03 | Async Chroma Retriever |
 
 ## Progress Reports
 
 | File | Date | Description |
 |------|------|-------------|
-| <../docs/progress_reports/20260322-reranking-boost-config.md> | Mar 22 | Reranking boost configuration (configurable via .env) |
-| <../docs/progress_reports/20260321-reranker-refactor.md> | Mar 21 | Reranker refactoring (vLLM/Cohere contracts) |
-| <../docs/progress_reports/opencode-troubleshooting.md> | Mar 2026 | OpenCode TUI troubleshooting guide |
-| <../docs/progress_reports/2026-02-28-cmw-api-endpoint-implementation.md> | Feb 28 | CMW Platform API endpoint implementation |
-| <../docs/progress_reports/2026-02-27-cmw-dynamic-category-integration.md> | Feb 27 | CMW dynamic category integration |
-| <../docs/progress_reports/2026-02-25-cmw-platform-integration.md> | Feb 25 | CMW Platform integration |
-| <../docs/progress_reports/2026-02-18-endpoint-refactor.md> | Feb 18 | Endpoint refactor: single source of truth |
-| <../docs/progress_reports/2026-02-17-forced-tool-call-architecture.md> | Feb 17 | Forced tool call architecture for SGR/SRP tools |
-| <../docs/progress_reports/2026-01-21-sgr-planning-structured-agent.md> | Jan 21 | SGR planning + structured agent callable |
-| <../docs/progress_reports/2025-12-19-native-gradio-spinners.md> | Dec 19 | Native Gradio spinners implementation |
-| <../docs/progress_reports/token_estimation_russian_issue_20251209.md> | Dec 9 | Token estimation issue for Russian text |
-| <../docs/progress_reports/clean_architecture_refactor.md> | Nov 3 | Clean architecture refactor: agent-driven context tracking |
-| <../docs/progress_reports/streaming_implementation.md> | Nov 3 | Token-level streaming implementation |
-| <../docs/progress_reports/memory_and_context_management_implementation.md> | Nov 3 | Memory and context management |
-| <../docs/progress_reports/accumulated_context_tracking_fix.md> | Nov 3 | Accumulated context tracking fix |
-| <../docs/progress_reports/centralized_token_counting.md> | Nov 3 | Centralized token counting utility |
-| <../docs/progress_reports/aggressive_memory_compression_fix.md> | Nov 3 | Aggressive memory compression fix |
-| <../docs/progress_reports/tool_architecture_fix.md> | Nov 3 | Tool architecture fix: self-contained retrieve_context |
-| <../docs/progress_reports/tool_result_leak_fix.md> | Nov 3 | Tool result leak fix |
-| <../docs/progress_reports/tool_call_leak_fix.md> | Nov 3 | Tool call leak fix |
-| <../docs/progress_reports/generic_tool_filtering_fix.md> | Nov 3 | Generic tool filtering fix |
-| <../docs/progress_reports/context_fallback_implementation.md> | Nov 3 | Context window fallback implementation |
-| <../docs/progress_reports/progressive_budgeting_fix.md> | Nov 3 | Progressive context budgeting fix |
-| <../docs/progress_reports/article_deduplication_fix.md> | Nov 3 | Article deduplication fix |
-| <../docs/progress_reports/agent_mode_implementation.md> | Nov 2 | Agent mode implementation |
-| <../docs/progress_reports/agent_tool_choice_update.md> | Nov 2 | Agent mode: tool_choice parameter |
-| <../docs/progress_reports/agent_final_implementation_summary.md> | Nov 2 | Agent mode: final implementation summary |
-| <../docs/progress_reports/multi_tool_call_implementation.md> | Nov 2 | Multi-tool-call citation accumulation |
-| <../docs/progress_reports/multi_tool_call_final_summary.md> | Nov 2 | Multi-tool-call: final summary |
-| <../docs/progress_reports/tool_refactoring_completion.md> | Nov 2 | RAG context retrieval tool refactoring |
-| <../docs/progress_reports/tool_implementation_validation.md> | Nov 2 | Tool implementation validation |
-| <../docs/progress_reports/gradio_metadata_implementation.md> | Nov 2 | Gradio metadata messages for tool execution |
-| <../docs/progress_reports/2025-10-28-dynamic-token-limits-and-llm-mechanics-reuse.md> | Oct 28 | Dynamic token limits & LLM mechanics reuse |
-| <../docs/progress_reports/2025-10-28-testing-and-verification.md> | Oct 28 | Testing & verification report |
-| <../docs/progress_reports/2025-10-28-implementation-audit-and-fixes.md> | Oct 28 | Implementation audit & fixes |
-| <../docs/progress_reports/2025-01-28-indexer-separation-validation.md> | Jan 28 | Indexer separation validation |
-| <../docs/progress_reports/VALIDATION_REPORT.md> | Feb 11 | Async ChromaDB retriever validation (PASSED) |
-| <../docs/progress_reports/dynamic_tool_result_compression.md> | Nov 3 | Dynamic tool result compression |
-| <../docs/progress_reports/json_overhead_safety_margin.md> | Nov 3 | JSON overhead safety margin |
-| <../docs/progress_reports/typed_context_refactor.md> | Nov 3 | Typed context refactor |
-| <../docs/progress_reports/summary_context_overflow_fix.md> | Nov 3 | Context overflow fix summary |
-| <../docs/progress_reports/summary_typed_context_and_json_overhead.md> | Nov 3 | Typed context + JSON overhead summary |
-| <rag_engine/docs/progress_reports/20260321-embedding-instruction-fix-applied.md> | Mar 21 | Embedding instruction fix applied to models.yaml |
+| <../docs/progress_reports/20260322-reranking-boost-config.md> | 2026-03-22 | Reranking boost configuration (configurable via .env) |
+| <../docs/progress_reports/20260321-reranker-refactor.md> | 2026-03-21 | Reranker refactoring (vLLM/Cohere contracts) |
+| <../docs/progress_reports/opencode-troubleshooting.md> | 2026-03 | OpenCode TUI troubleshooting guide |
+| <../docs/progress_reports/2026-02-28-cmw-api-endpoint-implementation.md> | 2026-02-28 | CMW Platform API endpoint implementation |
+| <../docs/progress_reports/2026-02-27-cmw-dynamic-category-integration.md> | 2026-02-27 | CMW dynamic category integration |
+| <../docs/progress_reports/2026-02-25-cmw-platform-integration.md> | 2026-02-25 | CMW Platform integration |
+| <../docs/progress_reports/2026-02-18-endpoint-refactor.md> | 2026-02-18 | Endpoint refactor: single source of truth |
+| <../docs/progress_reports/2026-02-17-forced-tool-call-architecture.md> | 2026-02-17 | Forced tool call architecture for SGR/SRP tools |
+| <../docs/progress_reports/2026-01-21-sgr-planning-structured-agent.md> | 2026-01-21 | SGR planning + structured agent callable |
+| <../docs/progress_reports/2025-12-19-native-gradio-spinners.md> | 2025-12-19 | Native Gradio spinners implementation |
+| <../docs/progress_reports/token_estimation_russian_issue_20251209.md> | 2025-12-09 | Token estimation issue for Russian text |
+| <../docs/progress_reports/clean_architecture_refactor.md> | 2025-11-03 | Clean architecture refactor: agent-driven context tracking |
+| <../docs/progress_reports/streaming_implementation.md> | 2025-11-03 | Token-level streaming implementation |
+| <../docs/progress_reports/memory_and_context_management_implementation.md> | 2025-11-03 | Memory and context management |
+| <../docs/progress_reports/accumulated_context_tracking_fix.md> | 2025-11-03 | Accumulated context tracking fix |
+| <../docs/progress_reports/centralized_token_counting.md> | 2025-11-03 | Centralized token counting utility |
+| <../docs/progress_reports/aggressive_memory_compression_fix.md> | 2025-11-03 | Aggressive memory compression fix |
+| <../docs/progress_reports/tool_architecture_fix.md> | 2025-11-03 | Tool architecture fix: self-contained retrieve_context |
+| <../docs/progress_reports/tool_result_leak_fix.md> | 2025-11-03 | Tool result leak fix |
+| <../docs/progress_reports/tool_call_leak_fix.md> | 2025-11-03 | Tool call leak fix |
+| <../docs/progress_reports/generic_tool_filtering_fix.md> | 2025-11-03 | Generic tool filtering fix |
+| <../docs/progress_reports/context_fallback_implementation.md> | 2025-11-03 | Context window fallback implementation |
+| <../docs/progress_reports/progressive_budgeting_fix.md> | 2025-11-03 | Progressive context budgeting fix |
+| <../docs/progress_reports/article_deduplication_fix.md> | 2025-11-03 | Article deduplication fix |
+| <../docs/progress_reports/agent_mode_implementation.md> | 2025-11-02 | Agent mode implementation |
+| <../docs/progress_reports/agent_tool_choice_update.md> | 2025-11-02 | Agent mode: tool_choice parameter |
+| <../docs/progress_reports/agent_final_implementation_summary.md> | 2025-11-02 | Agent mode: final implementation summary |
+| <../docs/progress_reports/multi_tool_call_implementation.md> | 2025-11-02 | Multi-tool-call citation accumulation |
+| <../docs/progress_reports/multi_tool_call_final_summary.md> | 2025-11-02 | Multi-tool-call: final summary |
+| <../docs/progress_reports/tool_refactoring_completion.md> | 2025-11-02 | RAG context retrieval tool refactoring |
+| <../docs/progress_reports/tool_implementation_validation.md> | 2025-11-02 | Tool implementation validation |
+| <../docs/progress_reports/gradio_metadata_implementation.md> | 2025-11-02 | Gradio metadata messages for tool execution |
+| <../docs/progress_reports/2025-10-28-dynamic-token-limits-and-llm-mechanics-reuse.md> | 2025-10-28 | Dynamic token limits & LLM mechanics reuse |
+| <../docs/progress_reports/2025-10-28-testing-and-verification.md> | 2025-10-28 | Testing & verification report |
+| <../docs/progress_reports/2025-10-28-implementation-audit-and-fixes.md> | 2025-10-28 | Implementation audit & fixes |
+| <../docs/progress_reports/2025-01-28-indexer-separation-validation.md> | 2025-01-28 | Indexer separation validation |
+| <../docs/progress_reports/VALIDATION_REPORT.md> | 2026-02-11 | Async ChromaDB retriever validation (PASSED) |
+| <../docs/progress_reports/dynamic_tool_result_compression.md> | 2025-11-03 | Dynamic tool result compression |
+| <../docs/progress_reports/json_overhead_safety_margin.md> | 2025-11-03 | JSON overhead safety margin |
+| <../docs/progress_reports/typed_context_refactor.md> | 2025-11-03 | Typed context refactor |
+| <../docs/progress_reports/summary_context_overflow_fix.md> | 2025-11-03 | Context overflow fix summary |
+| <../docs/progress_reports/summary_typed_context_and_json_overhead.md> | 2025-11-03 | Typed context + JSON overhead summary |
+| <rag_engine/docs/progress_reports/20260321-embedding-instruction-fix-applied.md> | 2026-03-21 | Embedding instruction fix applied to models.yaml |
 
 ## Analysis
 
 | File | Date | Description |
 |------|------|-------------|
-| <../docs/analysis/context_compression_analysis_20251209.md> | Dec 9 | Context compression analysis for small context windows |
-| <../docs/analysis/memory_management_limits_explanation.md> | Jan 28 | Memory management limits: timing, precedence, defaults |
-| <../docs/analysis/retriever-refactor-validation.md> | Jan 28 | Retriever refactor plan validation |
-| <../docs/analysis/system_prompt_redundancy_analysis.md> | Jan 28 | System prompt redundancy analysis |
-| <rag_engine/docs/analysis/20260321-qwen3-reranker-instruction-optimization-report.md> | Mar 21 | Reranker instruction research (30+ variants tested) |
-| <rag_engine/docs/analysis/20260321-reranker-benchmark-final.md> | Mar 21 | Reranker benchmark (52 questions, 38 Russian) |
-| <rag_engine/docs/analysis/20260321-reranker-instruction-analysis.md> | Mar 21 | Qwen3 reranker instruction optimization (10,685 docs in ChromaDB) |
+| <../docs/analysis/context_compression_analysis_20251209.md> | 2025-12-09 | Context compression analysis for small context windows |
+| <../docs/analysis/memory_management_limits_explanation.md> | 2025-01-28 | Memory management limits: timing, precedence, defaults |
+| <../docs/analysis/retriever-refactor-validation.md> | 2025-01-28 | Retriever refactor plan validation |
+| <../docs/analysis/system_prompt_redundancy_analysis.md> | 2025-01-28 | System prompt redundancy analysis |
+| <rag_engine/docs/analysis/20260321-qwen3-reranker-instruction-optimization-report.md> | 2026-03-21 | Reranker instruction research (30+ variants tested) |
+| <rag_engine/docs/analysis/20260321-reranker-benchmark-final.md> | 2026-03-21 | Reranker benchmark (52 questions, 38 Russian) |
+| <rag_engine/docs/analysis/20260321-reranker-instruction-analysis.md> | 2026-03-21 | Qwen3 reranker instruction optimization (10,685 docs in ChromaDB) |
 
 ### Experiments
 
@@ -136,8 +136,8 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 
 | File | Date | Description |
 |------|------|-------------|
-| <rag_engine/docs/plans/20260321-reranker-instruction-optimization-final-report.md> | Mar 21 | Qwen3 reranker instruction optimization final report (58-65% improvement) |
-| <rag_engine/docs/plans/20260321-file-inventory-reranker-embedding-experiments.md> | Mar 21 | Inventory of reranker and embedding experiment files |
+| <rag_engine/docs/plans/20260321-reranker-instruction-optimization-final-report.md> | 2026-03-21 | Qwen3 reranker instruction optimization final report (58-65% improvement) |
+| <rag_engine/docs/plans/20260321-file-inventory-reranker-embedding-experiments.md> | 2026-03-21 | Inventory of reranker and embedding experiment files |
 
 ---
 
