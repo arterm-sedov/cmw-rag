@@ -120,11 +120,11 @@ class TestCrossEncoderReranker:
         doc = MockDocument("Doc with tags", metadata={"tags": ["important"]})
         candidates = [(doc, 0.0)]
 
-        boost_weights = {"tag_match": 0.2}
+        boost_weights = {"tag_match": 0.05}
         result = reranker.rerank("query", candidates, top_k=1, metadata_boost_weights=boost_weights)
 
-        # Score should be boosted: 0.8 * (1 + 0.2) = 0.96
-        assert result[0][1] == pytest.approx(0.96, 0.01)
+        # Score should be boosted: 0.8 * (1 + 0.05) = 0.84
+        assert result[0][1] == pytest.approx(0.84, 0.01)
 
 
 class TestInfinityReranker:
@@ -212,11 +212,11 @@ class TestInfinityReranker:
         doc = MockDocument("Code example", metadata={"has_code": True})
         candidates = [(doc, 0.0)]
 
-        boost_weights = {"code_presence": 0.3}
+        boost_weights = {"code_presence": 0.05}
         result = reranker.rerank("query", candidates, top_k=1, metadata_boost_weights=boost_weights)
 
-        # Score should be boosted: 0.8 * (1 + 0.3) = 1.04
-        assert result[0][1] == pytest.approx(1.04, 0.01)
+        # Score should be boosted: 0.8 * (1 + 0.05) = 0.84
+        assert result[0][1] == pytest.approx(0.84, 0.01)
 
     @patch("rag_engine.retrieval.reranker.HTTPClientMixin._post")
     def test_infinity_custom_instruction_override(self, mock_post, caplog):

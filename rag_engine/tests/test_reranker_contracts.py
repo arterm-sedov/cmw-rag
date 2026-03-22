@@ -139,11 +139,11 @@ class TestRerankEndpoint:
                 (MockDocument("doc2", metadata={"has_code": False}), 0.0),
             ]
             results = adapter.rerank(
-                "query", candidates, top_k=2, metadata_boost_weights={"code_presence": 0.5}
+                "query", candidates, top_k=2, metadata_boost_weights={"code_presence": 0.05}
             )
 
             assert results[0][0].page_content == "doc1"
-            assert results[0][1] == 0.75  # 0.5 * 1.5
+            assert results[0][1] == 0.525  # 0.5 * 1.05
             assert results[1][1] == 0.5
 
 
