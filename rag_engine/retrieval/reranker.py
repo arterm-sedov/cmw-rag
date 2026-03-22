@@ -312,7 +312,7 @@ class RerankerAdapter(HTTPClientMixin):
         formatted_docs = [self.format_document(d) for d in documents]
 
         response = self._post(
-            {"query": formatted_query, "documents": formatted_docs},
+            {"queries": formatted_query, "documents": formatted_docs},
         )
 
         # Parse vLLM format: {data: [{index, score}, ...]}
