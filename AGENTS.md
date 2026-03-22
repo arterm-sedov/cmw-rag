@@ -206,6 +206,7 @@ Before considering work complete:
 - **Secrets:** NEVER hardcode secrets. Use environment variables.
 - **.env Files:** NEVER commit `.env` files to version control. Use `.env-example` as a template with placeholder values only. The `.env` file contains sensitive credentials and deployment-specific settings.
 - **No Breakage:** Never break existing code.
+- **Documentation:** After changes, update `.opencode/README.md` and related docs if affected.
 
 ### 12-Factor App Principles
 
