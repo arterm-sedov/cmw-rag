@@ -117,6 +117,7 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 
 | File | Date | Description |
 |------|------|-------------|
+| <../docs/research/20260323-advanced-rag-approaches.md> | 2026-03-23 | Deep research report: Most advanced RAG approaches (2024-2026) |
 | <../docs/analysis/context_compression_analysis_20251209.md> | 2025-12-09 | Context compression analysis for small context windows |
 | <../docs/analysis/memory_management_limits_explanation.md> | 2025-01-28 | Memory management limits: timing, precedence, defaults |
 | <../docs/analysis/retriever-refactor-validation.md> | 2025-01-28 | Retriever refactor plan validation |
