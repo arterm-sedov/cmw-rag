@@ -252,3 +252,19 @@ For the Russian market, consider local cloud providers for data sovereignty comp
 2. **Best Value:** Cloud.ru's GigaChat3-10B-A1.8B at ~12.2 ₽/million tokens (~10x cheaper than US alternatives)
 
 3. **Local Inference:** Use cmw-mosec/cmw-vllm for fully offline solutions with RTX 4090 (0.6B-4B models) or A100/H100 (8B+ models)
+
+### RTX 4090 (48GB) Benchmarks [[source]](https://t.me/neuraldeep/1476)
+
+Performance on RTX 4090 (data from NeuralDeep community):
+
+| Model | Tokens/sec | Parameters | Context |
+|-------|-------------|------------|---------|
+| Llama 3.1 8B | ~50-60 | 8B | 8K |
+| Qwen 2.5 32B | ~20-30 | 32B | 32K |
+| Mistral 7B | ~40-50 | 7B | 8K |
+| Qwen3-30B-A3B | ~25-35 | 30B MoE | 32K |
+
+**Budget Cluster Recommendations [[source]](https://t.me/neuraldeep/1627):**
+*   Budget cluster: 4x RTX 4090 for parallel processing
+*   Power consumption: ~400W per card (~1600W total)
+*   Suitable for: RAG bots, transcription, streaming

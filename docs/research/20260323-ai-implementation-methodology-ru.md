@@ -139,4 +139,75 @@
 
 ---
 
-**Заключение:** Экосистема ИИ CMW обеспечивает надежную, модульную методологию для внедрения и управления производственными RAG-системами. Архитектура поддерживает гибкое развертывание (унифицированное vs распределенное) и включает инструменты для обслуживания и отчуждения.
+## 6. Лучшие практики RAG от сообщества NeuralDeep
+
+На основе материалов канала **NeuralDeep** (t.me/neuraldeep) и сообщества экспертов:
+
+### 6.1 ETL и подготовка данных [[источник]](https://t.me/neuraldeep/1758)
+
+*   **markitdown** — конвертация документов в Markdown [[GitHub]](https://github.com/microsoft/markitdown)
+*   **marker** — быстрое извлечение текста из PDF [[GitHub]](https://github.com/datalab-to/marker)
+*   **docling** — продвинутое извлечение данных из документов [[GitHub]](https://github.com/docling-project/docling)
+
+### 6.2 Чанкование (Chunking) [[источник]](https://habr.com/ru/companies/raft/articles/954158/)
+
+*   **Chonkie** — быстрая и легковесная библиотека для чанкования [[GitHub]](https://github.com/chonkie-inc/chonkie)
+*   LangChain text splitters [[GitHub]](https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters)
+
+### 6.3 Векторные модели для русского языка [[источник]](https://t.me/neuraldeep/1758)
+
+*   **ai-forever/FRIDA** — российская модель, оптимизированная для русского
+*   **BAAI/bge-m3** — мультиязычная модель
+*   **intfloat/multilingual-e5-large** — мультиязычные эмбеддинги
+*   **Qwen3-Embedding-8B** — большая мультиязычная модель
+
+### 6.4 LLM и vLLM модели для русского сегмента [[источник]](https://t.me/neuraldeep/1758)
+
+**Рекомендации сообщества по соотношению цена/качество:**
+
+*   **t-tech/T-lite-it-1.0** — легкая модель для русского языка
+*   **t-tech/T-pro-it-2.0** — продвинутая модель для русского языка
+*   **Qwen3-30B-A3B-Instruct-2507** — рекомендуется для Agentic RAG [[GitHub]](https://github.com/vamplabAI/sgr-agent-core/tree/tool-confluence)
+*   **RefalMachine/RuadaptQwen2.5-14B-Instruct** — адаптированная для русского
+
+### 6.5 Реранкеры [[источник]](https://t.me/neuraldeep/1758)
+
+*   **BAAI/bge-reranker-v2-m3** — мультиязычный кросс-энкодер
+*   **Qwen3-Reranker-8B** — большая модель для реранкинга
+
+### 6.6 Фреймворки для RAG [[источник]](https://t.me/neuraldeep/1758)
+
+Одобрено сообществом NeuralDeep:
+*   **Dify** — Low-code платформа для AI-приложений [[GitHub]](https://github.com/langgenius/dify/)
+*   **AutoRAG** — автоматический RAG оптимизатор [[GitHub]](https://github.com/Marker-Inc-Korea/AutoRAG)
+*   **LlamaIndex** — структурированная работа с данными [[GitHub]](https://github.com/run-llama/llama_index)
+*   **Mastra** — AI-фреймворк для продакшена [[GitHub]](https://github.com/mastra-ai/mastra)
+
+### 6.7 Agentic RAG архитектура [[источник]](https://t.me/neuraldeep/1605)
+
+**SGR (Schema-Guided Reasoning)** — фреймворк для агентов от neuraldeep:
+*   SGR Agent Core [[GitHub]](https://github.com/vamplabAI/sgr-agent-core) — 1k+ stars
+*   Запуск и философия | SGR vs Tools | Бенчмарки
+*   Agentic RAG на локальных моделях (Qwen3-30B-A3B)
+
+### 6.8 Оценка (Eval) [[источник]](https://t.me/neuraldeep/1758)
+
+*   **RAGAS** — метрики для RAG [[Docs]](https://docs.ragas.io/en/stable/)
+*   **ARES** — автоматическая оценка RAG [[GitHub]](https://github.com/stanford-futuredata/ARES)
+
+### 6.9 Безопасность [[источник]](https://t.me/neuraldeep/1758)
+
+*   **NVIDIA NeMo Guardrails** — удержание бота в рамках темы [[GitHub]](https://github.com/NVIDIA-NeMo/Guardrails)
+*   **Lakera / Rebuff** — детекторы инъекций [[Platform]](https://platform.lakera.ai/) [[GitHub]](https://github.com/protectai/rebuff)
+*   **Garak** — сканер уязвимостей LLM [[GitHub]](https://github.com/NVIDIA/garak)
+
+### 6.10 Кейс: RAG для ФСК (Строительная компания) [[источник]](https://habr.com/ru/companies/redmadrobot/articles/892882/)
+
+*   **Задача:** RAG-чат-бот для ФСК (5млн+ токенов) — B2B
+*   **Результат:** Снижение нагрузки на команду поддержки на **30–40%**
+*   **Архитектура:** Router-компонент + два workflow AI-агента
+*   **Фокус:** Предотвращение галлюцинаций для минимизации репутационных рисков
+
+---
+
+**Заключение:** Экосистема ИИ CMW обеспечивает надежную, модульную методологию для внедрения и управления производственными RAG-системами. Архитектура поддерживает гибкое развертывание (унифицированное vs распределенное) и включает инструменты для обслуживания и отчуждения. Сообщество NeuralDeep и лучшие практики из Хабра подтверждают эффективность выбранных подходов.
