@@ -101,6 +101,35 @@ vLLM incurs higher overhead due to KV cache and continuous batching:
 
 **Recommendation:** Start with **g5.xlarge (A10G)** for small-scale production (~$734/month).
 
+### 3.3 Russian Cloud Providers (for comparison)
+
+**Note:** For Russian market, consider local providers for data sovereignty compliance.
+
+#### Cloud.ru (Evolution Foundation Models) [[source]](https://cloud.ru/documents/tariffs/evolution/foundation-models)
+
+| Model | Input Tokens (per million) | Output Tokens (per million) | Price incl. VAT (₽/million) |
+|-------|---------------------------|----------------------------|------------------------------|
+| GigaChat3-10B-A1.8B | 10 | 10 | 12.2 |
+| Qwen3-235B-A22B-Instruct-2507 | 17 | - | 20.74 |
+| GigaChat-2-Max | 466.67 | 466.67 | 569.34 |
+| MiniMax-M2 | 33 | 130 | 40.26 / 158.6 |
+
+#### Yandex Cloud (YandexGPT) [[source]](https://www.akm.ru/eng/press/yandex-b2b-tech-has-opened-access-to-the-largest-language-model-on-the-russian-market/)
+
+*   **Price:** ~50 kopecks per 1,000 tokens (~500 ₽/million tokens)
+*   **Models:** YandexGPT Pro 5.1, Alice AI LLM
+
+#### SberCloud (GigaChat API) [[source]](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
+
+| Package | Tokens | Price (incl. VAT) |
+|---------|--------|------------------|
+| GigaChat 2 Lite (1B) | 1,000,000,000 | 65,000 ₽ |
+| GigaChat 2 Pro (120M) | 120,000,000 | 60,000 ₽ |
+
+**Equivalent price per million tokens:**
+*   GigaChat 2 Lite: ~65 ₽/million
+*   GigaChat 2 Pro: ~500 ₽/million
+
 ---
 
 ## 4. Operational Expenditure (OpEx)
@@ -205,3 +234,21 @@ The CMW AI ecosystem offers flexible sizing options suitable for various client 
 - **Cloud:** Zero upfront cost, higher long-term TCO, ideal for variable workloads.
 
 **Recommendation:** Start with cloud deployment for proof-of-concept, then migrate to on-premise for production if workload is stable and predictable.
+
+### Russian Market Recommendations
+
+For the Russian market, consider local cloud providers for data sovereignty compliance:
+
+1. **Cost Comparison (per 1M tokens):**
+   | Provider | Model | Price (₽/million) | USD Equiv. |
+   |----------|-------|-------------------|------------|
+   | Cloud.ru | GigaChat3-10B | 12.2 | ~$0.13 |
+   | Cloud.ru | Qwen3-235B | 20.74 | ~$0.22 |
+   | Yandex Cloud | YandexGPT | ~500 | ~$5.50 |
+   | SberCloud | GigaChat 2 Lite | ~65 | ~$0.72 |
+   | SberCloud | GigaChat 2 Pro | ~500 | ~$5.50 |
+   | OpenRouter (US) | Various | 100-1000 | $1-10 |
+
+2. **Best Value:** Cloud.ru's GigaChat3-10B-A1.8B at ~12.2 ₽/million tokens (~10x cheaper than US alternatives)
+
+3. **Local Inference:** Use cmw-mosec/cmw-vllm for fully offline solutions with RTX 4090 (0.6B-4B models) or A100/H100 (8B+ models)
