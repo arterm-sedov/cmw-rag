@@ -269,20 +269,86 @@ Performance on RTX 4090 (data from NeuralDeep community):
 *   Power consumption: ~400W per card (~1600W total)
 *   Suitable for: RAG bots, transcription, streaming
 
-### New RAG Architectures and Cost Impact [[source]](https://t.me/ai_archnadzor)
+### Advanced RAG Architectures and Cost Impact [[source]](https://t.me/ai_archnadzor)
 
-From "Эй ай надзор" channel — key architectures and their economics:
+From **@ai_archnadzor** channel — key architectures and their economics:
+
+#### Performance Optimization Architectures
 
 | Architecture | Optimization | Cost Reduction | Use Case |
 |------------|-------------|---------------|---------|
-| **REFRAG** | Chunk compression via RoBERTa | 30x speedup | Tier-1 systems |
-| **HippoRAG 2** | Dual-Node architecture | 12x cheaper indexing | Mass indexing |
-| **Topo-RAG** | Multi-vector indexes | Hallucinations 45%→8% | Fintech, logistics |
-| **Doc-to-LoRA** | LoRA adapters from docs | VRAM: 12GB→50MB (99%) | Long documents |
-| **BitNet** | 1-bit weights | CPU inference | Edge AI, local solutions |
+| **REFRAG** | Chunk compression via RoBERTa + RL policy | 30.85x TTFT speedup | Tier-1 systems, millions of queries |
+| **HippoRAG 2** | Dual-Node architecture (entity + passage nodes) | 12x cheaper indexing (9M vs 115M tokens) | Mass indexing |
+| **Topo-RAG** | Multi-vector indexes per cell | Hallucinations 45%→8%, Index 12.4GB→4.1GB | Fintech, logistics, tables |
+| **Doc-to-LoRA** | Hypernetwork generates LoRA from docs | VRAM: 12GB→50MB (99%), <1s assimilation | Long documents, context optimization |
+| **BitNet** | 1-bit weights for Attention/MLP | CPU inference, no GPU monopoly | Edge AI, local solutions, cost reduction |
 
-**2026 Trends:**
-*   End of "vanilla RAG" era
-*   Composite architectures with specialized indexes
-*   Cost reduction via BitNet and CPU solutions
-*   Context optimization via Doc-to-LoRA
+#### Semantic Quality Architectures
+
+| Architecture | Innovation | Quality Improvement | Use Case |
+|-------------|-----------|---------------------|---------|
+| **Cog-RAG** | Dual hypergraphs (themes + entities) | Win Rate +84.5% vs Naive RAG | Medicine, science, complex domains |
+| **Disco-RAG** | Rhetorical Structure Theory (RST) | Transforms RAG into logical analyst | Jurisprudence, medicine |
+| **Semantic Gravity** | Physics-based rejection sampling | 100% Safety Compliance | Enterprise, high-risk queries |
+| **GraphOS** | 16-layer architecture with Redis + Neo4j | 47% cost savings on routing | Complex enterprise RAG |
+
+#### Storage & Infrastructure
+
+| Architecture | Innovation | Storage Reduction | Use Case |
+|-------------|-----------|-------------------|---------|
+| **LEANN** | On-demand embedding computation | 97% reduction (201GB → 6GB for 60M chunks) | Offline-first, privacy |
+| **Topo-RAG** | Cell-aware late interaction (CALI) | 18.4% nDCG@10 improvement | Table-heavy documents |
+
+### Benchmark Data from NeuralDeep [[source]](https://t.me/neuraldeep/1476)
+
+RTX 4090 (48GB) performance:
+
+| Model | Tokens/sec | Parameters | Context |
+|-------|------------|------------|---------|
+| Llama 3.1 8B | ~50-60 | 8B | 8K |
+| Qwen 2.5 32B | ~20-30 | 32B | 32K |
+| Mistral 7B | ~40-50 | 7B | 8K |
+| Qwen3-30B-A3B | ~25-35 | 30B MoE | 32K |
+| Qwen3-30B-A3B (Raspberry Pi 5) | ~8-8.5 | 30B MoE | 32K |
+
+**Budget Cluster Recommendations [[source]](https://t.me/neuraldeep/1627):**
+*   Budget cluster: 4x RTX 4090 for parallel processing
+*   Power consumption: ~400W per card (~1600W total)
+*   Suitable for: RAG bots, transcription, streaming
+
+### Local Coding Models for Cost Reduction [[source]](https://t.me/ai_archnadzor/167)
+
+Replace Claude Code ($1,500-2,500/month for 5-10 engineers) with local models:
+
+| Model | VRAM | Context | Use Case |
+|-------|------|---------|----------|
+| **Qwen3-Coder-Next** (MoE) | ~24 GB (Q4_K_M) | 64K+ | Autonomous agents, full repo analysis |
+| **GLM-4.7-Flash** (MoE) | 16-24 GB | 200K | Microservices, legacy monoliths |
+| **CodeGemma v1.1** | 8-20 GB | 32K | Clean syntax (Python, TS, Go) |
+| **StarCoder2 15B** | 10-12 GB | 16K | Rare languages, legacy (COBOL, Fortran) |
+| **Phi-4-mini-instruct** | 3-4 GB | 8K | Instant autocomplete in IDE |
+| **IBM Granite-20B-Code** | 12-16 GB | 8K | Enterprise compliance (Java, C#, SQL) |
+
+**Deployment Strategy:** Brain + Edge (heavy model on server for architectural review + micro model local for instant autocomplete)
+
+### 2026 Trends Summary
+
+From **@ai_archnadzor** and **NeuralDeep** channels:
+
+**Architecture Trends:**
+*   End of "vanilla RAG" era — composite architectures with specialized indexes
+*   Graph-based memory (Knowledge Graphs, Temporal Graphs, Hypergraphs)
+*   Multi-modal VLM replacing traditional OCR pipelines
+*   DSPy + GEPA for automatic prompt optimization
+
+**Cost Optimization Trends:**
+*   BitNet and 1-bit inference for CPU-based production
+*   Doc-to-LoRA eliminating KV-Cache overhead
+*   LEANN for 97% storage reduction
+*   REFRAG for 30x latency improvement
+
+**Infrastructure Trends:**
+*   CLI replacing MCP for agent tool access (zero overhead)
+*   EffGen framework for SLM efficiency (+11.2% for 1.5B models)
+*   Arize Phoenix for full observability
+*   Guardrails as mandatory infrastructure layer
