@@ -113,6 +113,14 @@ channel_snapshot.yml
 - Recalculate USD values using fixed conversion `1 USD = 85 RUB`.
 - Example conversion: `$1,200` -> `102 000 руб.`
 
+### Russian typography and punctuation
+
+- **Quotation marks:** use `«` and `»` for Russian quotations. Reserve straight `"` for code, APIs, or when the medium cannot render guillemets.
+- **Em dash (`—`):** use for appositions, breaks in sense, and dialogue-style breaks; do not use hyphen-minus `-` where a long dash is intended.
+- **En dash (`–`):** use for ranges (pages, years), e.g. `2019–2025`, with no extra spaces inside the range unless your style guide requires thin spaces.
+- **Colon:** if text continues on the same line after `:`, start with lowercase (not English sentence case), except proper names, acronyms, or a clearly new sentence.
+- **Hyphen:** use for compounds and hyphenated words; keep minus and code literals as needed in technical snippets.
+
 ### Terminology Rules
 
 - Prefer established Russian business and technical terms.
