@@ -1,36 +1,66 @@
-# Channel Extractions - Storage and Management
+# Research Agents Guidelines
 
-## Location
+## Directory Structure
 
-Extraction files are stored outside the repository in:
 ```
-D:/Documents/cmw-rag-channel-extractions/
+docs/research/
+├── AGENTS.md           # This file - research workflow guidelines
+├── 20260323-topic-ru.md   # Russian executive summary
+├── 20260323-topic.md      # (Optional) English executive summary
+└── extractions/        # (Optional) Raw extraction files
 ```
 
-## Files in Extraction Directory
+## Source Material Storage
 
-- `.playwright-cli/` - Playwright snapshots for Telegram scraping
-- `channel_snapshot.yml` - Telegram channel data
-- `ai_machinelearning_channel.md` - Extracted content from @ai_machinelearning_big_data
+**Location:** `D:/Documents/cmw-rag-channel-extractions/`
 
-## Git Ignore Rules
+**Purpose:**
+- Raw scraped data from external sources (channels, websites, APIs)
+- Large files that can be regenerated on demand
+- Keeps repository focused on curated, processed content
 
-The following are excluded from the repository in `.gitignore`:
+**Git Ignore:**
 ```
-# Telegram channel extractions (stored in D:/Documents)
 .playwright-cli/
 channel_snapshot.yml
 ```
 
-## Why Store Outside Repository
+## Executive Summary Guidelines
 
-- Extraction files are large and contain raw scraped data
-- They can be regenerated from source channels if needed
-- Keeping them in `D:/Documents/` prevents repo bloat
-- Repository contains only the processed, curated executive summaries in `docs/research/`
+**Naming Convention:**
+```
+YYYYMMDD-topic-[lang].md
+```
+Example: `20260323-ai-implementation-methodology-ru.md`
 
-## What to Commit
+**Format:**
+- Single language per file (preferably Russian for this project)
+- Processed, curated content only
+- Cite sources inline with links
+- Structure for executive consumption (not raw data)
 
-- ✅ Executive summaries in `docs/research/` (processed content)
-- ✅ Documentation in `docs/research/extractions.md` (this file)
-- ❌ Raw extraction files (stored in D:/Documents)
+**Include:**
+- Key facts with citations
+- Pricing, benchmarks, metrics
+- Architecture comparisons
+- Market analysis
+
+**Exclude:**
+- Raw scraping data
+- Duplicate language versions (unless explicitly requested)
+- Intermediate processing artifacts
+
+## Workflow
+
+1. **Extract** raw data to `D:/Documents/cmw-rag-channel-extractions/`
+2. **Process** into executive summary in `docs/research/`
+3. **Commit** only the processed summaries
+4. **Document** methodology in this AGENTS.md file
+
+## Key Principles
+
+- Keep repository lean (raw data outside)
+- Process once, document once
+- Russian market focus (primary language)
+- Cite all sources inline
+- Abstract patterns for reusability
