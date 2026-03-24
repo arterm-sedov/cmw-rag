@@ -68,6 +68,16 @@
     *   Мониторинг и Observability (Langfuse/Arize)
     *   Обновление и дообучение моделей
 
+### Около-LLM инфраструктура: логи, события, нагрузка
+
+Ниже — **статьи OpEx/CapEx** вокруг сервисов, которые отдают LLM/RAG наружу: потоки событий, хранение логов, нагрузочное тестирование. Иллюстрация переносима на любой стек; источники — открытые описания проектов Ozon Tech.
+
+- **Хранение и поиск логов:** [seq-db](https://github.com/ozontech/seq-db) позиционируется как масштабируемая СУБД для логов с одиночным и кластерным режимами — в дереве затрат это **диск, реплики, запросы** и связанный **персонал** сопровождения observability.
+- **Пайплайны событий:** [file.d](https://github.com/ozontech/file.d) — сбор и обработка событий (в т.ч. в Kafka, Kubernetes), интеграция с Prometheus; влияет на **OpEx** вычислений и сети при учёте токенов/вызовов в потоках телеметрии (см. также связку file.d → seq-db в документации проектов).
+- **Нагрузочное тестирование gRPC:** [framer](https://github.com/ozontech/framer) заявлен как высокопроизводительный генератор нагрузки для gRPC; полезен при проверке **SLO и ёмкости** обвязки инференса. В README проекта указана стадия **alpha** и возможные изменения публичного API — закладывать **риск смены инструментария** в пилоте.
+
+Подробнее переносимые **управленческие** уроки из публичных статей (платформа ботов, ретривал, MLOps) — в [Методология внедрения и отчуждения ИИ](20260323-ai-implementation-methodology-ru.md) (раздел «Извлекаемые уроки из публичных материалов крупного e-com (РФ)»).
+
 ---
 
 ## Сценарный сайзинг (Scenario Sizing)
@@ -201,6 +211,8 @@
 
 По [материалам Сбера на Хабре](https://habr.com/ru/companies/sberbank/articles/1014146/) и [коллекции GigaChat 3.1 на Hugging Face](https://huggingface.co/collections/ai-sage/gigachat-31) доступны открытые веса под **MIT**; дополнительно — материалы [на GitVerse](https://gitverse.ru/GigaTeam/gigachat3.1). Таблицы тарифов выше описывают **управляемый API** (₽ за млн токенов). Self-hosted **убирает** счётчик токенов у облака, перенося затраты в **GPU, энергию, персонал и риск регрессий** движка.
 
+**Параллельный паттерн на рынке:** публичные веса под **кастомной** лицензией (не MIT) дают тот же сдвиг **токены API → CapEx/OpEx GPU**, но в TCO нужно заложить **юридический разбор** и **наблюдаемость выходных токенов** при коммерческом использовании; в **лицензионном соглашении YandexGPT-5-Lite-8B** на Hugging Face указаны порог **10 миллионов выходных токенов в месяц** и срок **30 календарных дней** для обращения к правообладателю с целью согласовать продолжение использования ([файл LICENSE](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)).
+
 - **CapEx / аренда GPU:** зависит от размера MoE-чекпойнта и выбранного квантования; флагманский Ultra ориентирован на **кластерный** сценарий, Lightning — на более компактный инференс (точный сайзинг VRAM в данном документе не фиксируется без замеров на целевом стеке **cmw-vllm** / **cmw-mosec**).
 - **OpEx:** электроэнергия, персонал LLMOps, обновления инференс-движка, **регрессионные eval** при смене весов или версии сервера.
 
@@ -212,7 +224,7 @@
 
 **Имя в прайсе Cloud.ru vs Hub:** строка **GigaChat3-10B-A1.8B** в [тарифах Cloud.ru](https://cloud.ru/documents/tariffs/evolution/foundation-models) — **облачный** SKU с оплатой по токену; на Hugging Face версии весов нумеруются отдельно (**3.1** и **3.0**), совпадение имени с прайсом **не** гарантирует идентичность чекпойнта и движка без явной сверки релиза.
 
-**Отчуждение и комплаенс:** лицензия MIT на веса облегчает передачу артефактов заказчику, но **не заменяет** проверку требований реестра доверенных моделей для госсектора — см. [Методология внедрения и отчуждения ИИ](20260323-ai-implementation-methodology-ru.md).
+**Отчуждение и комплаенс:** лицензия MIT на веса облегчает передачу артефактов заказчику, но **не заменяет** проверку требований реестра доверенных моделей для госсектора; **кастомные** лицензии на публичные веса добавляют учёт порогов и сроков (см. абзац выше) — детали пакета передачи в [Методология внедрения и отчуждения ИИ](20260323-ai-implementation-methodology-ru.md).
 
 ---
 
@@ -1269,6 +1281,11 @@ TCO = Hourly_Rate × 24 × 365 × Years + Egress_Fees + Storage_Fees
 - [AKM.ru — доступ к крупнейшей языковой модели на рынке РФ (Yandex B2B)](https://www.akm.ru/eng/press/yandex-b2b-tech-has-opened-access-to-the-largest-language-model-on-the-russian-market/)
 - [Сбер — GigaChat API: юридические тарифы](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
 
+### Публичные веса с нестандартной лицензией (иллюстрация для TCO и мониторинга)
+
+- [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
+- [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
+
 ### Открытые модели ai-sage (GigaChat и спутники, TCO)
 
 - [Хабр — GigaChat-3.1: большое обновление больших моделей (блог Сбера)](https://habr.com/ru/companies/sberbank/articles/1014146/)
@@ -1303,6 +1320,12 @@ TCO = Hourly_Rate × 24 × 365 × Years + Egress_Fees + Storage_Fees
 - [OpenCode — Ecosystem](https://opencode.ai/docs/ecosystem/)
 - [OpenCode Zen](https://opencode.ai/docs/zen)
 - [OpenWork (different-ai/openwork)](https://github.com/different-ai/openwork)
+
+### Публичные инструменты e-com (иллюстрация около-LLM OpEx, без рекламы)
+
+- [GitHub — ozontech/seq-db](https://github.com/ozontech/seq-db)
+- [GitHub — ozontech/file.d](https://github.com/ozontech/file.d)
+- [GitHub — ozontech/framer](https://github.com/ozontech/framer)
 
 ### FinOps, TCO, инфраструктура и железо
 
