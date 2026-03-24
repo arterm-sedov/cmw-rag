@@ -99,6 +99,10 @@ channel_snapshot.yml
 - Intermediate processing artifacts.
 - Unverified marketing fluff or "water" content.
 
+### Authoring inputs vs published executive text
+
+- Internal repositories, slide decks, and local paths are **authoring inputs only**. Published executive summaries (for example `20260323-*-ru.md`) state **generic, transferable practice**; they must not treat repositories as a product SKU or require readers to open the codebase.
+
 ## Russian Language and Numeric Standards
 
 ### Numbers and Values
