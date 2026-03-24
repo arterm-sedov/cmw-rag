@@ -234,3 +234,13 @@ Follow the twelve-factor methodology:
 ## IMPORTANT
 
 **Make sure: code is:** clean, lean, brilliant, dry, minimalistic, abstract, non-duplicating, non-breaking, perfect, genius, and pythonic.
+
+## Channel Extractions Location
+
+Telegram channel extraction files are stored in:
+- `D:/Documents/cmw-rag-channel-extractions/`
+
+This includes:
+- `.playwright-cli/` - Playwright snapshots for Telegram scraping
+- `channel_snapshot.yml` - Telegram channel data
+- `ai_machinelearning_channel.md` - Extracted content from @ai_machinelearning_big_data
