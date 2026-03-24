@@ -352,3 +352,97 @@ From **@ai_archnadzor** and **NeuralDeep** channels:
 *   EffGen framework for SLM efficiency (+11.2% for 1.5B models)
 *   Arize Phoenix for full observability
 *   Guardrails as mandatory infrastructure layer
+
+---
+
+## 10. Latest AI/ML Trends from @ai_machinelearning_big_data [[source]](https://t.me/ai_machinelearning_big_data)
+
+From **@ai_machinelearning_big_data** channel (323,407 subscribers) — fresh AI/ML news and trends:
+
+### 10.1 Coding Agents
+
+**NousResearch Hermes Agent Hackathon:**
+*   187 submissions, $11,750 prize pool
+*   Winners: Media Tool (ffmpeg), CAD Builder, Sidecar, World Map, Mars Rover
+*   Hermes Agent wrote a 79,456-word novel
+
+**Cursor Composer 2:**
+*   Competes with Claude Opus 4.6 and GPT-5.4
+*   Price: $0.50/1M input tokens, $2.50/1M output tokens
+*   Benchmark: 61.3 points (vs 44.2 for v1.5)
+
+**Claude Code Channels (Anthropic):**
+*   Claude Code integration with Telegram and Discord via MCP
+*   Async AI agent workflow
+*   "OpenClaw killer" per community
+
+**OpenAI Superapp (Codex + ChatGPT + Atlas):**
+*   Unifying products into single platform
+*   Agents for autonomous computer work
+
+### 10.2 AI Infrastructure
+
+**NVIDIA Nemotron-Cascade 2:**
+*   MoE 30B (3B active) — Gold at IMO, IOI, ICPC 2025
+*   LiveCodeBench v6: 88.4 points
+*   Codeforces rating: 2345 (300B+ model level)
+*   License: NVIDIA Open Model License
+
+**Huawei Atlas 350:**
+*   Accelerator on Ascend 950PR — 2.87x faster than Nvidia H20
+*   FP4 compute, 112 GB HBM
+*   Load LLMs up to 70B parameters on single card
+
+**GLM 5.1 Open Source:**
+*   Zixuan Li (ZAI) announced plans to open source
+
+**Mamba3:**
+*   SSM architecture with inference priority
+*   SISO: best total prefill + decode latency
+*   MIMO: comparable speed, but noticeably more accurate
+
+### 10.3 Robotics & Hardware
+
+**Unitree As2:**
+*   Quadruped robot in 3 versions: AIR, PRO, EDU
+*   18 kg, 12 DOF, up to 3.7 m/s
+*   EDU: NVIDIA Jetson Orin NX support
+
+**Pokemon Go → Robot Navigation:**
+*   30B photos from fans for spatial AI training
+*   Niantic Spatial: centimeter-accurate visual navigation
+*   Coco Robotics: couriers with 4 cameras
+
+### 10.4 Enterprise AI
+
+**Google AI Studio — Vibe Coding:**
+*   Antigravity Agent for automatic Firebase deployment
+*   Next.js, React, Angular support
+*   Gemini 3.1 Pro for full development cycle
+
+**ElevenLabs Music Marketplace:**
+*   AI music from ElevenCreative
+*   14M generated songs
+*   $11M earned on voice marketplace
+
+**Adobe Firefly:**
+*   Custom AI models on user data
+*   Project Moonlight: agentic interface for all apps
+
+### 10.5 Russian Market
+
+**Agents Week by Yandex SHD (April 6-10):**
+*   Intensive on AI agents from Yandex experts
+*   Single-agent and multi-agent architectures
+*   Production approaches: evaluation, monitoring, scaling
+
+**National AI Olympiad:**
+*   7,000 participants, 111 finalists, 18 winners
+*   Winners get internship at Sberbank
+
+**Yandex Prompt Hub:**
+*   Prompt for generating prompts (4-D methodology)
+*   Deconstruct → Diagnose → Develop → Deliver
+
+**Sber One Day Offer for Data Scientists:**
+*   March 28, opportunity to get hired in 1 day

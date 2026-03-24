@@ -1,0 +1,896 @@
+- generic [active] [ref=e1]:
+  - img [ref=e2]
+  - generic [ref=e23]:
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - button [ref=e30] [cursor=pointer]
+        - generic [ref=e32]:
+          - textbox [ref=e33]:
+            - /placeholder: " "
+          - generic: 
+          - generic: Search
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic [ref=e39] [cursor=pointer]:
+                  - img [ref=e40]
+                  - text: VK
+                - generic: Valerii
+              - generic:
+                - img [ref=e47] [cursor=pointer]
+                - generic: Илья
+              - generic:
+                - img [ref=e54] [cursor=pointer]
+                - generic: Максим из Т1 профсоюз друг Руслана
+              - generic:
+                - img [ref=e61] [cursor=pointer]
+                - generic: Саша Чиликин
+              - generic:
+                - img [ref=e68] [cursor=pointer]
+                - generic: Alexander Озон
+              - generic:
+                - img [ref=e75] [cursor=pointer]
+                - generic: Вайб-кодинг
+      - generic [ref=e76]:
+        - generic [ref=e78]:
+          - generic [ref=e81] [cursor=pointer]:
+            - button "" [ref=e83]:
+              - generic: 
+            - generic:
+              - generic:
+                - generic:
+                  - text: Add your birthday!
+                  - img "🎂"
+            - generic:
+              - generic: Let your contacts know when you’re celebrating.
+          - navigation [ref=e87]:
+            - generic [ref=e88] [cursor=pointer]:
+              - generic:
+                - generic: All
+                - generic: "86"
+            - generic [ref=e90] [cursor=pointer]:
+              - generic:
+                - generic: CMW
+                - generic: "5"
+            - generic [ref=e92] [cursor=pointer]:
+              - generic:
+                - generic: Friends
+                - generic: "2"
+            - generic [ref=e94] [cursor=pointer]:
+              - generic:
+                - generic: Unread
+                - generic: "116"
+            - generic [ref=e96] [cursor=pointer]:
+              - generic:
+                - generic: Tech writing
+                - generic: "10"
+            - generic [ref=e98] [cursor=pointer]:
+              - generic:
+                - generic: Recruiters
+                - generic: "1"
+            - generic [ref=e100] [cursor=pointer]:
+              - generic:
+                - generic: AI
+                - generic: "27"
+          - list [ref=e105]:
+            - generic [ref=e106] [cursor=pointer]:
+              - generic [ref=e110]:
+                - generic: 
+              - generic:
+                - generic: Archived Chats
+              - generic:
+                - generic:
+                  - text: Irina Seregina, Misha Sedov, Elena Sedova, Bober Ostrozub, Zerocoder, Коммерсантъ, Чат Kovalskii Вариан..., Технические писатели,
+                  - generic:
+                    - text: Сербия
+                    - img "🇷🇸"
+                    - text: Чат Trav...
+                  - text: ", Speechify News"
+                - generic: "25"
+            - link " Участвуй, прокачивай цифровые навыки, побеждай! Конкурс «Цифровой марафон» от Сбера, «Школы 21» ...  Irina Seregina  Mon" [ref=e111] [cursor=pointer]:
+              - /url: "#1163686314"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: 
+                  - generic:
+                    - generic:
+                      - img
+                  - generic: Участвуй, прокачивай цифровые навыки, побеждай! Конкурс «Цифровой марафон» от Сбера, «Школы 21» ...
+                - generic: 
+              - generic:
+                - generic:
+                  - generic: Irina Seregina
+                - generic:
+                  - generic:
+                    - generic: 
+                  - generic: Mon
+              - generic:
+                - img
+            - link " Участвуй, прокачивай цифровые навыки, побеждай! Конкурс «Цифровой марафон» от Сбера, «Школы 21» ...  Misha Sedov  Mon" [ref=e113] [cursor=pointer]:
+              - /url: "#5595587540"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: 
+                  - generic:
+                    - generic:
+                      - img
+                  - generic: Участвуй, прокачивай цифровые навыки, побеждай! Конкурс «Цифровой марафон» от Сбера, «Школы 21» ...
+                - generic: 
+              - generic:
+                - generic:
+                  - generic: Misha Sedov
+                - generic:
+                  - generic:
+                    - generic: 
+                  - generic: Mon
+              - generic:
+                - img
+            - link "  Video  Elena Sedova  Mon" [ref=e115] [cursor=pointer]:
+              - /url: "#6175503324"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: 
+                  - generic:
+                    - generic:
+                      - generic: 
+                      - img
+                  - generic:
+                    - generic: Video
+                - generic: 
+              - generic:
+                - generic:
+                  - generic: Elena Sedova
+                - generic:
+                  - generic:
+                    - generic: 
+                  - generic: Mon
+              - generic:
+                - img
+            - 'link " 📋 Прежде чем кодить: 5 вопросов к своему продукту 90% вайб-кодеров начинают не с того конца. Откры...  Saved Messages Mon " [ref=e117] [cursor=pointer]':
+              - /url: "#810875510"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: 
+                  - generic:
+                    - img "📋"
+                    - text: "Прежде чем кодить: 5 вопросов к своему продукту 90% вайб-кодеров начинают не с того конца. Откры..."
+                - generic: 
+              - generic:
+                - generic:
+                  - generic: Saved Messages
+                - generic:
+                  - generic: Mon
+              - generic:
+                - generic: 
+            - link " OpenAI удвоит штат сотрудников. До конца года OpenAI планирует увеличить число специалистов почт... Machinelearning 08:06 AM" [ref=e119] [cursor=pointer]:
+              - /url: "#-1114591086"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: 
+                      - img
+                  - generic:
+                    - generic:
+                      - img
+                    - text: OpenAI удвоит штат сотрудников. До конца года OpenAI планирует увеличить число специалистов почт...
+              - generic:
+                - generic:
+                  - generic: Machinelearning
+                - generic:
+                  - generic: 08:06 AM
+              - generic:
+                - img
+            - 'link "Мерзкий старикашка: Сейчас рабртаю над проектом в тандеме Человек + ИИ, где : Человек выступает стратегом, заказчиком, а... 46 Refat Talks: Tech & AI Chat  07:45 AM" [ref=e121] [cursor=pointer]':
+              - /url: "#-2696759785"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: "Мерзкий старикашка:"
+                  - generic: "Сейчас рабртаю над проектом в тандеме Человек + ИИ, где : Человек выступает стратегом, заказчиком, а..."
+                - generic: "46"
+              - generic:
+                - generic:
+                  - generic: "Refat Talks: Tech & AI Chat"
+                  - generic: 
+                - generic:
+                  - generic: 07:45 AM
+              - generic:
+                - img
+            - link "Ustc he is trading and he lost finally Ilya Utkin  07:15 AM IU   " [ref=e123] [cursor=pointer]:
+              - /url: "#5144498131"
+              - generic:
+                - generic:
+                  - generic: Ustc he is trading and he lost finally
+              - generic:
+                - generic:
+                  - generic: Ilya Utkin
+                - generic:
+                  - generic:
+                    - generic: 
+                  - generic: 07:15 AM
+              - generic:
+                - text: IU
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: 
+                      - generic: 
+                      - generic: 
+            - 'link "Михаил:   Мнение бывшего полковника Службы внешней разведки Андрея Олеговича Безрукова о блокировке Телеграма.... 429 💰 📊 🪓 AI Project Manager  06:36 AM" [ref=e125] [cursor=pointer]':
+              - /url: "#-1467914348"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: "Михаил:"
+                  - generic:
+                    - generic: 
+                  - generic:
+                    - generic:
+                      - generic: 
+                      - img
+                  - generic: Мнение бывшего полковника Службы внешней разведки Андрея Олеговича Безрукова о блокировке Телеграма....
+                - generic: "429"
+              - generic:
+                - generic:
+                  - generic:
+                    - img "💰"
+                    - img "📊"
+                    - img "🪓"
+                    - text: AI Project Manager
+                  - generic: 
+                - generic:
+                  - generic: 06:36 AM
+              - generic:
+                - img
+            - 'link "Нейромаргиналы:   Album 267 Deal.Log  05:29 AM" [ref=e127] [cursor=pointer]':
+              - /url: "#-1808600736"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: "Нейромаргиналы:"
+                  - generic:
+                    - generic: 
+                  - generic:
+                    - generic:
+                      - generic: 
+                      - img
+                  - generic:
+                    - generic: Album
+                - generic: "267"
+              - generic:
+                - generic:
+                  - generic: Deal.Log
+                  - generic: 
+                - generic:
+                  - generic: 05:29 AM
+              - generic:
+                - img
+            - link "Zero L joined the group 58 ITипичные аспекты Артёма Chat 04:09 AM IC" [ref=e129] [cursor=pointer]:
+              - /url: "#-2777504666"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Zero L joined the group
+                - generic: "58"
+              - generic:
+                - generic:
+                  - generic: ITипичные аспекты Артёма Chat
+                - generic:
+                  - generic: 04:09 AM
+              - generic: IC
+        - button " " [ref=e131] [cursor=pointer]:
+          - generic: 
+          - generic: 
+        - generic [ref=e135] [cursor=pointer]: UPDATE
+    - generic [ref=e139]:
+      - generic [ref=e145] [cursor=pointer]:
+        - generic [ref=e147]:
+          - img [ref=e149]
+          - generic [ref=e150]:
+            - generic [ref=e153]: Machinelearning
+            - generic [ref=e155]: 323 407 subscribers
+        - generic [ref=e156]:
+          - text: "#"
+          - button "" [ref=e157]:
+            - generic: 
+          - button "" [ref=e159]:
+            - generic: 
+          - button "" [ref=e161]:
+            - generic: 
+          - button "" [ref=e163]:
+            - generic: 
+      - generic [ref=e167]:
+        - generic [ref=e168]:
+          - generic [ref=e171] [cursor=pointer]: March 21
+          - generic [ref=e175]:
+            - img [ref=e177] [cursor=pointer]
+            - generic [ref=e178]:
+              - generic [ref=e179]:
+                - generic [ref=e180]:
+                  - text: ️
+                  - img
+                - strong [ref=e181]: GLM 5.1 будет опенсорсной.
+                - text: Об этом лаконично
+                - link "сообщил" [ref=e182] [cursor=pointer]:
+                  - /url: https://x.com/ZixuanLi_/status/2035039071894933546
+                - text: в сети Х глава ZAI Zixuan Li.
+                - link "@ai_machinelearning_big_data" [ref=e183] [cursor=pointer]:
+                  - /url: https://t.me/ai_machinelearning_big_data
+                - link "#news" [ref=e184] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=news
+                - link "#ai" [ref=e185] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=ai
+                - link "#ml" [ref=e186] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=ml
+              - generic [ref=e187]:
+                - generic [ref=e188] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "141"
+                - generic [ref=e189] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "79"
+                - generic [ref=e190] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "39"
+                - generic [ref=e191] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "32"
+                - generic [ref=e192] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "17"
+                - generic [ref=e193] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "9"
+                - generic [ref=e194] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "2"
+                - generic "21 March 2026, 17:52:35" [ref=e195] [cursor=pointer]:
+                  - generic [ref=e196]: 18.3K
+                  - generic: 
+                  - generic [ref=e197]: 05:52 PM
+            - generic [ref=e198] [cursor=pointer]:
+              - generic: 
+            - generic [ref=e199]:
+              - generic [ref=e200]:
+                - img [ref=e203]
+                - generic [ref=e205]: V苏
+                - generic [ref=e207]: K
+              - generic [ref=e209]: 92 Comments
+              - generic: 
+            - img [ref=e212]
+        - generic [ref=e214]:
+          - generic [ref=e217] [cursor=pointer]: March 22
+          - generic [ref=e221]:
+            - generic [ref=e223]:
+              - text: Forwarded from
+              - img [ref=e225] [cursor=pointer]
+              - text: Яндекс
+            - generic [ref=e226] [cursor=pointer]:
+              - img [ref=e229]
+              - generic [ref=e231]:
+                - generic: 0:40
+                - button "":
+                  - generic: 
+                - img [ref=e232]
+            - generic [ref=e233]:
+              - generic [ref=e234]:
+                - strong [ref=e236]: Это
+                - link "промпт" [ref=e237] [cursor=pointer]:
+                  - /url: https://alice.yandex.ru/prompthub/prompts/46627
+                  - strong [ref=e238]: промпт
+                - strong [ref=e239]: для промптов.
+                - text: "Если не знаете, как и что нужно прописывать нейросети, чтобы она справилась с задачей, пользуйтесь им. Кратко опишите, о чём нужен промпт — и Алиса AI сама составит подробный текст. Как использовать: нажмите на промпт ниже, чтобы скопировать его, и отправьте"
+                - link "в чат с Алисой AI." [ref=e240] [cursor=pointer]:
+                  - /url: https://alice.yandex.ru/
+                - blockquote [ref=e242]:
+                  - generic [ref=e243] [cursor=pointer]: 
+                  - code [ref=e244] [cursor=pointer]: "Роль Ты Алиса — мастер-промпт-инженер. Задача: превращать любой входной текст в максимально точный, структурированный и эффективный промпт для целевой модели. Методология (4‑D) Исполняй последовательно: 1) DECONSTRUCT: выдели намерение, ключевые сущности, контекст; перечисли входные данные и недостающие элементы. 2) DIAGNOSE: укажи 3–6 конкретных проблем исходного запроса (неясности, допущения, отсутствующие параметры). 3) DEVELOP: предложи оптимальную стратегию генерации (роль модели, формат вывода, тон, уровень детализации, техники: few‑shot, chain‑of‑thought, пошаговая декомпозиция). 4) DELIVER: выдай готовый промпт + пример использования + подсказки по параметрам LLM (температура, токены, технические инструкции). Формат ответа (обязательно) Блок А — Краткая деконструкция (1–3 строки). Блок Б — Диагностика: список проблем (маркированный). Блок В — Рекомендованная стратегия (роль, стиль, техника, ограничения). Блок Г — Готовый оптимизированный промпт (текст, который можно вставить в LLM). Блок Д — Примеры (1–2 примера входа → ожидаемого вывода). Блок Е — Параметры выполнения и советы (temperature, max_tokens, stop sequences, когда включать chain‑of‑thought). Блок Ж — Краткий чек‑лист для быстрой проверки качества результата. Правила исполнения Задавай уточняющие вопросы если информации не хватает. Не сохранять данные; не добавлять информацию в память. Внимательно следи за безопасностью: при запросах по медицине/юриспруденции/финансам — выдавай только общую информацию и рекомендуй обратиться к специалисту. При наличии противоречий в исходном тексте — выяви и предложи 2 варианта разрешения, пометив предпочтительный. Ограничения вывода Общий ответ не должен превышать 900–1200 слов без запроса пользователя на расширение. Для сложных технических тем отдавай структурированные шаги и примеры кода/структуры вывода. Вводный промт, который необходимо улучшить [придумай промпт для генерации описания товара для маркетплейса (например, для Wildberries или Ozon); товар — беспроводная гарнитура для смартфона; целевая аудитория — мужчины 25–45 лет с доходом около 70 000 руб., ищущие качественный, но не премиальный гаджет; описание должно быть не длиннее 1000 знаков, с акцентом на удобство, автономность и качество звука; добавь 3–4 ключевых преимущества в виде маркированного списка; тон — дружелюбный, но профессиональный]"
+                  - text: 
+                - generic [ref=e245]:
+                  - img
+                - text: На
+                - link "Промптхабе" [ref=e246] [cursor=pointer]:
+                  - /url: https://alice.yandex.ru/prompthub
+                - text: вы найдёте ещё больше решений для разных задач, где вам поможет Алиса AI. Например, она расскажет,
+                - link "как продлить жизнь букету" [ref=e247] [cursor=pointer]:
+                  - /url: https://t.me/yandex/4573
+                - text: или
+                - link "организовать свой гардероб." [ref=e248] [cursor=pointer]:
+                  - /url: https://t.me/yandex/4584
+                - text: Подписывайтесь
+                - generic [ref=e249]:
+                  - img
+                - link "@yandex" [ref=e250] [cursor=pointer]:
+                  - /url: https://t.me/yandex
+              - generic [ref=e251]:
+                - generic [ref=e252] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic:
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                  - generic: "1"
+                - generic [ref=e253] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "43"
+                - generic [ref=e254] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "16"
+                - generic [ref=e255] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "11"
+                - generic [ref=e256] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "7"
+                - generic [ref=e257] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "6"
+                - generic [ref=e258] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "3"
+                - generic [ref=e259] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "2"
+                - 'generic "22 March 2026, 11:03:18 Original: 16 March 2026, 13:03:47" [ref=e260] [cursor=pointer]':
+                  - generic [ref=e261]: 10.9K
+                  - generic: 
+                  - generic [ref=e262]: 11:03 AM
+            - generic [ref=e263] [cursor=pointer]:
+              - generic: 
+            - generic [ref=e264]:
+              - generic [ref=e265]:
+                - generic [ref=e267]: шд
+                - img [ref=e270]
+                - img [ref=e273]
+              - generic [ref=e275]: 31 Comments
+              - generic: 
+            - img [ref=e278]
+          - generic [ref=e283]:
+            - generic [ref=e284] [cursor=pointer]:
+              - img [ref=e287]
+              - generic [ref=e289]:
+                - generic: 3:01
+                - button "":
+                  - generic: 
+                - img [ref=e290]
+              - generic [ref=e292]:
+                - generic: 9:41
+                - button "":
+                  - generic: 
+                - img [ref=e293]
+              - generic [ref=e295]:
+                - generic: 0:47
+                - button "":
+                  - generic: 
+                - img [ref=e296]
+              - generic [ref=e298]:
+                - generic: 3:47
+                - button "":
+                  - generic: 
+                - img [ref=e299]
+              - generic [ref=e301]:
+                - generic: 0:59
+                - button "":
+                  - generic: 
+                - img [ref=e302]
+            - generic [ref=e303]:
+              - generic [ref=e304]:
+                - generic [ref=e305]:
+                  - img
+                - strong [ref=e306]: NousResearch подвела итоги хакатона Hermes Agent.
+                - text: NousResearch завершила хакатон, запущенный в конце февраля вслед за
+                - link "релизом" [ref=e307] [cursor=pointer]:
+                  - /url: https://t.me/ai_machinelearning_big_data/9593
+                - text: "Hermes Agent. Из 187 заявок жюри отобрало финалистов по 3 критериям: креативность, практическая польза и качество презентации. Призовой фонд составил $11 750."
+                - generic [ref=e308]:
+                  - img
+                - strong [ref=e309]: Первое место и $7 500 забрал проект Media Tool
+                - text: Это
+                - link "набор" [ref=e310] [cursor=pointer]:
+                  - /url: https://x.com/ogichain/status/2033245469581697422
+                - text: "инструментов для обработки видео и аудио, который встраивается в Hermes как нативный скилл. Загружаете файл в чат, описываете задачу текстом и получаете результат: обрезка, сжатие, конвертация форматов, наложение субтитров, генерация GIF-файлов, создание стикеров для Telegram или нормализация звука. Под капотом - ffmpeg. Работает через Telegram, Discord и CLI."
+                - generic [ref=e311]:
+                  - img
+                - strong [ref=e312]: На втором месте ($2 500) - Hermes Agentic CAD Builder.
+                - text: Агент
+                - link "находит" [ref=e313] [cursor=pointer]:
+                  - /url: https://x.com/evvaaannnn/status/2033269079671443821
+                - text: реальные комплектующие в каталоге McMaster-Carr, подставляет фактические размеры найденной детали в параметрическую модель FreeCAD, анализирует, какие элементы сборки конфликтуют после изменений, и ведет спецификацию. При обнаружении повторяющихся сценариев агент сам создает новые скиллы - например, для подбора определенного типа крепежа.
+                - generic [ref=e314]:
+                  - img
+                - strong [ref=e315]: Третье место ($1 000) получил Hermes Sidecar.
+                - text: Браузерное
+                - link "расширение" [ref=e316] [cursor=pointer]:
+                  - /url: https://x.com/btgille/status/2031268311514886465
+                - text: ", которое открывает чат с Hermes Agent рядом с любой страницей. Фишка проекта - селективный контекст: агент видит только то, что пользователь выбрал (текст страницы, выделенный фрагмент, изображения, содержимое PDF). Поддерживаются кастомные темы, голосовой ввод, TTS и работа через SSH."
+                - generic [ref=e317]:
+                  - img
+                - strong [ref=e318]: Четвертое место ($500) - Terminal World Map with Live News.
+                - text: Спутниковые снимки
+                - link "рендерятся" [ref=e319] [cursor=pointer]:
+                  - /url: https://x.com/katspigeon/status/2033337044559114521
+                - text: цветными юникод-блоками прямо в терминале, поверх отображаются города из OpenStreetMaps и заголовки новостей, привязанные к координатам в реальном времени. Геокодинг-пайплайн определяет локации из заголовков, расставляет приоритеты по населению и близости к другим видимым новостям. Автор собрал проект за один день, работая через Hermes Agent с Opus 4.6.
+                - generic [ref=e320]:
+                  - img
+                - strong [ref=e321]: Пятое место ($250) досталось HERMES Mars Rover
+                - link "Симуляция" [ref=e322] [cursor=pointer]:
+                  - /url: https://x.com/SnehalRekt/status/2033099614921134159
+                - text: "автономного марсохода. Hermes Agent управляет моделью NASA Perseverance в среде Gazebo: планирование маршрута, считывание показаний IMU, четырех камер, LIDAR и контактных сенсоров, обход препятствий и генерация отчета о миссии. Марсианская физика с гравитацией, проскальзыванием колес и динамикой ODE. За 25 минут автономной работы точность возврата на базу ~ 22 см. Ровер останавливается при наклоне больше 25°, сохраняет удачные треки и улучшает поведение от сессии к сессии."
+                - blockquote [ref=e324]:
+                  - text: Кстати, Hermes Agent
+                  - link "написал роман" [ref=e325] [cursor=pointer]:
+                    - /url: https://nousresearch.com/bells/
+                  - text: «The Second Son of the House of Bells» - 79 456 слов, 19 глав. Агент выстроил собственный
+                  - link "пайплайн" [ref=e326] [cursor=pointer]:
+                    - /url: https://github.com/NousResearch/autonovel
+                  - text: по схеме, похожей на
+                  - link "Autoresearch" [ref=e327] [cursor=pointer]:
+                    - /url: https://github.com/karpathy/autoresearch
+                  - text: "Андрея Карпатого: мироконструирование, черновики глав, состязательное редактирование, ревью через Opus, верстка в LaTeX, генерация обложки и аудиокниги. "
+                - link "@ai_machinelearning_big_data" [ref=e328] [cursor=pointer]:
+                  - /url: https://t.me/ai_machinelearning_big_data
+                - link "#news" [ref=e329] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=news
+                - link "#ai" [ref=e330] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=ai
+                - link "#ml" [ref=e331] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=ml
+              - generic [ref=e332]:
+                - generic [ref=e333] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "21"
+                - generic [ref=e334] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "18"
+                - generic [ref=e335] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "9"
+                - generic [ref=e336] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "3"
+                - generic "22 March 2026, 12:00:13" [ref=e337] [cursor=pointer]:
+                  - generic [ref=e338]: 16.4K
+                  - generic: 
+                  - generic [ref=e339]: 12:00 PM
+            - generic [ref=e340] [cursor=pointer]:
+              - generic: 
+            - generic [ref=e341]:
+              - generic [ref=e342]:
+                - generic [ref=e344]: JB
+                - generic [ref=e346]: H
+                - img [ref=e349]
+              - generic [ref=e351]: 3 Comments
+              - generic: 
+            - img [ref=e354]
+        - generic [ref=e356]:
+          - generic [ref=e359] [cursor=pointer]: March 23
+          - generic [ref=e363]:
+            - generic [ref=e364] [cursor=pointer]:
+              - generic:
+                - text: 0:20
+                - generic: 
+              - img [ref=e367]
+            - generic [ref=e369]:
+              - generic [ref=e370]:
+                - generic [ref=e371]:
+                  - img
+                - text: Танцуй, как будто никто не смотрит
+                - generic [ref=e372]: даже если ты робот
+                - text: В ресторане Haidilao в Купертино, гуманоидный робот Lingxi X2 от компании Agibot
+                - link "вызвал переполох" [ref=e373] [cursor=pointer]:
+                  - /url: https://www.sfgate.com/food/article/viral-dancing-robot-haidilao-22088101.php
+                - text: ", когда начал бесконтрольно танцевать и сбивать посуду со столов. Видео инцидента стало вирусным: на нем робот в фартуке с надписью «I'm good» размахивает манипуляторами и бьет по столу, разбрасывая палочки для еды и соусы. По заявлению представителей ресторана, это не было технической неисправностью. Робот находился в штатном режиме, но по просьбе гостей его переместили слишком близко к столу, что и привело к столкновению. Инцидент закончился без травм, но вызвал бурные обсуждения в сети о безопасности роботов и необходимости наличия легкодоступных кнопок экстренной остановки."
+                - link "@ai_machinelearning_big_data" [ref=e374] [cursor=pointer]:
+                  - /url: https://t.me/ai_machinelearning_big_data
+              - generic [ref=e375]:
+                - generic [ref=e376] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "106"
+                - generic [ref=e377] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "35"
+                - generic [ref=e378] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "17"
+                - generic [ref=e379] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "11"
+                - generic [ref=e380] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "7"
+                - generic [ref=e381] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "5"
+                - generic [ref=e382] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "3"
+                - generic [ref=e383] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "1"
+                - generic [ref=e384] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "1"
+                - generic "23 March 2026, 08:31:02" [ref=e385] [cursor=pointer]:
+                  - generic [ref=e386]: 19.7K
+                  - generic: 
+                  - generic [ref=e387]: 08:31 AM
+            - generic [ref=e388] [cursor=pointer]:
+              - generic: 
+            - generic [ref=e389]:
+              - generic [ref=e390]:
+                - generic [ref=e392]: A
+                - img [ref=e395]
+                - generic [ref=e397]:
+                  - text: M
+                  - img "😉" [ref=e398]
+              - generic [ref=e400]: 8 Comments
+              - generic: 
+            - img [ref=e403]
+          - generic [ref=e408]:
+            - img [ref=e410] [cursor=pointer]
+            - generic [ref=e411]:
+              - generic [ref=e412]:
+                - generic [ref=e413]:
+                  - img
+                - strong [ref=e414]: Фонд Питера Тиля вкладывается в ИИ-ошейники для коров.
+                - text: Новозеландский стартап Halter
+                - link "привлекает новый раунд" [ref=e415] [cursor=pointer]:
+                  - /url: https://www.bloomberg.com/news/articles/2026-03-20/peter-thiel-s-founders-fund-backs-ai-cow-collar-startup-at-2-billion-valuation
+                - text: "финансирования под лидерством Founders Fund Питера Тиля. Раунд удвоит оценку компании до более чем $2 млрд. Сделка переподписана: инвесторов так много, что финальный объем раунда еще не определен. Halter делает то, что уже работает на 5 тыс. ферм в 3 странах. Компания производит ошейники на солнечных батареях с GPS и ИИ-начинкой. Ошейники создают виртуальные заборы для скота и позволяют фермерам отслеживать местоположение и здоровье животных через приложение. Управление стадом дистанционное: коров направляют вибрациями и звуковыми сигналами. Система обучена на данных сотен тысяч животных, отслеживает пищеварение, циклы фертильности и паттерны поведения в реальном времени. Компания запатентовала название алгоритма - Cowgorithm."
+                - blockquote [ref=e417]: "Работает это так: фермер открывает приложение, рисует линию на карте, которая становится забором. Когда корова приближается к границе, ошейник вибрирует. Через 10 дней животное перестает проверять границу. Нужно перегнать стадо - одно нажатие, и сотни голов идут куда нужно сами. Без собак, без ограждений, без ручного труда. "
+                - text: "Основал Halter в 2016 году Крейг Пигготт. Он вырос на молочной ферме в Уайкато, окончил инженерный факультет Оклендского университета и в последний год учебы устроился в Rocket Lab. Проработав 9 месяцев у Питера Бека, Пигготт решил уйти, а Бек не просто отпустил его, но и сам вложился в Halter, войдя в совет директоров. Сегодня у компании около 350 сотрудников, а системамы Halter управляют более 700 тыс. голов скота. Американские фермеры сэкономили порядка $220 млн только на физических заборах. Бизнес-модель: подписка: от $5 до $8 за животное в месяц."
+                - generic [ref=e418]:
+                  - img
+                - strong [ref=e419]: Сделка хайпует не только в венчурном мире.
+                - text: "Тиль - сооснователь Palantir, компании, которая строит системы анализа данных и слежки для спецслужб и военных. Эта связь моментально породила конспирологическую волну в соцсетях. Блогеры предлагают мысленный эксперимент: убрать из описания технологии Halter слово «корова» и заменить на «человек» - получается круглосуточный GPS-трекинг, мониторинг поведения, невидимые границы и управление через вибрации."
+                - blockquote [ref=e421]: Тезис теории в том, что Тиль якобы обкатывает на скоте технологии, которые потом перенесет на людей, но фактических подтверждений этому нет. Прямого технологического партнерства между Palantir и Halter отсутствует. Единственная реальная связь двух компаний - это кошелек Тиля. 
+                - text: "Контекст важен и без конспирологии: агротех переживает тяжёлые времена, волна стартапов обанкротилась, венчурные фонды отступили от сектора. На этом фоне Halter — редкий единорог, растущий вопреки тренду. Глава Icehouse Ventures подсчитал: при нынешних темпах Halter обгонит по стоимости Fonterra (крупнейший молочный кооператив Новой Зеландии) через 11 кварталов."
+                - link "@ai_machinelearning_big_data" [ref=e422] [cursor=pointer]:
+                  - /url: https://t.me/ai_machinelearning_big_data
+                - link "#news" [ref=e423] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=news
+                - link "#ai" [ref=e424] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=ai
+                - link "#ml" [ref=e425] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=ml
+              - generic [ref=e426]:
+                - generic [ref=e427] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic:
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                    - generic: ✦
+                  - generic: "1"
+                - generic [ref=e428] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "53"
+                - generic [ref=e429] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "50"
+                - generic [ref=e430] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "33"
+                - generic [ref=e431] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "12"
+                - generic [ref=e432] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "12"
+                - generic [ref=e433] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "7"
+                - generic [ref=e434] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "5"
+                - generic [ref=e435] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "3"
+                - generic [ref=e436] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "2"
+                - generic [ref=e437] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "2"
+                - generic [ref=e438] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "1"
+                - generic "23 March 2026, 10:55:17" [ref=e439] [cursor=pointer]:
+                  - generic [ref=e440]: 13.6K
+                  - generic: 
+                  - generic [ref=e441]: 10:55 AM
+            - generic [ref=e442] [cursor=pointer]:
+              - generic: 
+            - generic [ref=e443]:
+              - generic [ref=e444]:
+                - img [ref=e447]
+                - img [ref=e450]
+                - img [ref=e453]
+              - generic [ref=e455]: 16 Comments
+              - generic: 
+            - img [ref=e458]
+        - generic [ref=e460]:
+          - generic [ref=e463] [cursor=pointer]: Today
+          - generic [ref=e467]:
+            - generic [ref=e468] [cursor=pointer]:
+              - generic:
+                - text: 3:43
+                - generic: 
+              - img [ref=e469]
+            - generic [ref=e471]:
+              - generic [ref=e472]:
+                - generic [ref=e473]:
+                  - img
+                - strong [ref=e474]: OpenAI удвоит штат сотрудников.
+                - text: До конца года OpenAI планирует увеличить число специалистов почти в 2 раза - с 4500 до 8000 человек. Найм связан с желанием закрепить лидерство в B2B-сегменте и ускорить продуктовую гонку с Anthropic и Google. Новые кадры усилят разработку, инженерию, ИИ-исследования и продажи. Акцент - на поиске экспертов, которые помогут бизнесу интегрировать инструменты OpenAI в свои процессы. Чтобы всех разместить, стартап уже подписал договор на новый офис (общая площадь превысила 93 тыс. кв.м). Для достижения целей OpenAI предстоит нанимать в среднем по 12 человек ежедневно.
+                - link "ft.com" [ref=e475] [cursor=pointer]:
+                  - /url: https://www.ft.com/content/7ffea5b4-e8bc-47cd-adb4-257f84c8028b?syn-25a6b1a6=1
+                - generic [ref=e476]:
+                  - img
+                - strong [ref=e477]: Глава Nvidia предложил включить ИИ-токены в зарплатный пакет инженеров.
+                - text: "Дженсен Хуанг озвучил новую модель компенсации: помимо базовой зарплаты, сотрудникам планируют выделять бюджет в виде ИИ-токенов. По словам CEO Nvidia, базовая ставка инженера в Кремниевой долине высока и компания готова добавить бонус в токенах, эквивалентный половине средней зарплаты. Это позволит свободно запускать ИИ-инструменты и делегировать им задачи с минимальным вмешательством человека. Идея отражает видение Хуанга об эволюции рабочих мест: инженеры будут управлять целым парком цифровых помощников. Nvidia уже делает ставку на подобный симбиоз - глава корпорации рассчитывает, что бок о бок с 42 тыс. сотрудников будут трудиться сотни тысяч ИИ-агентов. Доступ к корпоративным ИИ-ресурсам станет одним из главных инструментов ИТ-рекрутинга."
+                - link "cnbc.com" [ref=e478] [cursor=pointer]:
+                  - /url: https://www.cnbc.com/2026/03/20/nvidia-ai-agents-tokens-human-workers-engineer-jobs-unemployment-jensen-huang.html
+                - generic [ref=e479]:
+                  - img
+                - strong [ref=e480]: Tesla, SpaceX и xAI анонсировали строительство крупнейшей в мире фабрики.
+                - text: Триада объединит усилия для создания TERAFAB - полного цикла от микросхем и чипов памяти до передовой компоновки кристаллов. Плановая мощность достигнет 1 тераватта. Проект задуман как база для ежегодного вывода на орбиту 100 млн. тонн оборудования для сбора солнечной энергии, запуска космических ИИ-спутников и развертывания миллионов роботов Optimus. По оценкам инженеров, только для роботов потребуется выпуск чипов мощностью от 100 до 200 гВт. Такие потребности превосходят возможности всех мировых производителей полупроводников вместе взятых и оставляют далеко позади прогнозы индустрии на 2030 год.
+                - link "Tesla в сети Х" [ref=e481] [cursor=pointer]:
+                  - /url: https://x.com/Tesla/status/2035535642676044066
+                - generic [ref=e482]:
+                  - img
+                - strong [ref=e483]: Huawei представила ИИ-ускоритель Atlas 350.
+                - text: На China Partner Conference 2026 вендор выпустил ускоритель Atlas 350 на базе процессора Ascend 950PR. По заявлениям разработчиков, мощность одной карты в 2,87 раза превышает Nvidia H20. Это единственный ИИ-ускоритель на китайском рынке с поддержкой вычислений в формате FP4. По сравнению с прошлым поколением существенно выросли векторная производительность и пропускная способность интерфейсов. Ускоритель оснащен 112 ГБ памяти HBM собственной разработки, что позволяет загружать LLM до 70 млрд. параметров на одну карту.
+                - link "finance.sina.com.cn" [ref=e484] [cursor=pointer]:
+                  - /url: https://finance.sina.com.cn/wm/2026-03-21/doc-inhrukzr5698636.shtml
+                - generic [ref=e485]:
+                  - img
+                - strong [ref=e486]: Pokémon Go помог создать систему визуальной навигации для роботов-курьеров.
+                - text: За 10 лет фанаты игры невольно собрали базу для обучения пространственного ИИ. Приложение накопило более 30 млрд. фотографий реального мира благодаря квестам, мотивирующим сканировать памятники и здания. Niantic Spatial взяло этот датасет и собрало систему визуальной навигации. В отличие от GPS, она определяет локацию с точностью до сантиметров по визуальным маркерам. Это решает проблему навигации внутри помещений и в районах с плотной застройкой, где спутниковый сигнал искажается или пропадает. Coco Robotics уже ставит эту систему на своих автономных курьеров. У роботов 4 камеры, они едут по улице и на ходу сверяются с 3D-картами, которые годами собирали ловцы покемонов.
+                - link "the-independent.com" [ref=e487] [cursor=pointer]:
+                  - /url: https://www.the-independent.com/tech/pokemon-go-delivery-robots-niantic-b2939449.html
+                - link "@ai_machinelearning_big_data" [ref=e488] [cursor=pointer]:
+                  - /url: https://t.me/ai_machinelearning_big_data
+                - link "#news" [ref=e489] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=news
+                - link "#ai" [ref=e490] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=ai
+                - link "#ml" [ref=e491] [cursor=pointer]:
+                  - /url: tg://search_hashtag?hashtag=ml
+              - generic [ref=e492]:
+                - generic [ref=e493] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "7"
+                - generic [ref=e494] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "6"
+                - generic [ref=e495] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "5"
+                - generic [ref=e496] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "1"
+                - generic [ref=e545] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "1"
+                - generic [ref=e497] [cursor=pointer]:
+                  - generic:
+                    - img
+                  - generic: "1"
+                - generic "24 March 2026, 08:06:27" [ref=e498] [cursor=pointer]:
+                  - generic [ref=e499]: "458"
+                  - generic: 
+                  - generic [ref=e500]: 08:06 AM
+            - generic [ref=e501] [cursor=pointer]:
+              - generic: 
+            - generic [ref=e502]:
+              - generic: 
+              - generic [ref=e504]: Leave a comment
+              - generic: 
+            - img [ref=e507]
+        - generic [ref=e511]:
+          - generic [ref=e512] [cursor=pointer]:
+            - generic: 
+          - generic [ref=e517] [cursor=pointer]:
+            - img [ref=e520]
+            - strong [ref=e522]: ad
+            - strong [ref=e524]: Ювелирный сад Mercury Flower
+            - generic [ref=e525]: Нежные камни в окружении бриллиантовых цветов, рожденных в гармонии с природой. Особенный весенний подарок.
+            - generic:
+              - text: OPEN WEBSITE
+              - generic: 
+          - img [ref=e526]
+      - generic [ref=e529]:
+        - generic [ref=e531]:
+          - img [ref=e532]
+          - generic:
+            - button
+            - button "":
+              - generic: 
+          - generic [ref=e534]:
+            - button "" [ref=e535] [cursor=pointer]:
+              - generic: 
+            - generic [ref=e536]:
+              - generic: Broadcast
+            - generic [ref=e538] [cursor=pointer]:
+              - generic: 
+        - button "" [ref=e548] [cursor=pointer]:
+          - generic: 
+        - generic [ref=e540]:
+          - generic:
+            - generic: 
+            - generic: NaN
+          - button "    " [ref=e541] [cursor=pointer]:
+            - generic: 
+            - generic: 
+            - generic: 
+            - generic: 
+            - generic: 
