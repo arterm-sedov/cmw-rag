@@ -5,9 +5,8 @@
 ```
 docs/research/
 ├── AGENTS.md           # This file - research workflow guidelines
-├── 20260323-topic-ru.md   # Russian executive summary
-├── 20260323-topic.md      # (Optional) English executive summary
-└── extractions/        # (Optional) Raw extraction files
+├── YYYYMMDD-topic.md   # Russian executive summary (primary)
+└── YYYYMMDD-topic-en.md   # (Optional) English executive summary
 ```
 
 ## Source Material Storage
