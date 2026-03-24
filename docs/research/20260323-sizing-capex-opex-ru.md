@@ -903,7 +903,7 @@ Max tok/sec ≈ Memory Bandwidth (GB/s) / Model Size (GB)
 - Технологические стартапы
 - Приоритетные отрасли: финансы, здравоохранение, промышленность, оборона
 
-### Суверенный ИИ в России [[источник]](https://www.marketsandmarks.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp)
+### Суверенный ИИ в России [[источник]](https://www.marketsandmarkets.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp)
 
 **Ключевые тренды:**
 - Хранение данных внутри юрисдикции
@@ -1216,14 +1216,58 @@ TCO = Hourly_Rate × 24 × 365 × Years + Egress_Fees + Storage_Fees
 
 ## Заключение
 
----
+## Источники
 
-**Источники:**
-1. [Тарифы Cloud.ru Evolution Foundation Models (2026)](https://cloud.ru/documents/tariffs/evolution/foundation-models)
-2. [Бенчмарки производительности vLLM на RTX 4090](https://t.me/neuraldeep/1476)
-3. [FinOps для GenAI: Unit Economics (FinOps Foundation)](https://www.finops.org/wg/generative-ai/)
-4. [TCO Calculator: On-Prem vs Cloud (Slyd)](https://slyd.com/resources/tco-calculator)
-5. [РБК: Во сколько обойдется ИИ-агент — подсчеты экспертов (2026)](https://www.rbc.ru/education/05/02/2026/697162269a794772c9cf9991)
-6. [McKinsey: Планирование мощностей ИИ-инфраструктуры](https://introl.com/blog/ai-infrastructure-capacity-planning-forecasting-gpu-2025-2030)
-7. [Канал @ai_archnadzor — Архитектуры RAG 2.0](https://t.me/ai_archnadzor)
+### Облачные провайдеры и тарифы (РФ)
+
+- [Cloud.ru — Evolution Foundation Models, тарифы (2026)](https://cloud.ru/documents/tariffs/evolution/foundation-models)
+- [AKM.ru — доступ к крупнейшей языковой модели на рынке РФ (Yandex B2B)](https://www.akm.ru/eng/press/yandex-b2b-tech-has-opened-access-to-the-largest-language-model-on-the-russian-market/)
+- [Сбер — GigaChat API: юридические тарифы](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
+
+### Telegram-каналы и посты
+
+- [NeuralDeep — бенчмарки vLLM / RTX 4090](https://t.me/neuraldeep/1476)
+- [NeuralDeep — рекомендации по кластерам](https://t.me/neuraldeep/1627)
+- [NeuralDeep — экономика LLM-решений](https://t.me/neuraldeep/1366)
+- [Канал NeuralDeep](https://t.me/neuraldeep)
+- [Канал @ai_archnadzor — RAG и архитектуры](https://t.me/ai_archnadzor)
+- [@ai_archnadzor — локальные модели для кодинга и снижения затрат](https://t.me/ai_archnadzor/167)
+- [@ai_archnadzor — CLI вместо MCP](https://t.me/ai_archnadzor/190)
+- [@Redmadnews (red_mad_robot)](https://t.me/Redmadnews)
+- [@llm_under_hood](https://t.me/llm_under_hood)
+- [Канал @ai_machinelearning_big_data](https://t.me/ai_machinelearning_big_data)
+
+### FinOps, TCO, инфраструктура и железо
+
+- [FinOps Foundation — Generative AI (Unit Economics)](https://www.finops.org/wg/generative-ai/)
+- [Slyd — TCO Calculator: On-Prem vs Cloud](https://slyd.com/resources/tco-calculator)
+- [Introl — финансирование CapEx/OpEx и инвестиции в GPU](https://introl.com/blog/ai-infrastructure-financing-capex-opex-gpu-investment-guide-2025)
+- [SWFTE — экономика частного AI / on-prem](https://www.swfte.com/blog/private-ai-enterprises-onprem-economics)
+- [Runpod — LLM inference optimization playbook (throughput)](https://www.runpod.io/articles/guides/llm-inference-optimization-playbook)
+- [Introl — планирование мощностей ИИ-инфраструктуры (прогнозы, McKinsey в обзоре)](https://introl.com/blog/ai-infrastructure-capacity-planning-forecasting-gpu-2025-2030)
+- [PitchGrade — AI Infrastructure Primer](https://pitchgrade.com/research/ai-infrastructure-primer)
+
+### Рынок, ROI, эффект для экономики
+
+- [IMARC — Russia Artificial Intelligence Market](https://www.imarcgroup.com/russia-artificial-intelligence-market)
+- [MarketsandMarkets — Russia AI Inference Platform as a Service (PaaS)](https://www.marketsandmarkets.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp)
+- [Dataoorts — GPU cloud providers in Russia](https://dataoorts.com/top-5-plus-gpu-cloud-providers-in-russia/)
+- [Larridin — State of Enterprise AI in 2025 (ROI)](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
+- [Yakov & Partners — AI 2025 (экономический эффект)](https://yakovpartners.com/publications/ai-2025/)
+
+### СМИ, отраслевые обзоры и научные статьи (оптимизация инференса)
+
+- [РБК Education — во сколько обойдётся ИИ-агент: подсчёты экспертов (2026)](https://www.rbc.ru/education/05/02/2026/697162269a794772c9cf9991)
+- [a16z — Top 100 Gen AI Apps (6)](https://a16z.com/100-gen-ai-apps-6/)
+- [Google — Deep-Thinking Ratio (DTR), arXiv:2602.13517](https://arxiv.org/pdf/2602.13517)
+- [Oppo AI — Search More, Think Less (SMTL), arXiv:2602.22675](https://arxiv.org/pdf/2602.22675)
+- [Databricks — KARL, arXiv:2603.05218](https://arxiv.org/pdf/2603.05218)
+- [Accenture — Memex(RL), arXiv:2603.04257](https://arxiv.org/pdf/2603.04257)
+- [SkillNet (Alibaba, Ant, Tencent, Oppo), arXiv:2603.04448](https://arxiv.org/pdf/2603.04448)
+
+### Наблюдаемость (упомянуто в тексте)
+
+- [Arize Phoenix — документация](https://docs.arize.com/phoenix)
+- [LangSmith — документация](https://docs.smith.langchain.com/)
+- [Langfuse](https://langfuse.com)
 
