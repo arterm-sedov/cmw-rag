@@ -181,6 +181,27 @@ Use this compact structure for consistency:
 - Commit only processed summaries.
 - Document reusable methodology updates in this file when needed.
 
+## Cross-validation of related research
+
+Before finalizing or materially revising an article in `docs/research/`, **cross-check** other
+research files that belong to the same thread of work. Treat as related any document that
+matches on at least one of:
+
+- **Semantic linkage** — shared themes, entities, markets, technologies, or recommendations
+  (including cross-references, overlapping titles, or clearly parallel subject matter).
+- **Business line** — same product, offering, customer segment, or value stream the research
+  supports.
+- **Current scope or task** — objectives, acceptance criteria, or explicit scope in an active
+  task file (for example `docs/research/*-research-task.md` or a linked plan under
+  `.cursor/plans/`).
+
+**Cross-validation means:** compare conclusions, figures, dates, currency and unit conventions,
+and terminology across those related files; resolve or explicitly flag contradictions (for
+example under `## Риски и ограничения` with a short note pointing to the sibling document);
+avoid duplicate contradictory “single truths” without reconciliation. When this file and a task
+file disagree on process, follow the stricter requirement; when task scope defines what is in
+or out of bounds for the engagement, respect that scope when aligning related summaries.
+
 ## Definition of Done (Per Article)
 
 - Document follows naming convention and single-language rule.
@@ -191,6 +212,8 @@ Use this compact structure for consistency:
 - All claims are traceable with inline citations.
 - Final `## Источники` section is present with all used references as bullet links.
 - No critical statement remains without a source.
+- Related research in `docs/research/` has been cross-validated per **Cross-validation of
+  related research** when semantic overlap, business line, or the active task scope applies.
 
 ## Operating Principles
 
@@ -199,3 +222,5 @@ Use this compact structure for consistency:
 - Maintain Russian market focus.
 - Keep full source traceability via inline citations and final references list.
 - Reuse abstract patterns and avoid unnecessary duplication.
+- Cross-validate sibling research so the corpus stays internally consistent where topics
+  intersect.
