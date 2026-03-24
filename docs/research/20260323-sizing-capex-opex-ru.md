@@ -131,7 +131,7 @@
 
 ## Сборник мер по оптимизации стоимости (Cost Optimization Suite)
 
-1.  **Адаптивная маршрутизация (Model Routing):** Простые вопросы -> SLM (0.6B), сложные -> LLM (30B+). Экономия до 40%. Для self-hosted контура открытые MoE-веса вроде **GigaChat-3.1-Lightning** (в материалах Сбера — **1,8 млрд активных** параметров) могут претендовать на роль быстрого яруса; гипотезу подтверждают замеры latency, throughput и полная стоимость GPU-часа против токенов API ([Хабр](https://habr.com/ru/companies/sberbank/articles/1014146/)).
+1.  **Адаптивная маршрутизация (Model Routing):** Простые вопросы -> SLM (0.6B), сложные -> LLM (30B+). Экономия до 40%. Для self-hosted контура открытые MoE-веса вроде **GigaChat 3.1 Lightning** ([ai-sage/GigaChat3.1-10B-A1.8B](https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B): **10B** / **1,8B** активных) могут претендовать на роль быстрого яруса; гипотезу подтверждают замеры latency, throughput и полная стоимость GPU-часа против токенов API, плюс публичные ориентиры вендора ([Хабр](https://habr.com/ru/companies/sberbank/articles/1014146/)).
 2.  **Промпт-кэширование (Prompt Caching):** Использование статических системных промптов. Снижает стоимость входных токенов на 50-80%.
 3.  **Контекстная компрессия (REFRAG):** Сжатие чанков или удаление нерелевантных данных.
 4.  **Speculative Decoding:** Ускорение инференса большой модели за счет малой модели-предсказателя.
@@ -145,7 +145,7 @@
 | **Context Bloat** | Высокое (рост OpEx) | Жесткие лимиты токенов, семантическое сжатие истории. |
 | **Дефицит GPU (санкции)** | Среднее (рост CapEx) | Использование российских облаков, переход на CPU-инференс (BitNet). |
 | **Галлюцинации** | Высокое (репутация) | Внедрение Guardrails, многоуровневая верификация. |
-| **Регрессии стека инференса** | Среднее (качество, искажение бенчмарков) | Пиновать версии vLLM/SGLang; учитывать описанный в открытых материалах баг SGLang при `dp > 1` ([PR #18802](https://github.com/sgl-project/sglang/pull/18802), [Хабр, Сбер](https://habr.com/ru/companies/sberbank/articles/1014146/)); регрессионные eval перед обновлением движка. |
+| **Регрессии стека инференса** | Среднее (качество, искажение бенчмарков) | Пиновать версии vLLM/SGLang; баг SGLang при `dp > 1` ([PR #18802](https://github.com/sgl-project/sglang/pull/18802), [Хабр](https://habr.com/ru/companies/sberbank/articles/1014146/)); для GigaChat на HF сверять карточку на **минимальные коммиты** движка при tool calling ([пример — Lightning 3.1](https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B)); регрессионные eval перед обновлением. |
 
 ---
 
@@ -199,12 +199,18 @@
 
 ### Открытые веса и API: влияние на TCO
 
-По [материалам Сбера на Хабре](https://habr.com/ru/companies/sberbank/articles/1014146/), **GigaChat-3.1-Ultra** и **GigaChat-3.1-Lightning** публикуются под лицензией **MIT** ([коллекция на Hugging Face](https://huggingface.co/collections/ai-sage/gigachat-31), материалы [на GitVerse](https://gitverse.ru/GigaTeam/gigachat3.1)). Разделы с таблицами выше описывают **управляемый API** (учёт по токенам). Развёртывание **открытых весов** в закрытом контуре меняет профиль затрат:
+По [материалам Сбера на Хабре](https://habr.com/ru/companies/sberbank/articles/1014146/) и [коллекции GigaChat 3.1 на Hugging Face](https://huggingface.co/collections/ai-sage/gigachat-31) доступны открытые веса под **MIT**; дополнительно — материалы [на GitVerse](https://gitverse.ru/GigaTeam/gigachat3.1). Таблицы тарифов выше описывают **управляемый API** (₽ за млн токенов). Self-hosted **убирает** счётчик токенов у облака, перенося затраты в **GPU, энергию, персонал и риск регрессий** движка.
 
 - **CapEx / аренда GPU:** зависит от размера MoE-чекпойнта и выбранного квантования; флагманский Ultra ориентирован на **кластерный** сценарий, Lightning — на более компактный инференс (точный сайзинг VRAM в данном документе не фиксируется без замеров на целевом стеке **cmw-vllm** / **cmw-mosec**).
 - **OpEx:** электроэнергия, персонал LLMOps, обновления инференс-движка, **регрессионные eval** при смене весов или версии сервера.
 
-В той же публикации приведены **опубликованные вендором** цифры throughput для Lightning (в т.ч. FP8 и MTP) на конфигурации **1×H100**; перенос их в коммерческий бюджет заказчика допустим только после **воспроизведения** на своём железе и версии vLLM.
+Ниже — уточнения по **карточкам Hugging Face** для линейки GigaChat 3.1 (дополняют общую рамку, не заменяют её).
+
+**Ultra** — репозиторий [ai-sage/GigaChat3.1-702B-A36B](https://huggingface.co/ai-sage/GigaChat3.1-702B-A36B): **702B** параметров всего, **36B** активных при инференсе. В карточке зафиксированы сценарии **кластера / крупного on-prem**, поддержка нескольких движков (vLLM, SGLang, LMDeploy, TensorRT-LLM и др.) и **пример многоузлового SGLang** — это **ордер величины CapEx** (много GPU, несколько узлов), без добавления в данный отчёт вымышленных строк VRAM; точные цифры — только после замеров на **cmw-vllm** / **cmw-mosec** в контуре заказчика.
+
+**Lightning 3.1** — [ai-sage/GigaChat3.1-10B-A1.8B](https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B) (**10B** / **1,8B** активных); предыдущая открытая линейка — [ai-sage/GigaChat3-10B-A1.8B](https://huggingface.co/ai-sage/GigaChat3-10B-A1.8B). В карточке **3.1** приведены публичные замеры throughput (в т.ч. FP8 и MTP) на **1×H100** и указана версия vLLM для воспроизведения — перенос в бюджет допустим только после **своего** прогона. **OpEx интеграции:** для vLLM описан режим **MTP** (`speculative-config`); для **function calling** в карточке указаны **минимальные коммиты** vLLM и SGLang; для [GigaChat3-10B-A1.8B](https://huggingface.co/ai-sage/GigaChat3-10B-A1.8B) — переменная **`VLLM_USE_DEEP_GEMM=0`**. Это прямые драйверы **стоимости сопровождения** и регрессионного тестирования при обновлениях.
+
+**Имя в прайсе Cloud.ru vs Hub:** строка **GigaChat3-10B-A1.8B** в [тарифах Cloud.ru](https://cloud.ru/documents/tariffs/evolution/foundation-models) — **облачный** SKU с оплатой по токену; на Hugging Face версии весов нумеруются отдельно (**3.1** и **3.0**), совпадение имени с прайсом **не** гарантирует идентичность чекпойнта и движка без явной сверки релиза.
 
 **Отчуждение и комплаенс:** лицензия MIT на веса облегчает передачу артефактов заказчику, но **не заменяет** проверку требований реестра доверенных моделей для госсектора — см. [Методология внедрения и отчуждения ИИ](20260323-ai-implementation-methodology-ru.md).
 
@@ -1252,10 +1258,17 @@ TCO = Hourly_Rate × 24 × 365 × Years + Egress_Fees + Storage_Fees
 - [AKM.ru — доступ к крупнейшей языковой модели на рынке РФ (Yandex B2B)](https://www.akm.ru/eng/press/yandex-b2b-tech-has-opened-access-to-the-largest-language-model-on-the-russian-market/)
 - [Сбер — GigaChat API: юридические тарифы](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
 
-### Открытые веса GigaChat 3.1 (TCO и первичные ссылки)
+### Открытые модели ai-sage (GigaChat и спутники, TCO)
 
 - [Хабр — GigaChat-3.1: большое обновление больших моделей (блог Сбера)](https://habr.com/ru/companies/sberbank/articles/1014146/)
-- [Hugging Face — коллекция ai-sage/gigachat-31](https://huggingface.co/collections/ai-sage/gigachat-31)
+- [Hugging Face — организация ai-sage](https://huggingface.co/ai-sage)
+- [Hugging Face — коллекция GigaChat 3.1](https://huggingface.co/collections/ai-sage/gigachat-31)
+- [Hugging Face — ai-sage/GigaChat3.1-702B-A36B (Ultra)](https://huggingface.co/ai-sage/GigaChat3.1-702B-A36B)
+- [Hugging Face — ai-sage/GigaChat3.1-10B-A1.8B (Lightning 3.1)](https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B)
+- [Hugging Face — ai-sage/GigaChat3-10B-A1.8B (Lightning 3.0)](https://huggingface.co/ai-sage/GigaChat3-10B-A1.8B)
+- [Hugging Face — коллекция GigaEmbeddings](https://huggingface.co/collections/ai-sage/gigaembeddings)
+- [Hugging Face — коллекция GigaAM](https://huggingface.co/collections/ai-sage/gigaam)
+- [Hugging Face — коллекция GigaChat Lite](https://huggingface.co/collections/ai-sage/gigachat-lite)
 - [GitVerse — GigaTeam/gigachat3.1](https://gitverse.ru/GigaTeam/gigachat3.1)
 - [GitHub — sgl-project/sglang, PR #18802](https://github.com/sgl-project/sglang/pull/18802)
 
