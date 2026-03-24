@@ -268,3 +268,21 @@ Performance on RTX 4090 (data from NeuralDeep community):
 *   Budget cluster: 4x RTX 4090 for parallel processing
 *   Power consumption: ~400W per card (~1600W total)
 *   Suitable for: RAG bots, transcription, streaming
+
+### New RAG Architectures and Cost Impact [[source]](https://t.me/ai_archnadzor)
+
+From "Эй ай надзор" channel — key architectures and their economics:
+
+| Architecture | Optimization | Cost Reduction | Use Case |
+|------------|-------------|---------------|---------|
+| **REFRAG** | Chunk compression via RoBERTa | 30x speedup | Tier-1 systems |
+| **HippoRAG 2** | Dual-Node architecture | 12x cheaper indexing | Mass indexing |
+| **Topo-RAG** | Multi-vector indexes | Hallucinations 45%→8% | Fintech, logistics |
+| **Doc-to-LoRA** | LoRA adapters from docs | VRAM: 12GB→50MB (99%) | Long documents |
+| **BitNet** | 1-bit weights | CPU inference | Edge AI, local solutions |
+
+**2026 Trends:**
+*   End of "vanilla RAG" era
+*   Composite architectures with specialized indexes
+*   Cost reduction via BitNet and CPU solutions
+*   Context optimization via Doc-to-LoRA
