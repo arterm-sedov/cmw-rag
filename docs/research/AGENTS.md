@@ -2,8 +2,7 @@
 
 ## Scope
 
-This file defines research workflow, document standards, and formatting requirements for
-all files in `docs/research/`.
+This file defines research workflow, document standards, and formatting requirements for all files in `docs/research/`.
 
 ## Instruction Priority
 
@@ -124,12 +123,16 @@ channel_snapshot.yml
 ### Terminology Rules
 
 - Prefer established Russian business and technical terms.
-- Use English acronyms or terms only when strictly necessary or industry-standard
-  (for example, `RAG`, `LLM`, `CapEx`).
+- Use English acronyms or terms only when strictly necessary or industry-standard (for example, `RAG`, `LLM`, `CapEx`).
 - At first use, provide translation or short explanation in parentheses.
 - Example: `RAG (Retrieval-Augmented Generation — генерация с дополненной выборкой)`.
 
 ## Markdown and Document Formatting Standards
+
+### Prose and line breaks
+
+- Do not insert hard line breaks inside a single sentence or inside one continuous clause in running prose (paragraphs, lead-ins, and bullet body text). Keep the full sentence on one source line until the sentence-ending punctuation; rely on editor soft wrap for display width.
+- Break lines only between sentences, between list items, or between block-level elements (headings, lists, code fences)—not between “requirements for” and “all files,” or between a subject phrase and its verb, for example.
 
 ### Heading Rules
 
@@ -148,8 +151,7 @@ channel_snapshot.yml
 
 - Cite sources inline with hyperlinks where claims are made.
 - At the end of each final article, add a section with exact heading `## Источники`.
-- Under `## Источники`, include all used references as a bulleted list with links to
-  original materials.
+- Under `## Источники`, include all used references as a bulleted list with links to original materials.
 
 ## Minimal Article Template
 
@@ -183,24 +185,13 @@ Use this compact structure for consistency:
 
 ## Cross-validation of related research
 
-Before finalizing or materially revising an article in `docs/research/`, **cross-check** other
-research files that belong to the same thread of work. Treat as related any document that
-matches on at least one of:
+Before finalizing or materially revising an article in `docs/research/`, **cross-check** other research files that belong to the same thread of work. Treat as related any document that matches on at least one of:
 
-- **Semantic linkage** — shared themes, entities, markets, technologies, or recommendations
-  (including cross-references, overlapping titles, or clearly parallel subject matter).
-- **Business line** — same product, offering, customer segment, or value stream the research
-  supports.
-- **Current scope or task** — objectives, acceptance criteria, or explicit scope in an active
-  task file (for example `docs/research/*-research-task.md` or a linked plan under
-  `.cursor/plans/`).
+- **Semantic linkage** — shared themes, entities, markets, technologies, or recommendations (including cross-references, overlapping titles, or clearly parallel subject matter).
+- **Business line** — same product, offering, customer segment, or value stream the research supports.
+- **Current scope or task** — objectives, acceptance criteria, or explicit scope in an active task file (for example `docs/research/*-research-task.md` or a linked plan under `.cursor/plans/`).
 
-**Cross-validation means:** compare conclusions, figures, dates, currency and unit conventions,
-and terminology across those related files; resolve or explicitly flag contradictions (for
-example under `## Риски и ограничения` with a short note pointing to the sibling document);
-avoid duplicate contradictory “single truths” without reconciliation. When this file and a task
-file disagree on process, follow the stricter requirement; when task scope defines what is in
-or out of bounds for the engagement, respect that scope when aligning related summaries.
+**Cross-validation means:** compare conclusions, figures, dates, currency and unit conventions, and terminology across those related files; resolve or explicitly flag contradictions (for example under `## Риски и ограничения` with a short note pointing to the sibling document); avoid duplicate contradictory “single truths” without reconciliation. When this file and a task file disagree on process, follow the stricter requirement; when task scope defines what is in or out of bounds for the engagement, respect that scope when aligning related summaries.
 
 ## Definition of Done (Per Article)
 
@@ -212,8 +203,7 @@ or out of bounds for the engagement, respect that scope when aligning related su
 - All claims are traceable with inline citations.
 - Final `## Источники` section is present with all used references as bullet links.
 - No critical statement remains without a source.
-- Related research in `docs/research/` has been cross-validated per **Cross-validation of
-  related research** when semantic overlap, business line, or the active task scope applies.
+- Related research in `docs/research/` has been cross-validated per **Cross-validation of related research** when semantic overlap, business line, or the active task scope applies.
 
 ## Operating Principles
 
@@ -222,5 +212,4 @@ or out of bounds for the engagement, respect that scope when aligning related su
 - Maintain Russian market focus.
 - Keep full source traceability via inline citations and final references list.
 - Reuse abstract patterns and avoid unnecessary duplication.
-- Cross-validate sibling research so the corpus stays internally consistent where topics
-  intersect.
+- Cross-validate sibling research so the corpus stays internally consistent where topics intersect.
