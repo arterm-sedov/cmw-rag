@@ -45,6 +45,7 @@ Example: `20260323-ai-implementation-methodology-ru.md`
 - **No links in headings**: Do not place hyperlinks within heading text. Instead, place them in the following descriptive text or as citations.
 - **Avoid English in headings**: Do not use English words in headings unless strictly necessary (e.g., fixed industry abbreviations with no practical Russian equivalent).
 - **List Spacing**: Always add an empty newline before any bulleted or numbered list for better readability.
+- **Bullet Marker Standard**: Use `-` for bulleted lists. Do not use `*` as the primary bullet marker.
 - **Tone**: Business-like, concise, decision-oriented. Focus on figures and metrics (ROI, savings, sizing).
 
 **Russian Standards for Numbers & Values:**
