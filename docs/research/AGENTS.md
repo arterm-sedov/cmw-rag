@@ -131,8 +131,8 @@ channel_snapshot.yml
 
 ### Prose and line breaks
 
-- Do not insert hard line breaks inside a single sentence or inside one continuous clause in running prose (paragraphs, lead-ins, and bullet body text). Keep the full sentence on one source line until the sentence-ending punctuation; rely on editor soft wrap for display width.
-- Break lines only between sentences, between list items, or between block-level elements (headings, lists, code fences)—not between “requirements for” and “all files,” or between a subject phrase and its verb, for example.
+- No hard wraps mid-sentence in prose or list body text; one sentence per source line, soft-wrap in the editor.
+- Break lines only between sentences, list items, or blocks (headings, lists, fences).
 
 ### Heading Rules
 
