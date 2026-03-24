@@ -1,0 +1,18 @@
+- generic [ref=e1]:
+  - img [ref=e2]
+  - generic [ref=e23]:
+    - img [ref=e25]
+    - heading "Sign in to Telegram" [level=4] [ref=e27]
+    - generic [ref=e28]:
+      - text: Please confirm your country code
+      - text: and enter your phone number.
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]: USA
+        - generic: Country
+      - generic [ref=e33]:
+        - generic [active] [ref=e34]: +1 ‒‒‒ ‒‒‒ ‒‒‒‒
+        - generic: Phone Number
+      - button "Next" [ref=e35] [cursor=pointer]: Next
+      - button "Log in by QR Code" [ref=e37] [cursor=pointer]: Log in by QR Code
+      - button "Log in by passkey" [ref=e39] [cursor=pointer]: Log in by passkey
