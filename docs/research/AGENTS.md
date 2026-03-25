@@ -154,8 +154,17 @@ channel_snapshot.yml
 ### Citations and References
 
 - Cite sources inline with hyperlinks where claims are made.
+- **Inline mentions** (body text and ordinary lists; not inside `## Источники`): when you name an internal document or an external source by title, use a **quoted italic** Markdown link—guillemets `«»` around an italic link built with underscores `_..._`:
+  - **Internal** `.md` in this repo (typically under `docs/research/`): `«_[Название документа](relative-path/file-name.md)_»`. Use a path **relative to the current file** (for example `./20260323-topic-ru.md` or `../other/file.md`).
+  - **External** web sources: `«_[Название источника](https://...)_»` with the real URL as the link target.
+- **Examples (inline):**
+  - Sentence: См. «_[Методология внедрения ИИ](./20260323-ai-implementation-methodology-ru.md)_» для контекста.
+  - List item:
+    - См. также «_[Руководство для авторов research](./AGENTS.md)_».
 - At the end of each final article, add a section with exact heading `## Источники`.
-- Under `## Источники`, include all used references as a bulleted list with links to original materials.
+- Under `## Источники` or any bulleted lists containing only links, include references with **plain** Markdown links only—**no** guillemets, **no** italic underscores around the link:
+  - `- [Название источника](https://...)`
+  - Do not format reference-list entries as `«_[...](...)_»`.
 
 ## Minimal Article Template
 
@@ -204,8 +213,8 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Russian numeric and currency standards are applied consistently.
 - Terminology rules are applied (Russian-first, translated first use for English terms).
 - Markdown formatting rules are followed (headings, lists, links placement).
-- All claims are traceable with inline citations.
-- Final `## Источники` section is present with all used references as bullet links.
+- All claims are traceable with inline citations; inline document/source titles follow **Citations and References** (quoted italic links in body text).
+- Final `## Источники` section is present with all used references as plain bullet links (no guillemets or italic wrapper on list entries).
 - No critical statement remains without a source.
 - Related research in `docs/research/` has been cross-validated per **Cross-validation of related research** when semantic overlap, business line, or the active task scope applies.
 
