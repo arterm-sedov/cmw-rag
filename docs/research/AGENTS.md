@@ -167,6 +167,18 @@ channel_snapshot.yml
   - `- [Название источника](https://...)`
   - Do not format reference-list entries as `_«[...](...)»_`.
 
+### Consolidated packs (optional)
+
+Use for multi-file research sets under `docs/research/` when you want stable deep links and consistent metadata.
+
+**Heading ids** — On the same line as the heading, attribute-list syntax: `## Заголовок {: #prefix_slug }`. Pick one stable English **prefix** per file; H1 uses only the prefix, H2+ use `prefix_transliterated_slug`. Characters: lowercase letters, digits, underscores; ids **unique within the file** (duplicate titles: `_2`, `_3`, …). No links inside heading text (**Heading Rules**).
+
+**YAML front matter** — At the very top when the pack uses it: `title` (same as H1 without the `{: #… }` suffix), `date` (ISO), `status`, `tags` (about 5–12; English alphabetically, then Russian alphabetically), `hide: tags` if tags are for filtering/search only. Optional: `description` (one line). If `date` / `status` are in YAML, drop redundant **Дата пакета** / **Статус** lines under H1.
+
+**Cross-links** — `./sibling.md#anchor` from the current file’s directory. Body mentions of titled internals: **Citations and References**. Under `## Источники`: plain `[title](url)` only. No path for a document that is not a real file—title in guillemets only.
+
+**Optional** — `{: #id .pageBreakBefore }` on a heading where the export toolchain should force a page break.
+
 ## Minimal Article Template
 
 Use this compact structure for consistency:
@@ -218,6 +230,7 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Final `## Источники` section is present with all used references as plain bullet links (no guillemets or italic wrapper on list entries).
 - No critical statement remains without a source.
 - Related research in `docs/research/` has been cross-validated per **Cross-validation of related research** when semantic overlap, business line, or the active task scope applies.
+- If the output is a **consolidated pack** (several linked articles under `docs/research/`), satisfy **Consolidated packs (optional)** in full; ordinary single articles ignore that subsection.
 
 ## Operating Principles
 
