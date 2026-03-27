@@ -26,6 +26,7 @@ hide: tags
 
 - [«Приложение A: обзор и ведомость документов»](./20260325-research-appendix-a-index-ru.md#research_pkg_a_obzor_paketa)
 - [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa) (канон по цифрам)
+- [Профиль on-prem GPU в проектах CMW](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_profil_onprem_gpu_v_proektah_cmw) (реф. GeForce 24 ГБ, кастом 4090 48 ГБ, RTX PRO 6000 Blackwell 96 ГБ)
 - [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa)
 - «Приложение C: имеющиеся наработки CMW»
 - [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa)
