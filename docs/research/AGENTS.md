@@ -118,7 +118,7 @@ channel_snapshot.yml
 
 ### Russian typography and punctuation
 
-- **Quotation marks:** use `«` and `»` for Russian quotations. Reserve straight `"` for code, APIs, or when the medium cannot render guillemets.
+- **Quotation marks:** use `«` and `»` for Russian quotations. Reserve straight `"` for code, APIs.
 - **Em dash (`—`):** use for appositions, breaks in sense, and dialogue-style breaks; do not use hyphen-minus `-` where a long dash is intended.
 - **En dash (`–`):** use for ranges (pages, years), e.g. `2019–2025`, with no extra spaces inside the range unless your style guide requires thin spaces.
 - **Colon:** if text continues on the same line after `:`, start with lowercase (not English sentence case), except proper names, acronyms, or a clearly new sentence.
