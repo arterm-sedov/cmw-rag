@@ -97,6 +97,10 @@ hide: tags
 
 Практика по **BPMN 2.0**, шаблонам промптов и валидации XML — в «_[Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_bpmn_20_i_generatsiya_llm)_» (подраздел «Справочно: формализация процессов (BPMN 2.0) и генерация с помощью LLM»).
 
+### Справочно: агент в PR и артефакты вместо прямой записи в ИС {: #research_pkg_b_spravochno_agent_v_pr_i_artifacty_vmesto_pryamoi_zapisi_v_is }
+
+Для сценариев **анализа и предложения правок** по **pull request** снижает риск для ИС и приёмки, когда среда исполнения выдаёт **наружу артефакты** (**diff**, отчёты тестов, текст ревью), а **прямая запись** в защищаемую ветку или «истинный» репозиторий выполняется только после **человеческого** или **согласованного CI**-решения. Типовая песочница: репозиторий **только чтение**, временная рабочая область, сеть с **deny-by-default** и allowlist на зеркала и артефакты, **краткоживущие** токены с минимальным scope. Вопрос «разрешать ли запись **напрямую** в репозиторий или ограничиться **артефактом** на проверку» имеет смысл явно вынести в решение владельца продукта и ИБ; см. также _«[Приложение D — вопросы для дискуссии и выводы по исполнению](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_bezopasnyi_mvp_kontura_ispolneniya_diskussiya_sredy_vyvody)»_. Детали и соседние паттерны (долгоживущая dev-среда, регулируемый контур) — в _«[Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_model_riska_patterny_sredy_i_minimalnyi_sostav_platformy)»_.
+
 ### Уровни обучения при передаче {: #research_pkg_b_urovni_obucheniya_pri_peredache }
 
 | Аудитория | Фокус |
