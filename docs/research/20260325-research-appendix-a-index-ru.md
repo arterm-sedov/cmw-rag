@@ -137,6 +137,8 @@ hide: tags
 | `## Рекомендации по сайзингу для клиентов` | Основной отчёт: сайзинг и экономика |
 | `## Дополнительные стратегии оптимизации затрат` | Основной отчёт: сайзинг и экономика |
 | `## Промежуточное заключение по сайзингу` | Основной отчёт: сайзинг и экономика |
+| `### Бенчмарки RTX 4090 (24 ГБ)` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_benchmarki_rtx_4090_24_gb) |
+| `### Ориентиры сообщества: Qwen3.5-35B-A3B и потребительское железо (март 2026)` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_orientiry_soobschestva_qwen3_5_35b_a3b_i_potrebitelskoe_zhelezo_mart_2026) |
 | `## Актуальные AI/ML тренды из канала @ai_machinelearning_big_data` | Основной отчёт: сайзинг и экономика |
 | `## Оптимизация затрат на инференс (практический опыт)` | Основной отчёт: сайзинг и экономика |
 | `## Локальный инференс: практические кейсы` | Основной отчёт: сайзинг и экономика |
@@ -384,6 +386,9 @@ hide: tags
 - [Runpod — LLM inference optimization playbook (throughput)](https://www.runpod.io/articles/guides/llm-inference-optimization-playbook)
 - [Introl — планирование мощностей ИИ-инфраструктуры (прогнозы, McKinsey в обзоре)](https://introl.com/blog/ai-infrastructure-capacity-planning-forecasting-gpu-2025-2030)
 - [PitchGrade — AI Infrastructure Primer](https://pitchgrade.com/research/ai-infrastructure-primer)
+- [Medium — Qwen 3.5 35B A3B (AgentNativeDev)](https://agentnativedev.medium.com/qwen-3-5-35b-a3b-why-your-800-gpu-just-became-a-frontier-class-ai-workstation-63cc4d4ebac1)
+- [apxml.com — VRAM calculator](https://apxml.com/tools/vram-calculator)
+- [Hugging Face — Qwen/Qwen3.5-35B-A3B](https://huggingface.co/Qwen/Qwen3.5-35B-A3B)
 
 #### Наблюдаемость и телеметрия {: #research_pkg_a_nablyudaemost_i_telemetriya }
 
@@ -800,6 +805,9 @@ hide: tags
 - [Runpod — LLM inference optimization playbook (throughput)](https://www.runpod.io/articles/guides/llm-inference-optimization-playbook)
 - [Introl — планирование мощностей ИИ-инфраструктуры (прогнозы, McKinsey в обзоре)](https://introl.com/blog/ai-infrastructure-capacity-planning-forecasting-gpu-2025-2030)
 - [PitchGrade — AI Infrastructure Primer](https://pitchgrade.com/research/ai-infrastructure-primer)
+- [Medium — Qwen 3.5 35B A3B (AgentNativeDev)](https://agentnativedev.medium.com/qwen-3-5-35b-a3b-why-your-800-gpu-just-became-a-frontier-class-ai-workstation-63cc4d4ebac1)
+- [apxml.com — VRAM calculator](https://apxml.com/tools/vram-calculator)
+- [Hugging Face — Qwen/Qwen3.5-35B-A3B](https://huggingface.co/Qwen/Qwen3.5-35B-A3B)
 
 #### Наблюдаемость и телеметрия {: #research_pkg_a_nablyudaemost_i_telemetriya_2 }
 
