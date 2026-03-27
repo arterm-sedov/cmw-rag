@@ -45,14 +45,15 @@
 | Безопасность, комплаенс, observability (углубление) | «Приложение D: безопасность, комплаенс и observability» |
 | Навигация по пакету, реестр документов и источников | «Приложение A: витрина пакета» (этот файл) |
 
-## Навигация “вопрос → документ”
+## Навигация «вопрос → документ»
 
-- “Как внедрять и разрабатывать в пром контуре (роли, фазы, quality gates)?” → Основной отчёт: методология внедрения и разработки
-- “Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать?” → Основной отчёт: сайзинг и экономика
-- “Как устроен пакет отчуждения ИС/кода и что именно передаём клиенту (KT/IP)?” → Приложение B: отчуждение ИС и кода (KT, IP)
-- “Что есть в CMW сегодня (состав стека, границы ‘что есть’ vs ‘методология’)?” → Приложение C: имеющиеся наработки CMW
-- “Как обеспечить security, комплаенс и промышленную observability (контур контроля, data minimization posture)?” → Приложение D: безопасность, комплаенс и observability
-- “Нужен единый реестр источников и дополнительные источники из исходного задания по темам?” → Приложение A: витрина пакета (этот документ)
+- «Как внедрять и разрабатывать в пром контуре (роли, фазы, quality gates)?» → Основной отчёт: методология внедрения и разработки
+- «Где в корпоративном ИИ формируется преимущество (данные, семантика, агенты)?» → Основной отчёт: методология внедрения и разработки
+- «Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать?» → Основной отчёт: сайзинг и экономика
+- «Как устроен пакет отчуждения ИС/кода и что именно передаём клиенту (KT/IP)?» → Приложение B: отчуждение ИС и кода (KT, IP)
+- «Что есть в CMW сегодня (состав стека, границы ‘что есть’ vs ‘методология’)?» → Приложение C: имеющиеся наработки CMW
+- «Как обеспечить security, комплаенс и промышленную observability (контур контроля, data minimization posture)?» → Приложение D: безопасность, комплаенс и observability
+- «Нужен единый реестр источников и дополнительные источники из исходного задания по темам?» → Приложение A: витрина пакета (этот документ)
 
 ## Соответствие разделов исходных материалов документам пакета
 
@@ -134,6 +135,8 @@
 
 Каждый раздел исходных материалов с заголовком второго уровня (`##`) в комплекте имеет ровно один канонический документ; подзаголовки `###` и `####` остаются внутри соответствующего раздела и переносятся вместе с ним.
 
+Отдельные разделы второго уровня в **основном отчёте по методологии** могут добавляться **после** выпуска исходного сводного материала (март 2026) как уточнения рамки комплекта без изменения соответствия таблицы выше для строк исходника; так, раздел «Источник преимущества в корпоративном ИИ (2026)…» не имел одноимённого заголовка в исходном файле и закреплён канонически в основном отчёте по методологии.
+
 ## Источники
 
 ### Источники из «Методология внедрения и отчуждения ИИ» (использовано в пакете)
@@ -176,6 +179,10 @@
 - [NIST — AI RMF: Generative AI Profile (NIST.AI.600-1, 2024)](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence)
 - [NIST AIRC — Roadmap for the AI Risk Management Framework](https://airc.nist.gov/airmf-resources/roadmap)
 - [Официальное опубликование — Приказ Роскомнадзора от 19.06.2025 № 140 (обезличивание ПДн)](http://publication.pravo.gov.ru/document/0001202508010002)
+
+#### Данные и стратегические сигналы
+
+- [Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)
 
 #### Стек инференса (MOSEC, vLLM) и открытая документация
 
@@ -231,7 +238,7 @@
 - [Hugging Face — ai-sage/GigaChat3.1-10B-A1.8B (Lightning 3.1)](https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B)
 - [Hugging Face — ai-sage/GigaChat3-10B-A1.8B (Lightning 3.0)](https://huggingface.co/ai-sage/GigaChat3-10B-A1.8B)
 
-#### Операционные и “рядом” материалы
+#### Операционные и «рядом» материалы
 
 - [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
@@ -374,6 +381,10 @@
 - [ACSOUR — обязанность операторов передавать анонимизированные ПД в ГИС (152-ФЗ)](https://acsour.com/en/news-and-articles/tpost/2g13ahnab1-mandatory-anonymized-personal-data-shari)
 - [DataGuidance — поправки к национальной стратегии развития ИИ РФ](https://www.dataguidance.com/news/russia-president-issues-amendments-national-ai)
 - [Известия (EN) — создание офисов внедрения ИИ](https://en.iz.ru/en/node/1985740)
+
+#### Данные и стратегические сигналы
+
+- [Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)
 
 #### Стек инференса (MOSEC, vLLM) и открытая документация
 
@@ -750,6 +761,7 @@
 - [KPMG: Agentic AI Advantage - Strategy for Success (2025)](https://assets.kpmg.com/content/dam/kpmgsites/xx/pdf/2025/10/agentic-ai-advantage-report.pdf.coredownload.inline.pdf)
 - [PwC: Global AI Study 2025 - The Path to Value](https://www.pwc.com/gx/en/issues/data-and-ai/publications/global-ai-study.html)
 - [Gartner: Top Strategic Technology Trends for 2025 - AI focus](https://www.gartner.com/en/articles/gartner-top-10-strategic-technology-trends-for-2025)
+- [Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)
 - [Everest Group: Enterprise Generative AI Adoption 2025 Playbook](https://www.everestgrp.com/report/generative-ai-playbook)
 - [HFS Research: The Generative AI 2025 Horizon Report](https://www.hfsresearch.com/research/genai-horizon-2025/)
 
