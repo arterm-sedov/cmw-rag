@@ -15,16 +15,16 @@ tags:
   - TCO
   - исследование
   - методология
-  - пакет
+  - комплект
   - сайзинг
   - экономика
 hide: tags
 ---
 
 # Приложение A. Обзор и ведомость документов: навигация, реестр и источники {: #research_pkg_a }
-## Обзор пакета {: #research_pkg_a_obzor_paketa }
+## Обзор комплекта {: #research_pkg_a_obzor_paketa }
 
-Этот документ — **точка входа** в комплект из шести файлов: ведомость материалов, навигация «какой документ запросить по вопросу», единый реестр использованных источников и тематический перечень дополнительных источников из исходного задания на исследование. Два сводных материала от 23.03.2026 («методология внедрения и отчуждения ИИ» и «сайзинг, КапЭкс и ОпЭкс») сохраняются как неизменённые эталоны для внутреннего контроля полноты; при передаче вовне ориентируйтесь на документы этого комплекта.
+Этот документ — **точка входа** в комплект из шести файлов: ведомость материалов, навигация «какой документ запросить по вопросу», единый реестр использованных источников и тематический перечень дополнительных источников из исходного задания на исследование. Два сводных материала от 23.03.2026 («методология внедрения и отчуждения ИИ» и «сайзинг, КапЭкс и ОпЭкс») сохраняются как неизменённые эталоны для внутреннего контроля полноты; в них **не дублируются** публичные ссылки, добавленные позже в сплит-комплект 25.03.2026 (например MCP Tool Registry на Habr/GitHub, материалы CMO Club × red_mad_robot). Для актуальной ведомости внешних источников используйте этот файл и шесть документов комплекта `20260325-*`; при передаче вовне ориентируйтесь на документы этого комплекта.
 
 ## Как читать комплект (для руководства) {: #research_pkg_a_kak_chitat_komplekt_dlya_rukovodstva }
 
@@ -59,10 +59,10 @@ hide: tags
 | --- | --- |
 | Экономика: цифры, тарифы, сценарии сайзинга, CapEx / OpEx / TCO | [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa) |
 | Методология: TOM, фазы внедрения, производственная модель без канона по таблицам затрат | [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa) |
-| Отчуждение ИС и кода: KT / IP, лицензии, пакет передачи, приёмка | [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa) |
+| Отчуждение ИС и кода: KT / IP, лицензии, комплект передачи, приёмка | [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa) |
 | Наработки CMW: состав стека, границы «что есть сегодня» | «Приложение C: имеющиеся наработки CMW» |
 | Безопасность, комплаенс, observability (углубление) | [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa) |
-| Навигация по пакету, реестр документов и источников | [«Приложение A: обзор и ведомость документов»](#research_pkg_a_obzor_paketa) (этот файл) |
+| Навигация по комплекту, реестр документов и источников | [«Приложение A: обзор и ведомость документов»](#research_pkg_a_obzor_paketa) (этот файл) |
 
 ## Навигация «вопрос → документ» {: #research_pkg_a_navigatsiya_vopros_dokument }
 
@@ -71,8 +71,8 @@ hide: tags
 - «Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_strategiya_vnedreniya_ii_i_organizatsionnaya_zrelost); поведенческие риски — [Приложение D](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_organizatsionnye_i_povedencheskie_faktory_riska); риск бюджета «организационная зрелость и пилот» — [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_riski_byudzheta_i_mery_snizheniya)
 - «Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa)
 - «Где примерные расчёты расхода токенов по данным портала поддержки и допущениям?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_primernye_raschety_rashoda_tokenov_na_dostupnyh_dannyh_portal_podderzhki) (подраздел «Примерные расчёты расхода токенов на доступных данных (портал поддержки)»)
-- «Как устроен пакет отчуждения ИС/кода и что именно передаём клиенту (KT/IP)?» → [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa)
-- «Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_bpmn_20_i_generatsiya_llm) и [Приложение B: пакет отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_paket_otchuzhdeniya_minimalno_tselostnyi)
+- «Как устроен комплект отчуждения ИС/кода и что именно передаём клиенту (KT/IP)?» → [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa)
+- «Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_bpmn_20_i_generatsiya_llm) и [Приложение B: комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_paket_otchuzhdeniya_minimalno_tselostnyi)
 - «Что есть в CMW сегодня (состав стека, границы ‘что есть’ vs ‘методология’)?» → Приложение C: имеющиеся наработки CMW
 - «Как обеспечить security, комплаенс и промышленную observability (контур контроля, data minimization posture)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa)
 - «Как проектировать изоляцию и сеть для агентского исполнения (граница доверия, egress, краткоживущие учётные данные)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_granitsa_doveriya_set_i_sreda_ispolneniya_agenta)
@@ -83,13 +83,13 @@ hide: tags
 - «Где ландшафт российского рынка GenAI (онтология сегментов, сценарный контур до 2030, публичные материалы red_mad_robot 2025) и согласование с цифрами IMARC/сегментами?» → [Основной отчёт: методология](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_karta_rossiiskogo_rynka_genai_obzor_red_mad_robot_2025); [Основной отчёт: сайзинг — ИИ-рынок России](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_ii_rynok_rossii_statistika_i_prognozy); [AI TRiSM — Приложение D](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_ai_trism_i_upravlenie_doveriem)
 - «Нужен единый реестр источников и дополнительные источники из исходного задания по темам?» → [Приложение A: обзор и ведомость документов](#research_pkg_a_obzor_paketa) (этот документ)
 
-## Соответствие разделов исходных материалов документам пакета {: #research_pkg_a_sootvetstvie_razdelov_ishodnyh_materialov_dokumentam_paketa }
+## Соответствие разделов исходных материалов документам комплекта {: #research_pkg_a_sootvetstvie_razdelov_ishodnyh_materialov_dokumentam_paketa }
 
 Ниже для прозрачности показано, в каком документе комплекта закреплён каждый крупный раздел (заголовок второго уровня) исходных сводных материалов. Вложенные подразделы следуют за родительским разделом в том же файле; полный перечень ссылок — в разделе «Источники» ниже.
 
 ### Из «Методология внедрения и отчуждения ИИ» (исходный сводный материал, март 2026) {: #research_pkg_a_iz_metodologiya_vnedreniya_i_otchuzhdeniya_ii_ishodnyi_svodnyi_material_mart_202 }
 
-| Заголовок оригинала | Канонический документ в пакете |
+| Заголовок оригинала | Канонический документ в комплекте |
 | --- | --- |
 | `## Назначение документа и границы применения` | Основной отчёт: методология внедрения и разработки |
 | `## Резюме для руководства` | Основной отчёт: методология внедрения и разработки |
@@ -124,7 +124,7 @@ hide: tags
 
 ### Из «Сайзинг, CapEx и OpEx для клиентов» (исходный сводный материал, март 2026) {: #research_pkg_a_iz_saizing_capex_i_opex_dlya_klientov_ishodnyi_svodnyi_material_mart_2026 }
 
-| Заголовок оригинала | Канонический документ в пакете |
+| Заголовок оригинала | Канонический документ в комплекте |
 | --- | --- |
 | `## Назначение документа и границы применения` | Основной отчёт: сайзинг и экономика |
 | `## Резюме для руководства` | Основной отчёт: сайзинг и экономика |
@@ -176,7 +176,7 @@ hide: tags
 
 ## Источники {: #research_pkg_a_istochniki }
 
-### Источники из «Методология внедрения и отчуждения ИИ» (использовано в пакете) {: #research_pkg_a_istochniki_iz_metodologiya_vnedreniya_i_otchuzhdeniya_ii_ispolzovano_v_pakete }
+### Источники из «Методология внедрения и отчуждения ИИ» (использовано в комплекте) {: #research_pkg_a_istochniki_iz_metodologiya_vnedreniya_i_otchuzhdeniya_ii_ispolzovano_v_pakete }
 
 #### Инженерия обвязки и мультиагентная разработка {: #research_pkg_a_inzheneriya_obvyazki_i_multiagentnaya_razrabotka }
 
@@ -320,7 +320,7 @@ hide: tags
 - [Arize Phoenix — документация](https://docs.arize.com/phoenix)
 - [LangSmith — документация](https://docs.smith.langchain.com/)
 
-### Источники из «Оценка сайзинга, КапЭкс и ОпЭкс для клиентов» (использовано в пакете) {: #research_pkg_a_istochniki_iz_otsenka_saizinga_kapeks_i_opeks_dlya_klientov_ispolzovano_v_pakete }
+### Источники из «Оценка сайзинга, КапЭкс и ОпЭкс для клиентов» (использовано в комплекте) {: #research_pkg_a_istochniki_iz_otsenka_saizinga_kapeks_i_opeks_dlya_klientov_ispolzovano_v_pakete }
 
 #### Примерные расчёты токенов (портал поддержки, агрегаторы и обзоры прайсов) {: #research_pkg_a_primernye_raschety_tokenov_portal_podderzhki_agregatory_i_obzory_praisov }
 
@@ -427,6 +427,11 @@ hide: tags
 - [Medium — Qwen 3.5 35B A3B (AgentNativeDev)](https://agentnativedev.medium.com/qwen-3-5-35b-a3b-why-your-800-gpu-just-became-a-frontier-class-ai-workstation-63cc4d4ebac1)
 - [apxml.com — VRAM calculator](https://apxml.com/tools/vram-calculator)
 - [Hugging Face — Qwen/Qwen3.5-35B-A3B](https://huggingface.co/Qwen/Qwen3.5-35B-A3B)
+
+#### Исследования рынка (зрелость GenAI, не технический сайзинг) {: #research_pkg_a_issledovaniya_rynka_zrelost_genai }
+
+- [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197)
+- [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
 
 #### Наблюдаемость и телеметрия {: #research_pkg_a_nablyudaemost_i_telemetriya }
 
@@ -743,6 +748,8 @@ hide: tags
 - [NVIDIA/garak](https://github.com/NVIDIA/garak)
 - [Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps)
 - [EvilFreelancer/openapi-to-cli](https://github.com/EvilFreelancer/openapi-to-cli)
+- [GitHub — redmadrobot-rnd/mcp-registry (MCP Tool Registry)](https://github.com/redmadrobot-rnd/mcp-registry)
+- [Хабр — red_mad_robot: MCP Tool Registry и автоматизация RAG](https://habr.com/ru/companies/redmadrobot/articles/982004/)
 - [SkillsBD.ru](https://skillsbd.ru/)
 - [OpenCode](https://opencode.ai/)
 - [OpenCode — документация (Intro)](https://opencode.ai/docs)
@@ -854,6 +861,11 @@ hide: tags
 - [GitVerse — GigaTeam/gigachat3.1](https://gitverse.ru/GigaTeam/gigachat3.1)
 - [GitHub — sgl-project/sglang, PR #18802](https://github.com/sgl-project/sglang/pull/18802)
 
+#### Исследования рынка (зрелость GenAI, не технический сайзинг) {: #research_pkg_a_issledovaniya_rynka_zrelost_genai_2 }
+
+- [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197)
+- [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
+
 #### Telegram-каналы и посты {: #research_pkg_a_telegram_kanaly_i_posty }
 
 - [NeuralDeep — бенчмарки vLLM / RTX 4090](https://t.me/neuraldeep/1476)
@@ -870,7 +882,6 @@ hide: tags
 - [Redmadnews — AI + Economy, Китай](https://t.me/Redmadnews/5159)
 - [Redmadnews — бизнес-завтрак КРОК](https://t.me/Redmadnews/5167)
 - [Redmadnews — AI-first подкаст](https://t.me/Redmadnews/5170)
-- [CMO Club Russia — GenAI в маркетинге, анонс исследования (пост 197)](https://t.me/cmoclub/197)
 - [@llm_under_hood](https://t.me/llm_under_hood)
 - [Канал @ai_machinelearning_big_data](https://t.me/ai_machinelearning_big_data)
 
