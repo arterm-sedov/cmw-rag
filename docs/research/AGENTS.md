@@ -130,6 +130,7 @@ channel_snapshot.yml
 - Use English acronyms or terms only when strictly necessary or industry-standard (for example, `RAG`, `LLM`, `CapEx`).
 - At first use, provide translation or short explanation in parentheses.
 - Example: `RAG (Retrieval-Augmented Generation — генерация с дополненной выборкой)`.
+- **Engineering acronyms** such as `CI`, `CD`, `TCO`, and the like may appear in Russian report prose without expansion when the audience and context make the meaning clear.
 
 ## Markdown and Document Formatting Standards
 
