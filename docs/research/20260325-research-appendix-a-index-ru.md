@@ -80,6 +80,7 @@ hide: tags
 - «Как сравнивать E2B / Modal / Daytona и бенчмаркать песочницы (сеть, сессии, метрики прода)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_upravlyaemye_pesochnitsy_sravnenie_modelei_i_benchmarki) и [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_otsenka_upravlyaemyh_pesochnits_i_benchmarki)
 - «Как за ~30 дней вывести безопасный MVP контура исполнения агента, какие враждебные сценарии и критерии готовности?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_bezopasnyi_mvp_kontura_ispolneniya_diskussiya_sredy_vyvody) и [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_uzkii_bezopasn_mvp_kontura_ispolneniya_agenta_orientir_30_dnei)
 - «Где цифры и барьеры зрелости GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot × CMO Club, 2025)?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_rossiiskii_rynok); [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_genai_v_marketingovyh_komandah_krupnyh_brendov_rf_opros_cmo_2025); [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_organizatsionnye_barery_i_vospriyatie_rizikov_opros_cmo_red_mad_robot_2025)
+- «Где ландшафт российского рынка GenAI (онтология сегментов, сценарный контур до 2030, публичные материалы red_mad_robot 2025) и согласование с цифрами IMARC/сегментами?» → [Основной отчёт: методология](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_karta_rossiiskogo_rynka_genai_obzor_red_mad_robot_2025); [Основной отчёт: сайзинг — ИИ-рынок России](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_ii_rynok_rossii_statistika_i_prognozy); [AI TRiSM — Приложение D](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_ai_trism_i_upravlenie_doveriem)
 - «Нужен единый реестр источников и дополнительные источники из исходного задания по темам?» → [Приложение A: обзор и ведомость документов](#research_pkg_a_obzor_paketa) (этот документ)
 
 ## Соответствие разделов исходных материалов документам пакета {: #research_pkg_a_sootvetstvie_razdelov_ishodnyh_materialov_dokumentam_paketa }
@@ -110,6 +111,7 @@ hide: tags
 | `## Инженерия обвязки для агентов` | Основной отчёт: методология внедрения и разработки |
 | `## Практический опыт внедрения ИИ (red_mad_robot)` | Основной отчёт: методология внедрения и разработки |
 | `## Российский рынок ИИ: Текущее состояние и Прогнозы (2024-2026)` | Основной отчёт: методология внедрения и разработки |
+| `### Карта российского рынка GenAI (обзор red_mad_robot, публичные материалы 2025)` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_karta_rossiiskogo_rynka_genai_obzor_red_mad_robot_2025) |
 | `## Методология Enterprise AI (Global Best Practices)` | Основной отчёт: методология внедрения и разработки |
 | `## Практические кейсы из каналов` | Основной отчёт: методология внедрения и разработки |
 | `## Рекомендации по внедрению ИИ для клиентов` | Основной отчёт: методология внедрения и разработки |
@@ -155,6 +157,7 @@ hide: tags
 | `## VRAM Requirements для LLM Inference` | Основной отчёт: сайзинг и экономика |
 | `## Корректировка TCO для российского рынка` | Основной отчёт: сайзинг и экономика |
 | `## ИИ-рынок России: Статистика и прогнозы` | Основной отчёт: сайзинг и экономика |
+| `### Сегментные ориентиры РФ (GPU-облако, B2B LLM)` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_segmentnye_orientiry_rf_gpu_oblako_b2b_llm) |
 | `## Практические рекомендации по сайзингу (Decision Tree)` | Основной отчёт: сайзинг и экономика |
 | `## Новые тренды 2026 (Дополнительно)` | Основной отчёт: сайзинг и экономика |
 | `## Планирование мощности ИИ-инфраструктуры (2025-2030)` | Основной отчёт: сайзинг и экономика |
@@ -169,7 +172,7 @@ hide: tags
 
 Каждый раздел исходных материалов с заголовком второго уровня (`##`) в комплекте имеет ровно один канонический документ; подзаголовки `###` и `####` остаются внутри соответствующего раздела и переносятся вместе с ним.
 
-Отдельные разделы второго уровня в **основном отчёте по методологии** могут добавляться **после** выпуска исходного сводного материала (март 2026) как уточнения рамки комплекта без изменения соответствия таблицы выше для строк исходника; так, разделы «Источник преимущества в корпоративном ИИ (2026)…» и «Стратегия внедрения ИИ и организационная зрелость» не имели одноимённых заголовков в исходном файле и закреплены канонически в основном отчёте по методологии. Подраздел **«Публичные ориентиры рынка (@Redmadnews, 2026)»** вложен в раздел «Целевая операционная модель» и в таблице выше приведён отдельной строкой для навигации.
+Отдельные разделы второго уровня в **основном отчёте по методологии** могут добавляться **после** выпуска исходного сводного материала (март 2026) как уточнения рамки комплекта без изменения соответствия таблицы выше для строк исходника; так, разделы «Источник преимущества в корпоративном ИИ (2026)…» и «Стратегия внедрения ИИ и организационная зрелость» не имели одноимённых заголовков в исходном файле и закреплены канонически в основном отчёте по методологии. Подраздел **«Публичные ориентиры рынка (@Redmadnews, 2026)»** вложен в раздел «Целевая операционная модель» и в таблице выше приведён отдельной строкой для навигации. Подраздел **«Карта российского рынка GenAI (обзор red_mad_robot, публичные материалы 2025)»** вложен в раздел «Российский рынок ИИ…» и в таблице выше приведён отдельной строкой для навигации.
 
 ## Источники {: #research_pkg_a_istochniki }
 
@@ -219,6 +222,17 @@ hide: tags
 
 - [Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)
 
+#### Российский рынок GenAI, сегменты и AI TRiSM (публичные ссылки) {: #research_pkg_a_rossiiskii_rynok_genai_segmenty_i_ai_trism }
+
+- [red_mad_robot — раздел «Исследования»](https://redmadrobot.ru/issledovaniya-1/)
+- [red_mad_robot — мероприятие: тренд-репорт рынка GenAI (2025)](https://redmadrobot.ru/meropriyatiya/trend-report-rynok-gen-ai-v-2025-godu/)
+- [Хабр — red_mad_robot: анонс тренд-репорта и события в Сколково](https://habr.com/ru/companies/redmadrobot/articles/879750/)
+- [Сколково — событие «Состояние рынка GenAI в России и в мире» (12.02.2025)](https://www.skolkovo.ru/events/120225-sostoyanie-rynka-genai-v-rossii-i-v-mire/)
+- [Ведомости — рынок облачных сервисов с GPU (МНИАП)](https://www.vedomosti.ru/technology/articles/2024/12/11/1080600-rinok-oblachnih-servisov-s-gpu-virastet)
+- [РБК — объём рынка B2B LLM в России (MTS AI)](https://www.rbc.ru/technology_and_media/26/11/2024/67449d909a79478a2052d490)
+- [McKinsey — The state of AI](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)
+- [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
+
 #### Стек инференса (MOSEC, vLLM) и открытая документация {: #research_pkg_a_stek_inferensa_mosec_vllm_i_otkrytaya_dokumentatsiya }
 
 - [MOSEC — документация](https://mosecorg.github.io/mosec/index.html)
@@ -231,6 +245,9 @@ hide: tags
 - [Yakov & Partners — публикация AI 2025](https://yakovpartners.com/publications/ai-2025/)
 - [MarketsandMarkets — Russia AI Inference PaaS Market](https://www.marketsandmarkets.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp)
 - [IMARC — Russia Artificial Intelligence Market](https://www.imarcgroup.com/russia-artificial-intelligence-market)
+- [Ведомости — рынок облачных сервисов с GPU (МНИАП)](https://www.vedomosti.ru/technology/articles/2024/12/11/1080600-rinok-oblachnih-servisov-s-gpu-virastet)
+- [РБК — объём рынка B2B LLM в России (MTS AI)](https://www.rbc.ru/technology_and_media/26/11/2024/67449d909a79478a2052d490)
+- [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
 - [Larridin — State of Enterprise AI in 2025](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
 - [Dataoorts — GPU cloud providers in Russia](https://dataoorts.com/top-5-plus-gpu-cloud-providers-in-russia/)
 - [ITNext — GPU infrastructure as foundational to enterprise AI strategy](https://itnext.io/why-gpu-infrastructure-is-foundational-to-an-enterprise-ai-strategy-5b574ef1eebc)
@@ -474,6 +491,17 @@ hide: tags
 
 - [Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)
 
+#### Российский рынок GenAI, сегменты и AI TRiSM (публичные ссылки) {: #research_pkg_a_rossiiskii_rynok_genai_segmenty_i_ai_trism_2 }
+
+- [red_mad_robot — раздел «Исследования»](https://redmadrobot.ru/issledovaniya-1/)
+- [red_mad_robot — мероприятие: тренд-репорт рынка GenAI (2025)](https://redmadrobot.ru/meropriyatiya/trend-report-rynok-gen-ai-v-2025-godu/)
+- [Хабр — red_mad_robot: анонс тренд-репорта и события в Сколково](https://habr.com/ru/companies/redmadrobot/articles/879750/)
+- [Сколково — событие «Состояние рынка GenAI в России и в мире» (12.02.2025)](https://www.skolkovo.ru/events/120225-sostoyanie-rynka-genai-v-rossii-i-v-mire/)
+- [Ведомости — рынок облачных сервисов с GPU (МНИАП)](https://www.vedomosti.ru/technology/articles/2024/12/11/1080600-rinok-oblachnih-servisov-s-gpu-virastet)
+- [РБК — объём рынка B2B LLM в России (MTS AI)](https://www.rbc.ru/technology_and_media/26/11/2024/67449d909a79478a2052d490)
+- [McKinsey — The state of AI](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)
+- [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
+
 #### Стек инференса (MOSEC, vLLM) и открытая документация {: #research_pkg_a_stek_inferensa_mosec_vllm_i_otkrytaya_dokumentatsiya_2 }
 
 - [MOSEC — документация](https://mosecorg.github.io/mosec/index.html)
@@ -484,6 +512,10 @@ hide: tags
 #### Экономика, рынок, enterprise AI {: #research_pkg_a_ekonomika_rynok_enterprise_ai_2 }
 
 - [Yakov & Partners — публикация AI 2025](https://yakovpartners.com/publications/ai-2025/)
+- [IMARC — Russia Artificial Intelligence Market](https://www.imarcgroup.com/russia-artificial-intelligence-market)
+- [Ведомости — рынок облачных сервисов с GPU (МНИАП)](https://www.vedomosti.ru/technology/articles/2024/12/11/1080600-rinok-oblachnih-servisov-s-gpu-virastet)
+- [РБК — объём рынка B2B LLM в России (MTS AI)](https://www.rbc.ru/technology_and_media/26/11/2024/67449d909a79478a2052d490)
+- [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
 - [MarketsandMarkets — Russia AI Inference PaaS Market](https://www.marketsandmarkets.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp)
 - [Larridin — State of Enterprise AI in 2025](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
 - [ITNext — GPU infrastructure as foundational to enterprise AI strategy](https://itnext.io/why-gpu-infrastructure-is-foundational-to-an-enterprise-ai-strategy-5b574ef1eebc)
