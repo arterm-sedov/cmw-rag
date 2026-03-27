@@ -68,6 +68,7 @@ hide: tags
 
 - «Как внедрять и разрабатывать в пром контуре (роли, фазы, quality gates)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)
 - «Где в корпоративном ИИ формируется преимущество (данные, семантика, агенты)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)
+- «Где глобальные бенчмарки корпоративного внедрения по публичному отчёту OpenAI (2025) и оговорки по выборке (не норма для КП в РФ)?» → [Основной отчёт: методология внедрения и разработки — эмпирика корпоративного внедрения](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_empirika_korporativnogo_vnedreniya_otchet_openai_2025)
 - «Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_strategiya_vnedreniya_ii_i_organizatsionnaya_zrelost); поведенческие риски — [Приложение D](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_organizatsionnye_i_povedencheskie_faktory_riska); риск бюджета «организационная зрелость и пилот» — [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_riski_byudzheta_i_mery_snizheniya)
 - «Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa)
 - «Где примерные расчёты расхода токенов по данным портала поддержки и допущениям?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_primernye_raschety_rashoda_tokenov_na_dostupnyh_dannyh_portal_podderzhki) (подраздел «Примерные расчёты расхода токенов на доступных данных (портал поддержки)»)
@@ -113,6 +114,7 @@ hide: tags
 | `## Российский рынок ИИ: Текущее состояние и Прогнозы (2024-2026)` | Основной отчёт: методология внедрения и разработки |
 | `### Карта российского рынка GenAI (обзор red_mad_robot, публичные материалы 2025)` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_karta_rossiiskogo_rynka_genai_obzor_red_mad_robot_2025) |
 | `## Методология Enterprise AI (Global Best Practices)` | Основной отчёт: методология внедрения и разработки |
+| `### Эмпирика корпоративного внедрения (отчёт OpenAI, 2025; оговорки по выборке)` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_empirika_korporativnogo_vnedreniya_otchet_openai_2025) |
 | `## Практические кейсы из каналов` | Основной отчёт: методология внедрения и разработки |
 | `## Рекомендации по внедрению ИИ для клиентов` | Основной отчёт: методология внедрения и разработки |
 | `## Управление рисками и соответствие (Compliance)` | Приложение D: безопасность, комплаенс и observability |
@@ -248,7 +250,9 @@ hide: tags
 - [Ведомости — рынок облачных сервисов с GPU (МНИАП)](https://www.vedomosti.ru/technology/articles/2024/12/11/1080600-rinok-oblachnih-servisov-s-gpu-virastet)
 - [РБК — объём рынка B2B LLM в России (MTS AI)](https://www.rbc.ru/technology_and_media/26/11/2024/67449d909a79478a2052d490)
 - [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
-- [Larridin — State of Enterprise AI in 2025](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
+- [OpenAI — The state of enterprise AI (обзор, декабрь 2025)](https://openai.com/index/the-state-of-enterprise-ai-2025-report)
+- [OpenAI — The state of enterprise AI 2025 (PDF)](https://cdn.openai.com/pdf/7ef17d82-96bf-4dd1-9df2-228f7f377a29/the-state-of-enterprise-ai_2025-report.pdf)
+- [Larridin — State of Enterprise AI in 2025 (независимый обзор)](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
 - [Dataoorts — GPU cloud providers in Russia](https://dataoorts.com/top-5-plus-gpu-cloud-providers-in-russia/)
 - [ITNext — GPU infrastructure as foundational to enterprise AI strategy](https://itnext.io/why-gpu-infrastructure-is-foundational-to-an-enterprise-ai-strategy-5b574ef1eebc)
 - [РБК Education — во сколько обойдётся ИИ-агент: подсчёты экспертов (2026)](https://www.rbc.ru/education/05/02/2026/697162269a794772c9cf9991)
@@ -522,7 +526,9 @@ hide: tags
 - [РБК — объём рынка B2B LLM в России (MTS AI)](https://www.rbc.ru/technology_and_media/26/11/2024/67449d909a79478a2052d490)
 - [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
 - [MarketsandMarkets — Russia AI Inference PaaS Market](https://www.marketsandmarkets.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp)
-- [Larridin — State of Enterprise AI in 2025](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
+- [OpenAI — The state of enterprise AI (обзор, декабрь 2025)](https://openai.com/index/the-state-of-enterprise-ai-2025-report)
+- [OpenAI — The state of enterprise AI 2025 (PDF)](https://cdn.openai.com/pdf/7ef17d82-96bf-4dd1-9df2-228f7f377a29/the-state-of-enterprise-ai_2025-report.pdf)
+- [Larridin — State of Enterprise AI in 2025 (независимый обзор)](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
 - [ITNext — GPU infrastructure as foundational to enterprise AI strategy](https://itnext.io/why-gpu-infrastructure-is-foundational-to-an-enterprise-ai-strategy-5b574ef1eebc)
 - [РБК Education — во сколько обойдётся ИИ-агент: подсчёты экспертов (2026)](https://www.rbc.ru/education/05/02/2026/697162269a794772c9cf9991)
 - [FinOps Foundation — Generative AI / Unit Economics](https://www.finops.org/wg/generative-ai/)

@@ -193,6 +193,8 @@ hide: tags
 
 Для **внутренней** разработки с агентами (отдельно от **цены за одно обращение в эксплуатации**) полезно фиксировать **стоимость цикла** «план → код → проверка», **число итераций до приёмки** и связанные токены — эти затраты **относят на** центр компетенций или платформу и сверяют с эффектом от упрощения обвязки после обновления модели ([Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps), [Martin Fowler — Harness Engineering](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)).
 
+Публичная эмпирика OpenAI («_[The state of enterprise AI](https://openai.com/index/the-state-of-enterprise-ai-2025-report)_», декабрь 2025) указывает на рост среднего потребления **reasoning tokens** на организацию примерно **в 320 раз** за **12** месяцев — **глобальный** ориентир нагрузки на «интеллектуальные» режимы, а не норма для КП в РФ. В финансовой модели имеет смысл **сегментировать** учёт (чат vs рассуждение / агентские циклы), согласовать **`gen_ai.client.token.usage`** и биллинг провайдера и заложить чувствительность сценариев к смене модели. Организационный контекст разрыва внедрения и оговорки по выборке — см. «_[Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_empirika_korporativnogo_vnedreniya_otchet_openai_2025)_», подраздел «Эмпирика корпоративного внедрения (отчёт OpenAI, 2025; оговорки по выборке)».
+
 ---
 
 ## CapEx / OpEx Модель (Данные РБК 2026) {: #research_sizing_20260325_capex_opex_model_dannye_rbk_2026 }
@@ -1590,7 +1592,9 @@ TCO = Hourly_Rate × 24 × 365 × Years + Egress_Fees + Storage_Fees
 - [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
 - [MarketsandMarkets — Russia AI Inference Platform as a Service (PaaS)](https://www.marketsandmarkets.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp)
 - [Dataoorts — GPU cloud providers in Russia](https://dataoorts.com/top-5-plus-gpu-cloud-providers-in-russia/)
-- [Larridin — State of Enterprise AI in 2025 (ROI)](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
+- [OpenAI — The state of enterprise AI (обзор, декабрь 2025)](https://openai.com/index/the-state-of-enterprise-ai-2025-report)
+- [OpenAI — The state of enterprise AI 2025 (PDF)](https://cdn.openai.com/pdf/7ef17d82-96bf-4dd1-9df2-228f7f377a29/the-state-of-enterprise-ai_2025-report.pdf)
+- [Larridin — State of Enterprise AI in 2025 (независимый обзор, ROI)](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
 - [Yakov & Partners — AI 2025 (экономический эффект)](https://yakovpartners.com/publications/ai-2025/)
 
 ### СМИ, отраслевые обзоры и научные статьи (оптимизация инференса) {: #research_sizing_20260325_smi_otraslevye_obzory_i_nauchnye_stati_optimizatsiya_inferensa }
