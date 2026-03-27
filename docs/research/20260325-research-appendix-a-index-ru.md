@@ -281,7 +281,7 @@
 - [VK Cloud — машинное обучение в облаке](https://cloud.vk.com/docs/ru/ml)
 - [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
 
-#### Публичные веса с нестандартной лицензией (иллюстрация для TCO и мониторинга)
+#### Публичные веса с нестандартной лицензией
 
 - [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
@@ -317,7 +317,7 @@
 - [Introl — планирование мощностей ИИ-инфраструктуры (прогнозы, McKinsey в обзоре)](https://introl.com/blog/ai-infrastructure-capacity-planning-forecasting-gpu-2025-2030)
 - [PitchGrade — AI Infrastructure Primer](https://pitchgrade.com/research/ai-infrastructure-primer)
 
-#### Наблюдаемость и телеметрия (упомянуто в тексте)
+#### Наблюдаемость и телеметрия
 
 - [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
@@ -431,7 +431,7 @@
 - [Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Llama-70B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B)
 - [Hugging Face — организация Qwen](https://huggingface.co/Qwen)
 
-#### Иллюстрация: публичные веса с нестандартной лицензией
+#### Публичные веса с нестандартной лицензией
 
 - [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
@@ -504,12 +504,12 @@
 - [AGORA — Industrial AI](https://t.me/AGORA)
 - [«ITипичные аспекты Артёма» (Артём Лысенко)](https://t.me/virrius_tech_chat)
 
-#### Посты NeuralDeep (цитируемые в тексте)
+#### Посты NeuralDeep
 
 - [ETL, эмбеддинги, реранкеры, фреймворки RAG, eval, безопасность](https://t.me/neuraldeep/1758)
 - [Agentic RAG / SGR](https://t.me/neuraldeep/1605)
 
-#### Посты @ai_archnadzor (цитируемые в тексте)
+#### Посты @ai_archnadzor
 
 - [GraphOS для RAG](https://t.me/ai_archnadzor/151)
 - [Semantic Gravity Framework](https://t.me/ai_archnadzor/155)
@@ -583,7 +583,7 @@
 
 - [Портал НПА — проект федерального закона (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
 
-#### Наблюдаемость и телеметрия (стандарты и стек в тексте)
+#### Наблюдаемость и телеметрия: стандарты и стек
 
 - [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
@@ -635,7 +635,7 @@
 - [VK Cloud — машинное обучение в облаке](https://cloud.vk.com/docs/ru/ml)
 - [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
 
-#### Публичные веса с нестандартной лицензией (иллюстрация для TCO и мониторинга)
+#### Публичные веса с нестандартной лицензией
 
 - [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
@@ -689,7 +689,7 @@
 - [Introl — планирование мощностей ИИ-инфраструктуры (прогнозы, McKinsey в обзоре)](https://introl.com/blog/ai-infrastructure-capacity-planning-forecasting-gpu-2025-2030)
 - [PitchGrade — AI Infrastructure Primer](https://pitchgrade.com/research/ai-infrastructure-primer)
 
-#### Наблюдаемость и телеметрия (упомянуто в тексте)
+#### Наблюдаемость и телеметрия
 
 - [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
