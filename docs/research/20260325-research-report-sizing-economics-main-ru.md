@@ -1277,4 +1277,138 @@ TCO = Hourly_Rate × 24 × 365 × Years + Egress_Fees + Storage_Fees
 
 ## Источники
 
-- Полный реестр источников — см. «Приложение A: витрина пакета».
+- Полный консолидированный реестр — см. [Приложение A: витрина пакета](20260325-research-appendix-a-index-ru.md).
+
+### Инженерия обвязки и мультиагентная разработка
+
+- [OpenAI — Harness engineering](https://openai.com/ru-RU/index/harness-engineering/)
+- [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
+- [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
+- [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
+
+### Безопасность GenAI, OWASP и сигналы рынка (TCO / риски)
+
+- [OWASP GenAI Security — Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
+- [OWASP GenAI Security — Top 10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
+- [GitHub — NVIDIA Garak (сканер для LLM, только изолированные стенды)](https://github.com/NVIDIA/garak)
+- [CodeWall — разбор red team: McKinsey AI platform](https://codewall.ai/blog/how-we-hacked-mckinseys-ai-platform)
+- [Коммерсантъ — рынок и атаки на ИИ-системы (журналистский контекст)](https://www.kommersant.ru/doc/8363105)
+- [OpenAI — приобретение PromptFoo (контекст рынка тестирования)](https://openai.com/index/openai-to-acquire-promptfoo/)
+- [Kaspersky — пресс-релиз: угрозы под видом популярных ИИ-сервисов (бенчмарк тренда)](https://www.kaspersky.com/about/press-releases/kaspersky-chatgpt-mimicking-cyberthreats-surge-115-in-early-2025-smbs-increasingly-targeted)
+
+### Иллюстративные ориентиры нагрузки (публичные интервью, финсектор)
+
+- [CIO — интервью: чат-бот, масштаб обращений и сценарии](https://cio.osp.ru/articles/5455)
+- [«Открытые системы» — RAG и LLM для поддержки операционистов](https://www.osp.ru/articles/2025/0324/13059305)
+
+### Облачные провайдеры и тарифы (РФ)
+
+- [Cloud.ru — Evolution Foundation Models (продукт, перечень моделей)](https://cloud.ru/products/evolution-foundation-models)
+- [Cloud.ru — Evolution Foundation Models, тарифы (2026)](https://cloud.ru/documents/tariffs/evolution/foundation-models)
+- [Yandex AI Studio — доступные генеративные модели](https://aistudio.yandex.ru/docs/ru/ai-studio/concepts/generation/models.html)
+- [Yandex AI Studio — правила тарификации](https://aistudio.yandex.ru/docs/ru/ai-studio/pricing.html)
+- [AKM.ru — доступ к крупнейшей языковой модели на рынке РФ (Yandex B2B)](https://www.akm.ru/eng/press/yandex-b2b-tech-has-opened-access-to-the-largest-language-model-on-the-russian-market/)
+- [Сбер — GigaChat API: юридические тарифы](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
+- [Selectel — Foundation Models Catalog](https://selectel.ru/services/cloud/foundation-models-catalog)
+- [MWS — MWS GPT](https://mws.ru/mws-gpt/)
+- [MWS — тарифы MWS GPT](https://mws.ru/docs/docum/cloud_terms_mwsgpt_pricing.html)
+- [МТС Cloud — виртуальная инфраструктура с GPU](https://cloud.mts.ru/services/virtual-infrastructure-gpu/)
+- [MWS — GPU On‑premises](https://mws.ru/services/mws-gpu-on-prem/)
+- [CNews — кейс: MTS AI и экономия инвестиций за счёт облака MWS (обзор)](https://www.cnews.ru/reviews/provajdery_gpu_cloud_2025/cases/kak_mts_ai_sekonomila_bolee_milliarda)
+- [CIO — MTS AI перенесла обучение моделей в облако](https://cio.osp.ru/articles/140525-MTS-AI-perenesla-obuchenie-modeley-v-oblako)
+- [VK Cloud — машинное обучение в облаке](https://cloud.vk.com/docs/ru/ml)
+- [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
+
+### Публичные веса с нестандартной лицензией (иллюстрация для TCO и мониторинга)
+
+- [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
+- [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
+
+### Открытые модели ai-sage (GigaChat и спутники, TCO)
+
+- [Хабр — GigaChat-3.1: большое обновление больших моделей (блог Сбера)](https://habr.com/ru/companies/sberbank/articles/1014146/)
+- [Hugging Face — организация ai-sage](https://huggingface.co/ai-sage)
+- [Hugging Face — коллекция GigaChat 3.1](https://huggingface.co/collections/ai-sage/gigachat-31)
+- [Hugging Face — ai-sage/GigaChat3.1-702B-A36B (Ultra)](https://huggingface.co/ai-sage/GigaChat3.1-702B-A36B)
+- [Hugging Face — ai-sage/GigaChat3.1-10B-A1.8B (Lightning 3.1)](https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B)
+- [Hugging Face — ai-sage/GigaChat3-10B-A1.8B (Lightning 3.0)](https://huggingface.co/ai-sage/GigaChat3-10B-A1.8B)
+- [Hugging Face — коллекция GigaEmbeddings](https://huggingface.co/collections/ai-sage/gigaembeddings)
+- [Hugging Face — коллекция GigaAM](https://huggingface.co/collections/ai-sage/gigaam)
+- [Hugging Face — коллекция GigaChat Lite](https://huggingface.co/collections/ai-sage/gigachat-lite)
+- [GitVerse — GigaTeam/gigachat3.1](https://gitverse.ru/GigaTeam/gigachat3.1)
+- [GitHub — sgl-project/sglang, PR #18802](https://github.com/sgl-project/sglang/pull/18802)
+
+### Telegram-каналы и посты
+
+- [NeuralDeep — бенчмарки vLLM / RTX 4090](https://t.me/neuraldeep/1476)
+- [NeuralDeep — рекомендации по кластерам](https://t.me/neuraldeep/1627)
+- [NeuralDeep — экономика LLM-решений](https://t.me/neuraldeep/1366)
+- [Канал NeuralDeep](https://t.me/neuraldeep)
+- [Канал @ai_archnadzor — RAG и архитектуры](https://t.me/ai_archnadzor)
+- [@ai_archnadzor — локальные модели для кодинга и снижения затрат](https://t.me/ai_archnadzor/167)
+- [@ai_archnadzor — CLI вместо MCP](https://t.me/ai_archnadzor/190)
+- [@Redmadnews (red_mad_robot)](https://t.me/Redmadnews)
+- [@llm_under_hood](https://t.me/llm_under_hood)
+- [Канал @ai_machinelearning_big_data](https://t.me/ai_machinelearning_big_data)
+
+### Инструменты разработки с ИИ (ориентиры, вне SKU CMW)
+
+- [OpenCode](https://opencode.ai/)
+- [OpenCode — документация (Intro)](https://opencode.ai/docs)
+- [OpenCode — Ecosystem](https://opencode.ai/docs/ecosystem/)
+- [OpenCode Zen](https://opencode.ai/docs/zen)
+- [OpenWork (different-ai/openwork)](https://github.com/different-ai/openwork)
+- [OpenRouter](https://openrouter.ai/)
+- [OpenRouter — Logging и политики провайдеров](https://openrouter.ai/docs/guides/privacy/logging)
+
+### Регулирование (проектный контур 2026)
+
+- [Портал НПА — проект федерального закона (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
+
+### Публичные инструменты e-com (иллюстрация около-LLM OpEx, без рекламы)
+
+- [GitHub — ozontech/seq-db](https://github.com/ozontech/seq-db)
+- [GitHub — ozontech/file.d](https://github.com/ozontech/file.d)
+- [GitHub — ozontech/framer](https://github.com/ozontech/framer)
+
+### FinOps, TCO, инфраструктура и железо
+
+- [FinOps Foundation — Generative AI (Unit Economics)](https://www.finops.org/wg/generative-ai/)
+- [FinOps Framework — Unit Economics (capability)](https://www.finops.org/framework/capabilities/unit-economics/)
+- [OpenAI — Prompt caching (снижение стоимости повторяющегося контекста)](https://platform.openai.com/docs/guides/prompt-caching)
+- [Slyd — TCO Calculator: On-Prem vs Cloud](https://slyd.com/resources/tco-calculator)
+- [Introl — финансирование CapEx/OpEx и инвестиции в GPU](https://introl.com/blog/ai-infrastructure-financing-capex-opex-gpu-investment-guide-2025)
+- [SWFTE — экономика частного AI / on-prem](https://www.swfte.com/blog/private-ai-enterprises-onprem-economics)
+- [Runpod — LLM inference optimization playbook (throughput)](https://www.runpod.io/articles/guides/llm-inference-optimization-playbook)
+- [Introl — планирование мощностей ИИ-инфраструктуры (прогнозы, McKinsey в обзоре)](https://introl.com/blog/ai-infrastructure-capacity-planning-forecasting-gpu-2025-2030)
+- [PitchGrade — AI Infrastructure Primer](https://pitchgrade.com/research/ai-infrastructure-primer)
+
+### Рынок, ROI, эффект для экономики
+
+- [IMARC — Russia Artificial Intelligence Market](https://www.imarcgroup.com/russia-artificial-intelligence-market)
+- [MarketsandMarkets — Russia AI Inference Platform as a Service (PaaS)](https://www.marketsandmarkets.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp)
+- [Dataoorts — GPU cloud providers in Russia](https://dataoorts.com/top-5-plus-gpu-cloud-providers-in-russia/)
+- [Larridin — State of Enterprise AI in 2025 (ROI)](https://larridin.com/blog/state-of-enterprise-ai-in-2025)
+- [Yakov & Partners — AI 2025 (экономический эффект)](https://yakovpartners.com/publications/ai-2025/)
+
+### СМИ, отраслевые обзоры и научные статьи (оптимизация инференса)
+
+- [РБК Education — во сколько обойдётся ИИ-агент: подсчёты экспертов (2026)](https://www.rbc.ru/education/05/02/2026/697162269a794772c9cf9991)
+- [a16z — Top 100 Gen AI Apps (6)](https://a16z.com/100-gen-ai-apps-6/)
+- [Google — Deep-Thinking Ratio (DTR), arXiv:2602.13517](https://arxiv.org/pdf/2602.13517)
+- [Oppo AI — Search More, Think Less (SMTL), arXiv:2602.22675](https://arxiv.org/pdf/2602.22675)
+- [Databricks — KARL, arXiv:2603.05218](https://arxiv.org/pdf/2603.05218)
+- [Accenture — Memex(RL), arXiv:2603.04257](https://arxiv.org/pdf/2603.04257)
+- [SkillNet (Alibaba, Ant, Tencent, Oppo), arXiv:2603.04448](https://arxiv.org/pdf/2603.04448)
+
+### Наблюдаемость и телеметрия (упомянуто в тексте)
+
+- [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
+- [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
+- [OpenTelemetry — OpenTelemetry for Generative AI (блог)](https://opentelemetry.io/blog/2024/otel-generative-ai)
+- [OpenInference — инструментирование ИИ для OpenTelemetry](https://arize-ai.github.io/openinference/)
+- [Arize Phoenix — документация](https://docs.arize.com/phoenix)
+- [LangSmith — документация](https://docs.smith.langchain.com/)
+- [LangChain Docs — Evaluation concepts (LangSmith)](https://docs.langchain.com/langsmith/evaluation-concepts)
+- [Официальное опубликование — Приказ Роскомнадзора от 19.06.2025 № 140 (обезличивание ПДн)](http://publication.pravo.gov.ru/document/0001202508010002)
+- [Langfuse — документация observability](https://langfuse.com/docs/observability/get-started)

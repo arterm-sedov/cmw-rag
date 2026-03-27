@@ -654,4 +654,141 @@ User Query
 
 ## Источники
 
-- Полный реестр источников — см. «Приложение A: витрина пакета».
+- Полный консолидированный реестр — см. [Приложение A: витрина пакета](20260325-research-appendix-a-index-ru.md).
+
+### OWASP GenAI Security, тестирование и адаптации на русском
+
+- [OWASP Gen AI Security Project — Introduction](https://genai.owasp.org/introduction-genai-security-project/)
+- [OWASP — проект Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [GenAI Security — OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
+- [GenAI Security — OWASP Top 10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
+- [OWASP — Web Security Testing Guide (WSTG), stable](https://owasp.org/www-project-web-security-testing-guide/stable/)
+- [GitHub — OWASP Application Security Verification Standard 5.0.0 (PDF, RU)](https://github.com/OWASP/ASVS/blob/master/5.0/OWASP_Application_Security_Verification_Standard_5.0.0_ru.pdf)
+- [GitHub — OWASP www-project-ai-testing-guide](https://github.com/OWASP/www-project-ai-testing-guide)
+- [Habr — OWASP: LLM TOP 10 2025 (адаптация)](https://habr.com/ru/companies/owasp/articles/893712/)
+- [Habr — OWASP (вводные по тестированию и материалам сообщества)](https://habr.com/ru/companies/owasp/articles/817241/)
+- [Habr — OWASP (смежные публикации сообщества)](https://habr.com/ru/companies/owasp/articles/896328/)
+- [Habr — OWASP (смежные публикации сообщества)](https://habr.com/ru/companies/owasp/articles/900276/)
+
+### Угрозы GenAI и иллюстративные материалы третьих лиц (не реклама)
+
+- [Kaspersky Resource Center — What Is Prompt Injection?](https://www.kaspersky.com/resource-center/threats/prompt-injection)
+- [Kaspersky Blog — How LLMs can be compromised in 2025](https://www.kaspersky.com/blog/new-llm-attack-vectors-2025/54323/)
+- [Kaspersky Blog — Agentic AI security measures and OWASP ASI Top 10](https://www.kaspersky.com/blog/top-agentic-ai-risks-2026/29988/)
+- [Securelist — webinar: AI agents vs. prompt injections](https://securelist.com/webinars/ai-agents-vs-prompt-injections/)
+- [Kaspersky — press release: training Large Language Models Security (описание программы)](https://www.kaspersky.com/about/press-releases/kaspersky-introduces-a-new-training-large-language-models-security)
+- [CodeWall — How we hacked McKinsey’s AI platform (разбор red team)](https://codewall.ai/blog/how-we-hacked-mckinseys-ai-platform)
+
+### Нормативные и стратегические материалы
+
+- [ISO/IEC 42001:2023 — Artificial intelligence management system](https://www.iso.org/standard/81230.html)
+- [NIST — AI RMF to ISO/IEC 42001 Crosswalk (PDF)](https://airc.nist.gov/docs/NIST_AI_RMF_to_ISO_IEC_42001_Crosswalk.pdf)
+- [NIST — AI RMF: Generative AI Profile (NIST.AI.600-1, 2024)](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence)
+- [NIST AIRC — Roadmap for the AI Risk Management Framework](https://airc.nist.gov/airmf-resources/roadmap)
+- [Официальное опубликование — Приказ Роскомнадзора от 19.06.2025 № 140 (обезличивание ПДн)](http://publication.pravo.gov.ru/document/0001202508010002)
+- [Фонтанка — проект закона о госрегулировании ИИ (Минцифры, 18.03.2026)](https://www.fontanka.ru/2026/03/18/76318717/)
+- [ACSOUR — обязанность операторов передавать анонимизированные ПД в ГИС (152-ФЗ)](https://acsour.com/en/news-and-articles/tpost/2g13ahnab1-mandatory-anonymized-personal-data-shari)
+- [DataGuidance — поправки к национальной стратегии развития ИИ РФ](https://www.dataguidance.com/news/russia-president-issues-amendments-national-ai)
+- [Известия (EN) — создание офисов внедрения ИИ](https://en.iz.ru/en/node/1985740)
+
+### Оценка качества и мониторинг (LangSmith)
+
+- [LangChain Docs — Evaluation concepts (LangSmith)](https://docs.langchain.com/langsmith/evaluation-concepts)
+- [LangSmith — Online evaluations (how-to)](https://docs.smith.langchain.com/observability/how_to_guides/online_evaluations)
+
+### Исследования (edge–cloud routing, ориентиры НИОКР)
+
+- [arXiv — HybridFlow: Resource-Adaptive Subtask Routing for Edge-Cloud LLM Inference](https://arxiv.org/html/2512.22137v4)
+- [arXiv — PRISM: Privacy-Aware Routing for Cloud-Edge LLM Inference](https://arxiv.org/html/2511.22788v1)
+
+### Habr и статьи по инженерии RAG
+
+- [Raft на Habr — чанкование](https://habr.com/ru/companies/raft/articles/954158/)
+
+### Telegram-каналы
+
+- [NeuralDeep](https://t.me/neuraldeep)
+- [@ai_archnadzor](https://t.me/ai_archnadzor)
+- [@Redmadnews (red_mad_robot)](https://t.me/Redmadnews)
+- [@rmr_rnd — R&D red_mad_robot](https://t.me/rmr_rnd)
+- [AGORA — Industrial AI](https://t.me/AGORA)
+- [«ITипичные аспекты Артёма» (Артём Лысенко)](https://t.me/virrius_tech_chat)
+
+### Посты NeuralDeep (цитируемые в тексте)
+
+- [ETL, эмбеддинги, реранкеры, фреймворки RAG, eval, безопасность](https://t.me/neuraldeep/1758)
+- [Agentic RAG / SGR](https://t.me/neuraldeep/1605)
+
+### Посты @ai_archnadzor (цитируемые в тексте)
+
+- [GraphOS для RAG](https://t.me/ai_archnadzor/151)
+- [Semantic Gravity Framework](https://t.me/ai_archnadzor/155)
+- [Nested Learning](https://t.me/ai_archnadzor/157)
+- [LEANN](https://t.me/ai_archnadzor/161)
+- [OpenClaw (ex-Moltbot)](https://t.me/ai_archnadzor/165)
+- [Perplexica](https://t.me/ai_archnadzor/166)
+- [Guardrails как архитектурный паттерн](https://t.me/ai_archnadzor/168)
+- [EffGen / agentic SLM](https://t.me/ai_archnadzor/171)
+- [Типы AI-агентов](https://t.me/ai_archnadzor/173)
+- [GenAI в продакшене: технологический манифест](https://t.me/ai_archnadzor/175)
+- [Локальный стек обсервабильности](https://t.me/ai_archnadzor/177)
+- [REFRAG](https://t.me/ai_archnadzor/178)
+- [Cog-RAG](https://t.me/ai_archnadzor/179)
+- [HippoRAG 2](https://t.me/ai_archnadzor/180)
+- [Topo-RAG](https://t.me/ai_archnadzor/182)
+- [Disco-RAG](https://t.me/ai_archnadzor/183)
+- [DSPy 3 и GEPA](https://t.me/ai_archnadzor/184)
+- [OCR: NEMOTRON-PARSE, Chandra, DOTS.OCR](https://t.me/ai_archnadzor/185)
+- [BitNet](https://t.me/ai_archnadzor/189)
+- [CLI вместо MCP](https://t.me/ai_archnadzor/190)
+- [Doc-to-LoRA; память агентов (пост /191)](https://t.me/ai_archnadzor/191)
+- [Multimodal LLM](https://t.me/ai_archnadzor/192)
+
+### Открытые проекты третьих сторон (исходный код, документация, платформы)
+
+- [microsoft/markitdown](https://github.com/microsoft/markitdown)
+- [datalab-to/marker](https://github.com/datalab-to/marker)
+- [docling-project/docling](https://github.com/docling-project/docling)
+- [chonkie-inc/chonkie](https://github.com/chonkie-inc/chonkie)
+- [langchain-ai/langchain — text-splitters](https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters)
+- [vamplabAI/sgr-agent-core](https://github.com/vamplabAI/sgr-agent-core) (ветка [tool-confluence](https://github.com/vamplabAI/sgr-agent-core/tree/tool-confluence))
+- [langgenius/dify](https://github.com/langgenius/dify/)
+- [Marker-Inc-Korea/AutoRAG](https://github.com/Marker-Inc-Korea/AutoRAG)
+- [run-llama/llama_index](https://github.com/run-llama/llama_index)
+- [mastra-ai/mastra](https://github.com/mastra-ai/mastra)
+- [RAGAS — документация](https://docs.ragas.io/en/stable/)
+- [stanford-futuredata/ARES](https://github.com/stanford-futuredata/ARES)
+- [NVIDIA-NeMo/Guardrails](https://github.com/NVIDIA-NeMo/Guardrails)
+- [Lakera — платформа](https://platform.lakera.ai/)
+- [protectai/rebuff](https://github.com/protectai/rebuff)
+- [NVIDIA/garak](https://github.com/NVIDIA/garak)
+- [Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps)
+- [EvilFreelancer/openapi-to-cli](https://github.com/EvilFreelancer/openapi-to-cli)
+- [SkillsBD.ru](https://skillsbd.ru/)
+- [OpenCode](https://opencode.ai/)
+- [OpenCode — документация (Intro)](https://opencode.ai/docs)
+- [OpenCode — Ecosystem](https://opencode.ai/docs/ecosystem/)
+- [OpenCode Zen](https://opencode.ai/docs/zen)
+- [OpenWork (different-ai/openwork)](https://github.com/different-ai/openwork)
+- [OpenRouter](https://openrouter.ai/)
+- [OpenRouter — Logging и политики провайдеров](https://openrouter.ai/docs/guides/privacy/logging)
+
+### Наблюдаемость и телеметрия (стандарты и стек в тексте)
+
+- [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
+- [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
+- [OpenTelemetry — OpenTelemetry for Generative AI (блог)](https://opentelemetry.io/blog/2024/otel-generative-ai)
+- [OpenInference — инструментирование ИИ для OpenTelemetry](https://arize-ai.github.io/openinference/)
+- [Langfuse — документация observability / tracing](https://langfuse.com/docs/observability/get-started)
+- [Arize Phoenix — документация](https://docs.arize.com/phoenix)
+- [LangSmith — документация](https://docs.smith.langchain.com/)
+
+### Безопасность GenAI, OWASP и сигналы рынка (TCO / риски; из материала по сайзингу)
+
+- [OWASP GenAI Security — Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
+- [OWASP GenAI Security — Top 10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
+- [GitHub — NVIDIA Garak (сканер для LLM, только изолированные стенды)](https://github.com/NVIDIA/garak)
+- [CodeWall — разбор red team: McKinsey AI platform](https://codewall.ai/blog/how-we-hacked-mckinseys-ai-platform)
+- [Коммерсантъ — рынок и атаки на ИИ-системы (журналистский контекст)](https://www.kommersant.ru/doc/8363105)
+- [OpenAI — приобретение PromptFoo (контекст рынка тестирования)](https://openai.com/index/openai-to-acquire-promptfoo/)
+- [Kaspersky — пресс-релиз: угрозы под видом популярных ИИ-сервисов (бенчмарк тренда)](https://www.kaspersky.com/about/press-releases/kaspersky-chatgpt-mimicking-cyberthreats-surge-115-in-early-2025-smbs-increasingly-targeted)
