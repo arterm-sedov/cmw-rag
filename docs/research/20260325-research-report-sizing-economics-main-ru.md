@@ -24,7 +24,7 @@ hide: tags
 
 ## Связанные документы {: #research_sizing_20260325_svyazannye_dokumenty }
 
-- [«Приложение A: витрина пакета»](./20260325-research-appendix-a-index-ru.md#research_pkg_a_obzor_paketa)
+- [«Приложение A: обзор и ведомость документов»](./20260325-research-appendix-a-index-ru.md#research_pkg_a_obzor_paketa)
 - [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)
 - [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa)
 - «Приложение C: имеющиеся наработки CMW»
@@ -1384,7 +1384,7 @@ TCO = Hourly_Rate × 24 × 365 × Years + Egress_Fees + Storage_Fees
 
 ## Источники {: #research_sizing_20260325_istochniki }
 
-- Полный консолидированный реестр — см. [Приложение A: витрина пакета](./20260325-research-appendix-a-index-ru.md#research_pkg_a_polnyi_reestr_ispolzovannyh_istochnikov_tochnaya_konsolidatsiya).
+- Полный консолидированный реестр — см. [Приложение A: обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#research_pkg_a_polnyi_reestr_ispolzovannyh_istochnikov_tochnaya_konsolidatsiya).
 
 ### Инженерия обвязки и мультиагентная разработка {: #research_sizing_20260325_inzheneriya_obvyazki_i_multiagentnaya_razrabotka }
 
