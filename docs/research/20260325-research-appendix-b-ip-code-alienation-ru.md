@@ -300,3 +300,4 @@
 - [OpenWork (different-ai/openwork)](https://github.com/different-ai/openwork)
 - [OpenRouter](https://openrouter.ai/)
 - [OpenRouter — Logging и политики провайдеров](https://openrouter.ai/docs/guides/privacy/logging)
+- [Claude Platform — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview) (актуальная линейка **Claude 4.6**; см. также [What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)) — справочно при сверке зарубежного API с контрактной и комплаенс-моделью заказчика

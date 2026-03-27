@@ -83,6 +83,8 @@
 - **Восстановление после ошибок** — векторная классификация сбоев
 - **Учёт токенов и бюджета** — фактический расход токенов и оценка стоимости
 
+В референс-стеке **агентный слой платформы (CMW Platform)** опирается на **краткосрочную** память диалога в стеке LangChain и на **корпоративный RAG-контур** для извлечения из индекса; это **не** заявляет паритета с исследовательскими системами **долговременной переносимой** памяти между задачами. Публикации уровня General Agentic Memory (GAM) задают **направление эволюции** (накопление знаний и исследовательский цикл поверх памяти), которое при проектировании согласуют с политикой данных и observability — см. «_[Приложение D: безопасность, комплаенс и observability](20260325-research-appendix-d-security-observability-ru.md)_» и «_[Основной отчёт: методология внедрения и разработки](20260325-research-report-methodology-main-ru.md)_»; первоисточник: [arXiv — GAM](https://arxiv.org/pdf/2511.18423).
+
 **Инструменты для отчуждения:**
 | Компонент | Артефакт | Назначение |
 |-----------|----------|-----------|
@@ -132,6 +134,13 @@
 - [Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Qwen-32B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B)
 - [Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Llama-70B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B)
 - [Hugging Face — организация Qwen](https://huggingface.co/Qwen)
+
+### Зарубежные frontier-модели (справочно для сравнения качества, не baseline КП РФ)
+
+- [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
+- [Anthropic — Introducing Claude Sonnet 4.6](https://www.anthropic.com/news/claude-sonnet-4-6)
+- [Claude Docs — What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)
+- [Claude Docs — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
 
 ### Открытые проекты
 

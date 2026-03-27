@@ -146,6 +146,7 @@
 
 - [OpenAI — Harness engineering](https://openai.com/ru-RU/index/harness-engineering/)
 - [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
+- [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 - [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
 - [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
 
@@ -204,11 +205,26 @@
 - [a16z — Top 100 Gen AI Apps (6)](https://a16z.com/100-gen-ai-apps-6/)
 - [FinOps Foundation — Generative AI / Unit Economics](https://www.finops.org/wg/generative-ai/)
 - [FinOps Foundation — Framework: Unit Economics (Capability)](https://www.finops.org/framework/capabilities/unit-economics/)
+- [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
+- [Anthropic — Introducing Claude Sonnet 4.6](https://www.anthropic.com/news/claude-sonnet-4-6)
+- [Claude Docs — What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)
+- [Claude Docs — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
+- [Хабр — Релиз Claude Opus 4.6](https://habr.com/ru/news/993322/)
+- [Microsoft Research — Fara-7B: An Efficient Agentic Model for Computer Use (PDF)](https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf)
 
 #### Оценка качества и мониторинг (LangSmith)
 
 - [LangChain Docs — Evaluation concepts (LangSmith)](https://docs.langchain.com/langsmith/evaluation-concepts)
 - [LangSmith — Online evaluations (how-to)](https://docs.smith.langchain.com/observability/how_to_guides/online_evaluations)
+
+#### Исследования (edge–cloud routing, агентная память и обучение; ориентиры НИОКР)
+
+- [arXiv — HybridFlow: Resource-Adaptive Subtask Routing for Edge-Cloud LLM Inference](https://arxiv.org/html/2512.22137v4)
+- [arXiv — PRISM: Privacy-Aware Routing for Cloud-Edge LLM Inference](https://arxiv.org/html/2511.22788v1)
+- [arXiv — Agent0: co-evolving curriculum and executor agents](https://arxiv.org/pdf/2511.16043)
+- [arXiv — General Agentic Memory (GAM)](https://arxiv.org/pdf/2511.18423)
+- [arXiv — MoE на стеке AMD (IBM, Zyphra и др.)](https://arxiv.org/pdf/2511.17127)
+- [arXiv — Moonshot AI: ускорение синхронного RL](https://arxiv.org/pdf/2511.14617)
 
 #### Облачные провайдеры и тарифы (РФ)
 
@@ -261,8 +277,20 @@
 
 - [OpenAI — Harness engineering](https://openai.com/ru-RU/index/harness-engineering/)
 - [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
+- [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 - [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
 - [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
+
+#### Агентная память и модели (ориентиры НИОКР и прайсинга, не строка КП)
+
+- [arXiv — General Agentic Memory (GAM)](https://arxiv.org/pdf/2511.18423)
+- [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
+- [Anthropic — Introducing Claude Sonnet 4.6](https://www.anthropic.com/news/claude-sonnet-4-6)
+- [Claude Docs — What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)
+- [Claude Docs — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
+- [Хабр — Релиз Claude Opus 4.6](https://habr.com/ru/news/993322/)
+- [Anthropic — Pricing](https://www.anthropic.com/pricing)
+- [Microsoft Research — Fara-7B (PDF)](https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf)
 
 #### Безопасность GenAI, OWASP и сигналы рынка (TCO / риски)
 
@@ -353,6 +381,7 @@
 
 - [OpenAI — Harness engineering](https://openai.com/ru-RU/index/harness-engineering/)
 - [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
+- [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 - [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
 - [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
 
@@ -411,16 +440,26 @@
 - [РБК Education — во сколько обойдётся ИИ-агент: подсчёты экспертов (2026)](https://www.rbc.ru/education/05/02/2026/697162269a794772c9cf9991)
 - [FinOps Foundation — Generative AI / Unit Economics](https://www.finops.org/wg/generative-ai/)
 - [FinOps Foundation — Framework: Unit Economics (Capability)](https://www.finops.org/framework/capabilities/unit-economics/)
+- [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
+- [Anthropic — Introducing Claude Sonnet 4.6](https://www.anthropic.com/news/claude-sonnet-4-6)
+- [Claude Docs — What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)
+- [Claude Docs — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
+- [Хабр — Релиз Claude Opus 4.6](https://habr.com/ru/news/993322/)
+- [Microsoft Research — Fara-7B: An Efficient Agentic Model for Computer Use (PDF)](https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf)
 
 #### Оценка качества и мониторинг (LangSmith)
 
 - [LangChain Docs — Evaluation concepts (LangSmith)](https://docs.langchain.com/langsmith/evaluation-concepts)
 - [LangSmith — Online evaluations (how-to)](https://docs.smith.langchain.com/observability/how_to_guides/online_evaluations)
 
-#### Исследования (edge–cloud routing, ориентиры НИОКР)
+#### Исследования (edge–cloud routing, агентная память и обучение; ориентиры НИОКР)
 
 - [arXiv — HybridFlow: Resource-Adaptive Subtask Routing for Edge-Cloud LLM Inference](https://arxiv.org/html/2512.22137v4)
 - [arXiv — PRISM: Privacy-Aware Routing for Cloud-Edge LLM Inference](https://arxiv.org/html/2511.22788v1)
+- [arXiv — Agent0: co-evolving curriculum and executor agents](https://arxiv.org/pdf/2511.16043)
+- [arXiv — General Agentic Memory (GAM)](https://arxiv.org/pdf/2511.18423)
+- [arXiv — MoE на стеке AMD (IBM, Zyphra и др.)](https://arxiv.org/pdf/2511.17127)
+- [arXiv — Moonshot AI: ускорение синхронного RL](https://arxiv.org/pdf/2511.14617)
 
 #### Облачные провайдеры и тарифы (РФ)
 
@@ -627,8 +666,20 @@
 
 - [OpenAI — Harness engineering](https://openai.com/ru-RU/index/harness-engineering/)
 - [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
+- [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 - [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
 - [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
+
+#### Агентная память и модели (ориентиры НИОКР и прайсинга, не строка КП)
+
+- [arXiv — General Agentic Memory (GAM)](https://arxiv.org/pdf/2511.18423)
+- [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
+- [Anthropic — Introducing Claude Sonnet 4.6](https://www.anthropic.com/news/claude-sonnet-4-6)
+- [Claude Docs — What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)
+- [Claude Docs — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
+- [Хабр — Релиз Claude Opus 4.6](https://habr.com/ru/news/993322/)
+- [Anthropic — Pricing](https://www.anthropic.com/pricing)
+- [Microsoft Research — Fara-7B (PDF)](https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf)
 
 #### Безопасность GenAI, OWASP и сигналы рынка (TCO / риски)
 
@@ -802,6 +853,8 @@
 - [LangGraph: Enterprise Multi-Agent Orchestration Patterns (2025)](https://sumanta9090.medium.com/langgraph-patterns-best-practices-guide-2025-38cc2abb8763)
 - [LangGraph: Building Stateful, Multi-Agent AI Workflows (Checklist 2025)](https://bix-tech.com/ai-agents-orchestration-langgraph/)
 - [Anthropic: Contextual Retrieval - Improving RAG Accuracy (2025)](https://www.anthropic.com/news/contextual-retrieval)
+- [arXiv — General Agentic Memory (GAM), 2025](https://arxiv.org/pdf/2511.18423)
+- [arXiv — Agent0: co-evolving curriculum and executor agents, 2025](https://arxiv.org/pdf/2511.16043)
 - [OpenAI: Production RAG Best Practices & Evaluation (Cookbook)](https://github.com/openai/openai-cookbook/blob/main/examples/RAG_with_Evaluation.ipynb)
 - [Microsoft: RAG Architecture on Azure AI Search (2025 Update)](https://learn.microsoft.com/en-us/azure/architecture/guide/multimodal-rag/multimodal-rag-architecture)
 - [RAG - A Deep Dive (System Design Newsletter 2025)](https://newsletter.systemdesign.one/p/how-rag-works)

@@ -23,7 +23,9 @@
 
 ### Задача для бизнеса и эксплуатации
 
-Без сквозной видимости по шагам пайплайна (поиск, вызов модели, инструменты агента) инциденты и регрессии качества разбираются дольше; без метрик токенов и задержек **невозможно** устойчиво связывать рост нагрузки с P&L. Для агентов критичны также **глубина цикла** (число итераций, повторы вызовов инструментов) и корреляция с [OWASP Top 10 for Agentic Applications (2026)](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/). Для **внутренних** процессов разработки с coding agents полезно отдельно учитывать **эпизоды обвязки** (план → реализация → проверка → итерация): суммарные токены, длительность и число циклов связывают с OpEx инженерии; количественные ориентиры — в сопутствующем резюме **Оценка сайзинга, КапЭкс и ОпЭкс для клиентов** ([Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)).
+Без сквозной видимости по шагам пайплайна (поиск, вызов модели, инструменты агента) инциденты и регрессии качества разбираются дольше; без метрик токенов и задержек **невозможно** устойчиво связывать рост нагрузки с P&L. Для агентов критичны также **глубина цикла** (число итераций, повторы вызовов инструментов) и корреляция с [OWASP Top 10 for Agentic Applications (2026)](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/). Для **внутренних** процессов разработки с coding agents полезно отдельно учитывать **эпизоды обвязки** (план → реализация → проверка → итерация): суммарные токены, длительность и число циклов связывают с OpEx инженерии; количественные ориентиры — в сопутствующем резюме **Оценка сайзинга, КапЭкс и ОпЭкс для клиентов** ([Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps), [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)).
+
+Исследовательские архитектуры **глубокой агентной памяти** (иллюстрация — General Agentic Memory, GAM: накопление «страниц» памяти и итеративный цикл извлечения с проверкой полноты, [arXiv](https://arxiv.org/pdf/2511.18423)) увеличивают число шагов, объём **записей в долговременное хранилище** и повторяемость циклов «запрос — дозапрос — верификация». Для эксплуатации это напрямую стыкуется с **глубиной трасс**, **ретенцией** журналов и аудитом **кто и что записал в память**; риск **Memory and Context Poisoning** из того же OWASP Agentic 2026 остаётся актуальным. Такие схемы здесь приводятся как **ориентир НИОКР**, а не как обязательная поставка **корпоративный RAG-контур** / **агентный слой платформы (CMW Platform)**.
 
 ### Сигналы: трассировки, метрики, события
 
@@ -271,6 +273,8 @@ Output Guardrails → Human Feedback Loop
 
 **Тезис:** Будущее автономных агентов — не «плоский суп» векторов, а связка Онтологии + Графы.
 
+В открытых работах класса **General Agentic Memory** подчёркивается **исследовательский цикл поверх накопленных страниц памяти** (планирование, извлечение, проверка полноты), а не только similarity search по чанкам — это согласуется с тезисом ниже про онтологии и графы как носители структуры ([arXiv — GAM](https://arxiv.org/pdf/2511.18423)).
+
 **Почему онтологии критичны:**
 *   Без: Факт «Юзер перешел на Pro-план во вторник» = текстовый фрагмент
 *   С онтологией: Структурированное событие PlanChange, связывающее Customer + Subscription + timestamp
@@ -354,7 +358,7 @@ tracer_provider = register(
     *   Observability: Arize Phoenix / LangSmith
 
 **Золотой стандарт стека:**
-*   LLM: Claude 3.5 Sonnet / Llama 3.1 70B (локально)
+*   LLM: Claude 4.6 (Sonnet или Opus по задаче) / Llama 3.1 70B (локально)
 *   Orchestrator: LangGraph
 *   Vector DB: Qdrant / pgvector
 *   Eval: DeepEval
@@ -423,7 +427,7 @@ metadata:
 **MCP Agent (обобщённо):**
 
 ```
-LLM (Claude/GPT/Gemini)
+LLM (Claude 4.x / GPT / Gemini)
     ↓
 MCP Client (Model Context Protocol)
     ↓
@@ -698,10 +702,12 @@ User Query
 - [LangChain Docs — Evaluation concepts (LangSmith)](https://docs.langchain.com/langsmith/evaluation-concepts)
 - [LangSmith — Online evaluations (how-to)](https://docs.smith.langchain.com/observability/how_to_guides/online_evaluations)
 
-### Исследования (edge–cloud routing, ориентиры НИОКР)
+### Исследования (edge–cloud routing, агентная память и обучение; ориентиры НИОКР)
 
 - [arXiv — HybridFlow: Resource-Adaptive Subtask Routing for Edge-Cloud LLM Inference](https://arxiv.org/html/2512.22137v4)
 - [arXiv — PRISM: Privacy-Aware Routing for Cloud-Edge LLM Inference](https://arxiv.org/html/2511.22788v1)
+- [arXiv — General Agentic Memory (GAM)](https://arxiv.org/pdf/2511.18423)
+- [arXiv — Agent0: co-evolving curriculum and executor agents](https://arxiv.org/pdf/2511.16043)
 
 ### Habr и статьи по инженерии RAG
 
@@ -836,3 +842,12 @@ User Query
 ### Долгоживущие агентные приложения: проектирование обвязки (Anthropic)
 
 - [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
+- [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
+
+### Линейка моделей Claude 4.6 (API и продуктовые анонсы)
+
+- [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
+- [Anthropic — Introducing Claude Sonnet 4.6](https://www.anthropic.com/news/claude-sonnet-4-6)
+- [Claude Docs — What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)
+- [Claude Docs — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
+- [Хабр — Релиз Claude Opus 4.6](https://habr.com/ru/news/993322/)
