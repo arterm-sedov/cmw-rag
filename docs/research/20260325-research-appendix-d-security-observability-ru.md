@@ -62,6 +62,12 @@ hide: tags
 - **Зарубежные SaaS** наблюдаемости (например, **LangSmith**, облако **Arize**) **не запрещены** абстрактно, но для персональных и иных чувствительных данных и для регулируемых отраслей их использование в проде должно проходить через **ДПО, субобработчиков, резидентность** и явное решение по **запрету полного логирования** промптов/контекста без правовой базы. **Базовая рекомендация** для чувствительного продакшена в РФ: приоритет **on-prem / РФ-размещение** бэкенда телеметрии или режим без передачи текста запросов вне контура.
 - **NIST AI RMF** и **профиль GenAI** полезны как **методологический** якорь функции **Measure** (измерение и мониторинг свойств системы) — [публикация NIST.AI.600-1](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence); они **не подменяют** 152-ФЗ и отраслевые требования РФ. **EU AI Act** приводить только как **сравнительный** контекст обязанностей к логированию у поставщиков высокорисковых систем в ЕС, без выдачи этих обязанностей за нормы РФ без отдельного юридического заключения.
 
+### AI TRiSM и управление доверием {: #research_pkg_d_ai_trism_i_upravlenie_doveriem }
+
+**AI TRiSM** (в [глоссарии Gartner](https://www.gartner.com/en/information-technology/glossary/ai-trism) — **AI Trust, Risk and Security Management**; в ряде русскоязычных обзоров встречается написание «AI-TRISM») — это **рамка** для операционализации доверия к ИИ: объяснимость и интерпретируемость, защита моделей и данных, соответствие требованиям, устойчивость и надёжность процессов вокруг модели. Для контура **корпоративный RAG-контур** / **агентный слой платформы (CMW Platform)** это стыкуется с уже принятыми в пакете практиками: [OWASP LLM Top 10 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/), [OWASP Agentic Top 10 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/), минимизация содержимого в телеметрии, ModelOps и red teaming — **без** подмены внутренней модели угроз заказчика брендом аналитика. Сметные последствия (OpEx) — _«[Основной отчёт: сайзинг — OpEx безопасности GenAI](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_opex_bezopasnosti_genai_i_agentov_peremennaya_statya)_»_.
+
+**Model Context Protocol (MCP):** при проектировании агентов и реестров инструментов используйте каноническое имя **Model Context Protocol** (см. раздел _«[MCP, мультиагентная маршрутизация и воспроизводимые навыки](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_mcp_multiagentnaya_marshrutizatsiya_i_vosproizvodimye_navyki)_»_); не смешивать с бытовыми расшифровками вроде «Model Communication Protocol».
+
 ### Персональные данные и содержимое в телеметрии (152-ФЗ) {: #research_pkg_d_personalnye_dannye_i_soderzhimoe_v_telemetrii_152_fz }
 
 Спецификация OpenTelemetry для GenAI прямо предписывает: **по умолчанию не** записывать системные инструкции, полные сообщения и вывод модели в атрибуты спанов; для зрелого продакшена рекомендуется паттерн **внешнего хранилища контента** с **ссылками** в телеметрии и раздельным контролем доступа ([раздел о записи контента](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)). Это согласуется с минимизацией обработки ПДн: маскирование, сроки хранения журналов, матрица доступа (SRE vs разработка) и исключение из экспорта в недоверенные SaaS без ДПО.
@@ -943,6 +949,10 @@ User Query
 - [Langfuse — документация observability / tracing](https://langfuse.com/docs/observability/get-started)
 - [Arize Phoenix — документация](https://docs.arize.com/phoenix)
 - [LangSmith — документация](https://docs.smith.langchain.com/)
+
+### AI TRiSM и рамки доверия (справочно) {: #research_pkg_d_ai_trism_i_ramki_doveriya_spravochno }
+
+- [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
 
 ### Безопасность генеративного ИИ, OWASP и сигналы рынка: совокупная стоимость владения и риски {: #research_pkg_d_bezopasnost_generativnogo_ii_owasp_i_signaly_rynka_sovokupnaya_stoimost_vladeniy }
 
