@@ -133,8 +133,12 @@
 - [Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Llama-70B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B)
 - [Hugging Face — организация Qwen](https://huggingface.co/Qwen)
 
-### Открытые проекты (фрагмент стека RAG в тексте)
+### Открытые проекты
+
+Помимо перечисленных ниже фреймворков, в открытом доступе публикуют **референсные каркасы** под RAG и агентов: лаборатория AI R&D **red_mad_robot** описывает **MCP Tool Registry** (центральный реестр MCP-серверов для связки LLM с данными и инструментами) и выкладывает код на GitHub — это **ориентир для разведки архитектуры** и политики подключения MCP, а не компонент поставки **корпоративный RAG-контур** / **агентный слой платформы (CMW Platform)** без отдельного решения заказчика.
 
 - [langchain-ai/langchain — text-splitters](https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters)
 - [langgenius/dify](https://github.com/langgenius/dify/)
 - [run-llama/llama_index](https://github.com/run-llama/llama_index)
+- [GitHub — redmadrobot-rnd/mcp-registry](https://github.com/redmadrobot-rnd/mcp-registry)
+- [Хабр — red_mad_robot: MCP Tool Registry и автоматизация RAG](https://habr.com/ru/companies/redmadrobot/articles/982004/)

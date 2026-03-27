@@ -235,7 +235,23 @@
 - [DataGuidance — поправки к национальной стратегии развития ИИ РФ](https://www.dataguidance.com/news/russia-president-issues-amendments-national-ai)
 - [Известия (EN) — создание офисов внедрения ИИ](https://en.iz.ru/en/node/1985740)
 
-### Иллюстрация: публичные веса с нестандартной лицензией
+### Проекты OWASP по безопасности ИИ: GenAI Security, WSTG, ASVS и руководство по тестированию
+
+- [OWASP GenAI Security Project — Introduction](https://genai.owasp.org/introduction-genai-security-project/)
+- [GitHub — OWASP www-project-ai-testing-guide](https://github.com/OWASP/www-project-ai-testing-guide)
+- [OWASP — Web Security Testing Guide (WSTG), stable](https://owasp.org/www-project-web-security-testing-guide/stable/)
+- [GitHub — OWASP ASVS 5.0.0 (PDF, RU)](https://github.com/OWASP/ASVS/blob/master/5.0/OWASP_Application_Security_Verification_Standard_5.0.0_ru.pdf)
+- [Habr — OWASP LLM TOP 10 2025 (адаптация)](https://habr.com/ru/companies/owasp/articles/893712/)
+
+### Программы обучения по безопасности LLM
+
+- [Kaspersky — программа «Large Language Models Security» (пресс-релиз, описание)](https://www.kaspersky.com/about/press-releases/kaspersky-introduces-a-new-training-large-language-models-security)
+
+### Платформа корпоративных агентов MTS AI
+
+- [MWS AI — MWS AI Agents Platform (описание модулей)](https://mts.ai/product/ai-agents-platform/)
+
+### Публичные веса с нестандартной лицензией
 
 - [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
@@ -257,7 +273,7 @@
 - [GitVerse — GigaTeam/gigachat3.1](https://gitverse.ru/GigaTeam/gigachat3.1)
 - [GitHub — sgl-project/sglang, PR #18802](https://github.com/sgl-project/sglang/pull/18802)
 
-### Лицензионные и 152-ФЗ материалы (MWS / МТС; из методологии)
+### Лицензионные материалы и 152-ФЗ (MWS / МТС)
 
 - [MWS Docs — лицензионные условия ПО «MWS GPT»](https://mws.ru/docs/docum/lic_terms_mwsgpt.html)
 - [МТС Cloud — IaaS 152-ФЗ УЗ-1](https://cloud.mts.ru/services/iaas-152-fz/)
@@ -275,6 +291,8 @@
 
 ### Инструменты разработки с ИИ (ориентиры для заказчика, вне SKU CMW)
 
+- [Хабр — red_mad_robot: MCP Tool Registry (реестр MCP для RAG/агентов, открытый код)](https://habr.com/ru/companies/redmadrobot/articles/982004/)
+- [GitHub — redmadrobot-rnd/mcp-registry](https://github.com/redmadrobot-rnd/mcp-registry)
 - [OpenCode](https://opencode.ai/)
 - [OpenCode — документация (Intro)](https://opencode.ai/docs)
 - [OpenCode — Ecosystem](https://opencode.ai/docs/ecosystem/)

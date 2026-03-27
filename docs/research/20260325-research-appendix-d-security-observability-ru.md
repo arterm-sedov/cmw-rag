@@ -127,6 +127,8 @@ Output Guardrails → Human Feedback Loop
 
 **Экспертное наблюдение (платформенный ассистент, естественный язык → действия):** пользовательский запрос опирается на **устойчивые контракты инструментов** — схемы параметров, семантика ошибок, идемпотентность там, где она уместна. Рост числа инструментов раздувает матрицу регрессии и риск **расхождения версий** между разработкой, приёмкой и продакшеном; в TOM и пакет отчуждения стоит включить политику **версионирования схем**, поэтапного включения инструментов и явных сценариев **деградации** (безопасный отказ или упрощённый ответ вместо необязательного вызова при сбое бэкенда). Переносимо на любой оркестратор и на внешнее потребление через протоколы вроде MCP: решает не бренд фреймворка, а **управляемость контракта и среды**.
 
+**Централизованный реестр MCP-серверов** (иллюстрация инженерной дисциплины, не часть SKU CMW): в открытом контуре red_mad_robot описывают **MCP Tool Registry** как способ связать LLM с данными и инструментами при сборке RAG- и агентных сценариев; исходный код выложен отдельным репозиторием. Для заказчика смысл — не «ещё один продукт», а напоминание про **каталог допустимых серверов**, согласование версий и аудит подключений в одной матрице с allowlist и секретами из пакета отчуждения (см. «Приложение B»). Подробности и ограничения применимости — в первоисточниках в разделе «Источники».
+
 **Сопоставление с публичной декомпозицией корпоративной платформы (иллюстрация):** на сайте **MWS AI** перечислены модули **MWS AI Agents Platform** — визуальный конструктор сценариев, **LabelX** (разметка), **autoRAG**, **OPS Level** (LLMOps / MLOps / AgentOps / observability), **AutoML**, **NER**, интеграционный хаб, модули продакшена (версии, алерты, масштабирование, роли) ([продукт](https://mts.ai/product/ai-agents-platform/)). Ниже — **логическое** сопоставление с целевой операционной моделью этого документа и пакетом отчуждения, без переноса маркетинговых KPI с лендинга.
 
 | Публичный модуль (MWS AI) | Роли TOM (ориентир) | Артефакты отчуждения (ориентир) |
@@ -501,7 +503,7 @@ User Query
 
 С 1 сентября 2025 года действуют утверждённые **требования и методы обезличивания** персональных данных (официальное опубликование: [publication.pravo.gov.ru — документ 0001202508010002](http://publication.pravo.gov.ru/document/0001202508010002); агрегаторы норматекста — например [Контур](https://normativ.kontur.ru/document?documentId=500957&moduleId=1)). Для ИИ-ассистента с RAG это означает явное проектирование процессов: **какие поля** попадают в индекс и обучающие выборки; **какой метод обезличивания** применяется до индексации и при выгрузках; **учёт действий** по обезличиванию; **раздельное хранение** исходных и обезличенных наборов где это требуется политикой. Практика должна быть согласована с ДПО заказчика; настоящий документ не заменяет юридическое заключение.
 
-### Аттестованное облако для ПДн (иллюстрация на примере MWS)
+### Аттестованное облако для ПДн на примере MWS
 
 Для сценариев, где в контуре ИИ обрабатываются **персональные данные** (логи обращений, обучающие выборки с ПДн, хранилища), заказчик может рассматривать размещение части инфраструктуры в **аттестованном** облачном сегменте вместо полной самостоятельной аттестации собственных площадок — при условии соответствия вида обработки и уровня защиты требованиям **152-ФЗ** и внутренним ЛНА. **МТС Web Services** публикует **IaaS** для персональных данных с уровнем защищённости **УЗ-1** ([страница сервиса](https://cloud.mts.ru/services/iaas-152-fz/)), специальные условия аттестованного сегмента — в [документации MWS](https://mws.ru/docs/docum/cloud_terms_152fz.html); отдельно анонсировался сервис хранения ПДн в облаке ([новость MWS](https://mws.ru/news/mts-web-services-zapustila-servis-dlya-hraneniya-personalnyh-dannyh-v-oblake/)). Это **один из** возможных поставщиков на рынке РФ, а не исключительная рекомендация; выбор сегмента и договорных гарантий остаётся за заказчиком и юридической экспертизой.
 
@@ -714,12 +716,12 @@ User Query
 - [AGORA — Industrial AI](https://t.me/AGORA)
 - [«ITипичные аспекты Артёма» (Артём Лысенко)](https://t.me/virrius_tech_chat)
 
-### Посты NeuralDeep (цитируемые в тексте)
+### Посты NeuralDeep
 
 - [ETL, эмбеддинги, реранкеры, фреймворки RAG, eval, безопасность](https://t.me/neuraldeep/1758)
 - [Agentic RAG / SGR](https://t.me/neuraldeep/1605)
 
-### Посты @ai_archnadzor (цитируемые в тексте)
+### Посты @ai_archnadzor
 
 - [GraphOS для RAG](https://t.me/ai_archnadzor/151)
 - [Semantic Gravity Framework](https://t.me/ai_archnadzor/155)
@@ -764,6 +766,8 @@ User Query
 - [NVIDIA/garak](https://github.com/NVIDIA/garak)
 - [Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps)
 - [EvilFreelancer/openapi-to-cli](https://github.com/EvilFreelancer/openapi-to-cli)
+- [GitHub — redmadrobot-rnd/mcp-registry (MCP Tool Registry)](https://github.com/redmadrobot-rnd/mcp-registry)
+- [Хабр — red_mad_robot: MCP Tool Registry и автоматизация RAG](https://habr.com/ru/companies/redmadrobot/articles/982004/)
 - [SkillsBD.ru](https://skillsbd.ru/)
 - [OpenCode](https://opencode.ai/)
 - [OpenCode — документация (Intro)](https://opencode.ai/docs)
@@ -773,7 +777,7 @@ User Query
 - [OpenRouter](https://openrouter.ai/)
 - [OpenRouter — Logging и политики провайдеров](https://openrouter.ai/docs/guides/privacy/logging)
 
-### Наблюдаемость и телеметрия (стандарты и стек в тексте)
+### Наблюдаемость и телеметрия: стандарты и стек
 
 - [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
@@ -783,7 +787,7 @@ User Query
 - [Arize Phoenix — документация](https://docs.arize.com/phoenix)
 - [LangSmith — документация](https://docs.smith.langchain.com/)
 
-### Безопасность GenAI, OWASP и сигналы рынка (TCO / риски; из материала по сайзингу)
+### Безопасность генеративного ИИ, OWASP и сигналы рынка: совокупная стоимость владения и риски
 
 - [OWASP GenAI Security — Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
 - [OWASP GenAI Security — Top 10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
@@ -792,3 +796,43 @@ User Query
 - [Коммерсантъ — рынок и атаки на ИИ-системы (журналистский контекст)](https://www.kommersant.ru/doc/8363105)
 - [OpenAI — приобретение PromptFoo (контекст рынка тестирования)](https://openai.com/index/openai-to-acquire-promptfoo/)
 - [Kaspersky — пресс-релиз: угрозы под видом популярных ИИ-сервисов (бенчмарк тренда)](https://www.kaspersky.com/about/press-releases/kaspersky-chatgpt-mimicking-cyberthreats-surge-115-in-early-2025-smbs-increasingly-targeted)
+
+### Нормативные публикации и агрегаторы
+
+- [Портал НПА — проект федерального закона (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
+- [Контур — агрегатор норматекста (документ по обезличиванию ПДн)](https://normativ.kontur.ru/document?documentId=500957&moduleId=1)
+- [Москва 24 — публикация о проекте закона об ИИ, 18.03.2026](https://www.m24.ru/news/politika/18032026/883742)
+
+### Наблюдаемость: пример локального endpoint
+
+- [Пример endpoint трассировки (localhost:6006)](http://localhost:6006/v1/traces)
+
+### MWS Octapi, облако МТС 152-ФЗ и новости провайдера
+
+- [МТС Cloud — IaaS 152-ФЗ УЗ-1](https://cloud.mts.ru/services/iaas-152-fz/)
+- [MWS — MWS Octapi (продукт)](https://mws.ru/dev-tools/octapi/)
+- [MWS Docs — условия облачного сегмента 152-ФЗ](https://mws.ru/docs/docum/cloud_terms_152fz.html)
+- [MWS — новость: Octapi и создание ИИ-агентов](https://mws.ru/news/mts-web-services-na-30-uskorila-sozdanie-ii-agentov-pri-pomoshhi-platformy-mws-octapi/)
+- [MWS — новость: хранение персональных данных в облаке](https://mws.ru/news/mts-web-services-zapustila-servis-dlya-hraneniya-personalnyh-dannyh-v-oblake/)
+- [MWS AI — MWS AI Agents Platform (описание модулей)](https://mts.ai/product/ai-agents-platform/)
+
+### Публичные материалы МТС и MTS AI о RAG и платформе
+
+- [Хабр — MTS AI: граф в RAG](https://habr.com/ru/companies/mts_ai/articles/915276/)
+- [Хабр — МТС: RAG для поддержки (Confluence, Jira, гибридный поиск)](https://habr.com/ru/companies/ru_mts/articles/970476/)
+- [Хабр — МТС: RAG-помощник для саппорта (смежная публикация)](https://habr.com/ru/companies/ru_mts/articles/970392/)
+- [Хабр — МТС: MWS Octapi и AI-агенты](https://habr.com/ru/companies/ru_mts/articles/932382/)
+- [Хабр — МТС: архитектура LLM-платформы MWS GPT](https://habr.com/ru/companies/ru_mts/articles/967478/)
+
+### Наборы данных и репозитории для моделирования атак и обхода ограничений моделей
+
+- [Hugging Face — allenai/wildjailbreak](https://huggingface.co/datasets/allenai/wildjailbreak)
+- [Hugging Face — lmsys/toxic-chat](https://huggingface.co/datasets/lmsys/toxic-chat)
+- [GitHub — Libr-AI/do-not-answer](https://github.com/Libr-AI/do-not-answer)
+- [GitHub — elder-plinius/L1B3RT4S](https://github.com/elder-plinius/L1B3RT4S)
+- [GitHub — llm-attacks/llm-attacks](https://github.com/llm-attacks/llm-attacks)
+- [GitHub — paul-rottger/xstest](https://github.com/paul-rottger/xstest)
+
+### Долгоживущие агентные приложения: проектирование обвязки (Anthropic)
+
+- [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
