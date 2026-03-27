@@ -73,7 +73,7 @@
 
 Без такой структуры автоматизация быстро упирается в разрывы логики и ручные проверки.
 
-Gartner относит тему **AI-ready data** к числу быстрорастущих в повестке по ИИ («_[Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)_»).
+Gartner относит тему **AI-ready data** к числу быстрорастущих в повестке по ИИ (_«[Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)»_).
 
 Инженерная проработка баз знаний и онтологий в целевой операционной модели — у роли **Knowledge Engineer** ниже.
 
@@ -95,7 +95,7 @@ Gartner относит тему **AI-ready data** к числу быстрора
 
 Для промышленного использования нужны исполняемые правила, которые применяются на уровне каждого запроса, перехода и действия: это снижает операционный риск и делает результат воспроизводимым.
 
-Практический контур политик, guardrails и комплаенса — в «_[Приложение D: безопасность, комплаенс и observability](20260325-research-appendix-d-security-observability-ru.md)_».
+Практический контур политик, guardrails и комплаенса — в _«[Приложение D: безопасность, комплаенс и observability](20260325-research-appendix-d-security-observability-ru.md)»_.
 
 ### Внутренний контур данных
 
