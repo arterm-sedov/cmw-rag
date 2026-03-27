@@ -1,23 +1,36 @@
-# Приложение B. Отчуждение ИС и кода (KT, IP, лицензии, приёмка)
+---
+title: 'Приложение B. Отчуждение ИС и кода (KT, IP, лицензии, приёмка)'
+date: 2026-03-25
+status: 'утверждённый комплект материалов для руководства (v1)'
+tags:
+  - compliance
+  - handover
+  - IP
+  - KT
+  - licensing
+  - research
+  - отчуждение
+  - передача
+  - приёмка
+hide: tags
+---
 
-**Дата пакета:** 2026-03-25  
-**Статус:** утверждённый комплект материалов для руководства (v1)
-
-## Обзор пакета
+# Приложение B. Отчуждение ИС и кода (KT, IP, лицензии, приёмка) {: #research_pkg_b }
+## Обзор пакета {: #research_pkg_b_obzor_paketa }
 
 Здесь сосредоточены модели передачи, состав передаваемых артефактов, требования к учёту лицензий и критерии приёмки при отчуждении кода и сопутствующей ИС. Количественные эффекты для P&L не дублируются: на них указывает «Основной отчёт: сайзинг и экономика».
 
-## Связанные документы
+## Связанные документы {: #research_pkg_b_svyazannye_dokumenty }
 
-- «Приложение A: витрина пакета»
-- «Основной отчёт: методология внедрения и разработки»
-- «Основной отчёт: сайзинг и экономика»
+- [«Приложение A: витрина пакета»](./20260325-research-appendix-a-index-ru.md#research_pkg_a_obzor_paketa)
+- [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)
+- [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa)
 - «Приложение C: имеющиеся наработки CMW»
-- «Приложение D: безопасность, комплаенс и observability»
+- [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa)
 
-## Детальная методология отчуждения
+## Детальная методология отчуждения {: #research_pkg_b_detalnaya_metodologiya_otchuzhdeniya }
 
-### Ориентиры для заказчика: инструменты ускорения разработки (вне поставки CMW)
+### Ориентиры для заказчика: инструменты ускорения разработки (вне поставки CMW) {: #research_pkg_b_orientiry_dlya_zakazchika_instrumenty_uskoreniya_razrabotki_vne_postavki_cmw }
 
 Ниже перечисленные продукты — **подсказки заказчику** для ускорения прототипирования и освоения практик разработки с ИИ; они **не** входят в коммерческую поставку референс-стека **корпоративный RAG-контур**, **сервер инференса MOSEC**, **инференс на базе vLLM**, **агентный слой платформы (CMW Platform)** и **не** заменяют промышленный контур RAG и инференса, описанный в этом документе.
 
@@ -31,26 +44,26 @@
 
 **Практика для РФ:** снижение зависимости от зарубежного биллинга возможно за счёт **локальных моделей** и/или **API в РФ** там, где это допускает конфигурация выбранного инструмента и политика ИБ заказчика; доступность сервисов и условия использования нужно **проверять на дату** по официальным источникам и TOS. Итоговый контур согласовывается с комплаенсом и владельцем данных.
 
-### Отчуждение данных
-*   **Поддержка ChromaDB:** Штатные утилиты сопровождения (обслуживание коллекций, инспекция схемы) позволяют диагностировать, очищать и мигрировать.
-*   **Удаление векторного хранилища:** Коллекции можно удалить через HTTP API ChromaDB или Python-клиент.
-*   **Архивация документов:** Исходные документы (Markdown) остаются в файловой системе; векторные данные не теряются, если сохранен источник.
+### Отчуждение данных {: #research_pkg_b_otchuzhdenie_dannyh }
+-   **Поддержка ChromaDB:** Штатные утилиты сопровождения (обслуживание коллекций, инспекция схемы) позволяют диагностировать, очищать и мигрировать.
+-   **Удаление векторного хранилища:** Коллекции можно удалить через HTTP API ChromaDB или Python-клиент.
+-   **Архивация документов:** Исходные документы (Markdown) остаются в файловой системе; векторные данные не теряются, если сохранен источник.
 
-### Отчуждение моделей
-*   **Обновление конфигурации:** Смена идентификаторов моделей через переменные окружения и файл конфигурации моделей (YAML).
-*   **Горячая перезагрузка:** MOSEC поддерживает динамическую загрузку/выгрузку моделей (для vLLM требуется перезапуск).
-*   **Версионирование:** Модели отслеживаются через HuggingFace Hub; откат изменением ID модели.
-* **Открытые веса и лицензия:** при self-hosted чекпойнтах (в т.ч. GigaChat-3.1 под MIT — [Хабр, Сбер](https://habr.com/ru/companies/sberbank/articles/1014146/)) в пакет передачи входят идентификаторы релиза (HF/GitVerse), текст лицензии, политика фиксации версий, регрессионные eval при смене весов; интеграция с **инференс на базе vLLM** / **сервер инференса MOSEC** фиксируется в runbook.
-* **Кастомные лицензии на публичные веса:** помимо permissive-лицензий хранить пороги по **выходным токенам**, календарные сроки уведомления правообладателя и условия атрибуции; иллюстративный полный текст — [Лицензионное соглашение YandexGPT-5-Lite-8B (файл на Hugging Face)](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE).
-*   **Реестр доверенных моделей:** публикация открытых весов **не заменяет** проверку допуска модели для госсектора и КИИ (см. раздел Compliance ниже).
+### Отчуждение моделей {: #research_pkg_b_otchuzhdenie_modelei }
+-   **Обновление конфигурации:** Смена идентификаторов моделей через переменные окружения и файл конфигурации моделей (YAML).
+-   **Горячая перезагрузка:** MOSEC поддерживает динамическую загрузку/выгрузку моделей (для vLLM требуется перезапуск).
+-   **Версионирование:** Модели отслеживаются через HuggingFace Hub; откат изменением ID модели.
+- **Открытые веса и лицензия:** при self-hosted чекпойнтах (в т.ч. GigaChat-3.1 под MIT — [Хабр, Сбер](https://habr.com/ru/companies/sberbank/articles/1014146/)) в пакет передачи входят идентификаторы релиза (HF/GitVerse), текст лицензии, политика фиксации версий, регрессионные eval при смене весов; интеграция с **инференс на базе vLLM** / **сервер инференса MOSEC** фиксируется в runbook.
+- **Кастомные лицензии на публичные веса:** помимо permissive-лицензий хранить пороги по **выходным токенам**, календарные сроки уведомления правообладателя и условия атрибуции; иллюстративный полный текст — [Лицензионное соглашение YandexGPT-5-Lite-8B (файл на Hugging Face)](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE).
+-   **Реестр доверенных моделей:** публикация открытых весов **не заменяет** проверку допуска модели для госсектора и КИИ (см. раздел Compliance ниже).
 
-### Отчуждение инфраструктуры
+### Отчуждение инфраструктуры {: #research_pkg_b_otchuzhdenie_infrastruktury }
 
 - **Завершение сервисов инференса:** штатная остановка через CLI соответствующего пакета (**сервер инференса MOSEC** или **инференс на базе vLLM**); детали — в поставляемой документации.
 - **Завершение контейнера:** при развёртывании через Docker — стандартные процедуры остановки и удаления контейнеров.
 - **Очистка ресурсов:** память GPU освобождается при завершении процесса; данные ChromaDB сохраняются на диске до явного удаления.
 
-### Модели поставки и передачи (интеллектуальная собственность (ИС) и передача знаний)
+### Модели поставки и передачи (интеллектуальная собственность (ИС) и передача знаний) {: #research_pkg_b_modeli_postavki_i_peredachi_intellektualnaya_sobstvennost_is_i_peredacha_znanii }
 
 | Модель | Суть | Типичный пакет на выходе | Риски для заказчика |
 | :--- | :--- | :--- | :--- |
@@ -63,7 +76,7 @@
 
 При выборе **управляемой LLM-платформы** у инфраструктурного провайдера типовой пакет для юридической и закупочной сверки включает **лицензионные и иные условия ПО**, описание режимов **SaaS / hybrid / on-prem** и границ ответственности — иллюстрация: [специальные условия для ПО «MWS GPT»](https://mws.ru/docs/docum/lic_terms_mwsgpt.html). Публичная декомпозиция **платформы корпоративных агентов** (разметка, RAG, ops, интеграции) задаёт **чеклист владельцев** и артефактов передачи, переносимый на стек **корпоративный RAG-контур** / **агентный слой платформы (CMW Platform)** независимо от бренда ([MWS AI Agents Platform](https://mts.ai/product/ai-agents-platform/)).
 
-### Пакет отчуждения (минимально целостный)
+### Пакет отчуждения (минимально целостный) {: #research_pkg_b_paket_otchuzhdeniya_minimalno_tselostnyi }
 
 | Артефакт | Назначение |
 | :--- | :--- |
@@ -81,7 +94,7 @@
 | **Рубрики и промпты** для **модели-контролёра**, **эталонные примеры в промпте** | Меньше завышенных вердиктов, если вердикт выставляет **только модель-контролёр** без инструментальных проверок |
 | Регламент **синхронизации док ↔ код** (периодические прогоны, ответственный) | Борьба с устареванием знаний в репозитории |
 
-### Уровни обучения при передаче
+### Уровни обучения при передаче {: #research_pkg_b_urovni_obucheniya_pri_peredache }
 
 | Аудитория | Фокус |
 | :--- | :--- |
@@ -90,7 +103,7 @@
 | Разработка / ML | Код, пайплайны, доработка промптов и инструментов |
 | Комплаенс / ИБ | ПД, журналирование, доступы, требования регуляторов |
 
-### Критерии приёмки передачи (чек-лист)
+### Критерии приёмки передачи (чек-лист) {: #research_pkg_b_kriterii_priemki_peredachi_chek_list }
 
 - Сборка из переданных артефактов воспроизводится на стенде заказчика без «скрытых» шагов.
 - Пройдены согласованные сценарии eval; зафиксированы baseline-метрики.
@@ -98,7 +111,7 @@
 - Определены владельцы компонентов на стороне заказчика и дата окончания hypercare.
 - По ИС: зафиксированы лицензии, сторонние компоненты и ограничения использования.
 
-### Справочно: открытые стандарты OWASP и внешние программы обучения (не входят в поставку по умолчанию)
+### Справочно: открытые стандарты OWASP и внешние программы обучения (не входят в поставку по умолчанию) {: #research_pkg_b_spravochno_otkrytye_standarty_owasp_i_vneshnie_programmy_obucheniya_ne_vhodyat_v }
 
 В пакет **отчуждения знаний** целесообразно включать **ссылочный каркас**: канонические URL [OWASP GenAI Security Project](https://genai.owasp.org/introduction-genai-security-project/) (LLM Top 10 2025, Agentic Top 10 2026, [AI Testing Guide](https://github.com/OWASP/www-project-ai-testing-guide)), при необходимости — [WSTG](https://owasp.org/www-project-web-security-testing-guide/stable/) и [ASVS 5.0 RU](https://github.com/OWASP/ASVS/blob/master/5.0/OWASP_Application_Security_Verification_Standard_5.0.0_ru.pdf). Русскоязычные дайджесты сообщества (например, [Habr — OWASP LLM TOP 10 2025](https://habr.com/ru/companies/owasp/articles/893712/)) удобны для онбординга, но **не** заменяют официальные тексты.
 
@@ -106,38 +119,38 @@
 
 ---
 
-## Выводы по отчуждению ИИ
+## Выводы по отчуждению ИИ {: #research_pkg_b_vyvody_po_otchuzhdeniyu_ii }
 
-### Передача экспертизы
+### Передача экспертизы {: #research_pkg_b_peredacha_ekspertizy }
 **Методы:**
-*   **Документация:** руководство для агентов с инструкциями, RFC для дизайн-документов.
-*   **Обучение:** Воркшопы, курс «ШАД: Интенсив по AI-агентам» (Яндекс).
-*   **Код:** исходный код под открытой лицензией (при применимости), примеры использования.
+-   **Документация:** руководство для агентов с инструкциями, RFC для дизайн-документов.
+-   **Обучение:** Воркшопы, курс «ШАД: Интенсив по AI-агентам» (Яндекс).
+-   **Код:** исходный код под открытой лицензией (при применимости), примеры использования.
 
-### Создание агентов для клиентов
+### Создание агентов для клиентов {: #research_pkg_b_sozdanie_agentov_dlya_klientov }
 **Подходы:**
-*   **SkillsBD.ru** — база навыков для российских сервисов (Яндекс, Битрикс24, 1С).
-*   **SGR Agent Core** — Schema-Guided Reasoning для агентов.
-*   **OpenClaw** — self-hosted AI-агент (170K звезд за неделю).
+-   **SkillsBD.ru** — база навыков для российских сервисов (Яндекс, Битрикс24, 1С).
+-   **SGR Agent Core** — Schema-Guided Reasoning для агентов.
+-   **OpenClaw** — self-hosted AI-агент (170K звезд за неделю).
 
-### Национальная стратегия развития ИИ (Россия)
+### Национальная стратегия развития ИИ (Россия) {: #research_pkg_b_natsionalnaya_strategiya_razvitiya_ii_rossiya }
 **Указ Президента РФ №124 (февраль 2024):**
-*   Поправки к Национальной стратегии развития ИИ до 2030 года.
-*   Цель: более 11 трлн руб. влияния ИИ на ВВП к 2030 году.
-*   7.7 млрд руб. на федеральный проект «ИИ» (2025).
+-   Поправки к Национальной стратегии развития ИИ до 2030 года.
+-   Цель: более 11 трлн руб. влияния ИИ на ВВП к 2030 году.
+-   7.7 млрд руб. на федеральный проект «ИИ» (2025).
 
 **Тренд 2025-2026:**
-*   Массовое открытие офисов внедрения ИИ.
-*   Рост вакансий с ИИ-скиллами: +62% за янв-окт 2024.
-*   86% компаний используют open-source модели и fine-tuning.
+-   Массовое открытие офисов внедрения ИИ.
+-   Рост вакансий с ИИ-скиллами: +62% за янв-окт 2024.
+-   86% компаний используют open-source модели и fine-tuning.
 
 ---
 
-## Методология отчуждения ИИ-активов
+## Методология отчуждения ИИ-активов {: #research_pkg_b_metodologiya_otchuzhdeniya_ii_aktivov }
 
 При приобретении у инфраструктурного вендора **платформенного SKU** (управляемый LLM-шлюз, GPU как сервис, интеграционная платформа для агентов) в TCO заказчика обычно входят **лицензии или абонентская плата**, **сопровождение** (в т.ч. on-prem), **интеграции** с корпоративными системами и строки на обучение персонала — см. чеклисты и пакет артефактов в сопутствующем резюме **Методология внедрения и отчуждения ИИ** (в т.ч. юридические условия ПО и режимы развёртывания).
 
-### Передача экспертизы
+### Передача экспертизы {: #research_pkg_b_peredacha_ekspertizy_2 }
 
 | Компонент | Метод отчуждения | Формат |
 |-----------|-----------------|--------|
@@ -148,7 +161,7 @@
 | **Инфраструктура** | Docker Compose, K8s | YAML |
 | **Мониторинг** | Arize Phoenix, LangSmith | SaaS/Self-hosted |
 
-### Обучение клиентов
+### Обучение клиентов {: #research_pkg_b_obuchenie_klientov }
 
 **Рекомендуемые программы:**
 
@@ -162,7 +175,7 @@
 - ISO/IEC 42001:2023 — система менеджмента ИИ (AIMS); **число сертифицированных организаций на дату сметы** запрашивать у органа сертификации или официальной статистики аккредитации, без опоры на устаревшие вторичные цифры в прессе
 - AIUC-1: «SOC-2 для ИИ-агентов»
 
-### Создание агентов для клиентов
+### Создание агентов для клиентов {: #research_pkg_b_sozdanie_agentov_dlya_klientov_2 }
 
 **Подходы:**
 1. **SkillsBD.ru** — база навыков для российских сервисов
@@ -176,9 +189,9 @@
 
 ---
 
-## Резюме по методологии отчуждения
+## Резюме по методологии отчуждения {: #research_pkg_b_rezyume_po_metodologii_otchuzhdeniya }
 
-### Чек-лист отчуждения
+### Чек-лист отчуждения {: #research_pkg_b_chek_list_otchuzhdeniya }
 
 | Этап | Действие | Результат |
 |------|----------|-----------|
@@ -190,7 +203,7 @@
 | **6. Обучение** | Воркшопы | Передача знаний |
 | **7. Поддержка** | SLA | Помощь при проблемах |
 
-### Риски при отчуждении
+### Риски при отчуждении {: #research_pkg_b_riski_pri_otchuzhdenii }
 
 | Риск | Митигация |
 |------|----------|
@@ -200,7 +213,7 @@
 | **Регуляторные риски** | 152-ФЗ комплаенс |
 | **Безопасность** | Guardrails, аудит |
 
-### Финальные рекомендации
+### Финальные рекомендации {: #research_pkg_b_finalnye_rekomendatsii }
 
 1. **Для новых внедрений:**
    - Начните с POC на облачном инференсе
@@ -219,11 +232,11 @@
 
 ---
 
-## Источники
+## Источники {: #research_pkg_b_istochniki }
 
-- Полный консолидированный реестр — см. [Приложение A: витрина пакета](20260325-research-appendix-a-index-ru.md).
+- Полный консолидированный реестр — см. [Приложение A: витрина пакета](./20260325-research-appendix-a-index-ru.md#research_pkg_a_polnyi_reestr_ispolzovannyh_istochnikov_tochnaya_konsolidatsiya).
 
-### Нормативные и стратегические материалы
+### Нормативные и стратегические материалы {: #research_pkg_b_normativnye_i_strategicheskie_materialy }
 
 - [ISO/IEC 42001:2023 — Artificial intelligence management system](https://www.iso.org/standard/81230.html)
 - [NIST — AI RMF to ISO/IEC 42001 Crosswalk (PDF)](https://airc.nist.gov/docs/NIST_AI_RMF_to_ISO_IEC_42001_Crosswalk.pdf)
@@ -235,7 +248,7 @@
 - [DataGuidance — поправки к национальной стратегии развития ИИ РФ](https://www.dataguidance.com/news/russia-president-issues-amendments-national-ai)
 - [Известия (EN) — создание офисов внедрения ИИ](https://en.iz.ru/en/node/1985740)
 
-### Проекты OWASP по безопасности ИИ: GenAI Security, WSTG, ASVS и руководство по тестированию
+### Проекты OWASP по безопасности ИИ: GenAI Security, WSTG, ASVS и руководство по тестированию {: #research_pkg_b_proekty_owasp_po_bezopasnosti_ii_genai_security_wstg_asvs_i_rukovodstvo_po_testi }
 
 - [OWASP GenAI Security Project — Introduction](https://genai.owasp.org/introduction-genai-security-project/)
 - [GitHub — OWASP www-project-ai-testing-guide](https://github.com/OWASP/www-project-ai-testing-guide)
@@ -243,15 +256,15 @@
 - [GitHub — OWASP ASVS 5.0.0 (PDF, RU)](https://github.com/OWASP/ASVS/blob/master/5.0/OWASP_Application_Security_Verification_Standard_5.0.0_ru.pdf)
 - [Habr — OWASP LLM TOP 10 2025 (адаптация)](https://habr.com/ru/companies/owasp/articles/893712/)
 
-### Программы обучения по безопасности LLM
+### Программы обучения по безопасности LLM {: #research_pkg_b_programmy_obucheniya_po_bezopasnosti_llm }
 
 - [Kaspersky — программа «Large Language Models Security» (пресс-релиз, описание)](https://www.kaspersky.com/about/press-releases/kaspersky-introduces-a-new-training-large-language-models-security)
 
-### Платформа корпоративных агентов MTS AI
+### Платформа корпоративных агентов MTS AI {: #research_pkg_b_platforma_korporativnyh_agentov_mts_ai }
 
 - [MWS AI — MWS AI Agents Platform (описание модулей)](https://mts.ai/product/ai-agents-platform/)
 
-### Публичные веса с нестандартной лицензией
+### Публичные веса с нестандартной лицензией {: #research_pkg_b_publichnye_vesa_s_nestandartnoi_litsenziei }
 
 - [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
@@ -259,7 +272,7 @@
 - [Yandex Research — принятые к ICML 2025 (список, в т.ч. KV-cache)](https://research.yandex.com/blog/papers-accepted-to-icml-2025)
 - [arXiv — Cache Me If You Must (KV-quantization), 2501.19392](https://arxiv.org/abs/2501.19392)
 
-### Открытые модели ai-sage (GigaChat и спутники)
+### Открытые модели ai-sage (GigaChat и спутники) {: #research_pkg_b_otkrytye_modeli_ai_sage_gigachat_i_sputniki }
 
 - [Хабр — GigaChat-3.1: большое обновление больших моделей (блог Сбера)](https://habr.com/ru/companies/sberbank/articles/1014146/)
 - [Hugging Face — организация ai-sage](https://huggingface.co/ai-sage)
@@ -273,23 +286,23 @@
 - [GitVerse — GigaTeam/gigachat3.1](https://gitverse.ru/GigaTeam/gigachat3.1)
 - [GitHub — sgl-project/sglang, PR #18802](https://github.com/sgl-project/sglang/pull/18802)
 
-### Лицензионные материалы и 152-ФЗ (MWS / МТС)
+### Лицензионные материалы и 152-ФЗ (MWS / МТС) {: #research_pkg_b_litsenzionnye_materialy_i_152_fz_mws_mts }
 
 - [MWS Docs — лицензионные условия ПО «MWS GPT»](https://mws.ru/docs/docum/lic_terms_mwsgpt.html)
 - [МТС Cloud — IaaS 152-ФЗ УЗ-1](https://cloud.mts.ru/services/iaas-152-fz/)
 - [MWS Docs — условия облачного сегмента 152-ФЗ](https://mws.ru/docs/docum/cloud_terms_152fz.html)
 - [MWS — новость: хранение персональных данных в облаке](https://mws.ru/news/mts-web-services-zapustila-servis-dlya-hraneniya-personalnyh-dannyh-v-oblake/)
 
-### Модель Build–Operate–Transfer (передача знаний)
+### Модель Build–Operate–Transfer (передача знаний) {: #research_pkg_b_model_build_operate_transfer_peredacha_znanii }
 
 - [Luxoft — модель Build–Operate–Transfer (BOT)](https://www.luxoft.com/blog/master-the-build-operate-transfer-bot-model-with-luxoft)
 - [InOrg — seamless handover в модели BOT](https://inorg.com/blog/from-build-to-transfer-key-success-factors-a-seamless-bot-model-transition)
 
-### Регулирование (проектный контур 2026)
+### Регулирование (проектный контур 2026) {: #research_pkg_b_regulirovanie_proektnyi_kontur_2026 }
 
 - [Портал НПА — проект федерального закона (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
 
-### Инструменты разработки с ИИ (ориентиры для заказчика, вне SKU CMW)
+### Инструменты разработки с ИИ (ориентиры для заказчика, вне SKU CMW) {: #research_pkg_b_instrumenty_razrabotki_s_ii_orientiry_dlya_zakazchika_vne_sku_cmw }
 
 - [Хабр — red_mad_robot: MCP Tool Registry (реестр MCP для RAG/агентов, открытый код)](https://habr.com/ru/companies/redmadrobot/articles/982004/)
 - [GitHub — redmadrobot-rnd/mcp-registry](https://github.com/redmadrobot-rnd/mcp-registry)
