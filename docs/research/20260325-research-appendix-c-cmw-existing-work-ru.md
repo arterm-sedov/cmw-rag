@@ -83,7 +83,7 @@
 - **Восстановление после ошибок** — векторная классификация сбоев
 - **Учёт токенов и бюджета** — фактический расход токенов и оценка стоимости
 
-В референс-стеке **агентный слой платформы (CMW Platform)** опирается на **краткосрочную** память диалога в стеке LangChain и на **корпоративный RAG-контур** для извлечения из индекса; это **не** заявляет паритета с исследовательскими системами **долговременной переносимой** памяти между задачами. Публикации уровня General Agentic Memory (GAM) задают **направление эволюции** (накопление знаний и исследовательский цикл поверх памяти), которое при проектировании согласуют с политикой данных и observability — см. «_[Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa)_» и «_[Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)_»; первоисточник: [arXiv — GAM](https://arxiv.org/pdf/2511.18423).
+В референс-стеке **агентный слой платформы (CMW Platform)** опирается на **краткосрочную** память диалога в стеке LangChain и на **корпоративный RAG-контур** для извлечения из индекса; это **не** заявляет паритета с исследовательскими системами **долговременной переносимой** памяти между задачами. Публикации уровня General Agentic Memory (GAM) задают **направление эволюции** (накопление знаний и исследовательский цикл поверх памяти), которое при проектировании согласуют с политикой данных и observability — см. «_[Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa)_» и «_[Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)_»; первоисточник: [arXiv — GAM](https://arxiv.org/pdf/2511.18423). **Memex(RL)** (Accenture) описывает **другой** класс решений — **индексированную** память с **обучением с подкреплением** для решений о разгрузке контекста, заголовках и извлечении записей ([arXiv — Memex(RL)](https://arxiv.org/pdf/2603.04257); см. также «_[Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_pamyat_i_kontekst_v_ii_agentah)_»); это **не** компонент поставки **агентный слой платформы (CMW Platform)**.
 
 **Инструменты для отчуждения:**
 | Компонент | Артефакт | Назначение |
@@ -120,8 +120,10 @@
 - [MWS — тарифы MWS GPT](https://mws.ru/docs/docum/cloud_terms_mwsgpt_pricing.html)
 - [VK Cloud — машинное обучение в облаке (документация)](https://cloud.vk.com/docs/ru/ml)
 - [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
+- [Google — Gemini Embedding 2 (блог: нативно мультимодальные эмбеддинги)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-embedding-2/)
 - [NVIDIA — Nemotron 3 (обзор семейства)](https://research.nvidia.com/labs/nemotron/Nemotron-3/)
 - [Hugging Face — nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8](https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8)
+- [Hugging Face — nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8](https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8)
 - [Hugging Face — zai-org/GLM-4.6](https://huggingface.co/zai-org/GLM-4.6)
 - [Hugging Face — zai-org/GLM-4.7](https://huggingface.co/zai-org/GLM-4.7)
 - [Hugging Face — zai-org/GLM-4.7-Flash](https://huggingface.co/zai-org/GLM-4.7-Flash)
