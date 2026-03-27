@@ -388,7 +388,7 @@
 - [Netflix Tech Blog: Scaling Generative Recommenders (2025)](https://netflixtechblog.medium.com/integrating-netflixs-foundation-model-into-personalization-applications-cf176b5860eb)
 - [Airbnb Tech Blog: Reshaping Customer Support with GenAI (2025)](https://medium.com/airbnb-engineering/how-ai-text-generation-models-are-reshaping-customer-support-at-airbnb-a851db0b4fa3)
 - [Airbnb Tech Blog: Agent-in-the-Loop (AITL) Framework Paper (2025)](https://aclanthology.org/2025.emnlp-industry.135.pdf)
-- [Meta AI: Production Pipelines for Llama Deployments (Official 2025)](https://llama.meta.com/docs/deployment/production-deployment-pipelines)
+- [Meta (Экстремистская организация, запрещена в РФ) AI: Production Pipelines for Llama Deployments (Official 2025)](https://llama.meta.com/docs/deployment/production-deployment-pipelines)
 - [vLLM: Performance Optimization and Tuning Guide (2025)](https://docs.vllm.ai/en/latest/performance/optimization.html)
 - [vLLM Performance Tuning: The Ultimate Guide (2026)](https://cloud.google.com/blog/topics/developers-practitioners/vllm-performance-tuning-the-ultimate-guide-to-xpu-inference-configuration)
 - [vLLM Production Stack Roadmap for 2025 Q2 (GitHub)](https://github.com/vllm-project/production-stack/issues/300)
