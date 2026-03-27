@@ -9,7 +9,7 @@
 
 ## Связанные документы
 
-- «Приложение A: витрина пакета»
+- «Приложение A: обзор и ведомость документов»
 - «Основной отчёт: методология внедрения и разработки»
 - «Основной отчёт: сайзинг и экономика»
 - «Приложение B: отчуждение ИС и кода (KT, IP)»
@@ -97,7 +97,7 @@
 
 ## Источники
 
-- Полный консолидированный реестр — см. [Приложение A: витрина пакета](./20260325-research-appendix-a-index-ru.md#research_pkg_a_polnyi_reestr_ispolzovannyh_istochnikov_tochnaya_konsolidatsiya).
+- Полный консолидированный реестр — см. [Приложение A: обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#research_pkg_a_polnyi_reestr_ispolzovannyh_istochnikov_tochnaya_konsolidatsiya).
 
 ### Стек инференса (MOSEC, vLLM) и открытая документация
 

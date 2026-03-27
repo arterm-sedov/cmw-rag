@@ -23,7 +23,7 @@ hide: tags
 
 ## Связанные документы {: #research_pkg_d_svyazannye_dokumenty }
 
-- [«Приложение A: витрина пакета»](./20260325-research-appendix-a-index-ru.md#research_pkg_a_obzor_paketa)
+- [«Приложение A: обзор и ведомость документов»](./20260325-research-appendix-a-index-ru.md#research_pkg_a_obzor_paketa)
 - [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)
 - [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa)
 - [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa)
@@ -674,7 +674,7 @@ User Query
 
 ## Источники {: #research_pkg_d_istochniki }
 
-- Полный консолидированный реестр — см. [Приложение A: витрина пакета](./20260325-research-appendix-a-index-ru.md#research_pkg_a_polnyi_reestr_ispolzovannyh_istochnikov_tochnaya_konsolidatsiya).
+- Полный консолидированный реестр — см. [Приложение A: обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#research_pkg_a_polnyi_reestr_ispolzovannyh_istochnikov_tochnaya_konsolidatsiya).
 
 ### OWASP GenAI Security, тестирование и адаптации на русском {: #research_pkg_d_owasp_genai_security_testirovanie_i_adaptatsii_na_russkom }
 
