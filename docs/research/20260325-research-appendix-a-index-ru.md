@@ -130,6 +130,7 @@ hide: tags
 | `## Сборник мер по оптимизации стоимости (Cost Optimization Suite)` | Основной отчёт: сайзинг и экономика |
 | `## Риски бюджета и меры снижения` | Основной отчёт: сайзинг и экономика |
 | `## Тарифы российских облачных провайдеров ИИ` | Основной отчёт: сайзинг и экономика |
+| `### Аренда GPU (IaaS РФ): дополнительные поставщики и ориентиры` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_arenda_gpu_iaas_rf_dopolnitelnye_postavshchiki) |
 | `## Детальный анализ аппаратных требований` | Основной отчёт: сайзинг и экономика |
 | `### Профиль on-prem GPU в проектах CMW` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_profil_onprem_gpu_v_proektah_cmw) |
 | `## Детальные капитальные затраты (CapEx)` | Основной отчёт: сайзинг и экономика |
@@ -267,6 +268,13 @@ hide: tags
 - [MWS — тарифы MWS GPT](https://mws.ru/docs/docum/cloud_terms_mwsgpt_pricing.html)
 - [VK Cloud — машинное обучение в облаке (документация)](https://cloud.vk.com/docs/ru/ml)
 - [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
+- [Selectel — облако GPU (калькулятор)](https://selectel.ru/services/gpu/)
+- [Immers Cloud — GPU](https://immers.cloud/gpu/)
+- [1dedic — GPU-серверы](https://1dedic.ru/gpu-servers)
+- [Intelion Cloud](https://intelion.cloud/)
+- [HOSTKEY — выделенные серверы с GPU](https://hostkey.ru/gpu-dedicated-servers/)
+- [Cloud4Y — облачный GPU-хостинг](https://www.cloud4y.ru/cloud-hosting/gpu/)
+- [NVIDIA — GeForce Software License](https://www.nvidia.com/en-us/drivers/geforce-license/)
 
 #### Иллюстративная лицензия и примеры (YandexGPT-5-Lite-8B) {: #research_pkg_a_illyustrativnaya_litsenziya_i_primery_yandexgpt_5_lite_8b }
 
@@ -351,6 +359,13 @@ hide: tags
 - [CIO — MTS AI перенесла обучение моделей в облако](https://cio.osp.ru/articles/140525-MTS-AI-perenesla-obuchenie-modeley-v-oblako)
 - [VK Cloud — машинное обучение в облаке](https://cloud.vk.com/docs/ru/ml)
 - [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
+- [Selectel — облако GPU (калькулятор)](https://selectel.ru/services/gpu/)
+- [Immers Cloud — GPU](https://immers.cloud/gpu/)
+- [1dedic — GPU-серверы](https://1dedic.ru/gpu-servers)
+- [Intelion Cloud](https://intelion.cloud/)
+- [HOSTKEY — выделенные серверы с GPU](https://hostkey.ru/gpu-dedicated-servers/)
+- [Cloud4Y — облачный GPU-хостинг](https://www.cloud4y.ru/cloud-hosting/gpu/)
+- [NVIDIA — GeForce Software License](https://www.nvidia.com/en-us/drivers/geforce-license/) (справочно по сценариям GeForce vs datacenter)
 
 #### Публичные веса с нестандартной лицензией {: #research_pkg_a_publichnye_vesa_s_nestandartnoi_litsenziei }
 
@@ -505,6 +520,13 @@ hide: tags
 - [MWS — тарифы MWS GPT](https://mws.ru/docs/docum/cloud_terms_mwsgpt_pricing.html)
 - [VK Cloud — машинное обучение в облаке (документация)](https://cloud.vk.com/docs/ru/ml)
 - [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
+- [Selectel — облако GPU (калькулятор)](https://selectel.ru/services/gpu/)
+- [Immers Cloud — GPU](https://immers.cloud/gpu/)
+- [1dedic — GPU-серверы](https://1dedic.ru/gpu-servers)
+- [Intelion Cloud](https://intelion.cloud/)
+- [HOSTKEY — выделенные серверы с GPU](https://hostkey.ru/gpu-dedicated-servers/)
+- [Cloud4Y — облачный GPU-хостинг](https://www.cloud4y.ru/cloud-hosting/gpu/)
+- [NVIDIA — GeForce Software License](https://www.nvidia.com/en-us/drivers/geforce-license/)
 - [NVIDIA — Nemotron 3 (обзор семейства)](https://research.nvidia.com/labs/nemotron/Nemotron-3/)
 - [Hugging Face — nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8](https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8)
 - [Hugging Face — zai-org/GLM-4.6](https://huggingface.co/zai-org/GLM-4.6)
@@ -763,6 +785,13 @@ hide: tags
 - [CIO — MTS AI перенесла обучение моделей в облако](https://cio.osp.ru/articles/140525-MTS-AI-perenesla-obuchenie-modeley-v-oblako)
 - [VK Cloud — машинное обучение в облаке](https://cloud.vk.com/docs/ru/ml)
 - [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
+- [Selectel — облако GPU (калькулятор)](https://selectel.ru/services/gpu/)
+- [Immers Cloud — GPU](https://immers.cloud/gpu/)
+- [1dedic — GPU-серверы](https://1dedic.ru/gpu-servers)
+- [Intelion Cloud](https://intelion.cloud/)
+- [HOSTKEY — выделенные серверы с GPU](https://hostkey.ru/gpu-dedicated-servers/)
+- [Cloud4Y — облачный GPU-хостинг](https://www.cloud4y.ru/cloud-hosting/gpu/)
+- [NVIDIA — GeForce Software License](https://www.nvidia.com/en-us/drivers/geforce-license/)
 
 #### Публичные веса с нестандартной лицензией {: #research_pkg_a_publichnye_vesa_s_nestandartnoi_litsenziei_3 }
 

@@ -64,6 +64,10 @@ hide: tags
 - **Завершение контейнера:** при развёртывании через Docker — стандартные процедуры остановки и удаления контейнеров.
 - **Очистка ресурсов:** память GPU освобождается при завершении процесса; данные ChromaDB сохраняются на диске до явного удаления.
 
+### Справочно: аренда GPU и лицензирование NVIDIA (GeForce vs datacenter) {: #research_pkg_b_spravochno_arenda_gpu_i_litsenzirovanie_nvidia }
+
+При **аренде ВМ или сервера с GPU** юридический контур дополняет open-source лицензии на веса моделей: для потребительских линеек (GeForce / RTX и аналоги) и для продуктов, классифицируемых как **datacenter**, действуют **разные** рамки [лицензионных условий NVIDIA](https://www.nvidia.com/en-us/drivers/geforce-license/) и сопутствующих ограничений на ПО и сценарии использования — **due diligence** по текстам на дату сделки и по профилю нагрузки (коммерческий инференс, колокация, облако). Каталоги аренды публично смешивают классы железа (иллюстрации: [Intelion Cloud](https://intelion.cloud/), [HOSTKEY — GPU dedicated servers](https://hostkey.ru/gpu-dedicated-servers/)); **наличие SKU в каталоге не заменяет** юридическую и ИБ-проверку сценария заказчика. Количественные **₽/час** для таких каналов — только в сопутствующем резюме **Оценка сайзинга…**, подраздел **[«Аренда GPU (IaaS РФ): дополнительные поставщики и ориентиры»](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_arenda_gpu_iaas_rf_dopolnitelnye_postavshchiki)**.
+
 ### Модели поставки и передачи (интеллектуальная собственность (ИС) и передача знаний) {: #research_pkg_b_modeli_postavki_i_peredachi_intellektualnaya_sobstvennost_is_i_peredacha_znanii }
 
 | Модель | Суть | Типичный пакет на выходе | Риски для заказчика |
