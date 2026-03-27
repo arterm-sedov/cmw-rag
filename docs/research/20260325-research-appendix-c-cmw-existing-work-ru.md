@@ -95,4 +95,46 @@
 
 ## Источники
 
-- Полный реестр источников — см. «Приложение A: витрина пакета».
+- Полный консолидированный реестр — см. [Приложение A: витрина пакета](20260325-research-appendix-a-index-ru.md).
+
+### Стек инференса (MOSEC, vLLM) и открытая документация
+
+- [MOSEC — документация](https://mosecorg.github.io/mosec/index.html)
+- [mosecorg/mosec (GitHub)](https://github.com/mosecorg/mosec)
+- [vLLM — OpenAI-Compatible Server](https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html)
+- [сервер инференса MOSEC — README проекта (пример публичного зеркала)](https://github.com/arterm-sedov/cmw-mosec)
+
+### Облачные провайдеры и тарифы (РФ)
+
+- [Cloud.ru — Evolution Foundation Models (продукт)](https://cloud.ru/products/evolution-foundation-models)
+- [Cloud.ru — тарифы Evolution Foundation Models](https://cloud.ru/documents/tariffs/evolution/foundation-models)
+- [Yandex AI Studio — доступные генеративные модели](https://aistudio.yandex.ru/docs/ru/ai-studio/concepts/generation/models.html)
+- [Yandex AI Studio — прайсинг](https://aistudio.yandex.ru/docs/ru/ai-studio/pricing.html)
+- [AKM.ru — Yandex B2B Tech и языковые модели на рынке РФ](https://www.akm.ru/eng/press/yandex-b2b-tech-has-opened-access-to-the-largest-language-model-on-the-russian-market/)
+- [Сбер — портал GigaChat API](https://developers.sber.ru/portal/products/gigachat-api)
+- [Сбер — юридические тарифы GigaChat](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
+- [Selectel — Foundation Models Catalog](https://selectel.ru/services/cloud/foundation-models-catalog)
+- [MWS — MWS GPT (продукт)](https://mws.ru/mws-gpt/)
+- [MWS — тарифы MWS GPT](https://mws.ru/docs/docum/cloud_terms_mwsgpt_pricing.html)
+- [VK Cloud — машинное обучение в облаке (документация)](https://cloud.vk.com/docs/ru/ml)
+- [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
+- [NVIDIA — Nemotron 3 (обзор семейства)](https://research.nvidia.com/labs/nemotron/Nemotron-3/)
+- [Hugging Face — nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8](https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8)
+- [Hugging Face — zai-org/GLM-4.6](https://huggingface.co/zai-org/GLM-4.6)
+- [Hugging Face — zai-org/GLM-4.7](https://huggingface.co/zai-org/GLM-4.7)
+- [Hugging Face — zai-org/GLM-4.7-Flash](https://huggingface.co/zai-org/GLM-4.7-Flash)
+- [Hugging Face — zai-org/GLM-5](https://huggingface.co/zai-org/GLM-5)
+- [Hugging Face — openai/gpt-oss-20b](https://huggingface.co/openai/gpt-oss-20b)
+- [Hugging Face — openai/gpt-oss-120b](https://huggingface.co/openai/gpt-oss-120b)
+- [Hugging Face — MiniMaxAI/MiniMax-M2](https://huggingface.co/MiniMaxAI/MiniMax-M2)
+- [Hugging Face — moonshotai/Kimi-K2-Base](https://huggingface.co/moonshotai/Kimi-K2-Base)
+- [Hugging Face — организация moonshotai](https://huggingface.co/moonshotai)
+- [Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Qwen-32B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B)
+- [Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Llama-70B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B)
+- [Hugging Face — организация Qwen](https://huggingface.co/Qwen)
+
+### Открытые проекты (фрагмент стека RAG в тексте)
+
+- [langchain-ai/langchain — text-splitters](https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters)
+- [langgenius/dify](https://github.com/langgenius/dify/)
+- [run-llama/llama_index](https://github.com/run-llama/llama_index)
