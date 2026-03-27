@@ -235,6 +235,10 @@ hide: tags
 - [McKinsey — The state of AI](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)
 - [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
 
+#### Подкасты (первичная запись): AI-First, red_mad_robot {: #research_pkg_a_podkasty_pervichnaya_zapis_ai_first_red_mad_robot }
+
+- [YouTube — «Ноосфера» #129: Илья Самофеев (red_mad_robot), AI-First / AI-Native](https://www.youtube.com/watch?v=jTKhg1jqF_M)
+
 #### Стек инференса (MOSEC, vLLM) и открытая документация {: #research_pkg_a_stek_inferensa_mosec_vllm_i_otkrytaya_dokumentatsiya }
 
 - [MOSEC — документация](https://mosecorg.github.io/mosec/index.html)
@@ -678,6 +682,7 @@ hide: tags
 - [AI + Economy: китайская модель (карточки)](https://t.me/Redmadnews/5159)
 - [Бизнес-завтрак КРОК: CX и NPS (анонс)](https://t.me/Redmadnews/5167)
 - [AI-first стратегия: подкаст (анонс)](https://t.me/Redmadnews/5170)
+- [YouTube — «Ноосфера» #129: Илья Самофеев (red_mad_robot), AI-First / AI-Native (полная запись)](https://www.youtube.com/watch?v=jTKhg1jqF_M)
 
 #### Посты NeuralDeep {: #research_pkg_a_posty_neuraldeep }
 
@@ -888,6 +893,7 @@ hide: tags
 - [Redmadnews — AI + Economy, Китай](https://t.me/Redmadnews/5159)
 - [Redmadnews — бизнес-завтрак КРОК](https://t.me/Redmadnews/5167)
 - [Redmadnews — AI-first подкаст](https://t.me/Redmadnews/5170)
+- [YouTube — «Ноосфера» #129: Илья Самофеев (red_mad_robot), AI-First / AI-Native (полная запись)](https://www.youtube.com/watch?v=jTKhg1jqF_M)
 - [@llm_under_hood](https://t.me/llm_under_hood)
 - [Канал @ai_machinelearning_big_data](https://t.me/ai_machinelearning_big_data)
 
