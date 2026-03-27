@@ -78,6 +78,7 @@ hide: tags
 - «Какие паттерны среды для агента в PR и долгоживущей dev, модель риска по сценарию и минимальный состав платформы задач?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_model_riska_patterny_sredy_i_minimalnyi_sostav_platformy); для KT/IP и PR — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_spravochno_agent_v_pr_i_artifacty_vmesto_pryamoi_zapisi_v_is)
 - «Как сравнивать E2B / Modal / Daytona и бенчмаркать песочницы (сеть, сессии, метрики прода)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_upravlyaemye_pesochnitsy_sravnenie_modelei_i_benchmarki) и [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_otsenka_upravlyaemyh_pesochnits_i_benchmarki)
 - «Как за ~30 дней вывести безопасный MVP контура исполнения агента, какие враждебные сценарии и критерии готовности?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_bezopasnyi_mvp_kontura_ispolneniya_diskussiya_sredy_vyvody) и [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_uzkii_bezopasn_mvp_kontura_ispolneniya_agenta_orientir_30_dnei)
+- «Где цифры и барьеры зрелости GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot × CMO Club, 2025)?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_rossiiskii_rynok); [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_genai_v_marketingovyh_komandah_krupnyh_brendov_rf_opros_cmo_2025); [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_organizatsionnye_barery_i_vospriyatie_rizikov_opros_cmo_red_mad_robot_2025)
 - «Нужен единый реестр источников и дополнительные источники из исходного задания по темам?» → [Приложение A: обзор и ведомость документов](#research_pkg_a_obzor_paketa) (этот документ)
 
 ## Соответствие разделов исходных материалов документам пакета {: #research_pkg_a_sootvetstvie_razdelov_ishodnyh_materialov_dokumentam_paketa }
@@ -614,8 +615,13 @@ hide: tags
 - [@ai_archnadzor](https://t.me/ai_archnadzor)
 - [@Redmadnews (red_mad_robot)](https://t.me/Redmadnews)
 - [@rmr_rnd — R&D red_mad_robot](https://t.me/rmr_rnd)
+- [CMO Club Russia](https://t.me/cmoclub)
 - [AGORA — Industrial AI](https://t.me/AGORA)
 - [«ITипичные аспекты Артёма» (Артём Лысенко)](https://t.me/virrius_tech_chat)
+
+#### Посты CMO Club Russia {: #research_pkg_a_posty_cmo_club_russia }
+
+- [GenAI в маркетинге — анонс исследования red_mad_robot × CMO Club (пост 197)](https://t.me/cmoclub/197)
 
 #### Посты @Redmadnews {: #research_pkg_a_posty_redmadnews }
 
@@ -828,6 +834,7 @@ hide: tags
 - [Redmadnews — AI + Economy, Китай](https://t.me/Redmadnews/5159)
 - [Redmadnews — бизнес-завтрак КРОК](https://t.me/Redmadnews/5167)
 - [Redmadnews — AI-first подкаст](https://t.me/Redmadnews/5170)
+- [CMO Club Russia — GenAI в маркетинге, анонс исследования (пост 197)](https://t.me/cmoclub/197)
 - [@llm_under_hood](https://t.me/llm_under_hood)
 - [Канал @ai_machinelearning_big_data](https://t.me/ai_machinelearning_big_data)
 
