@@ -556,6 +556,8 @@ hide: tags
 - [InOrg — seamless handover в модели BOT](https://inorg.com/blog/from-build-to-transfer-key-success-factors-a-seamless-bot-model-transition)
 - [Habr — red_mad_robot: кейс RAG для ФСК](https://habr.com/ru/companies/redmadrobot/articles/892882/)
 - [Ведомости — CTO AI red_mad_robot (Влад Шевченко)](https://www.vedomosti.ru/technologies/trendsrub/articles/2026/03/11/1181757-ii-uskoril-kod)
+- [Habr — red_mad_robot: MCP Tool Registry и автоматизация RAG](https://habr.com/ru/companies/redmadrobot/articles/982004/)
+- [GitHub — redmadrobot-rnd/mcp-registry](https://github.com/redmadrobot-rnd/mcp-registry)
 
 #### Публичные материалы MWS / MTS AI {: #research_pkg_a_publichnye_materialy_mws_mts_ai }
 
@@ -592,6 +594,15 @@ hide: tags
 - [@rmr_rnd — R&D red_mad_robot](https://t.me/rmr_rnd)
 - [AGORA — Industrial AI](https://t.me/AGORA)
 - [«ITипичные аспекты Артёма» (Артём Лысенко)](https://t.me/virrius_tech_chat)
+
+#### Посты @Redmadnews {: #research_pkg_a_posty_redmadnews }
+
+- [MCP Tool Registry / RAG (анонс)](https://t.me/Redmadnews/5132)
+- [СП с «ВымпелКом», фабрика ИИ-агентов (анонс)](https://t.me/Redmadnews/5145)
+- [R&D в AI в 2026 (обзор)](https://t.me/Redmadnews/5146)
+- [AI + Economy: китайская модель (карточки)](https://t.me/Redmadnews/5159)
+- [Бизнес-завтрак КРОК: CX и NPS (анонс)](https://t.me/Redmadnews/5167)
+- [AI-first стратегия: подкаст (анонс)](https://t.me/Redmadnews/5170)
 
 #### Посты NeuralDeep {: #research_pkg_a_posty_neuraldeep }
 
@@ -777,11 +788,17 @@ hide: tags
 - [NeuralDeep — бенчмарки vLLM / RTX 4090](https://t.me/neuraldeep/1476)
 - [NeuralDeep — рекомендации по кластерам](https://t.me/neuraldeep/1627)
 - [NeuralDeep — экономика LLM-решений](https://t.me/neuraldeep/1366)
-- [Канал NeuralDeep](https://t.me/neuraldeep)
-- [Канал @ai_archnadzor — RAG и архитектуры](https://t.me/ai_archnadzor)
-- [@ai_archnadzor — локальные модели для кодинга и снижения затрат](https://t.me/ai_archnadzor/167)
-- [@ai_archnadzor — CLI вместо MCP](https://t.me/ai_archnadzor/190)
-- [@Redmadnews (red_mad_robot)](https://t.me/Redmadnews)
+- [NeuralDeep](https://t.me/neuraldeep)
+- [ai_archnadzor — RAG и архитектуры](https://t.me/ai_archnadzor)
+- [ai_archnadzor — локальные модели для кодинга и снижения затрат](https://t.me/ai_archnadzor/167)
+- [ai_archnadzor — CLI вместо MCP](https://t.me/ai_archnadzor/190)
+- [Redmadnews (red_mad_robot)](https://t.me/Redmadnews)
+- [Redmadnews — MCP Tool Registry / RAG](https://t.me/Redmadnews/5132)
+- [Redmadnews — СП с «ВымпелКом», фабрика агентов](https://t.me/Redmadnews/5145)
+- [Redmadnews — R&D в AI в 2026](https://t.me/Redmadnews/5146)
+- [Redmadnews — AI + Economy, Китай](https://t.me/Redmadnews/5159)
+- [Redmadnews — бизнес-завтрак КРОК](https://t.me/Redmadnews/5167)
+- [Redmadnews — AI-first подкаст](https://t.me/Redmadnews/5170)
 - [@llm_under_hood](https://t.me/llm_under_hood)
 - [Канал @ai_machinelearning_big_data](https://t.me/ai_machinelearning_big_data)
 
