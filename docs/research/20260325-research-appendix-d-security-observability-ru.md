@@ -51,6 +51,8 @@ hide: tags
 - **Метрики сервера инференса (self-hosted, vLLM и аналоги):** `gen_ai.server.request.duration`, `gen_ai.server.time_to_first_token`, `gen_ai.server.time_per_output_token` — для SLO по задержке, очередям и фазам prefill/decode ([метрики сервера](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)).
 - **События политик:** срабатывания guardrails, отказы по политике, эскалации human-in-the-loop — как отдельные записи или атрибуты, согласованные с матрицей ИБ заказчика.
 
+Ориентиры **токенов/с** из публикаций сообщества и обзоров полезны лишь для грубой прикидки до замеров; в эксплуатации их следует сопоставлять с **`gen_ai.server.time_per_output_token`** (и смежными метриками сервера) на целевом стенде. Иллюстративные таблицы по локальному железу и MoE — в **«Основной отчёт: сайзинг и экономика»** (пакет v1).
+
 Дополнительно **OpenInference** описывает инструментирование ИИ-приложений совместимо с OpenTelemetry и поддерживается, в частности, в **Arize Phoenix** ([OpenInference](https://arize-ai.github.io/openinference/)); выбор бэкенда хранения трассов остаётся за заказчиком.
 
 ### Применимость в России: что не блокируется и где нужны оговорки {: #research_pkg_d_primenimost_v_rossii_chto_ne_blokiruetsya_i_gde_nuzhny_ogovorki }
