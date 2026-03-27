@@ -45,6 +45,12 @@ hide: tags
 
 **Практика для РФ:** снижение зависимости от зарубежного биллинга возможно за счёт **локальных моделей** и/или **API в РФ** там, где это допускает конфигурация выбранного инструмента и политика ИБ заказчика; доступность сервисов и условия использования нужно **проверять на дату** по официальным источникам и TOS. Итоговый контур согласовывается с комплаенсом и владельцем данных.
 
+### Теневой GenAI в маркетинге и маршрутизация моделей (ориентир опроса CMO, 2025) {: #research_pkg_b_tenevoi_genai_v_marketinge_i_marshrutizatsiya_modelei_orientir_oprosa_cmo_2025 }
+
+Публичные материалы опроса **red_mad_robot × CMO Club Russia** фиксируют **высокую концентрацию** на универсальных зарубежных чат- и визуальных сервисах среди маркетинговых директоров (в сводке комплекта — порядка **91%** для **ChatGPT** и **59%** для **Midjourney**, с широким разрывом до следующих инструментов; канонические доли и контекст — в _«[Основной отчёт: сайзинг и экономика — Российский рынок](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_rossiiskii_rynok)_»_).
+
+Для комплекта отчуждения и договоров о **ИС** это аргумент за явный **каталог допустимых моделей и маршрутов данных**, учёт **TOS/API** зарубежных SaaS и разделение **промышленного** контура (**корпоративный RAG-контур**, API РФ, on-prem) от **самостоятельного** использования маркетингом глобальных сервисов; управленческий смысл и перекрёстные ссылки — в _«[Основной отчёт: методология — GenAI в маркетинговых командах](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_genai_v_marketingovyh_komandah_krupnyh_brendov_rf_opros_cmo_2025)_»_.
+
 ### Отчуждение данных {: #research_pkg_b_otchuzhdenie_dannyh }
 -   **Поддержка ChromaDB:** Штатные утилиты сопровождения (обслуживание коллекций, инспекция схемы) позволяют диагностировать, очищать и мигрировать.
 -   **Удаление векторного хранилища:** Коллекции можно удалить через HTTP API ChromaDB или Python-клиент.
@@ -327,6 +333,11 @@ hide: tags
 ### Регулирование (проектный контур 2026) {: #research_pkg_b_regulirovanie_proektnyi_kontur_2026 }
 
 - [Портал НПА — проект федерального закона (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
+
+### Опрос CMO Club × red_mad_robot (маркетинг, концентрация SaaS и ИС) {: #research_pkg_b_opros_cmo_club_red_mad_robot_marketing_kontsentratsiya_saas_i_is }
+
+- [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (пост 197)](https://t.me/cmoclub/197)
+- [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
 
 ### Инструменты разработки с ИИ (ориентиры для заказчика, вне SKU CMW) {: #research_pkg_b_instrumenty_razrabotki_s_ii_orientiry_dlya_zakazchika_vne_sku_cmw }
 
