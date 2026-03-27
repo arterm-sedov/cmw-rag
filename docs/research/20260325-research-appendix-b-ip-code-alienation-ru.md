@@ -25,6 +25,7 @@ hide: tags
 - [«Приложение A: обзор и ведомость документов»](./20260325-research-appendix-a-index-ru.md#research_pkg_a_obzor_paketa)
 - [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)
 - [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa)
+- [Профиль on-prem GPU в проектах CMW](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_profil_onprem_gpu_v_proektah_cmw) (реф. consumer 24 ГБ, кастом 4090 48 ГБ, PRO 6000 96 ГБ)
 - «Приложение C: имеющиеся наработки CMW»
 - [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa)
 
