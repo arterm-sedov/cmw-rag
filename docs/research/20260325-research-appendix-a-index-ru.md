@@ -21,19 +21,19 @@ tags:
 hide: tags
 ---
 
-# Приложение A. Обзор и ведомость документов: навигация, реестр и источники {: #research_pkg_a }
-## Обзор комплекта {: #research_pkg_a_obzor_paketa }
+# Приложение A. Обзор и ведомость документов: навигация, реестр и источники {: #app_a_root }
+## Обзор комплекта {: #app_a_pack_overview }
 
 Этот документ — **точка входа** в комплект из шести файлов: ведомость материалов, навигация «какой документ запросить по вопросу», единый реестр использованных источников и тематический перечень дополнительных источников из исходного задания на исследование. Два сводных материала от 23.03.2026 («методология внедрения и отчуждения ИИ» и «сайзинг, КапЭкс и ОпЭкс») сохраняются как неизменённые эталоны для внутреннего контроля полноты; в них **не дублируются** публичные ссылки, добавленные позже в сплит-комплект 25.03.2026 (например MCP Tool Registry на Habr/GitHub, материалы CMO Club × red_mad_robot). Для актуальной ведомости внешних источников используйте этот файл и шесть документов комплекта `20260325-*`; при передаче вовне ориентируйтесь на документы этого комплекта.
 
-## Как читать комплект (для руководства) {: #research_pkg_a_kak_chitat_komplekt_dlya_rukovodstva }
+## Как читать комплект (для руководства) {: #app_a_reading_guide_executives }
 
 1. Начните с **этого файла (Приложение A)**: по таблице «вопрос → документ» выберите нужный материал.
 2. Для **методологии внедрения, TOM, фаз и производственной модели** — основной отчёт по методологии; для **цифр, CapEx/OpEx/TCO и тарифов** — основной отчёт по сайзингу и экономике.
 3. **Отчуждение ИС и кода** — Приложение B; **что уже есть в референс-стеке** — Приложение C; **безопасность, комплаенс и observability** — Приложение D.
 4. Чтение **не требует** доступа к репозиториям или внутренним каталогам: все опоры — публичные ссылки в тексте и в разделе «Источники».
 
-## Условные обозначения и границы примера {: #research_pkg_a_uslovnye_oboznacheniya_i_granitsy_primera }
+## Условные обозначения и границы примера {: #app_a_conventions_and_scope }
 
 В тексте комплекта **корпоративный RAG-контур**, **сервер инференса MOSEC**, **инференс на базе vLLM** и **агентный слой платформы (CMW Platform)** — это **условные имена ролей** иллюстративного референс-стека CMW, а не обязательный коммерческий продукт или фиксированная поставка. Продукт **[OpenCode](https://opencode.ai/)** (открытый coding agent) и **внутренние каталоги планирования** в репозиториях — **разные вещи**; подробнее формулировка для договоров и переговоров — в «Приложение B: отчуждение ИС и кода (KT, IP)».
 
@@ -44,60 +44,60 @@ hide: tags
 | инференс на базе vLLM | Распределённый инференс LLM через vLLM в примере |
 | агентный слой платформы (CMW Platform) | Агентные сценарии управления платформой в примере |
 
-## Связанные документы {: #research_pkg_a_svyazannye_dokumenty }
-- [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)
-- [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa)
-- [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa)
+## Связанные документы {: #app_a_related_documents }
+- [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
+- [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
 - «Приложение C: имеющиеся наработки CMW»
-- [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa)
+- [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
 
 Исходные сводные материалы (март 2026), на которых основан комплект: «Краткое изложение: методология внедрения и отчуждения ИИ…», «Оценка сайзинга, КапЭкс и ОпЭкс для клиентов».
 
-## Владельцы тем (канонические документы) {: #research_pkg_a_vladeltsy_tem_kanonicheskie_dokumenty }
+## Владельцы тем (канонические документы) {: #app_a_topic_owners_canonical_docs }
 
 | Тема | Канонический документ |
 | --- | --- |
-| Экономика: цифры, тарифы, сценарии сайзинга, CapEx / OpEx / TCO | [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa) |
-| Методология: TOM, фазы внедрения, производственная модель без канона по таблицам затрат | [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa) |
-| Отчуждение ИС и кода: KT / IP, лицензии, комплект передачи, приёмка | [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa) |
+| Экономика: цифры, тарифы, сценарии сайзинга, CapEx / OpEx / TCO | [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) |
+| Методология: TOM, фазы внедрения, производственная модель без канона по таблицам затрат | [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#method_pack_overview) |
+| Отчуждение ИС и кода: KT / IP, лицензии, комплект передачи, приёмка | [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview) |
 | Наработки CMW: состав стека, границы «что есть сегодня» | «Приложение C: имеющиеся наработки CMW» |
-| Безопасность, комплаенс, observability (углубление) | [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa) |
-| Навигация по комплекту, реестр документов и источников | [«Приложение A: обзор и ведомость документов»](#research_pkg_a_obzor_paketa) (этот файл) |
+| Безопасность, комплаенс, observability (углубление) | [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview) |
+| Навигация по комплекту, реестр документов и источников | [«Приложение A: обзор и ведомость документов»](#app_a_pack_overview) (этот файл) |
 
-## Навигация «вопрос → документ» {: #research_pkg_a_navigatsiya_vopros_dokument }
+## Навигация «вопрос → документ» {: #app_a_question_document_navigation }
 
-- «Как внедрять и разрабатывать в пром контуре (роли, фазы, quality gates)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)
-- «Где в корпоративном ИИ формируется преимущество (данные, семантика, агенты)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_obzor_paketa)
-- «Где глобальные бенчмарки корпоративного внедрения по публичному отчёту OpenAI (2025) и оговорки по выборке (не норма для КП в РФ)?» → [Основной отчёт: методология внедрения и разработки — эмпирика корпоративного внедрения](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_empirika_korporativnogo_vnedreniya_otchet_openai_2025)
-- «Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_strategiya_vnedreniya_ii_i_organizatsionnaya_zrelost); поведенческие риски — [Приложение D](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_organizatsionnye_i_povedencheskie_faktory_riska); риск бюджета «организационная зрелость и пилот» — [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_riski_byudzheta_i_mery_snizheniya)
-- «Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_obzor_paketa)
-- «Где примерные расчёты расхода токенов по данным портала поддержки и допущениям?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_primernye_raschety_rashoda_tokenov_na_dostupnyh_dannyh_portal_podderzhki) (подраздел «Примерные расчёты расхода токенов на доступных данных (портал поддержки)»)
-- «Как устроен комплект отчуждения ИС/кода и что именно передаём клиенту (KT/IP)?» → [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_obzor_paketa)
-- «Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_bpmn_20_i_generatsiya_llm) и [Приложение B: комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_paket_otchuzhdeniya_minimalno_tselostnyi)
+- «Как внедрять и разрабатывать в пром контуре (роли, фазы, quality gates)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- «Где в корпоративном ИИ формируется преимущество (данные, семантика, агенты)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- «Где глобальные бенчмарки корпоративного внедрения по публичному отчёту OpenAI (2025) и оговорки по выборке (не норма для КП в РФ)?» → [Основной отчёт: методология внедрения и разработки — эмпирика корпоративного внедрения](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report)
+- «Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity); поведенческие риски — [Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_behavioral_risk_factors); риск бюджета «организационная зрелость и пилот» — [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)
+- «Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
+- «Где примерные расчёты расхода токенов по данным портала поддержки и допущениям?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates) (подраздел «Примерные расчёты расхода токенов на доступных данных (портал поддержки)»)
+- «Как устроен комплект отчуждения ИС/кода и что именно передаём клиенту (KT/IP)?» → [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
+- «Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm) и [Приложение B: комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)
 - «Что есть в CMW сегодня (состав стека, границы ‘что есть’ vs ‘методология’)?» → Приложение C: имеющиеся наработки CMW
-- «Как обеспечить security, комплаенс и промышленную observability (контур контроля, data minimization posture)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_obzor_paketa)
-- «Как проектировать изоляцию и сеть для агентского исполнения (граница доверия, egress, краткоживущие учётные данные)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_granitsa_doveriya_set_i_sreda_ispolneniya_agenta)
-- «Какие паттерны среды для агента в PR и долгоживущей dev, модель риска по сценарию и минимальный состав платформы задач?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_model_riska_patterny_sredy_i_minimalnyi_sostav_platformy); для KT/IP и PR — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_spravochno_agent_v_pr_i_artifacty_vmesto_pryamoi_zapisi_v_is)
-- «Как сравнивать E2B / Modal / Daytona и бенчмаркать песочницы (сеть, сессии, метрики прода)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_upravlyaemye_pesochnitsy_sravnenie_modelei_i_benchmarki) и [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_otsenka_upravlyaemyh_pesochnits_i_benchmarki)
-- «Как за ~30 дней вывести безопасный MVP контура исполнения агента, какие враждебные сценарии и критерии готовности?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_spravochno_bezopasnyi_mvp_kontura_ispolneniya_diskussiya_sredy_vyvody) и [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_spravochno_uzkii_bezopasn_mvp_kontura_ispolneniya_agenta_orientir_30_dnei)
-- «Где цифры и барьеры зрелости GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot × CMO Club, 2025)?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_rossiiskii_rynok); [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_genai_v_marketingovyh_komandah_krupnyh_brendov_rf_opros_cmo_2025); [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_organizatsionnye_barery_i_vospriyatie_rizikov_opros_cmo_red_mad_robot_2025); для концентрации SaaS, каталога моделей и ИС в договоре — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#research_pkg_b_tenevoi_genai_v_marketinge_i_marshrutizatsiya_modelei_orientir_oprosa_cmo_2025)
-- «Где ландшафт российского рынка GenAI (онтология сегментов, сценарный контур до 2030, публичные материалы red_mad_robot 2025) и согласование с цифрами IMARC/сегментами?» → [Основной отчёт: методология](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_karta_rossiiskogo_rynka_genai_obzor_red_mad_robot_2025); [Основной отчёт: сайзинг — ИИ-рынок России](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_ii_rynok_rossii_statistika_i_prognozy); [AI TRiSM — Приложение D](./20260325-research-appendix-d-security-observability-ru.md#research_pkg_d_ai_trism_i_upravlenie_doveriem)
-- «Нужен единый реестр источников и дополнительные источники из исходного задания по темам?» → [Приложение A: обзор и ведомость документов](#research_pkg_a_obzor_paketa) (этот документ)
+- «Как обеспечить security, комплаенс и промышленную observability (контур контроля, data minimization posture)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
+- «Как проектировать изоляцию и сеть для агентского исполнения (граница доверия, egress, краткоживущие учётные данные)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__trust_boundary_agent_environment)
+- «Какие паттерны среды для агента в PR и долгоживущей dev, модель риска по сценарию и минимальный состав платформы задач?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_model_platform_patterns); для KT/IP и PR — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)
+- «Как сравнивать E2B / Modal / Daytona и бенчмаркать песочницы (сеть, сессии, метрики прода)?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__managed_sandboxes_benchmarks) и [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_sandbox_evaluation_benchmarks)
+- «Как за ~30 дней вывести безопасный MVP контура исполнения агента, какие враждебные сценарии и критерии готовности?» → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__secure_mvp_execution_environment) и [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_agent_execution_mvp)
+- «Где цифры и барьеры зрелости GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot × CMO Club, 2025)?» → [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market); [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams); [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_barriers_risk_survey_2025); для концентрации SaaS, каталога моделей и ИС в договоре — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)
+- «Где ландшафт российского рынка GenAI (онтология сегментов, сценарный контур до 2030, публичные материалы red_mad_robot 2025) и согласование с цифрами IMARC/сегментами?» → [Основной отчёт: методология](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map); [Основной отчёт: сайзинг — ИИ-рынок России](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_ai_market_stats_forecasts); [AI TRiSM — Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__ai_trism_trust_management)
+- «Нужен единый реестр источников и дополнительные источники из исходного задания по темам?» → [Приложение A: обзор и ведомость документов](#app_a_pack_overview) (этот документ)
 
-## Соответствие разделов исходных материалов документам комплекта {: #research_pkg_a_sootvetstvie_razdelov_ishodnyh_materialov_dokumentam_paketa }
+## Соответствие разделов исходных материалов документам комплекта {: #app_a_source_to_pack_mapping }
 
 Ниже для прозрачности показано, в каком документе комплекта закреплён каждый крупный раздел (заголовок второго уровня) исходных сводных материалов. Вложенные подразделы следуют за родительским разделом в том же файле; полный перечень ссылок — в разделе «Источники» ниже.
 
-### Из «Методология внедрения и отчуждения ИИ» (исходный сводный материал, март 2026) {: #research_pkg_a_iz_metodologiya_vnedreniya_i_otchuzhdeniya_ii_ishodnyi_svodnyi_material_mart_202 }
+### Из «Методология внедрения и отчуждения ИИ» (исходный сводный материал, март 2026) {: #app_a_ai_implementation_methodology_source }
 
 | Заголовок оригинала | Канонический документ в комплекте |
 | --- | --- |
 | `## Назначение документа и границы применения` | Основной отчёт: методология внедрения и разработки |
 | `## Резюме для руководства` | Основной отчёт: методология внедрения и разработки |
-| `## Источник преимущества в корпоративном ИИ (2026): внутренний контекст и рабочий слой данных` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_istochnik_preimuschestva_v_korporativnom_ii_2026_vnutrennii_kontekst_i_rabochii_) |
-| `## Стратегия внедрения ИИ и организационная зрелость` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_strategiya_vnedreniya_ii_i_organizatsionnaya_zrelost) |
+| `## Источник преимущества в корпоративном ИИ (2026): внутренний контекст и рабочий слой данных` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_corporate_ai_advantage_source) |
+| `## Стратегия внедрения ИИ и организационная зрелость` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity) |
 | `## Целевая операционная модель (Target Operating Model)` | Основной отчёт: методология внедрения и разработки |
-| `### Публичные ориентиры рынка (@Redmadnews, 2026)` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_publichnye_orientiry_rynka_redmadnews_2026) |
+| `### Публичные ориентиры рынка (@Redmadnews, 2026)` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_market_benchmarks_2026) |
 | `## Методология внедрения (Этапы и Качество)` | Основной отчёт: методология внедрения и разработки |
 | `## Промышленная наблюдаемость LLM, RAG и агентов` | Приложение D: безопасность, комплаенс и observability |
 | `## Обзор текущей архитектуры CMW` | Приложение C: имеющиеся наработки CMW |
@@ -112,9 +112,9 @@ hide: tags
 | `## Инженерия обвязки для агентов` | Основной отчёт: методология внедрения и разработки |
 | `## Практический опыт внедрения ИИ (red_mad_robot)` | Основной отчёт: методология внедрения и разработки |
 | `## Российский рынок ИИ: Текущее состояние и Прогнозы (2024-2026)` | Основной отчёт: методология внедрения и разработки |
-| `### Карта российского рынка GenAI (обзор red_mad_robot, публичные материалы 2025)` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_karta_rossiiskogo_rynka_genai_obzor_red_mad_robot_2025) |
+| `### Карта российского рынка GenAI (обзор red_mad_robot, публичные материалы 2025)` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map) |
 | `## Методология Enterprise AI (Global Best Practices)` | Основной отчёт: методология внедрения и разработки |
-| `### Эмпирика корпоративного внедрения (отчёт OpenAI, 2025; оговорки по выборке)` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#research_methodology_20260325_empirika_korporativnogo_vnedreniya_otchet_openai_2025) |
+| `### Эмпирика корпоративного внедрения (отчёт OpenAI, 2025; оговорки по выборке)` | [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report) |
 | `## Практические кейсы из каналов` | Основной отчёт: методология внедрения и разработки |
 | `## Рекомендации по внедрению ИИ для клиентов` | Основной отчёт: методология внедрения и разработки |
 | `## Управление рисками и соответствие (Compliance)` | Приложение D: безопасность, комплаенс и observability |
@@ -124,7 +124,7 @@ hide: tags
 | `## Обоснование рекомендаций (метод исследования)` | Основной отчёт: методология внедрения и разработки |
 | `## Источники` | Приложение A: обзор и ведомость документов |
 
-### Из «Сайзинг, CapEx и OpEx для клиентов» (исходный сводный материал, март 2026) {: #research_pkg_a_iz_saizing_capex_i_opex_dlya_klientov_ishodnyi_svodnyi_material_mart_2026 }
+### Из «Сайзинг, CapEx и OpEx для клиентов» (исходный сводный материал, март 2026) {: #app_a_sizing_capex_opex_source }
 
 | Заголовок оригинала | Канонический документ в комплекте |
 | --- | --- |
@@ -139,17 +139,17 @@ hide: tags
 | `## Сборник мер по оптимизации стоимости (Cost Optimization Suite)` | Основной отчёт: сайзинг и экономика |
 | `## Риски бюджета и меры снижения` | Основной отчёт: сайзинг и экономика |
 | `## Тарифы российских облачных провайдеров ИИ` | Основной отчёт: сайзинг и экономика |
-| `### Аренда GPU (IaaS РФ): дополнительные поставщики и ориентиры` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_arenda_gpu_iaas_rf_dopolnitelnye_postavshchiki) |
+| `### Аренда GPU (IaaS РФ): дополнительные поставщики и ориентиры` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_rental_iaas_providers) |
 | `## Детальный анализ аппаратных требований` | Основной отчёт: сайзинг и экономика |
-| `### Профиль on-prem GPU в проектах CMW` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_profil_onprem_gpu_v_proektah_cmw) |
+| `### Профиль on-prem GPU в проектах CMW` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) |
 | `## Детальные капитальные затраты (CapEx)` | Основной отчёт: сайзинг и экономика |
 | `## Детальные операционные затраты (OpEx)` | Основной отчёт: сайзинг и экономика |
 | `## Анализ общей стоимости владения (TCO)` | Основной отчёт: сайзинг и экономика |
 | `## Рекомендации по сайзингу для клиентов` | Основной отчёт: сайзинг и экономика |
 | `## Дополнительные стратегии оптимизации затрат` | Основной отчёт: сайзинг и экономика |
 | `## Промежуточное заключение по сайзингу` | Основной отчёт: сайзинг и экономика |
-| `### Бенчмарки RTX 4090 (реф. 24 ГБ GeForce; у CMW — 48 ГБ кастом)` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_benchmarki_rtx_4090_24_gb) |
-| `### Ориентиры сообщества: Qwen3.5-35B-A3B и потребительское железо (март 2026)` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_orientiry_soobschestva_qwen3_5_35b_a3b_i_potrebitelskoe_zhelezo_mart_2026) |
+| `### Бенчмарки RTX 4090 (реф. 24 ГБ GeForce; у CMW — 48 ГБ кастом)` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_rtx_4090_benchmarks) |
+| `### Ориентиры сообщества: Qwen3.5-35B-A3B и потребительское железо (март 2026)` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_community_qwen_consumer_hardware) |
 | `## Актуальные AI/ML тренды из канала @ai_machinelearning_big_data` | Основной отчёт: сайзинг и экономика |
 | `## Оптимизация затрат на инференс (практический опыт)` | Основной отчёт: сайзинг и экономика |
 | `## Локальный инференс: практические кейсы` | Основной отчёт: сайзинг и экономика |
@@ -159,7 +159,7 @@ hide: tags
 | `## VRAM Requirements для LLM Inference` | Основной отчёт: сайзинг и экономика |
 | `## Корректировка TCO для российского рынка` | Основной отчёт: сайзинг и экономика |
 | `## ИИ-рынок России: Статистика и прогнозы` | Основной отчёт: сайзинг и экономика |
-| `### Сегментные ориентиры РФ (GPU-облако, B2B LLM)` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#research_sizing_20260325_segmentnye_orientiry_rf_gpu_oblako_b2b_llm) |
+| `### Сегментные ориентиры РФ (GPU-облако, B2B LLM)` | [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_segment_benchmarks) |
 | `## Практические рекомендации по сайзингу (Decision Tree)` | Основной отчёт: сайзинг и экономика |
 | `## Новые тренды 2026 (Дополнительно)` | Основной отчёт: сайзинг и экономика |
 | `## Планирование мощности ИИ-инфраструктуры (2025-2030)` | Основной отчёт: сайзинг и экономика |
@@ -170,17 +170,17 @@ hide: tags
 | `## Обоснование рекомендаций и границы документа` | Основной отчёт: сайзинг и экономика |
 | `## Источники` | Приложение A: обзор и ведомость документов |
 
-### Справка о структуре {: #research_pkg_a_spravka_o_strukture }
+### Справка о структуре {: #app_a_structure_reference }
 
 Каждый раздел исходных материалов с заголовком второго уровня (`##`) в комплекте имеет ровно один канонический документ; подзаголовки `###` и `####` остаются внутри соответствующего раздела и переносятся вместе с ним.
 
 Отдельные разделы второго уровня в **основном отчёте по методологии** могут добавляться **после** выпуска исходного сводного материала (март 2026) как уточнения рамки комплекта без изменения соответствия таблицы выше для строк исходника; так, разделы «Источник преимущества в корпоративном ИИ (2026)…» и «Стратегия внедрения ИИ и организационная зрелость» не имели одноимённых заголовков в исходном файле и закреплены канонически в основном отчёте по методологии. Подраздел **«Публичные ориентиры рынка (@Redmadnews, 2026)»** вложен в раздел «Целевая операционная модель» и в таблице выше приведён отдельной строкой для навигации. Подраздел **«Карта российского рынка GenAI (обзор red_mad_robot, публичные материалы 2025)»** вложен в раздел «Российский рынок ИИ…» и в таблице выше приведён отдельной строкой для навигации.
 
-## Источники {: #research_pkg_a_istochniki }
+## Источники {: #app_a_sources }
 
-### Источники из «Методология внедрения и отчуждения ИИ» (использовано в комплекте) {: #research_pkg_a_istochniki_iz_metodologiya_vnedreniya_i_otchuzhdeniya_ii_ispolzovano_v_pakete }
+### Источники из «Методология внедрения и отчуждения ИИ» (использовано в комплекте) {: #app_a_sources_ai_implementation_methodology }
 
-#### Инженерия обвязки и мультиагентная разработка {: #research_pkg_a_inzheneriya_obvyazki_i_multiagentnaya_razrabotka }
+#### Инженерия обвязки и мультиагентная разработка {: #app_a_wrapper_engineering_multiagent }
 
 - [OpenAI — Harness engineering](https://openai.com/ru-RU/index/harness-engineering/)
 - [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
@@ -188,7 +188,7 @@ hide: tags
 - [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
 - [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
 
-#### OWASP GenAI Security, тестирование и адаптации на русском {: #research_pkg_a_owasp_genai_security_testirovanie_i_adaptatsii_na_russkom }
+#### OWASP GenAI Security, тестирование и адаптации на русском {: #app_a_owasp_genai_security_ru }
 
 - [OWASP Gen AI Security Project — Introduction](https://genai.owasp.org/introduction-genai-security-project/)
 - [OWASP — проект Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
@@ -203,7 +203,7 @@ hide: tags
 - [Habr — OWASP (смежные публикации сообщества)](https://habr.com/ru/companies/owasp/articles/900276/)
 - [Habr — OWASP (смежные публикации сообщества)](https://habr.com/ru/companies/owasp/articles/896328/)
 
-#### Угрозы GenAI и иллюстративные материалы третьих лиц (не реклама) {: #research_pkg_a_ugrozy_genai_i_illyustrativnye_materialy_tretih_lits_ne_reklama }
+#### Угрозы GenAI и иллюстративные материалы третьих лиц (не реклама) {: #app_a_genai_threats_third_party_materials }
 
 - [Kaspersky Resource Center — What Is Prompt Injection?](https://www.kaspersky.com/resource-center/threats/prompt-injection)
 - [Kaspersky Blog — How LLMs can be compromised in 2025](https://www.kaspersky.com/blog/new-llm-attack-vectors-2025/54323/)
@@ -212,7 +212,7 @@ hide: tags
 - [Kaspersky — press release: training Large Language Models Security (описание программы)](https://www.kaspersky.com/about/press-releases/kaspersky-introduces-a-new-training-large-language-models-security)
 - [CodeWall — How we hacked McKinsey’s AI platform (разбор red team)](https://codewall.ai/blog/how-we-hacked-mckinseys-ai-platform)
 
-#### Нормативные и стратегические материалы {: #research_pkg_a_normativnye_i_strategicheskie_materialy }
+#### Нормативные и стратегические материалы {: #app_a_regulatory_strategic_materials }
 
 - [ISO/IEC 42001:2023 — Artificial intelligence management system](https://www.iso.org/standard/81230.html)
 - [NIST — AI RMF to ISO/IEC 42001 Crosswalk (PDF)](https://airc.nist.gov/docs/NIST_AI_RMF_to_ISO_IEC_42001_Crosswalk.pdf)
@@ -220,11 +220,11 @@ hide: tags
 - [NIST AIRC — Roadmap for the AI Risk Management Framework](https://airc.nist.gov/airmf-resources/roadmap)
 - [Официальное опубликование — Приказ Роскомнадзора от 19.06.2025 № 140 (обезличивание ПДн)](http://publication.pravo.gov.ru/document/0001202508010002)
 
-#### Данные и стратегические сигналы {: #research_pkg_a_dannye_i_strategicheskie_signaly }
+#### Данные и стратегические сигналы {: #app_a_data_strategic_signals }
 
 - [Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)
 
-#### Российский рынок GenAI, сегменты и AI TRiSM (публичные ссылки) {: #research_pkg_a_rossiiskii_rynok_genai_segmenty_i_ai_trism }
+#### Российский рынок GenAI, сегменты и AI TRiSM (публичные ссылки) {: #app_a_russian_genai_market_segments_trism }
 
 - [red_mad_robot — раздел «Исследования»](https://redmadrobot.ru/issledovaniya-1/)
 - [red_mad_robot — мероприятие: тренд-репорт рынка GenAI (2025)](https://redmadrobot.ru/meropriyatiya/trend-report-rynok-gen-ai-v-2025-godu/)
@@ -235,18 +235,18 @@ hide: tags
 - [McKinsey — The state of AI](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)
 - [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
 
-#### Подкасты (первичная запись): AI-First, red_mad_robot {: #research_pkg_a_podkasty_pervichnaya_zapis_ai_first_red_mad_robot }
+#### Подкасты (первичная запись): AI-First, red_mad_robot {: #app_a_podcasts_ai_first_red_mad_robot }
 
 - [YouTube — «Ноосфера» #129: Илья Самофеев (red_mad_robot), AI-First / AI-Native](https://www.youtube.com/watch?v=jTKhg1jqF_M)
 
-#### Стек инференса (MOSEC, vLLM) и открытая документация {: #research_pkg_a_stek_inferensa_mosec_vllm_i_otkrytaya_dokumentatsiya }
+#### Стек инференса (MOSEC, vLLM) и открытая документация {: #app_a_inference_stack_mosec_vllm_docs }
 
 - [MOSEC — документация](https://mosecorg.github.io/mosec/index.html)
 - [mosecorg/mosec (GitHub)](https://github.com/mosecorg/mosec)
 - [vLLM — OpenAI-Compatible Server](https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html)
 - [сервер инференса MOSEC — README проекта (пример публичного зеркала)](https://github.com/arterm-sedov/cmw-mosec)
 
-#### Экономика, рынок, enterprise AI {: #research_pkg_a_ekonomika_rynok_enterprise_ai }
+#### Экономика, рынок, enterprise AI {: #app_a_economics_market_enterprise_ai }
 
 - [Yakov & Partners — публикация AI 2025](https://yakovpartners.com/publications/ai-2025/)
 - [MarketsandMarkets — Russia AI Inference PaaS Market](https://www.marketsandmarkets.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp)
@@ -270,12 +270,12 @@ hide: tags
 - [Хабр — Релиз Claude Opus 4.6](https://habr.com/ru/news/993322/)
 - [Microsoft Research — Fara-7B: An Efficient Agentic Model for Computer Use (PDF)](https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf)
 
-#### Оценка качества и мониторинг (LangSmith) {: #research_pkg_a_otsenka_kachestva_i_monitoring_langsmith }
+#### Оценка качества и мониторинг (LangSmith) {: #app_a_quality_monitoring_langsmith }
 
 - [LangChain Docs — Evaluation concepts (LangSmith)](https://docs.langchain.com/langsmith/evaluation-concepts)
 - [LangSmith — Online evaluations (how-to)](https://docs.smith.langchain.com/observability/how_to_guides/online_evaluations)
 
-#### Исследования (edge–cloud routing, агентная память и обучение; ориентиры НИОКР) {: #research_pkg_a_issledovaniya_edge_cloud_routing_agentnaya_pamyat_i_obuchenie_orientiry_niokr }
+#### Исследования (edge–cloud routing, агентная память и обучение; ориентиры НИОКР) {: #app_a_research_edge_cloud_routing_memory }
 
 - [arXiv — HybridFlow: Resource-Adaptive Subtask Routing for Edge-Cloud LLM Inference](https://arxiv.org/html/2512.22137v4)
 - [arXiv — PRISM: Privacy-Aware Routing for Cloud-Edge LLM Inference](https://arxiv.org/html/2511.22788v1)
@@ -284,7 +284,7 @@ hide: tags
 - [arXiv — MoE на стеке AMD (IBM, Zyphra и др.)](https://arxiv.org/pdf/2511.17127)
 - [arXiv — Moonshot AI: ускорение синхронного RL](https://arxiv.org/pdf/2511.14617)
 
-#### Облачные провайдеры и тарифы (РФ) {: #research_pkg_a_oblachnye_provaidery_i_tarify_rf }
+#### Облачные провайдеры и тарифы (РФ) {: #app_a_cloud_providers_tariffs_russia }
 
 - [Cloud.ru — Evolution Foundation Models (продукт)](https://cloud.ru/products/evolution-foundation-models)
 - [Cloud.ru — тарифы Evolution Foundation Models](https://cloud.ru/documents/tariffs/evolution/foundation-models)
@@ -306,12 +306,12 @@ hide: tags
 - [Cloud4Y — облачный GPU-хостинг](https://www.cloud4y.ru/cloud-hosting/gpu/)
 - [NVIDIA — GeForce Software License](https://www.nvidia.com/en-us/drivers/geforce-license/)
 
-#### Иллюстративная лицензия и примеры (YandexGPT-5-Lite-8B) {: #research_pkg_a_illyustrativnaya_litsenziya_i_primery_yandexgpt_5_lite_8b }
+#### Иллюстративная лицензия и примеры (YandexGPT-5-Lite-8B) {: #app_a_illustrative_license_yandexgpt_examples }
 
 - [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
 
-#### Открытые модели ai-sage (GigaChat и спутники, TCO) {: #research_pkg_a_otkrytye_modeli_ai_sage_gigachat_i_sputniki_tco }
+#### Открытые модели ai-sage (GigaChat и спутники, TCO) {: #app_a_open_models_ai_sage_gigachat_tco }
 
 - [Хабр — GigaChat-3.1: большое обновление больших моделей (блог Сбера)](https://habr.com/ru/companies/sberbank/articles/1014146/)
 - [Hugging Face — организация ai-sage](https://huggingface.co/ai-sage)
@@ -320,7 +320,7 @@ hide: tags
 - [Hugging Face — ai-sage/GigaChat3.1-10B-A1.8B (Lightning 3.1)](https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B)
 - [Hugging Face — ai-sage/GigaChat3-10B-A1.8B (Lightning 3.0)](https://huggingface.co/ai-sage/GigaChat3-10B-A1.8B)
 
-#### Операционные и «рядом» материалы {: #research_pkg_a_operatsionnye_i_ryadom_materialy }
+#### Операционные и «рядом» материалы {: #app_a_operational_related_materials }
 
 - [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
@@ -328,9 +328,9 @@ hide: tags
 - [Arize Phoenix — документация](https://docs.arize.com/phoenix)
 - [LangSmith — документация](https://docs.smith.langchain.com/)
 
-### Источники из «Оценка сайзинга, КапЭкс и ОпЭкс для клиентов» (использовано в комплекте) {: #research_pkg_a_istochniki_iz_otsenka_saizinga_kapeks_i_opeks_dlya_klientov_ispolzovano_v_pakete }
+### Источники из «Оценка сайзинга, КапЭкс и ОпЭкс для клиентов» (использовано в комплекте) {: #app_a_sources_sizing_capex_opex_assessment }
 
-#### Примерные расчёты токенов (портал поддержки, агрегаторы и обзоры прайсов) {: #research_pkg_a_primernye_raschety_tokenov_portal_podderzhki_agregatory_i_obzory_praisov }
+#### Примерные расчёты токенов (портал поддержки, агрегаторы и обзоры прайсов) {: #app_a_token_estimates_pricing }
 
 - [Портал поддержки Comindware](https://support.comindware.com/)
 - [LLMoney — калькулятор цен токенов LLM](https://llmoney.ru)
@@ -338,7 +338,7 @@ hide: tags
 - [Хабр — гид по топ-20 нейросетям для текстов (в т.ч. цены)](https://habr.com/ru/articles/948672/)
 - [VC.ru — гайд по тарифам Claude и доступу из России](https://vc.ru/ai/2757771-tarify-claude-2026-gayd-po-planam-i-dostupu-iz-rossii)
 
-#### Инженерия обвязки и мультиагентная разработка {: #research_pkg_a_inzheneriya_obvyazki_i_multiagentnaya_razrabotka_2 }
+#### Инженерия обвязки и мультиагентная разработка {: #app_a_multiagent_engineering }
 
 - [OpenAI — Harness engineering](https://openai.com/ru-RU/index/harness-engineering/)
 - [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
@@ -346,7 +346,7 @@ hide: tags
 - [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
 - [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
 
-#### Агентная память и модели (ориентиры НИОКР и прайсинга, не строка КП) {: #research_pkg_a_agentnaya_pamyat_i_modeli_orientiry_niokr_i_praisinga_ne_stroka_kp }
+#### Агентная память и модели (ориентиры НИОКР и прайсинга, не строка КП) {: #app_a_agent_memory_benchmarks }
 
 - [arXiv — General Agentic Memory (GAM)](https://arxiv.org/pdf/2511.18423)
 - [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
@@ -357,7 +357,7 @@ hide: tags
 - [Anthropic — Pricing](https://www.anthropic.com/pricing)
 - [Microsoft Research — Fara-7B (PDF)](https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf)
 
-#### Безопасность GenAI, OWASP и сигналы рынка (TCO / риски) {: #research_pkg_a_bezopasnost_genai_owasp_i_signaly_rynka_tco_riski }
+#### Безопасность GenAI, OWASP и сигналы рынка (TCO / риски) {: #app_a_genai_security_owasp_tco }
 
 - [OWASP GenAI Security — Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
 - [OWASP GenAI Security — Top 10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
@@ -367,12 +367,12 @@ hide: tags
 - [OpenAI — приобретение PromptFoo (контекст рынка тестирования)](https://openai.com/index/openai-to-acquire-promptfoo/)
 - [Kaspersky — пресс-релиз: угрозы под видом популярных ИИ-сервисов (бенчмарк тренда)](https://www.kaspersky.com/about/press-releases/kaspersky-chatgpt-mimicking-cyberthreats-surge-115-in-early-2025-smbs-increasingly-targeted)
 
-#### Иллюстративные ориентиры нагрузки (публичные интервью, финсектор) {: #research_pkg_a_illyustrativnye_orientiry_nagruzki_publichnye_intervyu_finsektor }
+#### Иллюстративные ориентиры нагрузки (публичные интервью, финсектор) {: #app_a_load_benchmarks_financial }
 
 - [CIO — интервью: чат-бот, масштаб обращений и сценарии](https://cio.osp.ru/articles/5455)
 - [«Открытые системы» — RAG и LLM для поддержки операционистов](https://www.osp.ru/articles/2025/0324/13059305)
 
-#### Облачные провайдеры и тарифы (РФ) {: #research_pkg_a_oblachnye_provaidery_i_tarify_rf_2 }
+#### Облачные провайдеры и тарифы (РФ) {: #app_a_cloud_providers_russia }
 
 - [Cloud.ru — Evolution Foundation Models (продукт, перечень моделей)](https://cloud.ru/products/evolution-foundation-models)
 - [Cloud.ru — Evolution Foundation Models, тарифы (2026)](https://cloud.ru/documents/tariffs/evolution/foundation-models)
@@ -397,12 +397,12 @@ hide: tags
 - [Cloud4Y — облачный GPU-хостинг](https://www.cloud4y.ru/cloud-hosting/gpu/)
 - [NVIDIA — GeForce Software License](https://www.nvidia.com/en-us/drivers/geforce-license/) (справочно по сценариям GeForce vs datacenter)
 
-#### Публичные веса с нестандартной лицензией {: #research_pkg_a_publichnye_vesa_s_nestandartnoi_litsenziei }
+#### Публичные веса с нестандартной лицензией {: #app_a_public_weights_licensing }
 
 - [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
 
-#### Открытые проекты ai-sage (GigaChat и спутники) {: #research_pkg_a_otkrytye_proekty_ai_sage_gigachat_i_sputniki }
+#### Открытые проекты ai-sage (GigaChat и спутники) {: #app_a_open_models_gigachat }
 
 - [Хабр — GigaChat-3.1: большое обновление больших моделей (блог Сбера)](https://habr.com/ru/companies/sberbank/articles/1014146/)
 - [Hugging Face — организация ai-sage](https://huggingface.co/ai-sage)
@@ -411,7 +411,7 @@ hide: tags
 - [Hugging Face — ai-sage/GigaChat3.1-10B-A1.8B (Lightning 3.1)](https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B)
 - [Hugging Face — ai-sage/GigaChat3.1-10B-A1.8B (Lightning 3.0)](https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B)
 
-#### Инструменты разработки с ИИ (ориентиры) {: #research_pkg_a_instrumenty_razrabotki_s_ii_orientiry }
+#### Инструменты разработки с ИИ (ориентиры) {: #app_a_ai_dev_tools_benchmarks }
 
 - [OpenCode](https://opencode.ai/)
 - [OpenCode — документация (Intro)](https://opencode.ai/docs)
@@ -421,7 +421,7 @@ hide: tags
 - [OpenRouter](https://openrouter.ai/)
 - [OpenRouter — Logging и политики провайдеров](https://openrouter.ai/docs/guides/privacy/logging)
 
-#### Финансовая и инфраструктурная база (FinOps/TCO/железо) {: #research_pkg_a_finansovaya_i_infrastrukturnaya_baza_finops_tco_zhelezo }
+#### Финансовая и инфраструктурная база (FinOps/TCO/железо) {: #app_a_finops_tco_infrastructure }
 
 - [FinOps Foundation — Generative AI (Unit Economics)](https://www.finops.org/wg/generative-ai/)
 - [FinOps Framework — Unit Economics (capability)](https://www.finops.org/framework/capabilities/unit-economics/)
@@ -436,12 +436,12 @@ hide: tags
 - [apxml.com — VRAM calculator](https://apxml.com/tools/vram-calculator)
 - [Hugging Face — Qwen/Qwen3.5-35B-A3B](https://huggingface.co/Qwen/Qwen3.5-35B-A3B)
 
-#### Исследования рынка (зрелость GenAI, не технический сайзинг) {: #research_pkg_a_issledovaniya_rynka_zrelost_genai }
+#### Исследования рынка (зрелость GenAI, не технический сайзинг) {: #app_a_market_research_genai_maturity }
 
 - [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197)
 - [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
 
-#### Наблюдаемость и телеметрия {: #research_pkg_a_nablyudaemost_i_telemetriya }
+#### Наблюдаемость и телеметрия {: #app_a_observability_telemetry }
 
 - [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
@@ -453,11 +453,11 @@ hide: tags
 - [Официальное опубликование — Приказ Роскомнадзора от 19.06.2025 № 140 (обезличивание ПДн)](http://publication.pravo.gov.ru/document/0001202508010002)
 - [Langfuse — документация observability](https://langfuse.com/docs/observability/get-started)
 
-## Полный реестр использованных источников (точная консолидация) {: #research_pkg_a_polnyi_reestr_ispolzovannyh_istochnikov_tochnaya_konsolidatsiya }
+## Полный реестр использованных источников (точная консолидация) {: #app_a_sources_registry }
 
-### Источники из «Методология внедрения и отчуждения ИИ» (без сокращений) {: #research_pkg_a_istochniki_iz_metodologiya_vnedreniya_i_otchuzhdeniya_ii_bez_sokraschenii }
+### Источники из «Методология внедрения и отчуждения ИИ» (без сокращений) {: #app_a_ai_adoption_methodology_sources }
 
-#### Инженерия обвязки и мультиагентная разработка {: #research_pkg_a_inzheneriya_obvyazki_i_multiagentnaya_razrabotka_3 }
+#### Инженерия обвязки и мультиагентная разработка {: #app_a_multiagent_engineering_2 }
 
 - [OpenAI — Harness engineering](https://openai.com/ru-RU/index/harness-engineering/)
 - [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
@@ -465,7 +465,7 @@ hide: tags
 - [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
 - [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
 
-#### OWASP GenAI Security, тестирование и адаптации на русском {: #research_pkg_a_owasp_genai_security_testirovanie_i_adaptatsii_na_russkom_2 }
+#### OWASP GenAI Security, тестирование и адаптации на русском {: #app_a_owasp_genai_testing_ru }
 
 - [OWASP Gen AI Security Project — Introduction](https://genai.owasp.org/introduction-genai-security-project/)
 - [OWASP — проект Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
@@ -479,7 +479,7 @@ hide: tags
 - [Habr — OWASP (смежные публикации сообщества)](https://habr.com/ru/companies/owasp/articles/896328/)
 - [Habr — OWASP (смежные публикации сообщества)](https://habr.com/ru/companies/owasp/articles/900276/)
 
-#### Угрозы GenAI и иллюстративные материалы третьих лиц (не реклама) {: #research_pkg_a_ugrozy_genai_i_illyustrativnye_materialy_tretih_lits_ne_reklama_2 }
+#### Угрозы GenAI и иллюстративные материалы третьих лиц (не реклама) {: #app_a_genai_threats_materials }
 
 - [Kaspersky Resource Center — What Is Prompt Injection?](https://www.kaspersky.com/resource-center/threats/prompt-injection)
 - [Kaspersky Blog — How LLMs can be compromised in 2025](https://www.kaspersky.com/blog/new-llm-attack-vectors-2025/54323/)
@@ -488,7 +488,7 @@ hide: tags
 - [Kaspersky — press release: training Large Language Models Security (описание программы)](https://www.kaspersky.com/about/press-releases/kaspersky-introduces-a-new-training-large-language-models-security)
 - [CodeWall — How we hacked McKinsey’s AI platform (разбор red team)](https://codewall.ai/blog/how-we-hacked-mckinseys-ai-platform)
 
-#### Нормативные и стратегические материалы {: #research_pkg_a_normativnye_i_strategicheskie_materialy_2 }
+#### Нормативные и стратегические материалы {: #app_a_regulatory_strategic_docs }
 
 - [ISO/IEC 42001:2023 — Artificial intelligence management system](https://www.iso.org/standard/81230.html)
 - [NIST — AI RMF to ISO/IEC 42001 Crosswalk (PDF)](https://airc.nist.gov/docs/NIST_AI_RMF_to_ISO_IEC_42001_Crosswalk.pdf)
@@ -500,11 +500,11 @@ hide: tags
 - [DataGuidance — поправки к национальной стратегии развития ИИ РФ](https://www.dataguidance.com/news/russia-president-issues-amendments-national-ai)
 - [Известия (EN) — создание офисов внедрения ИИ](https://en.iz.ru/en/node/1985740)
 
-#### Данные и стратегические сигналы {: #research_pkg_a_dannye_i_strategicheskie_signaly_2 }
+#### Данные и стратегические сигналы {: #app_a_data_strategic_signals_2 }
 
 - [Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)
 
-#### Российский рынок GenAI, сегменты и AI TRiSM (публичные ссылки) {: #research_pkg_a_rossiiskii_rynok_genai_segmenty_i_ai_trism_2 }
+#### Российский рынок GenAI, сегменты и AI TRiSM (публичные ссылки) {: #app_a_russia_genai_market_trism }
 
 - [red_mad_robot — раздел «Исследования»](https://redmadrobot.ru/issledovaniya-1/)
 - [red_mad_robot — мероприятие: тренд-репорт рынка GenAI (2025)](https://redmadrobot.ru/meropriyatiya/trend-report-rynok-gen-ai-v-2025-godu/)
@@ -515,14 +515,14 @@ hide: tags
 - [McKinsey — The state of AI](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)
 - [Gartner — AI TRiSM (глоссарий)](https://www.gartner.com/en/information-technology/glossary/ai-trism)
 
-#### Стек инференса (MOSEC, vLLM) и открытая документация {: #research_pkg_a_stek_inferensa_mosec_vllm_i_otkrytaya_dokumentatsiya_2 }
+#### Стек инференса (MOSEC, vLLM) и открытая документация {: #app_a_inference_stack_mosec_vllm }
 
 - [MOSEC — документация](https://mosecorg.github.io/mosec/index.html)
 - [mosecorg/mosec (GitHub)](https://github.com/mosecorg/mosec)
 - [vLLM — OpenAI-Compatible Server](https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html)
 - [сервер инференса MOSEC — README проекта (пример публичного зеркала)](https://github.com/arterm-sedov/cmw-mosec)
 
-#### Экономика, рынок, enterprise AI {: #research_pkg_a_ekonomika_rynok_enterprise_ai_2 }
+#### Экономика, рынок, enterprise AI {: #app_a_economics_enterprise_ai }
 
 - [Yakov & Partners — публикация AI 2025](https://yakovpartners.com/publications/ai-2025/)
 - [IMARC — Russia Artificial Intelligence Market](https://www.imarcgroup.com/russia-artificial-intelligence-market)
@@ -544,12 +544,12 @@ hide: tags
 - [Хабр — Релиз Claude Opus 4.6](https://habr.com/ru/news/993322/)
 - [Microsoft Research — Fara-7B: An Efficient Agentic Model for Computer Use (PDF)](https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf)
 
-#### Оценка качества и мониторинг (LangSmith) {: #research_pkg_a_otsenka_kachestva_i_monitoring_langsmith_2 }
+#### Оценка качества и мониторинг (LangSmith) {: #app_a_quality_monitoring_langsmith_2 }
 
 - [LangChain Docs — Evaluation concepts (LangSmith)](https://docs.langchain.com/langsmith/evaluation-concepts)
 - [LangSmith — Online evaluations (how-to)](https://docs.smith.langchain.com/observability/how_to_guides/online_evaluations)
 
-#### Исследования (edge–cloud routing, агентная память и обучение; ориентиры НИОКР) {: #research_pkg_a_issledovaniya_edge_cloud_routing_agentnaya_pamyat_i_obuchenie_orientiry_niokr_2 }
+#### Исследования (edge–cloud routing, агентная память и обучение; ориентиры НИОКР) {: #app_a_edge_cloud_routing_research }
 
 - [arXiv — HybridFlow: Resource-Adaptive Subtask Routing for Edge-Cloud LLM Inference](https://arxiv.org/html/2512.22137v4)
 - [arXiv — PRISM: Privacy-Aware Routing for Cloud-Edge LLM Inference](https://arxiv.org/html/2511.22788v1)
@@ -558,7 +558,7 @@ hide: tags
 - [arXiv — MoE на стеке AMD (IBM, Zyphra и др.)](https://arxiv.org/pdf/2511.17127)
 - [arXiv — Moonshot AI: ускорение синхронного RL](https://arxiv.org/pdf/2511.14617)
 
-#### Облачные провайдеры и тарифы (РФ) {: #research_pkg_a_oblachnye_provaidery_i_tarify_rf_3 }
+#### Облачные провайдеры и тарифы (РФ) {: #app_a_cloud_providers_russia_2 }
 
 - [Cloud.ru — Evolution Foundation Models (продукт)](https://cloud.ru/products/evolution-foundation-models)
 - [Cloud.ru — тарифы Evolution Foundation Models](https://cloud.ru/documents/tariffs/evolution/foundation-models)
@@ -594,7 +594,7 @@ hide: tags
 - [Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Llama-70B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B)
 - [Hugging Face — организация Qwen](https://huggingface.co/Qwen)
 
-#### Публичные веса с нестандартной лицензией {: #research_pkg_a_publichnye_vesa_s_nestandartnoi_litsenziei_2 }
+#### Публичные веса с нестандартной лицензией {: #app_a_public_weights_licensing_2 }
 
 - [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
@@ -602,7 +602,7 @@ hide: tags
 - [Yandex Research — принятые к ICML 2025 (список, в т.ч. KV-cache)](https://research.yandex.com/blog/papers-accepted-to-icml-2025)
 - [arXiv — Cache Me If You Must (KV-quantization), 2501.19392](https://arxiv.org/abs/2501.19392)
 
-#### Открытые модели ai-sage (GigaChat и спутники) {: #research_pkg_a_otkrytye_modeli_ai_sage_gigachat_i_sputniki }
+#### Открытые модели ai-sage (GigaChat и спутники) {: #app_a_open_models_gigachat_2 }
 
 - [Хабр — GigaChat-3.1: большое обновление больших моделей (блог Сбера)](https://habr.com/ru/companies/sberbank/articles/1014146/)
 - [Hugging Face — организация ai-sage](https://huggingface.co/ai-sage)
@@ -616,14 +616,14 @@ hide: tags
 - [GitVerse — GigaTeam/gigachat3.1](https://gitverse.ru/GigaTeam/gigachat3.1)
 - [GitHub — sgl-project/sglang, PR #18802](https://github.com/sgl-project/sglang/pull/18802)
 
-#### Публичные материалы Ozon Tech {: #research_pkg_a_publichnye_materialy_ozon_tech }
+#### Публичные материалы Ozon Tech {: #app_a_ozon_tech_materials }
 
 - [Хабр — Ozon Tech: пересборка конструктора чат-ботов (Bots Factory, no-code, масштаб)](https://habr.com/ru/companies/ozontech/articles/834812/)
 - [Хабр — Ozon Tech: Query Prediction, ANN и обратный индекс](https://habr.com/ru/companies/ozontech/articles/990180/)
 - [Хабр — Ozon Tech: анонс ML&DS Meetup (MLOps, программа докладов)](https://habr.com/ru/companies/ozontech/articles/768734/)
 - [GitHub — организация ozontech (открытые репозитории)](https://github.com/ozontech)
 
-#### Методологии внедрения и отраслевые практики {: #research_pkg_a_metodologii_vnedreniya_i_otraslevye_praktiki }
+#### Методологии внедрения и отраслевые практики {: #app_a_implementation_methodologies_industry_practices }
 
 - [Just AI — корпоративный GenAI (упоминается как практикующий вендор)](https://just-ai.com/ru/)
 - [Luxoft — модель Build–Operate–Transfer (BOT)](https://www.luxoft.com/blog/master-the-build-operate-transfer-bot-model-with-luxoft)
@@ -633,7 +633,7 @@ hide: tags
 - [Habr — red_mad_robot: MCP Tool Registry и автоматизация RAG](https://habr.com/ru/companies/redmadrobot/articles/982004/)
 - [GitHub — redmadrobot-rnd/mcp-registry](https://github.com/redmadrobot-rnd/mcp-registry)
 
-#### Публичные материалы MWS / MTS AI {: #research_pkg_a_publichnye_materialy_mws_mts_ai }
+#### Публичные материалы MWS / MTS AI {: #app_a_public_materials_mws_mts_ai }
 
 - [Хабр — МТС: RAG для поддержки (Confluence, Jira, гибридный поиск)](https://habr.com/ru/companies/ru_mts/articles/970476/)
 - [Хабр — МТС: RAG-помощник для саппорта (смежная публикация)](https://habr.com/ru/companies/ru_mts/articles/970392/)
@@ -651,7 +651,7 @@ hide: tags
 - [MWS Docs — условия облачного сегмента 152-ФЗ](https://mws.ru/docs/docum/cloud_terms_152fz.html)
 - [MWS — новость: хранение персональных данных в облаке](https://mws.ru/news/mts-web-services-zapustila-servis-dlya-hraneniya-personalnyh-dannyh-v-oblake/)
 
-#### Публичные материалы финсектора (паттерны внедрения) {: #research_pkg_a_publichnye_materialy_finsektora_patterny_vnedreniya }
+#### Публичные материалы финсектора (паттерны внедрения) {: #app_a_financial_sector_public_materials_patterns }
 
 - [Хабр — автоматизация обучения и обновления моделей](https://habr.com/ru/companies/alfa/articles/852790/)
 - [Хабр — классификация текстов диалогов на большом числе классов](https://habr.com/ru/companies/alfa/articles/900538/)
@@ -660,7 +660,7 @@ hide: tags
 - [CIO — интервью: чат-бот, масштаб обращений и сценарии](https://cio.osp.ru/articles/5455)
 - [«Открытые системы» — RAG и LLM для поддержки операционистов](https://www.osp.ru/articles/2025/0324/13059305)
 
-#### Telegram-каналы {: #research_pkg_a_telegram_kanaly }
+#### Telegram-каналы {: #app_a_telegram_channels }
 
 - [NeuralDeep](https://t.me/neuraldeep)
 - [@ai_archnadzor](https://t.me/ai_archnadzor)
@@ -670,11 +670,11 @@ hide: tags
 - [AGORA — Industrial AI](https://t.me/AGORA)
 - [«ITипичные аспекты Артёма» (Артём Лысенко)](https://t.me/virrius_tech_chat)
 
-#### Посты CMO Club Russia {: #research_pkg_a_posty_cmo_club_russia }
+#### Посты CMO Club Russia {: #app_a_cmo_club_russia_posts }
 
 - [GenAI в маркетинге — анонс исследования red_mad_robot × CMO Club (пост 197)](https://t.me/cmoclub/197)
 
-#### Посты @Redmadnews {: #research_pkg_a_posty_redmadnews }
+#### Посты @Redmadnews {: #app_a_redmadnews_posts }
 
 - [MCP Tool Registry / RAG (анонс)](https://t.me/Redmadnews/5132)
 - [СП с «ВымпелКом», фабрика ИИ-агентов (анонс)](https://t.me/Redmadnews/5145)
@@ -684,12 +684,12 @@ hide: tags
 - [AI-first стратегия: подкаст (анонс)](https://t.me/Redmadnews/5170)
 - [YouTube — «Ноосфера» #129: Илья Самофеев (red_mad_robot), AI-First / AI-Native (полная запись)](https://www.youtube.com/watch?v=jTKhg1jqF_M)
 
-#### Посты NeuralDeep {: #research_pkg_a_posty_neuraldeep }
+#### Посты NeuralDeep {: #app_a_neuraldeep_posts }
 
 - [ETL, эмбеддинги, реранкеры, фреймворки RAG, eval, безопасность](https://t.me/neuraldeep/1758)
 - [Agentic RAG / SGR](https://t.me/neuraldeep/1605)
 
-#### Посты @ai_archnadzor {: #research_pkg_a_posty_ai_archnadzor }
+#### Посты @ai_archnadzor {: #app_a_ai_archnadzor_posts }
 
 - [GraphOS для RAG](https://t.me/ai_archnadzor/151)
 - [Semantic Gravity Framework](https://t.me/ai_archnadzor/155)
@@ -714,11 +714,11 @@ hide: tags
 - [Doc-to-LoRA; память агентов (пост /191)](https://t.me/ai_archnadzor/191)
 - [Multimodal LLM](https://t.me/ai_archnadzor/192)
 
-#### Habr и статьи по инженерии RAG {: #research_pkg_a_habr_i_stati_po_inzhenerii_rag }
+#### Habr и статьи по инженерии RAG {: #app_a_habr_rag_engineering_articles }
 
 - [Raft на Habr — чанкование](https://habr.com/ru/companies/raft/articles/954158/)
 
-#### Препринты (arXiv) {: #research_pkg_a_preprinty_arxiv }
+#### Препринты (arXiv) {: #app_a_arxiv_preprints }
 
 - [Google — Deep-Thinking Ratio (DTR), 2602.13517](https://arxiv.org/pdf/2602.13517)
 - [Oppo AI — Search More, Think Less (SMTL), 2602.22675](https://arxiv.org/pdf/2602.22675)
@@ -730,12 +730,12 @@ hide: tags
 - [OpenAI — контроль рассуждения со скрытыми шагами, 2603.05706](https://arxiv.org/pdf/2603.05706)
 - [Princeton — непрерывное обучение из взаимодействия с агентом, 2603.10165](https://arxiv.org/pdf/2603.10165)
 
-#### Продукты и блоги (эмбеддинги, M365; справочно) {: #research_pkg_a_produkty_i_blogi_emveddingi_m365_spravochno }
+#### Продукты и блоги (эмбеддинги, M365; справочно) {: #app_a_products_blogs_embeddings_m365_reference }
 
 - [Google — Gemini Embedding 2 (блог)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-embedding-2/)
 - [Microsoft — Copilot Cowork (блог Microsoft 365)](https://www.microsoft.com/en-us/microsoft-365/blog/2026/03/09/copilot-cowork-a-new-way-of-getting-work-done/)
 
-#### Открытые проекты третьих сторон {: #research_pkg_a_otkrytye_proekty_tretih_storon }
+#### Открытые проекты третьих сторон {: #app_a_open_third_party_projects }
 
 - [microsoft/markitdown](https://github.com/microsoft/markitdown)
 - [datalab-to/marker](https://github.com/datalab-to/marker)
@@ -770,11 +770,11 @@ hide: tags
 - [OpenRouter](https://openrouter.ai/)
 - [OpenRouter — Logging и политики провайдеров](https://openrouter.ai/docs/guides/privacy/logging)
 
-#### Регулирование (проектный контур 2026) {: #research_pkg_a_regulirovanie_proektnyi_kontur_2026 }
+#### Регулирование (проектный контур 2026) {: #app_a_regulation_project_context_2026 }
 
 - [Портал НПА — проект федерального закона (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
 
-#### Наблюдаемость и телеметрия: стандарты и стек {: #research_pkg_a_nablyudaemost_i_telemetriya_standarty_i_stek }
+#### Наблюдаемость и телеметрия: стандарты и стек {: #app_a_observability_telemetry_standards_stack }
 
 - [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
@@ -784,9 +784,9 @@ hide: tags
 - [Arize Phoenix — документация](https://docs.arize.com/phoenix)
 - [LangSmith — документация](https://docs.smith.langchain.com/)
 
-### Источники из «Оценка сайзинга, КапЭкс и ОпЭкс для клиентов» (без сокращений) {: #research_pkg_a_istochniki_iz_otsenka_saizinga_kapeks_i_opeks_dlya_klientov_bez_sokraschenii }
+### Источники из «Оценка сайзинга, КапЭкс и ОпЭкс для клиентов» (без сокращений) {: #app_a_sizing_capex_opex_assessment_sources }
 
-#### Примерные расчёты токенов (портал поддержки, агрегаторы и обзоры прайсов) {: #research_pkg_a_primernye_raschety_tokenov_portal_podderzhki_agregatory_i_obzory_praisov_2 }
+#### Примерные расчёты токенов (портал поддержки, агрегаторы и обзоры прайсов) {: #app_a_token_calculations_support_portal_pricing }
 
 - [Портал поддержки Comindware](https://support.comindware.com/)
 - [LLMoney — калькулятор цен токенов LLM](https://llmoney.ru)
@@ -794,7 +794,7 @@ hide: tags
 - [Хабр — гид по топ-20 нейросетям для текстов (в т.ч. цены)](https://habr.com/ru/articles/948672/)
 - [VC.ru — гайд по тарифам Claude и доступу из России](https://vc.ru/ai/2757771-tarify-claude-2026-gayd-po-planam-i-dostupu-iz-rossii)
 
-#### Инженерия обвязки и мультиагентная разработка {: #research_pkg_a_inzheneriya_obvyazki_i_multiagentnaya_razrabotka_4 }
+#### Инженерия обвязки и мультиагентная разработка {: #app_a_wrapping_engineering_multiagent_development }
 
 - [OpenAI — Harness engineering](https://openai.com/ru-RU/index/harness-engineering/)
 - [Anthropic — Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps)
@@ -802,7 +802,7 @@ hide: tags
 - [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
 - [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
 
-#### Агентная память и модели (ориентиры НИОКР и прайсинга, не строка КП) {: #research_pkg_a_agentnaya_pamyat_i_modeli_orientiry_niokr_i_praisinga_ne_stroka_kp_2 }
+#### Агентная память и модели (ориентиры НИОКР и прайсинга, не строка КП) {: #app_a_agent_memory_models_rnd_pricing_benchmarks }
 
 - [arXiv — General Agentic Memory (GAM)](https://arxiv.org/pdf/2511.18423)
 - [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
@@ -813,7 +813,7 @@ hide: tags
 - [Anthropic — Pricing](https://www.anthropic.com/pricing)
 - [Microsoft Research — Fara-7B (PDF)](https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf)
 
-#### Безопасность GenAI, OWASP и сигналы рынка (TCO / риски) {: #research_pkg_a_bezopasnost_genai_owasp_i_signaly_rynka_tco_riski_2 }
+#### Безопасность GenAI, OWASP и сигналы рынка (TCO / риски) {: #app_a_genai_security_owasp_market_signals_tco }
 
 - [OWASP GenAI Security — Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
 - [OWASP GenAI Security — Top 10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
@@ -823,12 +823,12 @@ hide: tags
 - [OpenAI — приобретение PromptFoo (контекст рынка тестирования)](https://openai.com/index/openai-to-acquire-promptfoo/)
 - [Kaspersky — пресс-релиз: угрозы под видом популярных ИИ-сервисов (бенчмарк тренда)](https://www.kaspersky.com/about/press-releases/kaspersky-chatgpt-mimicking-cyberthreats-surge-115-in-early-2025-smbs-increasingly-targeted)
 
-#### Иллюстративные ориентиры нагрузки (публичные интервью, финсектор) {: #research_pkg_a_illyustrativnye_orientiry_nagruzki_publichnye_intervyu_finsektor_2 }
+#### Иллюстративные ориентиры нагрузки (публичные интервью, финсектор) {: #app_a_load_benchmarks_public_interviews_finance }
 
 - [CIO — интервью: чат-бот, масштаб обращений и сценарии](https://cio.osp.ru/articles/5455)
 - [«Открытые системы» — RAG и LLM для поддержки операционистов](https://www.osp.ru/articles/2025/0324/13059305)
 
-#### Облачные провайдеры и тарифы (РФ) {: #research_pkg_a_oblachnye_provaidery_i_tarify_rf_4 }
+#### Облачные провайдеры и тарифы (РФ) {: #app_a_cloud_providers_tariffs_russia_2 }
 
 - [Cloud.ru — Evolution Foundation Models (продукт, перечень моделей)](https://cloud.ru/products/evolution-foundation-models)
 - [Cloud.ru — Evolution Foundation Models, тарифы (2026)](https://cloud.ru/documents/tariffs/evolution/foundation-models)
@@ -853,12 +853,12 @@ hide: tags
 - [Cloud4Y — облачный GPU-хостинг](https://www.cloud4y.ru/cloud-hosting/gpu/)
 - [NVIDIA — GeForce Software License](https://www.nvidia.com/en-us/drivers/geforce-license/)
 
-#### Публичные веса с нестандартной лицензией {: #research_pkg_a_publichnye_vesa_s_nestandartnoi_litsenziei_3 }
+#### Публичные веса с нестандартной лицензией {: #app_a_public_weights_nonstandard_license }
 
 - [Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
 
-#### Открытые модели ai-sage (GigaChat и спутники) {: #research_pkg_a_otkrytye_modeli_ai_sage_gigachat_i_sputniki_2 }
+#### Открытые модели ai-sage (GigaChat и спутники) {: #app_a_open_models_ai_sage_gigachat }
 
 - [Хабр — GigaChat-3.1: большое обновление больших моделей (блог Сбера)](https://habr.com/ru/companies/sberbank/articles/1014146/)
 - [Hugging Face — организация ai-sage](https://huggingface.co/ai-sage)
@@ -872,12 +872,12 @@ hide: tags
 - [GitVerse — GigaTeam/gigachat3.1](https://gitverse.ru/GigaTeam/gigachat3.1)
 - [GitHub — sgl-project/sglang, PR #18802](https://github.com/sgl-project/sglang/pull/18802)
 
-#### Исследования рынка (зрелость GenAI, не технический сайзинг) {: #research_pkg_a_issledovaniya_rynka_zrelost_genai_2 }
+#### Исследования рынка (зрелость GenAI, не технический сайзинг) {: #app_a_market_research_genai_maturity_2 }
 
 - [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197)
 - [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
 
-#### Telegram-каналы и посты {: #research_pkg_a_telegram_kanaly_i_posty }
+#### Telegram-каналы и посты {: #app_a_telegram_channels_posts }
 
 - [NeuralDeep — бенчмарки vLLM / RTX 4090](https://t.me/neuraldeep/1476)
 - [NeuralDeep — рекомендации по кластерам](https://t.me/neuraldeep/1627)
@@ -897,7 +897,7 @@ hide: tags
 - [@llm_under_hood](https://t.me/llm_under_hood)
 - [Канал @ai_machinelearning_big_data](https://t.me/ai_machinelearning_big_data)
 
-#### Инструменты разработки с ИИ {: #research_pkg_a_instrumenty_razrabotki_s_ii }
+#### Инструменты разработки с ИИ {: #app_a_ai_development_tools }
 
 - [OpenCode](https://opencode.ai/)
 - [OpenCode — документация (Intro)](https://opencode.ai/docs)
@@ -907,7 +907,7 @@ hide: tags
 - [OpenRouter](https://openrouter.ai/)
 - [OpenRouter — Logging и политики провайдеров](https://openrouter.ai/docs/guides/privacy/logging)
 
-#### Финансовая и инфраструктурная база (FinOps/TCO/железо) {: #research_pkg_a_finansovaya_i_infrastrukturnaya_baza_finops_tco_zhelezo_2 }
+#### Финансовая и инфраструктурная база (FinOps/TCO/железо) {: #app_a_financial_infrastructure_base_finops_tco }
 
 - [FinOps Foundation — Generative AI (Unit Economics)](https://www.finops.org/wg/generative-ai/)
 - [FinOps Framework — Unit Economics (capability)](https://www.finops.org/framework/capabilities/unit-economics/)
@@ -922,7 +922,7 @@ hide: tags
 - [apxml.com — VRAM calculator](https://apxml.com/tools/vram-calculator)
 - [Hugging Face — Qwen/Qwen3.5-35B-A3B](https://huggingface.co/Qwen/Qwen3.5-35B-A3B)
 
-#### Наблюдаемость и телеметрия {: #research_pkg_a_nablyudaemost_i_telemetriya_2 }
+#### Наблюдаемость и телеметрия {: #app_a_observability_telemetry_2 }
 
 - [OpenTelemetry — Semantic conventions for generative client AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/)
 - [OpenTelemetry — Semantic conventions for generative AI metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/)
@@ -934,9 +934,9 @@ hide: tags
 - [Официальное опубликование — Приказ Роскомнадзора от 19.06.2025 № 140 (обезличивание ПДн)](http://publication.pravo.gov.ru/document/0001202508010002)
 - [Langfuse — документация observability](https://langfuse.com/docs/observability/get-started)
 
-## Дополнительные источники из ТЗ (категории) {: #research_pkg_a_dopolnitelnye_istochniki_iz_tz_kategorii }
+## Дополнительные источники из ТЗ (категории) {: #app_a_additional_sources_categories }
 
-### 16.1 Международные стандарты и регулирование (Приоритет 1) {: #research_pkg_a_16_1_mezhdunarodnye_standarty_i_regulirovanie_prioritet_1 }
+### 16.1 Международные стандарты и регулирование (Приоритет 1) {: #app_a_international_standards_regulation }
 
 - [ISO/IEC 42001:2023 - PDF Sample and Core Requirements](https://cdn.standards.iteh.ai/samples/81230/4c1911ebc9a641fcb6ee21aa09c28ad3/ISO-IEC-42001-2023.pdf)
 - [NIST AI Risk Management Framework 1.0 (Full Portal)](https://nist.gov/itl/ai-risk-management-framework)
@@ -955,7 +955,7 @@ hide: tags
 - [G7 Hiroshima AI Process: International Guiding Principles](https://www.moff.go.jp/files/100573473.pdf)
 - [UK AI Safety Institute: Systemic Safety Framework (2025)](https://www.gov.uk/government/organisations/ai-safety-institute)
 
-### 16.2 Executive-методологии внедрения (Big Three & Big Four) {: #research_pkg_a_16_2_executive_metodologii_vnedreniya_big_three_big_four }
+### 16.2 Executive-методологии внедрения (Big Three & Big Four) {: #app_a_executive_implementation_methodologies }
 
 - [McKinsey: Rewiring the Enterprise for GenAI (2025)](https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/rewiring-for-the-era-of-gen-ai)
 - [McKinsey: The GenAI Operating Model Leader's Guide (2025)](https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/a-data-leaders-operating-guide-to-scaling-gen-ai)
@@ -987,7 +987,7 @@ hide: tags
 - [Everest Group: Enterprise Generative AI Adoption 2025 Playbook](https://www.everestgrp.com/report/generative-ai-playbook)
 - [HFS Research: The Generative AI 2025 Horizon Report](https://www.hfsresearch.com/research/genai-horizon-2025/)
 
-### 16.3 Технические паттерны и инженерные блоги (Промышленный ИИ / Production AI) {: #research_pkg_a_16_3_tehnicheskie_patterny_i_inzhenernye_blogi_promyshlennyi_ii_production_ai }
+### 16.3 Технические паттерны и инженерные блоги (Промышленный ИИ / Production AI) {: #app_a_technical_patterns_engineering_blogs }
 
 - [DoorDash: How We Built an Internal AI Platform That Works (2025)](https://www.getdot.ai/blog/doordash-ai-platform-agents)
 - [DoorDash: Building a Collaborative Multi-Agent AI Ecosystem (2026)](https://www.zenml.io/llmops-database/building-a-collaborative-multi-agent-ai-ecosystem-for-enterprise-knowledge-access)
@@ -1019,7 +1019,7 @@ hide: tags
 - [Portkey AI Gateway: Cost Management and Observability (2026)](https://docs.portkey.ai/)
 - [Helicone: Provider Routing and AI Gateway Docs (2026)](https://docs.helicone.ai/)
 
-### 16.4 Экономика ИИ, FinOps и сайзинг {: #research_pkg_a_16_4_ekonomika_ii_finops_i_saizing }
+### 16.4 Экономика ИИ, FinOps и сайзинг {: #app_a_ai_economics_finops_sizing }
 
 - [FinOps Foundation: Cost Estimation of AI Workloads (2026 Resource)](https://www.finops.org/wg/cost-estimation-of-ai-workloads)
 - [FinOps Framework 2025: Cloud Cost Allocation PDF](https://www.finops.org/wp-content/uploads/2025/05/English-FinOps-Framework-2025.pdf)
@@ -1041,7 +1041,7 @@ hide: tags
 - [OptyxStack Case Study: Reducing Inference Cost by 60% (2026)](https://optyxstack.com/case-studies/llm-inference-cost-reduction)
 - [AI Agent Cost Optimization: Token Economics in Production (Zylos 2026)](https://zylos.ai/research/2026-02-19-ai-agent-cost-optimization-token-economics)
 
-### 16.5 Российские регуляторные и правовые источники (Приоритет 1) {: #research_pkg_a_16_5_rossiiskie_regulyatornye_i_pravovye_istochniki_prioritet_1 }
+### 16.5 Российские регуляторные и правовые источники (Приоритет 1) {: #app_a_russian_regulatory_legal_sources }
 
 - [Указ Президента РФ №490: Национальная стратегия развития ИИ до 2030 (Ред. 2024)](https://www.consultant.ru/document/cons_doc_LAW_470015/)
 - [Указ Президента РФ от 15.02.2024: Изменения в стратегию ИИ (Актуальная версия)](https://ai.gov.ru/national-strategy/)
@@ -1065,7 +1065,7 @@ hide: tags
 - [BGP Litigation: Законопроект об ИИ - что нужно знать бизнесу (2026)](https://bgplaw.com/news/)
 - [Melling Voitishkin: Legal Alert - Маркировка ИИ контента в РФ](https://melling.com/ru/insights/)
 
-### 16.6 Российские прикладные исследования и бенчмарки {: #research_pkg_a_16_6_rossiiskie_prikladnye_issledovaniya_i_benchmarki }
+### 16.6 Российские прикладные исследования и бенчмарки {: #app_a_russian_applied_research_benchmarks }
 
 - [MERA Benchmark: GigaChat 2 MAX Ranking (Top-1 RU 2026)](https://setka.ru/posts/019592e7-54d7-4f94-af58-0b74d6968357)
 - [ruMMLU: Benchmarking Russian LLM Intelligence (HSE/Sber)](https://github.com/ai-forever/ru-mmlu)
@@ -1080,7 +1080,7 @@ hide: tags
 - [Sber AI: ru-Gemma и open-source инициативы 2025-2026](https://developers.sber.ru/docs/ru/gigachat/models/updates)
 - [Yandex Research: Оптимизация инференса LLM для русского языка (2025)](https://yandex.ru/company/research/)
 
-### 16.7 Модели отчуждения и передачи (BOT и Handover) {: #research_pkg_a_16_7_modeli_otchuzhdeniya_i_peredachi_bot_i_handover }
+### 16.7 Модели отчуждения и передачи (BOT и Handover) {: #app_a_transfer_models_bot_handover }
 
 - [Build-Operate-Transfer (BOT) Model: Full Guide 2025](https://build-operate-transfer.com/post/build-operate-transfer-bot-model-complete-guide-for-software-development-2025)
 - [Software Handover Checklist 2026: Documentation & IP Guide](https://www.tech4lyf.com/blog/software-handover-documentation-checklist-2026/)
@@ -1089,7 +1089,7 @@ hide: tags
 - [Devico: Checklist for a seamless BOT transition (2025)](https://devico.io/blog/checklist-for-a-seamless-bot-transition)
 - [Knowledge Transfer Framework for Enterprise Software Handover](https://www.knowledge-management-tools.net/knowledge-transfer-framework.html)
 
-### 16.8 Кураторские списки и репозитории (Awesome Lists) {: #research_pkg_a_16_8_kuratorskie_spiski_i_repozitorii_awesome_lists }
+### 16.8 Кураторские списки и репозитории (Awesome Lists) {: #app_a_curated_lists_repositories }
 
 - [GitHub: Awesome AI Agents 2026 (300+ resources)](https://github.com/caramaschiHG/awesome-ai-agents-2026)
 - [GitHub: Awesome Production GenAI (Updated March 2026)](https://ethicalml.github.io/awesome-production-genai/)
@@ -1102,7 +1102,7 @@ hide: tags
 - [Arxiv: OrchMAS - Orchestrated Reasoning with Multi-Agents (March 2026)](https://arxiv.org/abs/2603.03005v1)
 - [Arxiv: TreePS-RAG - Tree-based Process Supervision (Jan 2026)](https://arxiv.org/abs/2601.06922)
 
-### 16.9 Кейсы внедрения в российском бизнесе (2025-2026) {: #research_pkg_a_16_9_keisy_vnedreniya_v_rossiiskom_biznese_2025_2026 }
+### 16.9 Кейсы внедрения в российском бизнесе (2025-2026) {: #app_a_russian_business_implementation_cases }
 
 - [Сбер: Эффект от внедрения ИИ в 2026 году (Прогноз 550 млрд руб)](https://www.sostav.ru/publication/sber-ozhidaet-chto-effekt-ot-vnedreniya-ii-v-2026-godu-dostignet-550-mlrd-rublej-80507.html)
 - [Сбер: Первый в России ИИ-агент для Process Mining (Янв 2026)](https://pwa.lenta.ru/news/2026/01/22/sber-predstavil-pervogo-v-rossii-ii-agenta-dlya-analiza-biznes-protsessov/)
@@ -1121,7 +1121,7 @@ hide: tags
 - [Росатом: ИИ-системы для проектирования АЭС и анализа безопасности](https://rosatom.ru/journalist/news/)
 - [Самолет: Кейс «Цифровой рабочий» и ИИ в управлении стройкой (2025)](https://samolet.ru/news/)
 
-### 16.10 Технические статьи и инженерные блоги (Россия) {: #research_pkg_a_16_10_tehnicheskie_stati_i_inzhenernye_blogi_rossiya }
+### 16.10 Технические статьи и инженерные блоги (Россия) {: #app_a_russian_technical_articles_blogs }
 
 - [Хабр: Оркестрация ИИ-агентов в 2026 - Кейс ритейл-компании](https://habr.com/ru/articles/1008598/)
 - [Хабр: Продвинутые техники RAG в действии (Сбербанк 2025)](https://habr.com/ru/companies/sberbank/articles/937242/)
@@ -1137,7 +1137,7 @@ hide: tags
 - [RB.ru: Топ-100 ИИ-стартапов России 2025 - карта рынка](https://rb.ru/list/ai-100-2025/)
 - [ComNews: Экономика автоматизации ИИ и точки экономии для бизнеса (2026)](https://www.comnews.ru/digital-economy/content/244350/2026-03-23/2026-w13/1016/ekonomika-avtomatizacii-ii-i-realnye-tochki-ekonomii-dlya-biznesa)
 
-### 16.11 Российская экономика ИИ и отчеты консалтинга {: #research_pkg_a_16_11_rossiiskaya_ekonomika_ii_i_otchety_konsaltinga }
+### 16.11 Российская экономика ИИ и отчеты консалтинга {: #app_a_russian_ai_economy_consulting_reports }
 
 - [Яков и Партнёры: Rewiring the Enterprise for GenAI - Russian Context (2025)](https://yakovpartners.ru/publications/ai-2025/)
 - [Kept (ex-KPMG): ИИ-агенты KeptStore для корпоративного сектора (2026)](https://www.vedomosti.ru/press_releases/2026/01/14/kept-zapuskaet-platformu-s-ii-agentami-keptstore-dlya-avtomatizatsii-zadach-korporativnogo-segmenta-erid-2VfnxxbJAiD)

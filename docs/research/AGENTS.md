@@ -171,7 +171,7 @@ channel_snapshot.yml
 
 Use for multi-file research sets under `docs/research/` when you want stable deep links and consistent metadata.
 
-**Heading ids** — On the same line as the heading, attribute-list syntax: `## Заголовок {: #prefix_slug }`. Pick one stable English **prefix** per file; H1 uses only the prefix, H2+ use `prefix_transliterated_slug`. Characters: lowercase letters, digits, underscores; ids **unique within the file** (duplicate titles: `_2`, `_3`, …). No links inside heading text (**Heading Rules**).
+**Heading anchors/IDs** — On the same line as the heading, attribute-list syntax: `## Заголовок {: #anchor_slug }`. Pick one stable English **prefix** per file as the H1 `#root_anchor` derived from the **subject** of the **document**, H2+ use `#root_anchor_concise_english_snake_case` derived from the **meaning** of the heading (not Cyrillic transliteration). Characters: lowercase letters, digits, underscores; anchors **unique within the file** (duplicate titles: `_2`, `_3`, …). No links inside heading text (see **Heading Rules**).
 
 **YAML front matter** — At the very top when the pack uses it: `title` (same as H1 without the `{: #… }` suffix), `date` (ISO), `status`, `tags` (about 5–12; English alphabetically, then Russian alphabetically), `hide: tags` if tags are for filtering/search only. Optional: `description` (one line). If `date` / `status` are in YAML, drop redundant **Дата пакета** / **Статус** lines under H1.
 
