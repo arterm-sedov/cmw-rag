@@ -18,8 +18,6 @@ tags:
   - сайзинг
   - экономика
 
----
-
 # Приложение A. Обзор и ведомость документов: навигация, реестр и источники {: #app_a }
 
 ## Часть I. Навигация для руководства {: #app_a_part_i_executive_navigation }
@@ -315,6 +313,13 @@ tags:
 - [arXiv — MoE на стеке AMD (IBM, Zyphra и др.)](https://arxiv.org/pdf/2511.17127)
 - [arXiv — General Agentic Memory (GAM)](https://arxiv.org/pdf/2511.18423)
 
+#### Edge-инференс и оптимизации памяти (Apple Silicon, локальные модели) {: #app_a_edge_inference_memory_optimizations }
+
+- [Apple ML Research — LLM in a Flash: Efficient Large Language Model Inference with Limited Memory (ACL 2024)](https://machinelearning.apple.com/research/efficient-large-language)
+- [GitHub — matt-k-wong/mlx-flash (реализация для MLX, март 2026)](https://github.com/matt-k-wong/mlx-flash)
+- [arXiv — LLM in a Flash: Efficient Large Language Model Inference with Limited Memory (оригинальная статья, 2312.11514)](https://arxiv.org/html/2312.11514v3)
+- [Apple Developer — WWDC 2025: Explore large language models on Apple silicon with MLX](https://developer.apple.com/videos/play/wwdc2025/298/)
+
 #### Агентная память и модели (ориентиры НИОКР и прайсинга, не строка КП) {: #app_a_agent_memory_benchmarks }
 
 - [Anthropic — Pricing](https://www.anthropic.com/pricing)
@@ -358,6 +363,16 @@ tags:
 - [Cloud4Y — облачный GPU-хостинг](https://www.cloud4y.ru/cloud-hosting/gpu/)
 - [CNews — кейс: MTS AI и экономия инвестиций за счёт облака MWS (обзор)](https://www.cnews.ru/reviews/provajdery_gpu_cloud_2025/cases/kak_mts_ai_sekonomila_bolee_milliarda)
 - [NVIDIA — GeForce Software License](https://www.nvidia.com/en-us/drivers/geforce-license/)
+
+#### Российские облачные GPU: актуальные тарифы и аналитика (2026) {: #app_a_russian_cloud_gpu_pricing_2026 }
+
+- [Cloud.ru — Тарифы «Evolution Compute GPU», Приложение №7G.EVO.1 (январь 2026)](https://cloud.ru/documents/tariffs/evolution/evolution-compute-gpu)
+- [Elish Tech — Почасовая аренда GPU A100 vs H100: что выгоднее в 2026 году](https://www.elishtech.com/arenda-gpu-a100-vs-h100-2026/)
+- [Elish Tech — Где арендовать GPU-серверы дешевле и выгоднее: сравнение рынка в России и за рубежом](https://www.elishtech.com/gpu-server-rent-market-comparison/)
+- [Yandex Cloud — GPU (графические ускорители), документация](https://yandex.cloud/ru/docs/compute/concepts/gpus)
+- [Yandex Cloud — Прайс-лист (текущие тарифы)](https://yandex.cloud/ru/prices)
+- [Selectel — Cloud GPU (облачные серверы с GPU)](https://selectel.ru/services/cloud/servers/gpu)
+- [Selectel — Новости: новые конфигурации GPU-серверов от 50 руб./час](https://myseldon.com/ru/news/index/262426281)
 
 #### Публичные веса с нестандартной лицензией {: #app_a_public_weights_licensing }
 
