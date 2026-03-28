@@ -166,6 +166,25 @@ These rules apply to **Russian** research articles under `docs/research/` (the d
 - Avoid English words in **Russian** headings unless strictly necessary.
 - Convert standalone label-style lines (for example, `**Законопроект об ИИ:**`) into proper Markdown headings instead of bold paragraphs ending with a colon.
 
+### Admonitions (callout blocks)
+
+Use MkDocs admonitions (`!!! type "Title"`) instead of bold text for recommendations, warnings, and notes:
+
+| Instead of | Use |
+|:---|:---|
+| `**Рекомендация:** текст` | `!!! tip "Рекомендация"` |
+| `**Важно:** текст` | `!!! warning "Важно"` |
+| `**Примечание:** текст` | `!!! note "Заголовок"` |
+
+**Format:**
+```markdown
+!!! tip "Рекомендация"
+
+    Текст с отступом 4 пробела.
+```
+
+**Types:** `note`, `tip`, `warning`, `important`, `danger` — choose based on urgency and action required.
+
 ### List rules
 
 - Add an empty line before every bulleted or numbered list.
@@ -229,6 +248,28 @@ Use this compact structure for consistency. **Headings below are Russian** becau
 - Process findings into executive summaries in `docs/research/`.
 - Commit only processed summaries.
 - Document reusable methodology updates in this file when needed.
+
+### Current data requirement (Web search mandatory)
+
+**Always use Web search for model versions, pricing, and vendor data.**
+
+LLM versions, API pricing, and model capabilities change monthly. Your training data is outdated by months. **Do not rely on memory** for:
+- Model version numbers (e.g., GPT-5.4 vs GPT-5.2, Claude 4.6 vs 3.7, GigaChat 3.1 vs 2.x)
+- Pricing tiers and token costs
+- Release dates and feature availability
+- Regional provider catalogs (Yandex, Cloud.ru, SberCloud)
+
+**Procedure:**
+1. Before citing any model or price, run Web search with year 2026 in the query: `"Claude 4.6 2026 pricing"`, `"GigaChat 3.1 March 2026"`, `"MiniMax M2.7 latest"`.
+2. Verify the top 2–3 sources agree; if conflict, prefer official vendor docs or reputable aggregators (modelpricing.ai, llmoney.ru).
+3. Document the search date in the article’s sources or as a note: `_Проверено: март 2026._`
+4. If no reliable source found, flag the claim: `_(Требует уточнения: веб-поиск не дал результатов)_`.
+
+**Anti-pattern to avoid:** citing "latest" models from memory without verification, e.g., calling MiniMax-Text-01 or Kimi k1.5 "current" when they are 2025 versions replaced by M2.7 and K2.5.
+
+### Validation tools
+
+**Token and pricing calculations:** `validate_token_calculations.py` — Python script for validating word-to-token conversions and pricing calculations using actual Russian cloud provider tariffs. Use when updating sizing tables or verifying token economics.
 
 ## Cross-validation of related research
 
