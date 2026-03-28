@@ -30,6 +30,8 @@
 | Приложение B — отчуждение ИС и кода (KT, IP) | `20260325-research-appendix-b-ip-code-alienation-ru.md` |
 | Приложение C — имеющиеся наработки Comindware | `20260325-research-appendix-c-cmw-existing-work-ru.md` |
 | Приложение D — безопасность, комплаенс и observability | `20260325-research-appendix-d-security-observability-ru.md` |
+| Приложение E — рыночные и технические сигналы | `20260325-research-appendix-e-market-technical-signals-ru.md` |
+| Коммерческое резюме для руководства | `20260325-comindware-ai-commercial-offer-ru.md` |
 | C-level резюме: методология (кратко) | `20260325-research-executive-methodology-ru.md` |
 | C-level резюме: сайзинг и экономика (кратко) | `20260325-research-executive-sizing-ru.md` |
 
