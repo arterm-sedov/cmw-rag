@@ -1,7 +1,7 @@
 ---
 title: 'Приложение B. Отчуждение ИС и кода (KT, IP, лицензии, приёмка)'
-date: 2026-03-25
-status: 'утверждённый комплект материалов для руководства (v1)'
+date: 2026-03-28
+status: 'Черновой комплект материалов для руководства (v1)'
 tags:
   - compliance
   - handover
@@ -12,20 +12,20 @@ tags:
   - отчуждение
   - передача
   - приёмка
-hide: tags
+
 ---
 
 # Приложение B. Отчуждение ИС и кода (KT, IP, лицензии, приёмка) {: #app_b_root }
 ## Обзор комплекта {: #app_b_pack_overview }
 
-Здесь сосредоточены модели передачи, состав передаваемых артефактов, требования к учёту лицензий и критерии приёмки при отчуждении кода и сопутствующей ИС. Количественные эффекты для P&L не дублируются: на них указывает «Основной отчёт: сайзинг и экономика».
+Материал помогает **согласовать передачу контура**: что входит в комплект (код, конфигурации, данные, модели, runbook), как учитываются **лицензии и IP**, какие **критерии приёмки** закрепить в договоре. **Сметные последствия** и TCO — в [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview).
 
 ## Связанные документы {: #app_b_related_docs }
 
 - [«Приложение A: обзор и ведомость документов»](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)
 - [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
 - [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
-- [Профиль on-prem GPU в проектах CMW](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) (реф. consumer 24 ГБ, кастом 4090 48 ГБ, PRO 6000 96 ГБ)
+- [Профиль on-prem GPU в проектах CMW](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) (реф. consumer 24 ГБ, 4090 48 ГБ коммерческая аренда, PRO 6000 96 ГБ)
 - «Приложение C: имеющиеся наработки CMW»
 - [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
 
@@ -47,9 +47,11 @@ hide: tags
 
 ### Теневой GenAI в маркетинге и маршрутизация моделей (ориентир опроса CMO, 2025) {: #app_b_shadow_genai_marketing_model_routing }
 
-Публичные материалы опроса **red_mad_robot × CMO Club Russia** фиксируют **высокую концентрацию** на универсальных зарубежных чат- и визуальных сервисах среди маркетинговых директоров (в сводке комплекта — порядка **91%** для **ChatGPT** и **59%** для **Midjourney**, с широким разрывом до следующих инструментов; канонические доли и контекст — в _«[Основной отчёт: сайзинг и экономика — Российский рынок](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)_»_).
+Публичные материалы опроса **red_mad_robot × CMO Club Russia** фиксируют **высокую концентрацию** на универсальных зарубежных чат- и визуальных сервисах среди маркетинговых директоров (порядка **91%** для **ChatGPT** и **59%** для **Midjourney**, с широким разрывом до следующих инструментов; сводные доли и контекст — в _«[Основной отчёт: сайзинг и экономика — Российский рынок](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)_»_).
 
 Для комплекта отчуждения и договоров о **ИС** это аргумент за явный **каталог допустимых моделей и маршрутов данных**, учёт **TOS/API** зарубежных SaaS и разделение **промышленного** контура (**корпоративный RAG-контур**, API РФ, on-prem) от **самостоятельного** использования маркетингом глобальных сервисов; управленческий смысл и перекрёстные ссылки — в _«[Основной отчёт: методология — GenAI в маркетинговых командах](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams)_»_.
+
+**Питч «маркетинг / shadow SaaS / суверенитет ИС» (включать при активном движении продаж):** высокая концентрация на универсальных зарубежных сервисах усиливает риски **утечки данных** через неучтённые каналы, непрозрачных **субпроцессоров** и смешения **корпоративных активов** с личными учётными записями. В договоре и комплекте отчуждения полезно явно зафиксировать **реестр ИИ-инструментов**, **операторов/обработчиков**, политику логирования и запрет **теневого** GenAI вне согласованного контура; количественные доли и барьеры опроса — в _«[Основной отчёт: сайзинг и экономика — Российский рынок](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)_»_.
 
 ### Отчуждение данных {: #app_b_data_alienation }
 -   **Поддержка ChromaDB:** Штатные утилиты сопровождения (обслуживание коллекций, инспекция схемы) позволяют диагностировать, очищать и мигрировать.
@@ -135,7 +137,7 @@ hide: tags
 
 ### Справочно: открытые стандарты OWASP и внешние программы обучения (не входят в поставку по умолчанию) {: #app_b_reference_owasp_external_training }
 
-В комплект **отчуждения знаний** целесообразно включать **ссылочный каркас**: канонические URL [OWASP GenAI Security Project](https://genai.owasp.org/introduction-genai-security-project/) (LLM Top 10 2025, Agentic Top 10 2026, [AI Testing Guide](https://github.com/OWASP/www-project-ai-testing-guide)), при необходимости — [WSTG](https://owasp.org/www-project-web-security-testing-guide/stable/) и [ASVS 5.0 RU](https://github.com/OWASP/ASVS/blob/master/5.0/OWASP_Application_Security_Verification_Standard_5.0.0_ru.pdf). Русскоязычные дайджесты сообщества (например, [Habr — OWASP LLM TOP 10 2025](https://habr.com/ru/companies/owasp/articles/893712/)) удобны для онбординга, но **не** заменяют официальные тексты.
+В комплект **отчуждения знаний** целесообразно включать **ссылочный каркас**: первичные URL [OWASP GenAI Security Project](https://genai.owasp.org/introduction-genai-security-project/) (LLM Top 10 2025, Agentic Top 10 2026, [AI Testing Guide](https://github.com/OWASP/www-project-ai-testing-guide)), при необходимости — [WSTG](https://owasp.org/www-project-web-security-testing-guide/stable/) и [ASVS 5.0 RU](https://github.com/OWASP/ASVS/blob/master/5.0/OWASP_Application_Security_Verification_Standard_5.0.0_ru.pdf). Русскоязычные дайджесты сообщества (например, [Habr — OWASP LLM TOP 10 2025](https://habr.com/ru/companies/owasp/articles/893712/)) удобны для онбординга, но **не** заменяют официальные тексты.
 
 Коммерческие **курсы безопасности LLM** у третьих лиц (иллюстративный пример публичной программы — «Large Language Models Security» у [«Лаборатории Касперского»](https://www.kaspersky.com/about/press-releases/kaspersky-introduces-a-new-training-large-language-models-security), расписание и стоимость — только по сайту поставщика на дату закупки) могут дополнять подготовку ИБ и разработки заказчика; это **опция**, а не часть базовой поставки **корпоративный RAG-контур** / **сервер инференса MOSEC** / **инференс на базе vLLM** / **агентный слой платформы (CMW Platform)** без отдельного соглашения.
 
@@ -207,7 +209,7 @@ hide: tags
 3. **OpenClaw** — self-hosted AI-агент с ACP
 
 **Экономика:**
-- Замена подписки на облачный coding-агент (**~127 500 – 212 500 руб./мес** на 5–10 инженеров, эквив. **1 500 – 2 500 USD/мес × 85**) на локальные модели
+- Замена подписки на облачный coding-агент (**~127 500 – 212 500 руб./мес** на 5–10 инженеров, эквив. **1 500 – 2 500 USD/мес**; пересчёт — [приложение A, валюта](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy)) на локальные модели
 - Qwen3-Coder-Next MoE: 24 ГБ VRAM, 64K+ контекст
 - GLM-4.7-Flash MoE: 16-24 ГБ VRAM, 200K контекст
 
