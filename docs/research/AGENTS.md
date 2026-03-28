@@ -12,17 +12,17 @@ This file defines research workflow, document standards, and formatting requirem
 
 ## Business goals and task authority
 
-**Read this before major edits** to the **consolidated research pack** in `docs/research/` (full methodology and sizing reports, appendices A–D, and the two short executive summaries). The corpus serves **CMW’s commercial work**: evidence and narrative to **win and deliver** customer AI programs—**budget, architecture, compliance, handover (KT/IP), and roadmap**—not a standalone SKU for “selling research” or “curating publications.”
+**Read this before any edits** to the **consolidated research pack** in `docs/research/` (full methodology and sizing reports, appendices A–D, and the two short executive summaries). The corpus serves **Comindware’s commercial work**: evidence and narrative to **win and deliver** customer AI programs—**budget, architecture, compliance, handover (KT/IP), and roadmap**—not a standalone SKU for “selling research” or “curating publications.”
 
 **When you edit, optimize for:** decision-ready prose, **RF-resident defaults** (152-FZ, local clouds, data residency), and **honest limits** on global/vendor telemetry (sample scope; not an automatic baseline for RF production). Readers **reuse** claims in **their own** board packs and proposals; avoid meta-text about “how we wrote this for executives.”
 
 ### Reader-facing pack: business, technology, and expertise transfer
 
-The consolidated **20260325-** research pack is **not** internal authoring documentation. Write for **commercial and technical decision-makers** who will **sell and scope** AI delivery: budget, architecture, compliance, KT/IP, and risk—grounded in **CMW’s documented practice** (open repos where relevant) and **attributed** public sources (pricing, benchmarks, regulation).
+The consolidated **20260325-** research pack is **not** internal authoring documentation. Write for **commercial and technical decision-makers** who will **sell and scope** AI delivery: budget, architecture, compliance, KT/IP, and risk—grounded in **Comindware’s documented practice** (open repos where relevant) and **attributed** public sources (pricing, benchmarks, regulation).
 
 - **Tone:** **business + technology**; concise; no patronizing “how to read this file,” no references to source-file mechanics (YAML, front matter, template filenames), and no pack-maintenance asides (split history, “canonical row” editorial rules).
 - **Cross-cutting rules** (e.g. **FX**): **one canonical block** — [Appendix A, «Валюта: пересчёт USD…»](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy) (`#app_a_fx_policy`); other documents **short stub + link**; sizing/methodology use `#sizing_fx_policy` / `#method_fx_policy` and point in-report conversions to those anchors.
-- **Hardware facts:** do **not** describe **RTX 4090 48 GB** as a “CMW custom” GPU. It is a **commercially offered** dedicated-GPU server configuration (e.g. providers such as [1dedic — GPU servers](https://1dedic.ru/gpu-servers)); CMW may **rent** such SKUs like any customer-facing integrator.
+- **Hardware facts:** do **not** describe **RTX 4090 48 GB** as a “Comindware custom” GPU. It is a **commercially offered** dedicated-GPU server configuration (e.g. providers such as [1dedic — GPU servers](https://1dedic.ru/gpu-servers)); Comindware or Clients may buy or rent such SKUs like any customer-facing integrator.
 
 - [Research pack task (authoritative)](./20260324-research-task.md) — **authoritative** scope, acceptance, workflow, evidence and FX: **Russian** body (§§1–8). It points agents here for English workflow rules and non-duplication.
 - [Original task snapshot](./20260324-research-task_original.md) — historical manager brief; if it conflicts with the main task file, **follow the main task file**.
@@ -261,10 +261,10 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Reuse abstract patterns and avoid unnecessary duplication.
 - Cross-validate sibling research so the corpus stays internally consistent where topics intersect.
 
-## CMW research positioning
+## Comindware research positioning
 
-- **What CMW sells:** **implementation and guidance** on customer AI programs—not “research PDFs” or “publication curation” as an offering. `docs/research/` is **internal** enablement so teams can **compose** customer-ready narratives with **traceable** evidence.
-- **CMW first-party practice:** engineering reality in **cmw-rag**, **cmw-mosec**, **cmw-vllm**, **cmw-platform-agent**. Say **“we measured”** only where **documented** in those repos; do **not** imply customer-site benchmarks without evidence.
+- **What Comindware sells:** **implementation and guidance** on customer AI programs—not “research PDFs” or “publication curation” as an offering. `docs/research/` is **internal** enablement so teams can **compose** customer-ready narratives with **traceable** evidence.
+- **Comindware first-party practice:** engineering reality in **cmw-rag**, **cmw-mosec**, **cmw-vllm**, **cmw-platform-agent**. Say **“we measured”** only where **documented** in those repos; do **not** imply customer-site benchmarks without evidence.
 - **Harvested market and vendor material:** conferences, regulation, surveys, community—**attribute** sources and state **where it does / does not** apply to a resident RF contour. External benchmarks are **inputs**, not automatic baselines for customer proposals.
 - **Sovereign default (RF):** default architecture and compliance story to **residency**, **152-FZ**, and **local** clouds/APIs where the customer requires it. **US/CN/global** content is **scoped background** unless legal and contract review say otherwise.
 - **Global telemetry and ecosystem surveys** (e.g. large-provider reports): pair numbers with a **one-line sample/scope** so repurposed slides stay honest.
