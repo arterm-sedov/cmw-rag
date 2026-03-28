@@ -28,7 +28,7 @@ tags:
 
 ## Валюта {: #exec_sizing_currency }
 
-Пересчёт USD и правила для смет — [приложение A](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy).
+Курс USD и правила для смет — [приложение A](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy).
 
 ## Содержательные тезисы (детали — в основном отчёте)
 
