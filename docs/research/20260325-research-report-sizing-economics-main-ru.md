@@ -390,7 +390,7 @@ tags:
 | HOSTKEY | Выделенные серверы с GPU | Конфигурации на странице GPU dedicated | Уточнять в оферте | Аренда dedicated | [hostkey.ru/gpu-dedicated-servers/](https://hostkey.ru/gpu-dedicated-servers/) |
 | Cloud4Y | Облако GPU | Таблицы на странице GPU-хостинга помечены **без НДС** — НДС добавлять по оферте | **Без НДС** в публичных таблицах | По странице продукта | [cloud4y.ru — GPU](https://www.cloud4y.ru/cloud-hosting/gpu/) |
 
-**Не использовать как первоисточник цены:** поисковая выдача; нерелевантные лоты маркетплейса без GPU. Обзорный список рынка без замены прайсов — [Dataoorts — GPU cloud providers in Russia](https://dataoorts.com/top-5-plus-gpu-cloud-providers-in-russia/) (уже в [приложении A](./20260325-research-appendix-a-index-ru.md#app_a_sources)).
+**Не использовать как первоисточник цены:** поисковая выдача; нерелевантные лоты маркетплейса без GPU. Обзорный список рынка без замены прайсов — [Dataoorts — GPU cloud providers in Russia](https://dataoorts.com/top-5-plus-gpu-cloud-providers-in-russia/) (уже в [приложении A](./20260325-research-appendix-a-index-ru.md#app_a_sources_registry)).
 
 ### VK Cloud (ML) {: #sizing_vk_cloud_ml }
 
