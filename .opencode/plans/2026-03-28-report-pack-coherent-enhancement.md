@@ -1,6 +1,6 @@
 # Report-Pack Coherent Enhancement & Cross-Validation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Make the 10-document `report-pack` act as a single coherent system — consistent evidence, accurate cross-links, sharp narrative, and complete market context — so any C-level executive (CEO, CRO, CFO, CIO, CISO, CPO) can enter from any document and trust what they read.
 
@@ -100,10 +100,10 @@ Both docs have a "Содержательные тезисы" section but no role
 **Files:**
 - Modify: `report-pack/20260325-comindware-ai-commercial-offer-ru.md` line 6
 
-- [ ] **Step 1: Open file and confirm defect**
+- [x] **Step 1: Open file and confirm defect**
   Read line 6: confirm `- продажипродажи`.
 
-- [ ] **Step 2: Fix the tag**
+- [x] **Step 2: Fix the tag**
   Replace `- продажипродажи` with two separate tags:
   ```yaml
     - продажи
@@ -111,7 +111,7 @@ Both docs have a "Содержательные тезисы" section but no role
   ```
   (Remove the duplicate `- продукт` on line 7 since it would then appear twice. Final tags block should be: `продажи`, `продукт`, `корпоративный ИИ`, `GenAI`, `RAG`, `TOM`, `KT`, `BOT`.)
 
-- [ ] **Step 3: Verify YAML is valid**
+- [x] **Step 3: Verify YAML is valid**
   Confirm the front matter opens with `---` on line 1 and closes with `---` on line 14. Re-read lines 1–15 to confirm.
 
 ---
@@ -121,10 +121,10 @@ Both docs have a "Содержательные тезисы" section but no role
 **Files:**
 - Modify: `report-pack/20260325-research-appendix-c-cmw-existing-work-ru.md` lines 1-4
 
-- [ ] **Step 1: Confirm current state**
+- [x] **Step 1: Confirm current state**
   Read lines 1–5. Confirm no `---` YAML block; only `# Приложение C...` heading and bold text.
 
-- [ ] **Step 2: Prepend YAML block**
+- [x] **Step 2: Prepend YAML block**
   Insert before line 1:
   ```yaml
   ---
@@ -142,17 +142,17 @@ Both docs have a "Содержательные тезисы" section but no role
   ---
   ```
 
-- [ ] **Step 3: Remove redundant bold-text metadata**
+- [x] **Step 3: Remove redundant bold-text metadata**
   Delete lines (now shifted) `**Дата комплекта:** 2026-03-25` and `**Статус:** утверждённый комплект материалов для руководства (v1)` — this info is now in YAML.
 
-- [ ] **Step 4: Add heading anchor to H1**
+- [x] **Step 4: Add heading anchor to H1**
   Change `# Приложение C. Доказательство готовности (Proof of Capability): референс-стек Comindware (состав, границы, артефакты)`
   to `# Приложение C. Доказательство готовности (Proof of Capability): референс-стек Comindware (состав, границы, артефакты) {: #app_c_pack_overview }`
 
-- [ ] **Step 5: Add anchor to pack-overview H2**
+- [x] **Step 5: Add anchor to pack-overview H2**
   Change `## Обзор комплекта` to `## Обзор комплекта {: #app_c_overview }`
 
-- [ ] **Step 6: Verify file starts correctly**
+- [x] **Step 6: Verify file starts correctly**
   Re-read lines 1–12 to confirm YAML block + H1 with anchor.
 
 ---
@@ -162,10 +162,10 @@ Both docs have a "Содержательные тезисы" section but no role
 **Files:**
 - Modify: `report-pack/20260325-research-appendix-c-cmw-existing-work-ru.md` lines 16-22
 
-- [ ] **Step 1: Confirm current state**
+- [x] **Step 1: Confirm current state**
   Read lines 16–23. Confirm all 5 entries are plain text without hyperlinks.
 
-- [ ] **Step 2: Replace with linked list**
+- [x] **Step 2: Replace with linked list**
   Replace the entire `## Связанные документы` block (lines 16-22) with:
   ```markdown
   ## Связанные документы
@@ -177,7 +177,7 @@ Both docs have a "Содержательные тезисы" section but no role
   - [«Приложение D: безопасность, комплаенс и наблюдаемость (observability)»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
   ```
 
-- [ ] **Step 3: Verify all 5 anchors exist**
+- [x] **Step 3: Verify all 5 anchors exist**
   Grep for `#app_a_pack_overview`, `#method_pack_overview`, `#sizing_pack_overview`, `#app_b_pack_overview`, `#app_d__pack_overview` in the respective files to confirm each target anchor exists.
 
 ---
@@ -187,28 +187,28 @@ Both docs have a "Содержательные тезисы" section but no role
 **Files:**
 - Modify: `report-pack/20260325-research-appendix-a-index-ru.md` lines 63, 74, 93, 128
 
-- [ ] **Step 1: Confirm defects**
+- [x] **Step 1: Confirm defects**
   Read the 4 lines to confirm they are all plain text without links.
 
-- [ ] **Step 2: Fix line 63 — Related documents list**
+- [x] **Step 2: Fix line 63 — Related documents list**
   Replace `- «Приложение C: имеющиеся наработки CMW»`
   with `- [«Приложение C: доказательство готовности — референс-стек Comindware»](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)`
 
-- [ ] **Step 3: Fix line 74 — Topic table**
+- [x] **Step 3: Fix line 74 — Topic table**
   In the table row for `Наработки Comindware`:
   Replace `«Приложение C: имеющиеся наработки Comindware»`
   with `[«Приложение C: доказательство готовности — референс-стек Comindware»](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)`
 
-- [ ] **Step 4: Fix line 93 — Q→doc navigation**
+- [x] **Step 4: Fix line 93 — Q→doc navigation**
   Replace the plain-text reference `Приложение C: имеющиеся наработки Comindware`
   with `[Приложение C: доказательство готовности — референс-стек Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)`
 
-- [ ] **Step 5: Fix line 128 — Source mapping table**
+- [x] **Step 5: Fix line 128 — Source mapping table**
   In the row for `Обзор текущей архитектуры Comindware`:
   Replace `Приложение C: имеющиеся наработки Comindware`
   with `[Приложение C: доказательство готовности — референс-стек Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)`
 
-- [ ] **Step 6: Re-read all 4 fixed lines to confirm**
+- [x] **Step 6: Re-read all 4 fixed lines to confirm**
 
 ---
 
@@ -234,10 +234,10 @@ Verify:
 
 **Context:** 4 documents point to `sizing-economics-main#sizing_russian_market`. That anchor does not exist in the sizing report. The anchor IS defined in Appendix E (`#sizing_russian_market`, line 152), which is the right home for the full data. The fix: add a minimal stub section in the sizing report that (a) makes the anchor real, (b) gives key figures inline, (c) points to Appendix E for full breakdown. This satisfies all 4 existing references without duplicating Appendix E's data block.
 
-- [ ] **Step 1: Find the right insertion point**
+- [x] **Step 1: Find the right insertion point**
   Search for `sizing_russian_ai_cloud_tariffs` or `sizing_russian_recommendations` in the sizing report to find a natural "Russian market" area. The section `## Тарифы российских облачных провайдеров ИИ {: #sizing_russian_ai_cloud_tariffs }` (line 372) is the nearest. Insert the new stub **before** this section.
 
-- [ ] **Step 2: Write the stub section**
+- [x] **Step 2: Write the stub section**
   Insert at line ~371 (before the tariffs H2):
   ```markdown
   ## Российский рынок GenAI: зрелость и барьеры (опрос CMO Club × red_mad_robot, 2025) {: #sizing_russian_market }
@@ -253,10 +253,10 @@ Verify:
 
   ```
 
-- [ ] **Step 3: Verify the 4 broken references now resolve correctly**
+- [x] **Step 3: Verify the 4 broken references now resolve correctly**
   Re-read the stub. Confirm: anchor `#sizing_russian_market` is present, key figures are correct (match Appendix E lines 173-182), 43% disambiguation is explicit, pointer to Appendix E is present, pointer to Appendix D for the security split is present.
 
-- [ ] **Step 4: Add `## Источники` entry for the CMO survey**
+- [x] **Step 4: Add `## Источники` entry for the CMO survey**
   At the end of the sizing report's `## Источники` section (around line 1575), confirm these two entries already exist:
   - `[Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197)`
   - `[RB.RU — 93% команд в маркетинге используют ИИ...](https://rb.ru/news/...)`
@@ -269,15 +269,15 @@ Verify:
 **Files:**
 - Modify: `report-pack/20260325-research-appendix-c-cmw-existing-work-ru.md` lines 28-30
 
-- [ ] **Step 1: Confirm current state**
+- [x] **Step 1: Confirm current state**
   Read lines 28-31. Confirm the bold-text reference «Оценка сайзинга, КапЭкс и ОпЭкс для клиентов» (раздел «**Российский рынок**») is not hyperlinked.
 
-- [ ] **Step 2: Replace bold text with hyperlink**
+- [x] **Step 2: Replace bold text with hyperlink**
   In the sentence on line 30, replace the bold-text reference to the survey data:
   - Change: `зафиксированы в сопутствующем резюме **Оценка сайзинга, КапЭкс и ОпЭкс для клиентов** (раздел «**Российский рынок**»)`
   - To: `зафиксированы в _«[Основной отчёт: сайзинг и экономика — Российский рынок](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)»_`
 
-- [ ] **Step 3: Verify the link and surrounding sentence are grammatically correct**
+- [x] **Step 3: Verify the link and surrounding sentence are grammatically correct**
   Re-read lines 28-32.
 
 ---
@@ -286,28 +286,28 @@ Verify:
 
 This is a systematic spot-check. For each anchor below, confirm it exists in the target file.
 
-- [ ] **Step 1: Check `#app_b_pack_overview`**
+- [x] **Step 1: Check `#app_b_pack_overview`**
   Grep `app_b_pack_overview` in `appendix-b-ip-code-alienation-ru.md`. Confirm defined.
 
-- [ ] **Step 2: Check `#app_d__pack_overview`**
+- [x] **Step 2: Check `#app_d__pack_overview`**
   Grep `app_d__pack_overview` in `appendix-d-security-observability-ru.md`. Confirm defined.
 
-- [ ] **Step 3: Check `#method_pack_overview`**
+- [x] **Step 3: Check `#method_pack_overview`**
   Grep `method_pack_overview` in `research-report-methodology-main-ru.md`. Confirm defined.
 
-- [ ] **Step 4: Check `#app_a_fx_policy`**
+- [x] **Step 4: Check `#app_a_fx_policy`**
   Grep `app_a_fx_policy` in `appendix-a-index-ru.md`. Confirm defined.
 
-- [ ] **Step 5: Check `#method_genai_marketing_teams`**
+- [x] **Step 5: Check `#method_genai_marketing_teams`**
   Grep in `research-report-methodology-main-ru.md`. Confirm defined.
 
-- [ ] **Step 6: Check `#app_b_shadow_genai_marketing_model_routing`**
+- [x] **Step 6: Check `#app_b_shadow_genai_marketing_model_routing`**
   Grep in `appendix-b-ip-code-alienation-ru.md`. Confirm defined.
 
-- [ ] **Step 7: Check `#app_b_capability_transfer_overview`** (referenced from Appendix C line 13)
+- [x] **Step 7: Check `#app_b_capability_transfer_overview`** (referenced from Appendix C line 13)
   Grep in `appendix-b-ip-code-alienation-ru.md`. Confirm defined. If not found, downgrade the link to `#app_b_pack_overview` which is confirmed to exist.
 
-- [ ] **Step 8: Document results**
+- [x] **Step 8: Document results**
   Record any missing anchors found. If any are missing, add minimal anchor stubs (a bare `{: #anchor_name }` on the nearest relevant heading). Do NOT restructure content.
 
 ---
@@ -334,10 +334,10 @@ Verify:
 
 **Principle:** The commercial offer is the first document a C-level executive sees. It currently has zero market demand data. Add a lean, factual demand signal section and a proper `## Источники` section. Do NOT write new research — pull from existing validated figures in Appendix E.
 
-- [ ] **Step 1: Find insertion point**
+- [x] **Step 1: Find insertion point**
   The section `## Зачем это бизнесу (P&L и контроль)` (line 27) is the right place to add market context. Insert a new short section immediately after the `## Зачем это бизнесу` section (before `## Что мы продаём`).
 
-- [ ] **Step 2: Write the demand evidence block**
+- [x] **Step 2: Write the demand evidence block**
   Insert between the `## Зачем это бизнесу` and `## Что мы продаём` sections:
   ```markdown
   ## Рыночный контекст (опрос CMO Club × red_mad_robot, 2025)
@@ -352,7 +352,7 @@ Verify:
   Это рынок, где спрос уже есть, а **управляемый контур** (данные, eval, комплаенс, передача) остаётся полем конкуренции. Именно это предлагает Comindware — подробнее в _«[Приложение E: рыночные и технические сигналы](./20260325-research-appendix-e-market-technical-signals-ru.md#sizing_russian_market)»_ и _«[Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)»_.
   ```
 
-- [ ] **Step 3: Add `## Источники` section at end of file**
+- [x] **Step 3: Add `## Источники` section at end of file**
   After the last line of the navigation section, append:
   ```markdown
   ## Источники
@@ -364,7 +364,7 @@ Verify:
   - [Банк России — официальные курсы валют](https://www.cbr.ru/currency_base/daily/)
   ```
 
-- [ ] **Step 4: Verify no duplication and correct tone**
+- [x] **Step 4: Verify no duplication and correct tone**
   Re-read the full commercial offer. Confirm: (a) market section is lean (≤8 lines), (b) figures match Appendix E exactly, (c) 43%×2 disambiguation is clear, (d) tone is business-factual not marketing-fluff, (e) no internal tool names or repo paths appear in body text.
 
 ---
@@ -377,7 +377,7 @@ Verify:
 
 **Principle:** Both executive summary docs are accurate but end abruptly without connecting back to the role matrix defined in the commercial offer. Add a lean "Что важно каждому" block that mirrors the commercial offer's role matrix — no new content, just routing.
 
-- [ ] **Step 1: Add role routing to executive-methodology summary**
+- [x] **Step 1: Add role routing to executive-methodology summary**
   In `20260325-research-executive-methodology-ru.md`, before `## Где искать полноту`, insert:
 
   ```markdown
@@ -391,7 +391,7 @@ Verify:
   - **CFO:** юнит-экономика (₽/диалог, ₽/тикет), TCO и вилки CapEx/OpEx — в «Резюме для руководства: сайзинг».
   ```
 
-- [ ] **Step 2: Add role routing to executive-sizing summary**
+- [x] **Step 2: Add role routing to executive-sizing summary**
   In `20260325-research-executive-sizing-ru.md`, before `## Где искать полноту`, insert:
 
   ```markdown
@@ -405,7 +405,7 @@ Verify:
   - **CPO / Продукт:** юнит-экономика сценариев (₽/диалог, ₽/тикет, утилизация) — базис для приоритизации и road map.
   ```
 
-- [ ] **Step 3: Verify both summaries remain ≤2 pages equivalent**
+- [x] **Step 3: Verify both summaries remain ≤2 pages equivalent**
   Re-read both files top to bottom. Confirm they stay lean (the role blocks are ~8 lines each), no duplication with body text above, cross-links are correct.
 
 ---
@@ -417,16 +417,16 @@ Verify:
 
 **Issue:** The Q→doc navigation (lines 84-103) has no entry pointing to the commercial offer as the "first stop" for C-level pitch context. The doc exists and is linked in the Related Documents list, but is not referenced in the navigation by a question.
 
-- [ ] **Step 1: Confirm current state**
+- [x] **Step 1: Confirm current state**
   Read lines 84-86. Confirm the first Q→doc entry is about implementation (not the commercial offer).
 
-- [ ] **Step 2: Prepend the commercial offer entry**
+- [x] **Step 2: Prepend the commercial offer entry**
   Before the first Q→doc bullet (line 84), insert:
   ```markdown
   - «Нужно быстро понять суть предложения Comindware — что продаём, пакеты (PoC→Пилот→Масштаб→BOT), артефакты передачи, матрица по ролям?» → [«Comindware: корпоративный ИИ для промышленного предприятия — предложение для руководства»](./20260325-comindware-ai-commercial-offer-ru.md)
   ```
 
-- [ ] **Step 3: Verify the entry is grammatically correct and follows the established Q→doc style**
+- [x] **Step 3: Verify the entry is grammatically correct and follows the established Q→doc style**
   Re-read lines 83-87 to confirm the new entry blends in with the pattern.
 
 ---
