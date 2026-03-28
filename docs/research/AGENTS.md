@@ -138,6 +138,7 @@ These rules apply to **Russian** research articles under `docs/research/` (the d
 ### Typography and punctuation (Russian)
 
 - **Quotation marks:** use `«` and `»` for Russian quotations. Reserve straight `"` for code and APIs.
+- **Bold inside quotes:** when formatting a quoted term in bold, place the asterisks **inside** the guillemets: `«**Термин**»`, not `**«Термин»**`.
 - **Em dash (`—`):** appositions, breaks in sense, dialogue-style breaks; do not use hyphen-minus `-` where a long dash is intended.
 - **En dash (`–`):** ranges (pages, years), e.g. `2019–2025`, no extra spaces inside the range unless your style guide requires thin spaces.
 - **Colon:** if text continues on the same line after `:`, start with lowercase (not English sentence case), except proper names, acronyms, or a clearly new sentence.

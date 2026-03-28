@@ -1,19 +1,18 @@
 ---
 title: 'Приложение A. Обзор и ведомость документов: навигация, реестр и источники'
 date: 2026-03-28
-status: 'Черновой комплект материалов для руководства (v1)'
+status: 'Черновой комплект материалов для руководства (v1, март 2026)'
 tags:
   - AI
   - CapEx
-  - compliance
-  - enterprise
-  - methodology
-  - observability
+  - комплаенс
+  - корпоративный
+  - методология
+  - наблюдаемость
   - OpEx
   - RAG
-  - research
+  - коммерциализация
   - TCO
-  - исследование
   - методология
   - комплект
   - сайзинг
@@ -21,19 +20,19 @@ tags:
 
 ---
 
-# Приложение A. Обзор и ведомость документов: навигация, реестр и источники {: #app_a_root }
+# Приложение A. Обзор и ведомость документов: навигация, реестр и источники {: #app_a }
 
 ## Часть I. Навигация для руководства {: #app_a_part_i_executive_navigation }
 
 ## Обзор комплекта {: #app_a_pack_overview }
 
-Настоящее приложение помогает **быстро найти ответ** в исследовательском комплекте Comindware (март 2026, v1): **как организовать внедрение и эксплуатацию** GenAI под резидентный контур, **какие диапазоны CapEx/OpEx/TCO** закладывать, **как передавать код и ИС**, **где граница готового стека Comindware** и **какие риски и контроли** закрывать до промышленного запуска. В комплекте — два основных отчёта (методология; сайзинг и экономика), четыре приложения (включая этот обзор, отчуждение, состав стека, безопасность и observability) и два **кратких резюме** для быстрого ознакомления. Ниже — навигация по вопросам, ведомость документов и **единый реестр источников**; его дополняют перекрёстные ссылки внутри отчётов. Материалы опираются на **публичные прайсы и отраслевые публикации** и на **инженерную практику Comindware** (открытые репозитории экосистемы); их можно использовать как основу для **собственных презентаций, смет и управленческих решений** — с перепроверкой цифр на дату и под профиль заказчика.
+Настоящее приложение помогает **быстро найти ответ** в комплекте Comindware (март 2026, v1): **как организовать внедрение и эксплуатацию** GenAI под резидентный контур, **какие диапазоны CapEx/OpEx/TCO** закладывать, **как передавать код и ИС**, **где граница готового стека Comindware** и **какие риски и контроли** закрывать до промышленного запуска. В комплекте — коммерческое резюме для руководства, два основных отчёта (методология; сайзинг и экономика), приложения (A–E) и два **кратких резюме** для быстрого ознакомления. Ниже — навигация по вопросам, ведомость документов и **единый реестр источников**; его дополняют перекрёстные ссылки внутри отчётов. Материалы опираются на **публичные прайсы и отраслевые публикации** и на **инженерную практику Comindware** (открытые репозитории экосистемы); их можно использовать как основу для **собственных презентаций, смет и управленческих решений** — с перепроверкой цифр на дату и под профиль заказчика.
 
 ## Как пользоваться комплектом {: #app_a_reading_guide_executives }
 
 1. Откройте **настоящее приложение (A)** и по таблице «вопрос → документ» перейдите к нужному разделу.
 2. **Решения по модели внедрения, ролям, фазам и качеству** — в основном отчёте по методологии; **сметы, тарифы, TCO и сценарии сайзинга** — в основном отчёте по сайзингу и экономике.
-3. Нужен **сжатый обзор** без детальных таблиц — два резюме в конце списка связанных документов (методология; сайзинг) — см. раздел **«Краткие резюме»** ниже.
+3. Нужен **сжатый обзор** без детальных таблиц — два резюме в конце списка связанных документов (методология; сайзинг) — см. раздел «**Краткие резюме**» ниже.
 4. **Передача ИС и кода, KT/IP** — приложение B; **фактический состав стека Comindware** — приложение C; **ИБ, комплаенс и промышленная observability** — приложение D.
 5. Цифры и ссылки в тексте **проверяйте по сводному реестру источников** (часть III) здесь и в парных отчётах.
 
@@ -56,30 +55,35 @@ tags:
 
 ## Связанные документы {: #app_a_related_documents }
 
+- [«Comindware: корпоративный ИИ для промышленного предприятия — предложение для руководства (внедрение + передача экспертизы)»](./20260325-comindware-ai-commercial-offer-ru.md)
 - [«Резюме для руководства: методология внедрения и отчуждения ИИ (C-level)»](./20260325-research-executive-methodology-ru.md)
 - [«Резюме для руководства: сайзинг, CapEx и OpEx (C-level)»](./20260325-research-executive-sizing-ru.md)
 - [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
 - [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
 - [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
 - «Приложение C: имеющиеся наработки CMW»
-- [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
+- [«Приложение D: безопасность, комплаенс и наблюдаемость (observability)»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
+- [«Приложение E: рыночные и технические сигналы (справочно)»](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)
 
 ## Базовые документы по теме {: #app_a_topic_owners_canonical_docs }
 
 | Тема | Документ |
 | --- | --- |
+| Коммерческое резюме предложения: что продаём и как передаём способность | [«Comindware: корпоративный ИИ для промышленного предприятия — предложение для руководства»](./20260325-comindware-ai-commercial-offer-ru.md) |
 | Экономика: цифры, тарифы, сценарии сайзинга, CapEx / OpEx / TCO | [«Основной отчёт: сайзинг и экономика»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) |
 | Методология: TOM, фазы внедрения, производственная модель (таблицы затрат — в отчёте по сайзингу) | [«Основной отчёт: методология внедрения и разработки»](./20260325-research-report-methodology-main-ru.md#method_pack_overview) |
 | Отчуждение ИС и кода: KT / IP, лицензии, комплект передачи, приёмка | [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview) |
 | Наработки Comindware: состав стека, границы «что есть сегодня» | «Приложение C: имеющиеся наработки CMW» |
-| Безопасность, комплаенс, observability (углубление) | [«Приложение D: безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview) |
+| Безопасность, комплаенс, наблюдаемость (углубление) | [«Приложение D: безопасность, комплаенс и наблюдаемость (observability)»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview) |
+| Рыночный и инженерный контекст (сигналы, дайджесты, публичные кейсы; не для смет) | [«Приложение E: рыночные и технические сигналы (справочно)»](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root) |
 | Навигация по комплекту, реестр документов и источников | [«Приложение A: обзор и ведомость документов»](#app_a_pack_overview) (этот документ) |
 | Краткое резюме: методология и отчуждение | [«Резюме для руководства: методология внедрения и отчуждения ИИ (C-level)»](./20260325-research-executive-methodology-ru.md) |
 | Краткое резюме: сайзинг и экономика | [«Резюме для руководства: сайзинг, CapEx и OpEx (C-level)»](./20260325-research-executive-sizing-ru.md) |
 
 ## Навигация «вопрос → документ» {: #app_a_question_document_navigation }
 
-- «Как внедрять и разрабатывать в пром контуре (роли, фазы, quality gates)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- «Нужно коммерческое резюме: что именно предлагается (пакеты PoC→Пилот→Масштабирование→BOT) и что остаётся у заказчика после передачи?» → [«Comindware: корпоративный ИИ для промышленного предприятия — предложение для руководства»](./20260325-comindware-ai-commercial-offer-ru.md)
+- «Как внедрять и разрабатывать в пром контуре (роли, фазы, контрольные точки качества)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
 - «Где в корпоративном ИИ формируется преимущество (данные, семантика, агенты)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
 - «Где глобальные бенчмарки корпоративного внедрения по публичному отчёту OpenAI (2025) и оговорки по выборке (не норма для КП в РФ)?» → [Основной отчёт: методология внедрения и разработки — эмпирика корпоративного внедрения](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report)
 - «Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)?» → [Основной отчёт: методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity); поведенческие риски — [Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_behavioral_risk_factors); риск бюджета «организационная зрелость и пилот» — [Основной отчёт: сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)
@@ -445,7 +449,7 @@ tags:
 - [GitHub — redmadrobot-rnd/mcp-registry](https://github.com/redmadrobot-rnd/mcp-registry)
 - [Habr — red_mad_robot: кейс RAG для ФСК](https://habr.com/ru/companies/redmadrobot/articles/892882/)
 - [Habr — red_mad_robot: MCP Tool Registry и автоматизация RAG](https://habr.com/ru/companies/redmadrobot/articles/982004/)
-- [InOrg — seamless handover в модели BOT](https://inorg.com/blog/from-build-to-transfer-key-success-factors-a-seamless-bot-model-transition)
+- [InOrg — бесшовная передача (seamless handover) в модели BOT](https://inorg.com/blog/from-build-to-transfer-key-success-factors-a-seamless-bot-model-transition)
 - [Just AI — корпоративный GenAI (упоминается как практикующий вендор)](https://just-ai.com/ru/)
 - [Luxoft — модель Build–Operate–Transfer (BOT)](https://www.luxoft.com/blog/master-the-build-operate-transfer-bot-model-with-luxoft)
 - [Ведомости — CTO AI red_mad_robot (Влад Шевченко)](https://www.vedomosti.ru/technologies/trendsrub/articles/2026/03/11/1181757-ii-uskoril-kod)
@@ -598,7 +602,7 @@ tags:
 - [G7 Hiroshima AI Process: International Guiding Principles](https://www.moff.go.jp/files/100573473.pdf)
 - [UK AI Safety Institute: Systemic Safety Framework (2025)](https://www.gov.uk/government/organisations/ai-safety-institute)
 
-### 16.2 Executive-методологии внедрения (Big Three & Big Four) {: #app_a_executive_implementation_methodologies }
+### 16.2 Управленческие методологии внедрения (Big Three & Big Four) {: #app_a_executive_implementation_methodologies }
 
 - [McKinsey: Rewiring the Enterprise for GenAI (2025)](https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/rewiring-for-the-era-of-gen-ai)
 - [McKinsey: The GenAI Operating Model Leader's Guide (2025)](https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/a-data-leaders-operating-guide-to-scaling-gen-ai)
@@ -723,10 +727,10 @@ tags:
 - [Sber AI: ru-Gemma и open-source инициативы 2025-2026](https://developers.sber.ru/docs/ru/gigachat/models/updates)
 - [Yandex Research: Оптимизация инференса LLM для русского языка (2025)](https://yandex.ru/company/research/)
 
-### 16.7 Модели отчуждения и передачи (BOT и Handover) {: #app_a_transfer_models_bot_handover }
+### 16.7 Модели отчуждения и передачи (BOT и передача) {: #app_a_transfer_models_bot_handover }
 
 - [Build-Operate-Transfer (BOT) Model: Full Guide 2025](https://build-operate-transfer.com/post/build-operate-transfer-bot-model-complete-guide-for-software-development-2025)
-- [Software Handover Checklist 2026: Documentation & IP Guide](https://www.tech4lyf.com/blog/software-handover-documentation-checklist-2026/)
+- [Tech4lyf — чек‑лист передачи ПО (Software handover checklist, 2026)](https://www.tech4lyf.com/blog/software-handover-documentation-checklist-2026/)
 - [InCommon: Why BOT Wins for AI Infrastructure](https://www.incommon.ai/blog/build-operate-transfer/)
 - [Innowise: BOT Outsourcing Contract and IP Transfer Guide](https://innowise.com/blog/build-operate-transfer-bot-model-guide/)
 - [Devico: Checklist for a seamless BOT transition (2025)](https://devico.io/blog/checklist-for-a-seamless-bot-transition)
