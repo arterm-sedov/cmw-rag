@@ -77,25 +77,40 @@ tags:
 
 ### Агенты и IDE для разработки {: #app_e_coding_agents }
 
-**NousResearch Hermes Agent Hackathon:**
-- 187 заявок, призовой фонд ~998 750 руб.
-- Победители: Media Tool (ffmpeg integration), Hermes Agentic CAD Builder (FreeCAD), Hermes Sidecar (browser extension), Terminal World Map, HERMES Mars Rover
-- Hermes Agent также написал роман на 79 456 слов
+**Рекомендация для РФ:** SourceCraft (Yandex) → GigaCode (Sber) → Koda → OpenCode Enterprise (on-prem)
 
-**OpenCode** — открытый аналог Claude Code, в РФ работает без VPN, поддерживает локальные модели (Qwen/GLM) для суверенного закрытого развёртывания.
-**Cursor (IDE) + Composer 2:** интерфейс выбора моделей (Opus, GPT-5 и др.); в РФ работает без VPN.
-**Claude Code** (Anthropic): агент для кодинга, в РФ только через VPN.
-**Codex** (OpenAI) и **Antigravity** (Google): аналогичные предложения, в РФ только через VPN.
+**Российские решения (российские разработчики):**
 
-**OpenCode / OpenWork / OpenRouter:**
-- **[OpenCode](https://opencode.ai/docs)** — **открытый аналог Claude Code** (агент для разработки, **без VPN в РФ**, локальный/edge); [OpenWork](https://github.com/different-ai/openwork) — опциональный UI/десктоп для команд; [OpenRouter](https://openrouter.ai/) — агрегирующий API для экспериментов. **OpEx разработки** ниже с локальными моделями; Zen (USD) — требует оценки ИБ-рисков и учёта юрисдикции данных при выборе провайдера. См. [кейсы локального инференса](#app_e_local_inference_practical_cases).
+| Решение | Разработчик | Цена | Notes |
+|---------|-------------|------|-------|
+| **SourceCraft** | Yandex Cloud | 700 ₽/пользователь/мес | Agent mode, code review |
+| **GigaCode 2.0 + GigaIDE** | SberTech | Бесплатно (ограничено) | IDE + AI |
+| **Koda** | Koda startup | ~250–1 590 ₽/мес | Работает без VPN, 152-ФЗ |
+
+**Глобальные решения, работающие в РФ без VPN:**
+
+| Решение | Цена (5–10 чел.) | On-prem | Notes |
+|---------|-----------------|---------|-------|
+| **OpenCode Go** | 4 250–8 500 ₽/мес | ❌ | Работает без VPN, open-source модели |
+| **Cursor Teams** | 17 000–34 000 ₽/мес | ❌ | Мощный IDE на базе VS Code |
+| **Claude Code** | API-токены | ❌ | Только через VPN |
+
+**Полный on-prem (без облака):**
+
+| Решение | Цена | Notes |
+|---------|------|-------|
+| **OpenCode Enterprise** | Индивидуально | Локальные модели (Ollama, vLLM) |
+| **Tabnine Enterprise** | $39+/пользователь/мес | Полный on-prem |
+| **Sourcegraph Cody** | $59+/пользователь/мес | Enterprise search + AI |
 
 **Claude Code Channels** (Anthropic):
+
 - Подключение Claude Code к Telegram и Discord через MCP
 - Асинхронный формат работы с ИИ-агентами
 - "Убийца OpenClaw" по мнению сообщества
 
 **OpenAI Codex + ChatGPT + Atlas → Суперприложение:**
+
 - Объединение продуктов в единую платформу
 - Агенты для автономной работу на компьютере
 
@@ -163,6 +178,7 @@ tags:
 - Project Moonlight: agentic interface для всех приложений
 
 **Ouroboros (Cloud.ru):**
+
 - Открытый агент https://github.com/razzant/ouroboros, самонастраивающийся аналог OpenClaw и Hermes
 - Автономная эволюция: пишет и переписывает свой код без участия пользователя, исправляет ошибки и добавляет функции
 - Фоновое сознание: думает и проявляет инициативу между задачами, в отличие от обычных ассистентов
