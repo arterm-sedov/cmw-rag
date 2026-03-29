@@ -32,11 +32,49 @@ tags:
 - Для CISO: опираться на OWASP LLM Top 10 2025, Agentic Top 10 2026 и NIST AI RMF как методологические ориентиры.
 - Для переговоров по суверенности: раздел про резидентный контур и ограничения для госсектора/КИИ.
 
+**OWASP LLM Top 10 2025:**
+
+| № | Код | Категория |
+|---|-----|-----------|
+| 1 | LLM01:2025 | Prompt Injection |
+| 2 | LLM02:2025 | Sensitive Information Disclosure |
+| 3 | LLM03:2025 | Supply Chain Vulnerabilities |
+| 4 | LLM04:2025 | Data and Model Poisoning |
+| 5 | LLM05:2025 | Improper Output Handling |
+| 6 | LLM06:2025 | Excessive Agency |
+| 7 | LLM07:2025 | System Prompt Leakage |
+| 8 | LLM08:2025 | Vector and Embedding Weaknesses |
+| 9 | LLM09:2025 | Misinformation |
+| 10 | LLM10:2025 | Unbounded Consumption |
+
+**OWASP Agentic Top 10 2026:**
+
+| № | Код | Категория |
+|---|-----|-----------|
+| 1 | ASI01:2026 | Agent Goal Hijack |
+| 2 | ASI02:2026 | Tool Misuse & Exploitation |
+| 3 | ASI03:2026 | Identity & Privilege Abuse |
+| 4 | ASI04:2026 | Agentic Supply Chain Vulnerabilities |
+| 5 | ASI05:2026 | Unexpected Code Execution (RCE) |
+| 6 | ASI06:2026 | Memory & Context Poisoning |
+| 7 | ASI07:2026 | Insecure Inter-Agent Communication |
+| 8 | ASI08:2026 | Cascading Failures |
+| 9 | ASI09:2026 | Human-Agent Trust Exploitation |
+| 10 | ASI10:2026 | Rogue Agents |
+
+Статистика инцидентов (2026): 36,8% AI-навыков содержат уязвимости; 135 000+ экземпляров OpenClaw подвержены атакам.
+
 **Не использовать как:**
 
 - Полную модель угроз без адаптации под профиль заказчика (требуется отдельный анализ).
 - Юридическое заключение по 152-ФЗ без согласования с ДПО заказчика.
 - Действующую норму по законопроекту об ИИ (на март 2026 — черновик, не вступил в силу).
+
+Нормативный контекст (РФ, март 2026):
+- **152-ФЗ** (с поправками 2025 г.): основной закон о персональных данных; поправки вступили в силу в июле и сентябре 2025 г. — усилены требования к локализации и анонимизации
+- **123-ФЗ**: федеральный закон об ответственности за вред, причинённый ИИ (действует с 2024 г.)
+- **Стратегия развития ИИ 124/2024**: президентский указ о развитии ИИ до 2030 г.
+- **Законопроект о суверенном ИИ**: Минцифры опубликовало проект в марте 2026 г. — требует создания нейросетей в России и обучения на российских данных
 
 ## Сводка доверия для CISO/CIO: что проверять перед промышленным запуском {: #app_d__ciso_trust_summary }
 
@@ -95,6 +133,20 @@ tags:
 
 Дополнительно **OpenInference** описывает инструментирование ИИ-приложений совместимо с OpenTelemetry и поддерживается, в частности, в **Arize Phoenix** ([OpenInference](https://arize-ai.github.io/openinference/)); выбор бэкенда хранения трассов остаётся за заказчиком.
 
+**Self-hosted решения для соответствия 152-ФЗ:**
+
+Для российских продакшен-контуров рекомендуются self-hosted решения observability с развёртыванием в российских дата-центрах:
+
+| Инструмент | Тип развёртывания | 152-ФЗ соответствие |
+|------------|-------------------|---------------------|
+| Arize Phoenix | Self-hosted (Docker/K8s) | ✅ Полное |
+| Langfuse | Self-hosted (Docker/K8s) | ✅ Полное |
+| Helicone | Self-hosted | ✅ Полное |
+| SigNoz | Self-hosted | ✅ Полное |
+| LangSmith | SaaS (только EU/US) | ❌ Не рекомендуется |
+
+Для соответствия требованиям локализации приоритет — self-hosted решения на базе OpenTelemetry.
+
 ### Применимость в России: что не блокируется и где нужны оговорки {: #app_d__russia_applicability_caveats }
 
 - **Открытые стандарты (OpenTelemetry, конвенции GenAI)** не привязаны к юрисдикции поставщика; их можно закладывать в проектирование **без ограничений**, сохраняя осознанность, что часть полей спецификации ещё в статусе **Development**.
@@ -105,6 +157,19 @@ tags:
 ### AI TRiSM и управление доверием {: #app_d__ai_trism_trust_management }
 
 **AI TRiSM** (в [глоссарии Gartner](https://www.gartner.com/en/information-technology/glossary/ai-trism) — **AI Trust, Risk and Security Management**; в ряде русскоязычных обзоров встречается написание «AI-TRISM») — это **рамка** для операционализации доверия к ИИ: объяснимость и интерпретируемость, защита моделей и данных, соответствие требованиям, устойчивость и надёжность процессов вокруг модели. Для контура **корпоративный RAG-контур** / **агентный слой платформы (Comindware Platform)** это стыкуется с уже принятыми в комплекте практиками: [OWASP LLM Top 10 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/), [OWASP Agentic Top 10 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/), минимизация содержимого в телеметрии, ModelOps и red teaming — **без** подмены внутренней модели угроз заказчика брендом аналитика. Сметные последствия (OpEx) — _«[Основной отчёт: сайзинг — OpEx безопасности GenAI](./20260325-research-report-sizing-economics-main-ru.md#sizing_genai_security_opex)»_.
+
+**Рыночный ландшафт AI TRiSM (2026):**
+
+Рынок AI TRiSM оценивается в ~$3,2 млрд (2025), прогноз — $4,83 млрд к 2034 г.
+
+| Категория | Представители |
+|-----------|---------------|
+| AI Security Platforms | Palo Alto Networks Prisma AIRS, Microsoft Azure AI Studio |
+| AI Governance | Mindgard, Zenity, PointGuard AI |
+| Data Security | Securiti, Knosti AI |
+| Red Teaming | Microsoft PyRIT, NVIDIA Garak, Giskard |
+
+**Ключевые тренды:** 40% корпоративных приложений будут включать автономных AI-агентов к концу 2026 г.; 76% организаций отмечают Shadow AI как значимую проблему; только 26% имеют комплексные политики AI-безопасности.
 
 **Model Context Protocol (MCP):** при проектировании агентов и реестров инструментов используйте официальное наименование **Model Context Protocol** (см. раздел _«[MCP, мультиагентная маршрутизация и воспроизводимые навыки](./20260325-research-appendix-d-security-observability-ru.md#app_d__mcp_multiagent_routing_skills)_»_); не смешивать с бытовыми расшифровками вроде «Model Communication Protocol».
 
