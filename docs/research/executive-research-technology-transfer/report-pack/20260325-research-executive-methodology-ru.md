@@ -17,7 +17,13 @@ tags:
 
 - **Решение для руководства**: утвердить модель внедрения (PoC → Pilot → Scale), целевую операционную модель (TOM) и принцип передачи (KT/IP/BOT) с измеримыми критериями приёмки.
 - **Для переговоров**: фиксировать границы применимости цифр/кейсов, рамку комплаенса (152‑ФЗ, резидентность) и различие «разработка/эксперименты» vs «промышленный контур».
-- **Куда идти дальше**: коммерческое резюме предложения — документ _«[Корпоративный ИИ для промышленного предприятия — предложение для руководства](./20260325-comindware-ai-commercial-offer-ru.md)»_; детали — в основном отчёте и приложениях A–D.
+- **Что читать дальше**:
+    - Коммерческое резюме предложения — _[Корпоративный ИИ для промышленного предприятия — предложение для руководства](./20260325-comindware-ai-commercial-offer-ru.md)_
+    - _[Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md)_
+    - _[Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md)_
+    - _[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md)_
+    - _[Наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md)_
+    - _[Безопасность и наблюдаемость](./20260325-research-appendix-d-security-observability-ru.md)_
 
 ## SCQA {: #exec_method_scqa }
 
@@ -65,18 +71,24 @@ tags:
     - **Человеческий капитал:** кастомизированная программа обучения для внутренних администраторов и AI-тренеров заказчика.
     - **Юридическая чистота:** оформленная передача прав на интеллектуальную собственность (ИС).
 
-**Рынок РФ и глобальный контекст.** Карта сегментов GenAI и отраслевые опросы (в т.ч. маркетинг) дают **сегментные** ориентиры спроса. Цифры по экосистеме OpenAI относятся к **выборке enterprise-клиентов провайдера**, **не** к типовому резидентному продакшну в РФ; детали и ссылки — см. _«[Отчёт. Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md)»_.
+**Рынок РФ и глобальный контекст.** Карта сегментов GenAI и отраслевые опросы (в т.ч. маркетинг) дают **сегментные** ориентиры спроса. Цифры по экосистеме OpenAI относятся к **выборке enterprise-клиентов провайдера**, **не** к типовому резидентному продакшну в РФ; детали и ссылки — см. отчёт _«[Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md)»_.
+
+
 
 **Российский рынок в цифрах (2025–2026):**
 
 - Прогноз экономического эффекта ИИ: **13 трлн руб.** к 2030 году (Yakov Partners), из них 60% — в 5 секторах: e-commerce, телеком, IT, строительство, здравоохранение
 - **46% компаний** уже внедряют или тестируют автономные ИИ-агенты
 - **86% компаний** используют открытые модели и дообучение (fine-tuning)
-- Рост вакансий с ИИ-скиллами: +62% за янв–окт 2024
+- Рост вакансий с ИИ-навыками: **+89%** за янв–окт 2025 ([hh.ru × PR DEV](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/))
 
 ## Где искать полноту {: #exec_method_where_to_find }
 
-Развёрнутый текст и таблицы: _«[Отчёт. Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md)»_; навигация и реестр источников — _«[Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md)»_; отчуждение ИС/кода — _«[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md)»_; состав стека Comindware — _«[Приложение C](./20260325-research-appendix-c-cmw-existing-work-ru.md)»_; ИБ, комплаенс и observability — _«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md)»_.
+- Развёрнутый текст и таблицы — _[Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md)_
+- Навигация и реестр источников — _[Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md)_
+- Отчуждение ИС/кода — _[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md)_
+- Состав стека Comindware — _[Наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md)_
+- ИБ, комплаенс и observability — _[Безопасность и наблюдаемость](./20260325-research-appendix-d-security-observability-ru.md)_
 
 ## План действий: 30/60/90 дней {: #exec_method_action_plan }
 
@@ -110,4 +122,6 @@ tags:
 - [NIST AI Risk Management Framework 1.0](https://nist.gov/itl/ai-risk-management-framework)
 - [Национальная стратегия развития ИИ до 2030 года (Указ Президента РФ №124, февраль 2024)](http://kremlin.ru/acts/bank/49930)
 - [152-ФЗ «О персональных данных»](https://www.consultant.ru/document/cons_doc_LAW_61801/)
-- [Приложение C «Имеющиеся наработки Comindware»: интеграция открытых компонентов RAG-контура, инференс-сервера MOSEC и агентной платформы](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
+- [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197) (46%, 86%)
+- [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
+- [RB.RU — вакансии с ИИ-навыками выросли в 2,7 раза (hh.ru × PR DEV, март 2026)](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/)
