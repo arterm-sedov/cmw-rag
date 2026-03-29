@@ -360,6 +360,19 @@
 
 Глубоко исследуй приведённые ссылки, их содержимое и НАЙДИ НОВЫЕ
 
+## 19. Validation & Harmonization Checklist
+
+See `AGENTS.md` → **Reusable research patterns**. Key additions:
+
+- [ ] Validate figures via web search (2026)
+- [ ] Sort results by local relevance (Russian market first)
+- [ ] Use three-tier: Cloud → Hybrid → On-prem
+
+## 20. Plan Structure
+
+- Goal → Tasks (checkbox) → Status phases → Results
+- Save to `.opencode/plans/`
+
 ### 16.1 Международные стандарты и регулирование (Приоритет 1)
 
 - [ISO/IEC 42001:2023 - Artificial Intelligence Management System (Official)](https://www.iso.org/standard/81230.html)

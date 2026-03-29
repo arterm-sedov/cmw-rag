@@ -305,6 +305,30 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Reuse abstract patterns and avoid unnecessary duplication.
 - Cross-validate sibling research so the corpus stays internally consistent where topics intersect.
 
+## Reusable research patterns
+
+### Plan → Execute → Validate → Iterate
+
+- Plan under `.opencode/plans/`
+- Subagents for parallel work → `deep-researches/`
+- Iterate plan based on results
+
+### Validation
+
+- Web search mandatory for pricing, versions, any figures
+- Cross-validate 2-3 sources
+- Distinguish cloud vs hybrid vs on-prem
+
+### Harmonization
+
+- Compare timelines, pricing, terminology across files
+- Remove any authoring remarks from the actual target documents
+- Add cross-references
+
+### Three-tier categorization (sort by local relevance)
+
+- Cloud (SaaS) → Hybrid → On-prem
+
 ## Comindware research positioning
 
 - **What Comindware sells:** **implementation and guidance** on customer AI programs—not “research PDFs” or “publication curation” as an offering. `docs/research/` is **internal** enablement so teams can **compose** customer-ready narratives with **traceable** evidence.
