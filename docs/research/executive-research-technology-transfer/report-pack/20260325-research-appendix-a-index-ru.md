@@ -506,7 +506,7 @@ tags:
 - [Guardrails как архитектурный паттерн](https://t.me/ai_archnadzor/168)
 - [EffGen / agentic SLM](https://t.me/ai_archnadzor/171)
 - [Типы AI-агентов](https://t.me/ai_archnadzor/173)
-- [GenAI в продакшене: технологический манифест](https://t.me/ai_archnadzor/175)
+- [GenAI в продакшне: технологический манифест](https://t.me/ai_archnadzor/175)
 - [Локальный стек обсервабильности](https://t.me/ai_archnadzor/177)
 - [REFRAG](https://t.me/ai_archnadzor/178)
 - [Cog-RAG](https://t.me/ai_archnadzor/179)
