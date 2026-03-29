@@ -983,9 +983,9 @@ vLLM имеет более высокий оверхед по сравнению
 
 ## Риски и оптимизация {: #sizing_risks_and_optimization }
 
-### Актуальные AI/ML тренды из канала @ai_machinelearning_big_data {: #sizing_ai_ml_trends_channel }
+### Актуальные тренды AI/ML из канала @ai_machinelearning_big_data {: #sizing_ai_ml_trends_channel }
 
-Актуальные AI/ML тренды для стратегического планирования — см. _[Приложение E](./20260325-research-appendix-e-market-technical-signals-ru.md#sizing_ai_ml_trends_channel)_.
+Актуальные тренды AI/ML для стратегического планирования — см. _[Приложение E](./20260325-research-appendix-e-market-technical-signals-ru.md#sizing_ai_ml_trends_channel)_.
 
 ### Оптимизация затрат на инференс (практический опыт) {: #sizing_inference_cost_optimization_practical }
 
@@ -1039,9 +1039,9 @@ vLLM имеет более высокий оверхед по сравнению
 
 ## Тренды и планирование {: #sizing_trends_and_planning }
 
-### Актуальные AI/ML тренды {: #sizing_trends_summary }
+### Актуальные тренды AI/ML {: #sizing_trends_summary }
 
-Актуальные AI/ML тренды для стратегического планирования — см. _[Приложение E](./20260325-research-appendix-e-market-technical-signals-ru.md#sizing_ai_ml_trends_channel)_.
+Актуальные тренды AI/ML для стратегического планирования — см. _[Приложение E](./20260325-research-appendix-e-market-technical-signals-ru.md#sizing_ai_ml_trends_channel)_.
 
 ## Заключение и обоснование {: #sizing_conclusion_justification }
 
