@@ -68,7 +68,7 @@ Example: `20260323-ai-implementation-methodology-ru.md`
 
 ### Source Material Location
 
-- Raw extracted materials must be stored in: `D:/Documents/cmw-rag-channel-extractions/`.
+- Raw extracted materials must be stored in: `~/Documents/cmw-rag-channel-extractions/`.
 
 ### Purpose of External Storage
 
@@ -246,7 +246,7 @@ Use this compact structure for consistency. **Headings below are Russian** becau
 
 ## Research workflow
 
-- Extract raw data to `D:/Documents/cmw-rag-channel-extractions/`.
+- Extract raw data to `~/Documents/cmw-rag-channel-extractions/`.
 - Process findings into executive summaries in `docs/research/`.
 - Commit only processed summaries.
 - Document reusable methodology updates in this file when needed.
@@ -337,3 +337,93 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - **Sovereign default (RF):** default architecture and compliance story to **residency**, **152-FZ**, and **local** clouds/APIs where the customer requires it. **US/CN/global** content is **scoped background** unless legal and contract review say otherwise.
 - **Global telemetry and ecosystem surveys** (e.g. large-provider reports): pair numbers with a **one-line sample/scope** so repurposed slides stay honest.
 - **Depth vs brevity:** the pack’s **short executive summaries** carry the same **business intent** as the long reports but **no repository paths** in body text (task §4, §8); deep reports and appendices keep `.md#anchor` links for maintenance. Details: [Research pack task](./20260324-research-task.md).
+
+## Agentic Research Execution Protocol
+
+This section defines the step-by-step workflow for conducting deep research on technology transfer and AI markets. Follow this protocol when assigned research tasks in `docs/research/executive-research-technology-transfer/`.
+
+### Pre-Research: Read Required Context
+
+Before starting any research task, you **must** read:
+
+1. **Task definition:** `docs/research/executive-research-technology-transfer/tasks/*-research-task.md`
+2. **Business goals:** Refer to Comindware's positioning (implementation and guidance on customer AI programs)
+3. **Existing deep-research files:** `docs/research/executive-research-technology-transfer/deep-researches/`
+4. **Raw materials:** `~/Documents/cmw-rag-channel-extractions/`
+
+### Step 1: Create and Version the Master Plan
+
+- [ ] Create **single** master plan under `.opencode/plans/YYYYMMDD-descriptive-name.md`
+- [ ] Define research scope based on task requirements
+- [ ] Identify specific gaps requiring deep research (competitor analysis, pricing models, market sizing)
+- [ ] Set verification checkpoints
+- [ ] Use subagents recursively to compile and refine the plan
+- [ ] **Version the plan with git** — commit iterations to trace evolution (see **Master Plan Versioning** below)
+
+### Step 2: Execute Parallel Research
+
+Use subagents to parallelize work across multiple phases:
+
+- [ ] Assign subagents to specific research tracks (competitors, pricing, market stats)
+- [ ] Direct subagents to use skills: `agent-browser`, `playwright`, `exa`, `searxng`, `tavily` for web scraping. Note: `webfetch` may fail sometimes, `tivaly` has limits.
+- [ ] Subagents write findings to `docs/research/executive-research-technology-transfer/deep-researches/`
+- [ ] Collect worldwide research, reports, and surveys
+
+### Step 3: Validate and Ground Findings
+
+- [ ] Web search mandatory for all model versions, pricing, and vendor data (see **Current data requirement** above)
+- [ ] Cross-validate 2-3 independent sources for every key figure
+- [ ] Resolve contradictions or flag them explicitly
+- [ ] Use rounded values for macro figures (avoid 4+ decimal places)
+
+### Step 4: Synthesize and Enhance
+
+- [ ] Use subagent reports to refine the master plan
+- [ ] **Commit plan iterations** — each significant evolution of the master plan gets a git commit with descriptive message
+- [ ] Combine figures from multiple sources into original conclusions
+- [ ] Group scattered information into coherent sections
+- [ ] Clarify confused or conflicting content
+- [ ] Add missing valuable insights
+
+### Step 5: Produce C-Level Output
+
+- [ ] Target: deeply worked, grounded material for C-Level decision making
+- [ ] Enable executives to make decisions easier—do not teach them their job
+- [ ] Focus on knowledge transfer, not sales scenarios
+- [ ] Ensure perfect coherence: better, not bigger
+- [ ] Write final reports in **Russian** (internal thinking/plans in English)
+
+### Step 6: Final Review and Iteration
+
+- [ ] Re-read all deep-research files and cross-validate
+- [ ] Verify all figures are sourced and validated
+- [ ] Iterate until the research is perfect and grounded in truth
+- [ ] Do **not** commit research output changes (research is autonomous refinement)
+
+### Master Plan Versioning
+
+Use git to version the **single** master plan file instead of creating multiple dated copies. This maintains a clear trace of how the plan recursively evolved.
+
+| Action | Git Command | Commit Message Pattern |
+| :--- | :--- | :--- |
+| Initial plan creation | `git add .opencode/plans/YYYYMMDD-*.md && git commit -m "..."` | `plan: init research plan for [topic]` |
+| Plan iteration after subagent findings | `git commit -am "..."` | `plan: refine [topic] — added [specific gap addressed]` |
+| Checkpoint before major phase | `git commit -am "..."` | `plan: checkpoint — [phase] complete, ready for [next phase]` |
+| Final evolved plan | `git commit -am "..."` | `plan: finalize — research scope locked for execution` |
+
+**Why version the master plan:**
+
+- Single source of truth (one file, not `plan-v1.md`, `plan-v2.md`, `plan-final.md`)
+- Full traceability of how research scope evolved through recursive refinement
+- Easy diff between iterations (`git diff HEAD~2`)
+- Recovery to any previous checkpoint if research direction needs adjustment
+
+### Research Principles
+
+| Principle | Application |
+| :--- | :--- |
+| **Better, not bigger** | Perfect coherence over volume; clarify, don't inflate |
+| **Grounded synthesis** | Generate original research rather than copy-pasting |
+| **C-Level enablement** | Support decision-making, don't teach executives their job |
+| **Worldwide scope** | Explore global research, reports, and surveys |
+| **Autonomous refinement** | Iterate until perfect without requiring approval for each step |
