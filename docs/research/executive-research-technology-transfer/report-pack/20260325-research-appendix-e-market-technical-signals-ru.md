@@ -92,20 +92,18 @@ tags:
 | Решение | Цена (5–10 чел.) | РФ без VPN | Notes |
 |---------|-----------------|------------|-------|
 | **OpenCode Go** | 4 250–8 500 ₽/мес | ✅ Да | Open-source модели |
-| **Bolt.new** | бесплатно–2 550 ₽/мес | ✅ Да | Full-stack, работает без VPN |
-| **Trae** (ByteDance) | ~$20/мес | ✅ Да (?) | Китайский, требует уточнения |
-| **Windsurf Teams** | 17 000–34 000 ₽/мес | ❌ Нет | Требует VPN (API) |
+| **Trae** (ByteDance) | ~1 700 ₽/мес | ✅ Да | КНР |
+| **Windsurf Teams** | 17 000–34 000 ₽/мес | ✅ Да (?) | Mixed reports |
 | **Cursor Teams** | 17 000–34 000 ₽/мес | ❌ Нет | Требует VPN |
 | **GitHub Copilot** | 8 075–16 150 ₽/мес | ❌ Нет | API заблокирован |
-| **Lovable** | ~$19/мес | ❌ Нет | 403 при доступе из РФ |
 
 **Полный on-prem (без облака):**
 
 | Решение | Цена | Notes |
 |---------|------|-------|
 | **OpenCode Enterprise** | Индивидуально | Локальные модели (Ollama, vLLM) |
-| **Tabnine Enterprise** | $39+/пользователь/мес | Полный on-prem |
-| **Sourcegraph Cody** | $59+/пользователь/мес | Enterprise search + AI |
+| **Tabnine Enterprise** | 3 300+ ₽/пользователь/мес | Полный on-prem |
+| **Sourcegraph Cody** | 5 000+ ₽/пользователь/мес | Enterprise search + AI |
 
 **Claude Code Channels** (Anthropic):
 
