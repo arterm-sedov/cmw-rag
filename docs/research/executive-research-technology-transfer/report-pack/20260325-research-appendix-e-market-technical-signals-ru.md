@@ -402,13 +402,20 @@ _Источник:_ [Сайзинг и экономика](./20260325-research-r
 
 | Модель | Параметры | Особенности |
 |--------|-----------|-------------|
-| Cursor Composer 2 | — | Код на уровне Opus 4.6; **~42,5 ₽/M** вход |
+| **Китайские модели** |
+| GLM-5 (Zhipu) | MoE | Опенсорс, 200K контекст |
+| GLM-4.6 (Zhipu) | — | 67/268 ₽/1M ток., Cloud.ru |
+| Qwen3-235B (MoE) | 235B (22B active) | ~21 ₽/1M, Cloud.ru |
+| Qwen3-32B | 32B | Open weights |
+| MiniMax M2.7 | — | 26/102 ₽/1M ток. |
+| Kimi K2.5 | — | Strong coding |
+| **Западные модели** |
+| Cursor Composer 2 | — | Код на уровне Opus 4.6 |
 | NVIDIA Nemotron-Cascade 2 | 30B MoE | Золото на IMO/IOI/ICPC |
-| GLM 5.1 | — | Опенсорс |
-| Mamba3 | — | Улучшенное декодирование |
-| Claude Opus 4.6 | — | Флагман API Anthropic (февраль 2026): агенты, код, **adaptive thinking**, **effort**, compaction; 1M контекст (бета) и тарифы — по [обзору моделей](https://platform.claude.com/docs/en/about-claude/models/overview) и [новости](https://www.anthropic.com/news/claude-opus-4-6) |
-| Claude Sonnet 4.6 | — | Баланс скорости и качества; см. [новость](https://www.anthropic.com/news/claude-sonnet-4-6) и [What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6) |
-| Microsoft Fara-7B | 7B | Агентная SLM для computer-use; архитектурный ориентир ([PDF](https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf)) |
+| Mamba3 | — | SSM-архитектура |
+| Claude Opus 4.6 | — | 1M контекст (бета) |
+| Claude Sonnet 4.6 | — | Баланс скорости/качества |
+| Microsoft Fara-7B | 7B | Агентная SLM |
 
 ### Unsloth Studio {: #app_e_unsloth_studio }
 
@@ -440,10 +447,20 @@ _Источник:_ [Сайзинг и экономика](./20260325-research-r
 
 | Модель | Вход (руб./1M ток.) | Выход (руб./1M ток.) | Notes |
 |--------|---------------------|----------------------|-------|
+| **Китайские модели (доступны в РФ)** |
+| GLM-4.6 (Zhipu) | ~67 | ~268 | 200K контекст, Cloud.ru |
+| GLM-5 (Zhipu) | ~100–150 | ~400–600 | Новейшая версия |
+| MiniMax M2.7 | ~26 | ~102 | Cloud.ru, OpenRouter |
+| MiniMax M2.5 | ~13 | ~102 | 1M контекст |
+| Qwen3-235B (MoE) | ~21 | ~21 | Cloud.ru |
+| Qwen3-32B | ~17 | ~17 | |
+| Kimi K2.5 | ~50–100 | ~200–400 | |
+| **Западные модели** |
 | Cursor Composer 2 | ~42,5 | ~212,5 | |
 | Opus 4.6 | ~425 | ~2 125 | 200K контекст |
 | Sonnet 4.6 | ~255 | ~1 275 | 200K контекст |
 | GPT-5.4 | ~850 | ~2 550 | |
+| Gemini 3.1 Pro | ~170 | ~1 020 | |
 
 !!! warning "Примечание"
 
