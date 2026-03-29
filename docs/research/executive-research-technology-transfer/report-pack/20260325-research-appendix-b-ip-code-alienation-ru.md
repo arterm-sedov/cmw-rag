@@ -206,7 +206,7 @@ tags:
 
 ### Создание агентов для клиентов {: #app_b_client_agent_creation }
 **Подходы:**
-- **SkillsBD.ru** — база навыков для российских сервисов (Яндекс, Битрикс24, 1С).
+- **Neuraldeep.ru** — база навыков для российских сервисов (Яндекс, Битрикс24, 1С).
 - **SGR Agent Core** — Schema-Guided Reasoning для агентов.
 - **OpenClaw** — self-hosted AI-агент (170K звезд за неделю).
 
@@ -253,7 +253,7 @@ tags:
 ### Создание агентов для клиентов {: #app_b_client_agent_creation_2 }
 
 **Подходы:**
-1. **SkillsBD.ru** — база навыков для российских сервисов
+1. **neuraldeep.ru** — база навыков для российских сервисов
 2. **SGR Agent Core** — Schema-Guided Reasoning для агентов
 3. **OpenClaw** — self-hosted AI-агент с ACP
 

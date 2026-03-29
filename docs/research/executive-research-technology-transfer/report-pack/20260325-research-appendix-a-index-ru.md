@@ -540,7 +540,7 @@ tags:
 - [Google — Gemini Embedding 2 (блог)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-embedding-2/)
 - [Microsoft — Copilot Cowork (блог Microsoft 365)](https://www.microsoft.com/en-us/microsoft-365/blog/2026/03/09/copilot-cowork-a-new-way-of-getting-work-done/)
 
-#### Открытые проекты третьих сторон {: #app_a_open_third_party_projects }
+#### Открытые проекты {: #app_a_open_third_party_projects }
 
 - [RAGAS — документация](https://docs.ragas.io/en/stable/)
 - [EvilFreelancer/openapi-to-cli](https://github.com/EvilFreelancer/openapi-to-cli)
@@ -563,7 +563,7 @@ tags:
 - [vamplabAI/sgr-agent-core](https://github.com/vamplabAI/sgr-agent-core) (ветка tool-confluence)
 - [vamplabAI/sgr-agent-core — ветка tool-confluence](https://github.com/vamplabAI/sgr-agent-core/tree/tool-confluence)
 - [Lakera — платформа](https://platform.lakera.ai/)
-- [SkillsBD.ru](https://skillsbd.ru/)
+- [Neuraldeep.ru — навыки для российских Сервисов](https://neuraldeep.ru/)
 
 #### Регулирование (проектный контур 2026) {: #app_a_regulation_project_context_2026 }
 
