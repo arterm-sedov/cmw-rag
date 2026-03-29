@@ -144,22 +144,8 @@ tags:
 - [vLLM — OpenAI-Compatible Server](https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html)
 - [сервер инференса MOSEC — README проекта (пример публичного зеркала)](https://github.com/arterm-sedov/cmw-mosec)
 
-### Облачные провайдеры и тарифы (РФ)
+### Модели на Hugging Face (Китай, РФ, США)
 
-**Актуальные тарифы (март 2026):**
-
-| Провайдер / Модель | Цена за 1 млн токенов (руб.) | Режим |
-|-------------------|------------------------------|-------|
-| **GigaChat 2 Lite** (Сбер) | 65 | вход/выход |
-| **GigaChat 2 Pro** (Сбер) | 500 | вход/выход |
-| **GigaChat 2 Max** (Сбер) | 650 | вход/выход |
-| **YandexGPT 5.1 Pro** (Яндекс) | 800 / 410 | синхронный / асинхронный |
-| **Cloud.ru Evolution** (вход) | 35 | вход |
-| **Cloud.ru Evolution** (выход) | 70 | выход |
-
-**Источники:** [Cloud.ru — Evolution Foundation Models](https://cloud.ru/products/evolution-foundation-models), [Yandex AI Studio — прайсинг](https://aistudio.yandex.ru/docs/ru/ai-studio/pricing.html), [Сбер — юридические тарифы GigaChat](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs).
-
-**Дополнительные провайдеры:**
 - [Selectel — Foundation Models Catalog](https://selectel.ru/services/cloud/foundation-models-catalog)
 - [MWS — MWS GPT](https://mws.ru/mws-gpt/)
 - [VK Cloud — машинное обучение](https://cloud.vk.com/docs/ru/ml)
@@ -181,18 +167,14 @@ tags:
 - [Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Llama-70B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B)
 - [Hugging Face — организация Qwen](https://huggingface.co/Qwen)
 
-### Зарубежные frontier-модели (справочно для сравнения качества, не baseline КП РФ)
+### Передовые модели (США)
 
 - [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
 - [Anthropic — Introducing Claude Sonnet 4.6](https://www.anthropic.com/news/claude-sonnet-4-6)
 - [Claude Docs — What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)
 - [Claude Docs — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
 
-### Открытые проекты
-
-Помимо перечисленных ниже фреймворков, в открытом доступе публикуют **референсные каркасы** под RAG и агентов: лаборатория AI R&D **red_mad_robot** описывает **MCP Tool Registry** (центральный реестр MCP-серверов для связки LLM с данными и инструментами) и выкладывает код на GitHub — это **ориентир для разведки архитектуры** и политики подключения MCP, а не компонент поставки **корпоративный RAG-контур** / **агентный слой платформы (Comindware Platform)** без отдельного решения заказчика. Та же лаборатория совместно с **CMO Club Russia** публикует **бенчмарк зрелости GenAI в маркетинге** крупных брендов РФ (2025); контекст для TOM и переговоров — в _«[Отчёт. Методология внедрения — GenAI в маркетинговых командах](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams)_»_. Отдельно на рынке представлены **управляемые песочницы** для исполнения агентского кода (**E2B**, **Modal**, **Daytona** и др.) с разными моделями сессий, сети и размещения — для сравнения и бенчмарков см. _«[Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__managed_sandboxes_benchmarks)»_; в поставку референс-стека Comindware они **не** входят по умолчанию.
-
-**Рыночные RAG-цепочки интеграторов (вне SKU Comindware):** в открытых обзорах и кейсах встречаются **собственные** конвейеры: декомпозиция запроса (**query decomposition**), гипотетические документы для ретрива (**HyDE**), **двойной** вызов с порогом сходства (**DCD**), **schema-guided** рассуждения (**SGR**), извлечение структуры из PDF (**Marker**, **Docling** и аналоги), хранение метаданных в **PostgreSQL** и векторный слой (**Qdrant**, **Chroma** и др.). Это **иллюстрация** зрелости рынка интеграции, а не требование воспроизвести все приёмы в **корпоративный RAG-контур**; пересечение с референс-стеком Comindware оценивают по целевому threat model и TOM. Паттерны защиты и **Model Context Protocol (MCP)** — _«[Приложение D: паттерны промышленного RAG](./20260325-research-appendix-d-security-observability-ru.md#app_d__industrial_rag_protection_patterns)»_ и _«[MCP, мультиагентная маршрутизация](./20260325-research-appendix-d-security-observability-ru.md#app_d__mcp_multiagent_routing_skills)»_.
+### Открытые проекты и фреймворки
 
 - [langchain-ai/langchain — text-splitters](https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters)
 - [langgenius/dify](https://github.com/langgenius/dify/)
