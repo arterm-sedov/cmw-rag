@@ -329,6 +329,17 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 
 - Cloud (SaaS) → Hybrid → On-prem
 
+### Market priority for technology research
+
+When researching solutions, vendors, or technologies, apply this priority order:
+
+1. **Russia solutions** — Russia-native vendors, products, and services
+2. **Open-source solutions** that work in Russia without VPN
+3. **Proprietary solutions** that work in Russia without VPN
+4. **International/global solutions** (outside Russia) — baseline for best practices, top-tier frontier research and models, comparison, foreign clients, or last resort when Russia options are unavailable
+
+This ordering reflects the business context: Russia-resident defaults, 152-FZ compliance, and local deployment feasibility come first. International solutions serve as technology baseline or for foreign client engagements.
+
 ## Comindware research positioning
 
 - **What Comindware sells:** **implementation and guidance** on customer AI programs—not “research PDFs” or “publication curation” as an offering. `docs/research/` is **internal** enablement so teams can **compose** customer-ready narratives with **traceable** evidence.
