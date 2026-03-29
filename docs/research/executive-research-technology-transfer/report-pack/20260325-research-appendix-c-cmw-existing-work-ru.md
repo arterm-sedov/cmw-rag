@@ -49,18 +49,25 @@ tags:
 
 Детальная экономика сайзинга, CapEx/OpEx и TCO — в сопутствующем резюме _«[Оценка сайзинга, CapEx и OpEx для клиентов](./20260325-research-executive-sizing-ru.md)»_; **профили on-prem GPU** (референсные consumer **24 ГБ**, **RTX 4090 48 ГБ** в коммерческой аренде, **RTX PRO 6000 Blackwell 96 ГБ** в проектах Comindware) — в отчёте _«[Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw)»_, подраздел «**Профиль on-prem GPU в проектах Comindware**» (чтение **сначала** по **топологии ёмкости** и классам бенчмарков в том же разделе). Технические детали развёртывания конкретных модулей — в публичной документации соответствующих программных компонентов экосистемы.
 
-**Сводные доли и барьеры** использования GenAI в маркетинге крупных брендов РФ (опрос **red_mad_robot × CMO Club Russia**, **2025**), включая **две различные** линии **~43 %** (галлюцинации vs утечка данных), зафиксированы в _«[Основной отчёт: сайзинг и экономика — Российский рынок](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)»_ и увязаны с _«[Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_barriers_risk_survey_2025)»_.
+**Сводные доли и барьеры** использования GenAI: по глобальным кросс-валидированным данным (McKinsey, Stanford, EY, OECD) **40-50%** компаний отмечают проблемы качества и галлюцинаций как значимый барьер; **45-60%** выражают опасения по поводу утечки данных и безопасности. В РФ **71%** крупных компаний уже используют GenAI, но лишь **7-10%** пилотов достигают промышленного внедрения (_«[Исследование Яков и Partners + Яндекс, декабрь 2025](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)»_ и _«[Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_barriers_risk_survey_2025)»_).
 
 **Ключевые методологические принципы:**
 - **Разделение ответственности:** Отдельные слои для обработки данных, поиска, инференса и доставки API.
 - **Гибридный поиск:** Объединение векторного поиска (плотного) с ключевым (разреженным) для оптимальной точности.
 - **Агентная архитектура:** Использование агентов LangChain для динамического вызова инструментов и рассуждения.
 - **Гибкость инфраструктуры:** Поддержка как MOSEC (единый сервер), так и vLLM (распределенные инстансы) бэкендов инференса.
-- **Российская суверенность:** Приоритет российских облачных провайдеров (Cloud.ru, Yandex Cloud, SberCloud, MWS GPT, Selectel и др. по контуру заказчика) для обеспечения соответствия требованиям о данных и инфраструктуре; дополнительно возможен путь **аренды GPU** у российских IaaS/dedicated-поставщиков — сводная матрица классов продуктов и ссылок на прайсы в сопутствующем резюме _«[Оценка сайзинга, CapEx и OpEx для клиентов](./20260325-research-executive-sizing-ru.md)»_, подраздел _«[Аренда GPU (IaaS РФ): дополнительные поставщики и ориентиры](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_rental_iaas_providers)»_.
+- **Российская суверенность:** Приоритет российских облачных провайдеров (Cloud.ru, Yandex Cloud, SberCloud, MWS GPT, Selectel и др. по контуру заказчика) для обеспечения соответствия требованиям 152-ФЗ; с **июля 2025** года обязательна локализация всех персональных данных граждан РФ — см. _«[Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__compliance_rf_152fz)»_; дополнительно возможен путь **аренды GPU** у российских IaaS/dedicated-поставщиков — сводная матрица классов продуктов и ссылок на прайсы в сопутствующем резюме _«[Оценка сайзинга, CapEx и OpEx для клиентов](./20260325-research-executive-sizing-ru.md)»_, подраздел _«[Аренда GPU (IaaS РФ): дополнительные поставщики и ориентиры](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_rental_iaas_providers)»_.
 - **Недоверенное исполнение:** при сценариях с кодом и широким набором инструментов заказчик проектирует **изоляцию среды и сетевые политики** отдельно от перечня модулей в таблице ниже; ориентиры — в _«[Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__trust_boundary_agent_environment)»_ и _«[Приложение D — модель риска, паттерны среды и минимальный состав платформы](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_model_platform_patterns)»_.
 - **Организационная зрелость:** наличие модулей **корпоративный RAG-контур**, **MOSEC**, **vLLM**, **агентный слой платформы (Comindware Platform)** **не заменяет** оргпроцессы, обучение команд и операционную модель внедрения; см. _«[Отчёт. Методология — Стратегия внедрения ИИ и организационная зрелость](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity)»_.
 
 Публичные кейсы и платформенные описания крупных игроков рынка РФ (в том числе **МТС Web Services / MTS AI**) полезны как **каталог воспроизводимых инженерных и организационных идей** — гибридный ретрив, жизненный цикл агентов, интеграционные протоколы, аттестованные контуры для ПДн. Выбор поставщика и архитектуры остаётся за заказчиком по тендеру, требованиям ИБ и экономической модели; интегратор может опираться на такие материалы при выравнивании ожиданий и комплекта отчуждения.
+
+**Контекст рынка РФ (2025):**
+
+- Общий рынок ИИ и больших данных: **520 млрд руб.** (+20% год к году)
+- Рынок GenAI: **58 млрд руб.** (рост в 5 раз)
+- Прогноз GenAI к 2030: **778 млрд руб.**
+- Top-5 игроков (Яндекс, Сбер, Т-Технологии, ВК, Касперский) — **~95%** рынка
 
 ### Связанные проекты
 
@@ -80,6 +87,7 @@ tags:
 **Назначение:** ИИ-агент для создания и управления сущностями в Comindware Platform на естественном языке.
 
 **Архитектура:**
+
 ```
 Слой интерфейса (Gradio)
     ↓
@@ -138,17 +146,23 @@ tags:
 
 ### Облачные провайдеры и тарифы (РФ)
 
-- [Cloud.ru — Evolution Foundation Models (продукт)](https://cloud.ru/products/evolution-foundation-models)
-- [Cloud.ru — тарифы Evolution Foundation Models](https://cloud.ru/documents/tariffs/evolution/foundation-models)
-- [Yandex AI Studio — доступные генеративные модели](https://aistudio.yandex.ru/docs/ru/ai-studio/concepts/generation/models.html)
-- [Yandex AI Studio — прайсинг](https://aistudio.yandex.ru/docs/ru/ai-studio/pricing.html)
-- [AKM.ru — Yandex B2B Tech и языковые модели на рынке РФ](https://www.akm.ru/eng/press/yandex-b2b-tech-has-opened-access-to-the-largest-language-model-on-the-russian-market/)
-- [Сбер — портал GigaChat API](https://developers.sber.ru/portal/products/gigachat-api)
-- [Сбер — юридические тарифы GigaChat](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
+**Актуальные тарифы (март 2026):**
+
+| Провайдер / Модель | Цена за 1 млн токенов (руб.) | Режим |
+|-------------------|------------------------------|-------|
+| **GigaChat 2 Lite** (Сбер) | 65 | вход/выход |
+| **GigaChat 2 Pro** (Сбер) | 500 | вход/выход |
+| **GigaChat 2 Max** (Сбер) | 650 | вход/выход |
+| **YandexGPT 5.1 Pro** (Яндекс) | 800 / 410 | синхронный / асинхронный |
+| **Cloud.ru Evolution** (вход) | 35 | вход |
+| **Cloud.ru Evolution** (выход) | 70 | выход |
+
+**Источники:** [Cloud.ru — Evolution Foundation Models](https://cloud.ru/products/evolution-foundation-models), [Yandex AI Studio — прайсинг](https://aistudio.yandex.ru/docs/ru/ai-studio/pricing.html), [Сбер — юридические тарифы GigaChat](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs).
+
+**Дополнительные провайдеры:**
 - [Selectel — Foundation Models Catalog](https://selectel.ru/services/cloud/foundation-models-catalog)
-- [MWS — MWS GPT (продукт)](https://mws.ru/mws-gpt/)
-- [MWS — тарифы MWS GPT](https://mws.ru/docs/docum/cloud_terms_mwsgpt_pricing.html)
-- [VK Cloud — машинное обучение в облаке (документация)](https://cloud.vk.com/docs/ru/ml)
+- [MWS — MWS GPT](https://mws.ru/mws-gpt/)
+- [VK Cloud — машинное обучение](https://cloud.vk.com/docs/ru/ml)
 - [Google — условия использования Gemma](https://ai.google.dev/gemma/terms)
 - [Google — Gemini Embedding 2 (блог: нативно мультимодальные эмбеддинги)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-embedding-2/)
 - [NVIDIA — Nemotron 3 (обзор семейства)](https://research.nvidia.com/labs/nemotron/Nemotron-3/)
