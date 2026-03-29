@@ -932,7 +932,7 @@ User Query
 - [Doc-to-LoRA; память агентов (пост /191)](https://t.me/ai_archnadzor/191)
 - [Multimodal LLM](https://t.me/ai_archnadzor/192)
 
-### Открытые проекты третьих сторон (исходный код, документация, платформы) {: #app_d__open_source_third_party_projects }
+### Открытые проекты (исходный код, документация, платформы) {: #app_d__open_source_third_party_projects }
 
 - [microsoft/markitdown](https://github.com/microsoft/markitdown)
 - [datalab-to/marker](https://github.com/datalab-to/marker)
@@ -954,7 +954,7 @@ User Query
 - [EvilFreelancer/openapi-to-cli](https://github.com/EvilFreelancer/openapi-to-cli)
 - [GitHub — redmadrobot-rnd/mcp-registry (MCP Tool Registry)](https://github.com/redmadrobot-rnd/mcp-registry)
 - [Хабр — red_mad_robot: MCP Tool Registry и автоматизация RAG](https://habr.com/ru/companies/redmadrobot/articles/982004/)
-- [SkillsBD.ru](https://skillsbd.ru/)
+- [Neuraldeep.ru — навыки для российских Сервисов](https://neuraldeep.ru/)
 - [OpenCode](https://opencode.ai/)
 - [OpenCode — документация (Intro)](https://opencode.ai/docs)
 - [OpenCode — Ecosystem](https://opencode.ai/docs/ecosystem/)
