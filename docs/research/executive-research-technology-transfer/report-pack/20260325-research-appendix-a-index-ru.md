@@ -377,6 +377,12 @@ tags:
 - [Портал поддержки Comindware](https://support.comindware.com/)
 - [VC.ru — гайд по тарифам Claude и доступу из России](https://vc.ru/ai/2757771-tarify-claude-2026-gayd-po-planam-i-dostupu-iz-rossii)
 
+#### Формат TOON и оптимизация токенов {: #app_a_toon_format_token_optimization }
+
+- [Спецификация TOON](https://toonformat.dev/)
+- [Tensorlake: бенчмарки](https://www.tensorlake.ai/blog/toon-vs-json)
+- [Systenics: экономия токенов](https://systenics.ai/blog/2026-01-24-toon-vs-json-how-token-oriented-object-notation-reduces-llm-token-costs)
+
 #### Иллюстративные ориентиры нагрузки (публичные интервью, финсектор) {: #app_a_load_benchmarks_financial }
 
 - [CIO — интервью: чат-бот, масштаб обращений и сценарии](https://cio.osp.ru/articles/5455)
