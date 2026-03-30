@@ -95,9 +95,13 @@ channel_snapshot.yml
 
 - Use SCQA logic:
   - **Situation:** market context and current state.
+
   - **Complication:** key challenge or opportunity.
+
   - **Question:** core business question.
+
   - **Answer:** concrete recommendation and implications.
+
 - Ensure recommendations are MECE where applicable.
 - Focus on “So what?” (business meaning and impact).
 
@@ -191,6 +195,12 @@ Use MkDocs admonitions (`!!! type "Title"`) instead of bold text for recommendat
 - Use `-` as the standard bullet marker.
 - Do not use `*` as the primary bullet marker.
 
+### Spacing Between Headings and Content
+
+- Always add a blank line after headings (H1-H6) before starting paragraph content or bullet lists
+- Always add a blank line after bold pseudo-headings (like **Situation:**) before starting paragraph content or bullet lists
+- This improves readability and ensures consistent formatting
+
 ### Citations and references
 
 - Cite sources inline with hyperlinks where claims are made.
@@ -246,10 +256,44 @@ Use this compact structure for consistency. **Headings below are Russian** becau
 
 ## Research workflow
 
-- Extract raw data to `~/Documents/cmw-rag-channel-extractions/`.
-- Process findings into executive summaries in `docs/research/`.
-- Commit only processed summaries.
-- Document reusable methodology updates in this file when needed.
+- Extract raw data to designated external storage (e.g. `~/Documents/cmw-rag-channel-extractions/`; if needed ask once the user where to store or use temp folder): keep repository focused on curated content.
+- Process findings into executive summaries in the research documents directory (e.g. `docs/research`).
+- Commit only processed summaries, keeping raw data and regenerable artifacts external.
+- When reusable methodology updates are discovered, document in this AGENTS.md file.
+
+### Core Research Principles (Agnostic to Domain)
+
+These principles apply regardless of specific topic, industry, or organization:
+
+**Evidence-Based Decision Support**
+
+- Research exists to enable actionable decisions, not as an academic exercise
+- All claims must be traceable to verifiable sources
+- Focus on "So what?" - the business meaning and impact of findings
+
+**Traceability and Verifiability**
+
+- Every significant claim requires inline citations to sources
+- Maintain a complete references section with all sources used
+- Document validation processes for time-sensitive data (versions, pricing, etc.)
+
+**Progressive Refinement with Checkpoints**
+
+- Research evolves through structured iteration with defined verification points
+- Use version control to trace evolution of research plans and findings
+- Validate and ground findings before synthesis and enhancement
+
+**Cross-Validation Discipline**
+
+- Verify key findings against multiple independent sources
+- Resolve contradictions explicitly or flag them for attention
+- Apply consistent conventions (currency, units, terminology) across related research
+
+**Audience-Centric Communication**
+
+- Tailor content to specific decision-maker needs (executives, technical leads, etc.)
+- Structure for easy consumption (SCQA: Situation-Complication-Question-Answer)
+- Focus on knowledge transfer, not scenario building
 
 ### Current data requirement (Web search mandatory)
 
