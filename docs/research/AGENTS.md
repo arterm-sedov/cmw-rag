@@ -384,6 +384,18 @@ When researching solutions, vendors, or technologies, apply this priority order:
 
 This ordering reflects the business context: Russia-resident defaults, 152-FZ compliance, and local deployment feasibility come first. International solutions serve as technology baseline or for foreign client engagements.
 
+### Real-World Case Integration
+
+When adding case studies to frameworks:
+
+- **Inline, not standalone** — integrate into relevant doc
+- **Ground with numbers** — specific metrics over vague statements
+- **Cite sources** — sources hyperlinked inline and in bibliography
+
+### Russian Technical Terms
+
+Use established Russian equivalents. Keep English acronyms (LLM, RAG, API) when industry-standard.
+
 ## Comindware research positioning
 
 - **What Comindware sells:** **implementation and guidance** on customer AI programs—not “research PDFs” or “publication curation” as an offering. `docs/research/` is **internal** enablement so teams can **compose** customer-ready narratives with **traceable** evidence.
