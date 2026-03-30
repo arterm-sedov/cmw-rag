@@ -692,6 +692,17 @@ User Query
 2. **Tool Misuse and Exploitation** — вызов разрешённых инструментов с параметрами или в контексте, ведущим к утечке, саботажу или **denial-of-wallet**.
 3. **Identity and Privilege Abuse** — злоупотребление цепочками делегирования, сервисными учётными записями и правами **non-human identity**.
 4. **Agentic Supply Chain Vulnerabilities** — компрометация сторонних модулей, промптов, навыков, MCP-серверов и иных артефактов среды исполнения.
+
+    !!! warning "Пример: инцидент LiteLLM и Telnyx (март 2026)"
+
+        Группировка TeamPCP скомпрометировала PyPI-пакеты LiteLLM (~97 млн загрузок/месяц) и Telnyx SDK. Вредоносный код в LiteLLM 1.82.8 активировался через `.pth`-файл при импорте, собирая SSH-ключи, облачные учётные данные и токены Kubernetes.
+        
+        Telnyx использовал стеганографию в WAV-аудиофайле с XOR-расшифровкой — это обошло стандартные SCA-сканеры.
+        
+        Подтверждено **500 000+** скомпрометированных учётных данных [Datadog Security Labs](https://securitylabs.datadoghq.com/articles/litellm-compromised-pypi-teampcp-supply-chain-campaign/).
+        
+        **Ключевой вывод:** традиционные сигнатурные сканеры пропускают zero-day; необходим **поведенческий анализ зависимостей** и **строгий фильтр исходящего трафика**.
+
 5. **Unexpected Code Execution (RCE)** — исполнение кода или команд, порождённых или доставленных через недоверенный вывод/цепочку рассуждений.
 6. **Memory and Context Poisoning** — устойчивое искажение памяти агента или долгоживущего контекста, влияющее на будущие решения и сессии.
 7. **Insecure Inter-Agent Communication** — слабая аутентификация, подмена или перехват сообщений между агентами и оркестратором.
@@ -699,7 +710,7 @@ User Query
 9. **Human-Agent Trust Exploitation** — манипуляция пользователем через доверие к «авторитету» агента (социальная инженерия через UI/рекомендации).
 10. **Rogue Agents** — агенты, вышедшие из-под политики: персистентность вредоносного поведения, обход мониторинга или коллюзия.
 
-**Практика:** при появлении или смене **инструментов, MCP, оркестрации и межагентских протоколов** пересматривать сценарии тестирования **наряду** с [LLM Top 10 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/); для заказчиков с **агентный слой платформы (Comindware Platform)** и сложной маршрутизацией агентов оба перечня считать **обязательными к учёту** в модели угроз и смете (см. сопутствующее резюме по OpEx безопасности GenAI).
+**Практика:** при появлении или смене **инструментов, MCP, оркестрации и межагентских протоколов** пересматривать сценарии тестирования **наряду** с [LLM Top 10 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/); для заказчиков с **агентный слой Comindware Platform** и сложной маршрутизацией агентов оба перечня обязательны к учёту в модели угроз и смете (см. сопутствующее резюме по OpEx безопасности GenAI).
 
 ### OWASP AI Testing Guide и граница с классическим веб-тестированием {: #app_d__owasp_ai_testing_web_boundary }
 
@@ -1100,3 +1111,9 @@ User Query
 - [Claude Docs — What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)
 - [Claude Docs — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
 - [Хабр — Релиз Claude Opus 4.6](https://habr.com/ru/news/993322/)
+
+### Инцидент LiteLLM и Telnyx (март 2026): цепочка поставок {: #app_d__litellm_telnyx_incident_2026 }
+
+- [The Hacker News — TeamPCP Pushes Malicious Telnyx Versions to PyPI](https://thehackernews.com/2026/03/teampcp-pushes-malicious-telnyx.html)
+- [Datadog Security Labs — LiteLLM and Telnyx compromised on PyPI](https://securitylabs.datadoghq.com/articles/litellm-compromised-pypi-teampcp-supply-chain-campaign/)
+- [Trend Micro — Your AI Gateway Was a Backdoor: Inside the LiteLLM Supply Chain Compromise](https://www.trendmicro.com/en_us/research/26/c/inside-litellm-supply-chain-compromise.html)

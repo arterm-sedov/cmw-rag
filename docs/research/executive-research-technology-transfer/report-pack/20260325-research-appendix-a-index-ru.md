@@ -203,6 +203,8 @@ tags:
 - [GitHub — NVIDIA Garak (сканер для LLM, только изолированные стенды)](https://github.com/NVIDIA/garak)
 - [OpenAI — приобретение PromptFoo (контекст рынка тестирования)](https://openai.com/index/openai-to-acquire-promptfoo/)
 - [Kaspersky — пресс-релиз: угрозы под видом популярных ИИ-сервисов (бенчмарк тренда)](https://www.kaspersky.com/about/press-releases/kaspersky-chatgpt-mimicking-cyberthreats-surge-115-in-early-2025-smbs-increasingly-targeted)
+- [The Hacker News — TeamPCP: LiteLLM и Telnyx скомпрометированы через PyPI (март 2026)](https://thehackernews.com/2026/03/teampcp-pushes-malicious-telnyx.html)
+- [Datadog Security Labs — LiteLLM and Telnyx compromised on PyPI: Tracing the TeamPCP supply chain campaign](https://securitylabs.datadoghq.com/articles/litellm-compromised-pypi-teampcp-supply-chain-campaign/)
 - [Коммерсантъ — рынок и атаки на ИИ-системы (журналистский контекст)](https://www.kommersant.ru/doc/8363105)
 
 #### Угрозы GenAI и иллюстративные материалы третьих лиц (не реклама) {: #app_a_genai_threats_third_party_materials }
