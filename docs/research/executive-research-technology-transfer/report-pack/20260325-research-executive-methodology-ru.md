@@ -100,11 +100,15 @@ tags:
 
 **Российский рынок в цифрах (2025–2026):**
 
-- Прогноз экономического эффекта ИИ: **13 трлн руб.** к 2030 году (Yakov Partners), из них 60% — в 5 секторах: e-commerce, телеком, IT, строительство, здравоохранение
+Ключевые ориентиры (полная сводка, вилка по Указу №124 vs отраслевые оценки — в _Приложении E «[Рыночные и технические сигналы](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_russian_market)»_):
+
+- Прогноз **экономического эффекта** ИИ в РФ к 2030: **~8–13 трлн руб.** в год (Yakov Partners × Яндекс; в деловых выжимках часто округляют до «до 13 трлн»), **~60%** приходится на пять секторов: e-commerce, телеком, IT, строительство, здравоохранение
 - **46% компаний** уже внедряют или тестируют автономные ИИ-агенты
 - **86% компаний** используют открытые модели и дообучение (fine-tuning)
-- Рост вакансий с ИИ-навыками: **в 2,7 раза** в Q1 2026 vs Q1 2025 ([hh.ru × PR DEV](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/))
-- Рынок GenAI в России: **58 млрд руб.** в 2025 году (vs 13 млрд руб. в 2024) ([Just AI + Onside](https://www.vedomosti.ru/technologies/trendsrub/articles/2026/03/04/1180756-ii-rivok-2026-chto))
+- Рост вакансий с ИИ-навыками: **+89%** в 2025 и **+170%** YoY в I кв. 2026 к I кв. 2025 (то есть **~2,7×** к уровню I кв. 2025; [hh.ru × PR DEV](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/))
+- Рынок GenAI в России: **~58 млрд руб.** в 2025 году (~×4,5 к 2024) — обзорный контекст ([Ведомости — тренды GenAI](https://www.vedomosti.ru/technologies/trendsrub/articles/2026/03/04/1180756-ii-rivok-2026-chto))
+
+Связка с фазами внедрения и управленческими выводами — _«[Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)»_.
 
 ## Подробности {: #exec_method_where_to_find }
 
@@ -143,9 +147,9 @@ tags:
 - [152-ФЗ «О персональных данных»](https://www.consultant.ru/document/cons_doc_LAW_61801/)
 - [Национальная стратегия развития ИИ до 2030 года (Указ Президента РФ №124, февраль 2024)](http://kremlin.ru/acts/bank/49930)
 - [NIST AI Risk Management Framework 1.0](https://nist.gov/itl/ai-risk-management-framework)
-- [Yakov Partners — Прогноз экономического эффекта ИИ в России, 2025](https://yakovpartners.ru/) (13 трлн руб. к 2030)
+- [Yakov Partners — Прогноз экономического эффекта ИИ в России, 2025](https://yakovpartners.ru/)
 - [OpenAI — The state of enterprise AI (обзор, декабрь 2025)](https://openai.com/index/the-state-of-enterprise-ai-2025-report)
 - [red_mad_robot — исследования и материалы рынка GenAI](https://redmadrobot.ru/issledovaniya-1/)
 - [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197) (46%, 86%)
 - [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
-- [RB.RU — вакансии с ИИ-навыками выросли в 2,7 раза (hh.ru × PR DEV, март 2026)](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/)
+- [RB.RU — вакансии с ИИ-навыками: +170% YoY в I кв. 2026 (~2,7× к I кв. 2025; hh.ru × PR DEV, март 2026)](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/)
