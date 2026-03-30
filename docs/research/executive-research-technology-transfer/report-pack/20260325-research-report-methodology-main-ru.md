@@ -21,7 +21,25 @@ tags:
 
 ### Обзор {: #method_pack_overview }
 
-Документ задаёт **операционную модель, фазы внедрения и производственную методологию** для корпоративных ИИ-контуров с RAG, инференсом и агентами в **резидентной** логике РФ. **Количественные** оценки, тарифы и TCO — см. _«[Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)»_; **безопасность, комплаенс и промышленная observability** — в _«[Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)»_; **отчуждение ИС и кода** — в _«[Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_. Содержание согласовано с аналитическим сводом Comindware «Краткое изложение: методология внедрения и отчуждения ИИ…» (март 2026) и расширено актуальными публичными источниками.
+Документ задаёт **операционную модель, фазы внедрения и производственную методологию** для корпоративных ИИ-контуров с RAG, инференсом и агентами в **резидентной** логике РФ.
+
+### Назначение документа и границы применения {: #method_purpose_and_scope }
+
+Документ обобщает **методологию внедрения и отчуждения** решений класса корпоративных ИИ-ассистентов с RAG, локальным или облачным инференсом и агентными сценариями. Названия **корпоративный RAG-контур**, **сервер инференса MOSEC**, **инференс на базе vLLM**, **агентный слой платформы (Comindware Platform)** используются как **условные обозначения ролей компонентов** иллюстративного референс-стека, а не как коммерческое предложение готового продукта.
+
+**Практический смысл:** воспроизводимые практики, состав передачи (KT), критерии приёмки, комплаенс и карта рисков — чтобы **согласовать решение о внедрении**, **оценить зрелость** организации и **подготовить передачу контура** заказчику без потери управляемости.
+
+### Связанные материалы {: #method_related_docs }
+
+- [Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)
+- [Курс USD и правила для смет](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy)
+- [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) (детализированные цифры и TCO)
+- [Профиль on-prem GPU в проектах Comindware](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) (реф. GeForce 24 ГБ, 4090 48 ГБ коммерческая аренда, RTX PRO 6000 Blackwell 96 ГБ)
+- [Приложение B. Отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
+- [Приложение C. Имеющиеся наработки Comindware (состав, границы, артефакты)](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
+- [Приложение D. Безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
+- [Приложение E. Рыночные и технические сигналы (справочно)](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)
+- [Резюме для руководства: методология внедрения и отчуждения ИИ](./20260325-research-executive-methodology-ru.md)
 
 ### Как использовать этот отчёт {: #method_how_to_use }
 
@@ -40,22 +58,7 @@ tags:
 - Готовое КП без адаптации под профиль нагрузки заказчика (цифры — в парном отчёте по сайзингу).
 - Норму для резидентного контура без отдельной правовой оценки (глобальные бенчмарки — контекст, не норма).
 
-#### Связанные документы {: #method_related_docs }
-
-- [Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)
-- [Курс USD и правила для смет](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy)
-- [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) (детализированные цифры и TCO)
-- [Профиль on-prem GPU в проектах Comindware](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) (реф. GeForce 24 ГБ, 4090 48 ГБ коммерческая аренда, RTX PRO 6000 Blackwell 96 ГБ)
-- [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
-- [Приложение C. Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
-- [Приложение D. Безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
-- [Приложение E. Рыночные и технические сигналы (справочно)](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)
-
-### Назначение документа и границы применения {: #method_purpose_and_scope }
-
-Документ обобщает **методологию внедрения и отчуждения** решений класса корпоративных ИИ-ассистентов с RAG, локальным или облачным инференсом и агентными сценариями. Названия **корпоративный RAG-контур**, **сервер инференса MOSEC**, **инференс на базе vLLM**, **агентный слой платформы (Comindware Platform)** используются как **условные обозначения ролей компонентов** иллюстративного референс-стека, а не как коммерческое предложение готового продукта.
-
-**Практический смысл:** воспроизводимые практики, состав передачи (KT), критерии приёмки, комплаенс и карта рисков — чтобы **согласовать решение о внедрении**, **оценить зрелость** организации и **подготовить передачу контура** заказчику без потери управляемости.
+потери управляемости.
 
 ### Обоснование подхода (SCQA) {: #method_scqa }
 
@@ -319,7 +322,7 @@ flowchart LR
 
 Для соответствия требованиям о данных и инфраструктуре в России рекомендуются локальные облачные платформы и/или закрытый контур. **Все количественные тарифы** (₽ за токены, комплекты, ₽/час GPU) собраны в одном месте — раздел «**Тарифы российских облачных провайдеров ИИ**» в сопутствующем резюме **Краткое изложение: Оценка сайзинга, CapEx и OpEx для клиентов (российский рынок)**; ниже — **роли провайдеров, состав моделей и правила сверки** без повторения таблиц. Дерево факторов стоимости и сценарный сайзинг — там же. Дополнительные **ориентиры по аренде GPU (IaaS РФ)** у поставщиков вне основной сводной таблицы — в том же сопутствующем резюме, подраздел [«**Аренда GPU (IaaS РФ): дополнительные поставщики и ориентиры**»](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_rental_iaas_providers) (матрица классов продуктов и первоисточников, без дублирования токенных прайсов).
 
-**Cloud.ru (Evolution Foundation Models)** · [[продукт]](https://cloud.ru/products/evolution-foundation-models) · [[тарифы]](https://cloud.ru/documents/tariffs/evolution/foundation-models)
+**Cloud.ru (Evolution Foundation Models)** · [продукт](https://cloud.ru/products/evolution-foundation-models) · [[тарифы](https://cloud.ru/documents/tariffs/evolution/foundation-models)
 
 - **API:** OpenAI-совместимый доступ к моделям в российских ЦОД.
 
@@ -337,7 +340,7 @@ flowchart LR
 
 - **SKU vs Hub:** имя в биллинге **не** гарантирует ту же ревизию весов, что на Hugging Face, без явной проверки.
 
-**Yandex Cloud (Yandex AI Studio / YandexGPT)** · [[модели]](https://aistudio.yandex.ru/docs/ru/ai-studio/concepts/generation/models.html) · [[тарификация]](https://aistudio.yandex.ru/docs/ru/ai-studio/pricing.html)
+**Yandex Cloud (Yandex AI Studio / YandexGPT)** · [модели]](https://aistudio.yandex.ru/docs/ru/ai-studio/concepts/generation/models.html) · [[тарификация](https://aistudio.yandex.ru/docs/ru/ai-studio/pricing.html)
 
 - **Модели (текст, базовый инстанс):** в обзорах и переговорах часто выделяют **YandexGPT Pro 5.1** и **Alice AI LLM**; полный перечень — [доступные генеративные модели](https://aistudio.yandex.ru/docs/ru/ai-studio/concepts/generation/models.html): Alice AI LLM; YandexGPT Pro 5.1 и Pro 5; YandexGPT Lite 5; DeepSeek V3.2; Qwen3 235B; gpt-oss-120b и gpt-oss-20b; Gemma 3 27B ([условия Gemma](https://ai.google.dev/gemma/terms)); дообученная YandexGPT Lite; YandexART и Realtime.
 
@@ -345,21 +348,21 @@ flowchart LR
 
 - **Особенности:** **OpenAI-совместимый** доступ к ряду моделей; **интеграция с экосистемой Yandex Cloud** (данные, идентичность, смежные сервисы — по политике заказчика и документации Яндекса); линейка **YandexGPT / Alice** ориентирована в том числе на **русскоязычные** сценарии наряду с мультиязычными моделями в галерее.
 
-**SberCloud (GigaChat API)** [[портал]](https://developers.sber.ru/portal/products/gigachat-api) · [[юридические тарифы]](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
+**SberCloud (GigaChat API)** [портал]](https://developers.sber.ru/portal/products/gigachat-api) · [[юридические тарифы](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
 
 - **Модели:** GigaChat-2 Lite, Pro, Max.
 
 - **Тарифы:** комплекты токенов по [юридическим тарифам](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs); эквиваленты **₽/млн** и размеры комплектов — в таблицах сопутствующего резюме (тот же раздел «**Тарифы российских облачных провайдеров ИИ**»).
 
-**Selectel (Foundation Models Catalog)** [[источник]](https://selectel.ru/services/cloud/foundation-models-catalog)
+**Selectel (Foundation Models Catalog)** [источник](https://selectel.ru/services/cloud/foundation-models-catalog)
 
 - Каталог с выделенным endpoint, API **совместим с OpenAI**; оплата за **CPU, GPU, RAM, диски**, не за токены. **Private Preview**, список моделей в панели (ссылки на HF). Свои веса **не** заявлены (FAQ на сайте).
 
-**MWS GPT (МТС Web Services)** [[продукт]](https://mws.ru/mws-gpt/) · [[тарифы]](https://mws.ru/docs/docum/cloud_terms_mwsgpt_pricing.html)
+**MWS GPT (МТС Web Services)** [продукт]](https://mws.ru/mws-gpt/) · [[тарифы](https://mws.ru/docs/docum/cloud_terms_mwsgpt_pricing.html)
 
 - OpenAI-совместимый API, SLA **99,95%** (для части моделей), режимы **SaaS / hybrid / on-prem**. Прайс **без НДС** за 1000 токенов под внутренними именами; сопоставление с публичными названиями — у поставщика. **Цифры** (лендинг, таблица «Модель N», НДС) — в сопутствующем резюме, подраздел **MWS GPT**.
 
-**VK Cloud (ML)** [[документация]](https://cloud.vk.com/docs/ru/ml)
+**VK Cloud (ML)** [документация](https://cloud.vk.com/docs/ru/ml)
 
 - **Cloud ML Platform**, Spark, Cloud Voice, Vision — **без** публичного каталога готовых LLM в формате Evolution FM / AI Studio; типичный путь — **своя** модель и MLOps.
 
@@ -441,14 +444,14 @@ flowchart LR
 
 #### ETL и подготовка данных {: #method_etl_data_preparation }
 
-- **markitdown** — конвертация документов в Markdown [[GitHub]](https://github.com/microsoft/markitdown)
-- **marker** — быстрое извлечение текста из PDF [[GitHub]](https://github.com/datalab-to/marker)
-- **docling** — продвинутое извлечение данных из документов [[GitHub]](https://github.com/docling-project/docling)
+- **markitdown** — конвертация документов в Markdown [GitHub](https://github.com/microsoft/markitdown)
+- **marker** — быстрое извлечение текста из PDF [GitHub](https://github.com/datalab-to/marker)
+- **docling** — продвинутое извлечение данных из документов [GitHub](https://github.com/docling-project/docling)
 
 #### Чанкование (Chunking) {: #method_chunking }
 
-- **Chonkie** — быстрая и легковесная библиотека для чанкования [[GitHub]](https://github.com/chonkie-inc/chonkie)
-- LangChain text splitters [[GitHub]](https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters)
+- **Chonkie** — быстрая и легковесная библиотека для чанкования [GitHub](https://github.com/chonkie-inc/chonkie)
+- LangChain text splitters [GitHub](https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters)
 
 #### Векторные модели для русского языка {: #method_russian_embedding_models }
 
@@ -467,7 +470,7 @@ flowchart LR
 
 - **t-tech/T-lite-it-1.0** — легкая модель для русского языка
 - **t-tech/T-pro-it-2.0** — продвинутая модель для русского языка
-- **Qwen3-30B-A3B-Instruct-2507** — рекомендуется для Agentic RAG [[GitHub]](https://github.com/vamplabAI/sgr-agent-core/tree/tool-confluence)
+- **Qwen3-30B-A3B-Instruct-2507** — рекомендуется для Agentic RAG [GitHub](https://github.com/vamplabAI/sgr-agent-core/tree/tool-confluence)
 - **RefalMachine/RuadaptQwen2.5-14B-Instruct** — адаптированная для русского
 
 #### Реранкеры {: #method_rerankers }
@@ -478,15 +481,15 @@ flowchart LR
 #### Фреймворки для RAG {: #method_rag_frameworks }
 
 Одобрено сообществом NeuralDeep:
-- **Dify** — Low-code платформа для AI-приложений [[GitHub]](https://github.com/langgenius/dify/)
-- **AutoRAG** — автоматический RAG оптимизатор [[GitHub]](https://github.com/Marker-Inc-Korea/AutoRAG)
-- **LlamaIndex** — структурированная работа с данными [[GitHub]](https://github.com/run-llama/llama_index)
-- **Mastra** — AI-фреймворк для продакшна [[GitHub]](https://github.com/mastra-ai/mastra)
+- **Dify** — Low-code платформа для AI-приложений [GitHub](https://github.com/langgenius/dify/)
+- **AutoRAG** — автоматический RAG оптимизатор [GitHub](https://github.com/Marker-Inc-Korea/AutoRAG)
+- **LlamaIndex** — структурированная работа с данными [GitHub](https://github.com/run-llama/llama_index)
+- **Mastra** — AI-фреймворк для продакшна [GitHub](https://github.com/mastra-ai/mastra)
 
 #### Agentic RAG архитектура {: #method_agentic_rag_architecture }
 
 **SGR (Schema-Guided Reasoning)** — фреймворк для агентов от neuraldeep:
-- SGR Agent Core [[GitHub]](https://github.com/vamplabAI/sgr-agent-core) — 1k+ stars
+- SGR Agent Core [GitHub](https://github.com/vamplabAI/sgr-agent-core) — 1k+ stars
 - Запуск и философия | SGR vs Tools | Бенчмарки
 - Agentic RAG на локальных моделях (Qwen3-30B-A3B)
 
@@ -494,14 +497,14 @@ flowchart LR
 
 #### Оценка (Eval) {: #method_evaluation }
 
-- **RAGAS** — метрики для RAG [[Docs]](https://docs.ragas.io/en/stable/)
-- **ARES** — автоматическая оценка RAG [[GitHub]](https://github.com/stanford-futuredata/ARES)
+- **RAGAS** — метрики для RAG [Docs](https://docs.ragas.io/en/stable/)
+- **ARES** — автоматическая оценка RAG [GitHub](https://github.com/stanford-futuredata/ARES)
 
 #### Безопасность {: #method_security }
 
-- **NVIDIA NeMo Guardrails** — удержание бота в рамках темы [[GitHub]](https://github.com/NVIDIA-NeMo/Guardrails)
-- **Lakera / Rebuff** — детекторы инъекций [[Platform]](https://platform.lakera.ai/) [[GitHub]](https://github.com/protectai/rebuff)
-- **Garak** — сканер уязвимостей LLM [[GitHub]](https://github.com/NVIDIA/garak)
+- **NVIDIA NeMo Guardrails** — удержание бота в рамках темы [GitHub](https://github.com/NVIDIA-NeMo/Guardrails)
+- **Lakera / Rebuff** — детекторы инъекций [Platform]](https://platform.lakera.ai/) [GitHub](https://github.com/protectai/rebuff)
+- **Garak** — сканер уязвимостей LLM [GitHub](https://github.com/NVIDIA/garak)
 
 #### Кейс: RAG для ФСК (Строительная компания) {: #method_rag_case_fsk_construction }
 

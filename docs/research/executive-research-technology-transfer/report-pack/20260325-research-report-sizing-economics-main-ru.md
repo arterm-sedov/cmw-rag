@@ -21,8 +21,26 @@ tags:
 
 ### Обзор {: #sizing_pack_overview }
 
-Документ даёт **количественные опоры** для решений по бюджету: тарифы облаков РФ, вилки CapEx/OpEx, дерево факторов стоимости и сценарии TCO для RAG, облачного и on-prem инференса, агентских контуров. **Методология внедрения и TOM** — в парном _«[отчёте по методологии](./20260325-research-report-methodology-main-ru.md#method_pack_overview)»_; **передача ИС, состав стека, ИБ** — в приложениях B–D.
- Содержание согласовано с аналитическим сводом Comindware «Оценка сайзинга, CapEx и OpEx для клиентов» (март 2026) и дополнено публичными прайсами и рыночными ориентирами на дату подготовки.
+Документ даёт **количественные опоры** для решений по бюджету: тарифы облаков РФ, вилки CapEx/OpEx, дерево факторов стоимости и сценарии TCO для RAG, облачного и on-prem инференса, агентских контуров.
+
+### Назначение документа и границы применения {: #sizing_purpose_and_scope }
+
+Документ обобщает **модель затрат и экономику эксплуатации** для корпоративных ИИ-контуров в резидентной логике РФ: облако, on-prem и гибрид.
+
+Представленные показатели — это **диапазоны для управленческих решений** и сценарного сравнения, а не фиксированная коммерческая смета или оферта.
+
+**Практический смысл:** единая финансово-техническая база для выбора целевой архитектуры, согласования CapEx/OpEx с CFO/CIO/CTO и подготовки защищаемого TCO-обоснования по этапам внедрения.
+
+### Связанные материалы {: #sizing_related_docs }
+
+- [Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)
+- [Курс USD и правила для смет](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy)
+- [Отчёт. Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- [Приложение B. Отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
+- [Приложение C. Имеющиеся наработки Comindware (состав, границы, артефакты)](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
+- [Приложение D. Безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
+- [Приложение E. Рыночные и технические сигналы (справочно)](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)
+- [Резюме для руководства: сайзинг, CapEx и OpEx](./20260325-research-executive-sizing-ru.md)
 
 ### Как использовать этот отчёт {: #sizing_how_to_use }
 
@@ -40,16 +58,6 @@ tags:
 
 - Точную смету без замеров на стенде заказчика (вилки — ориентир, не контрактная цифра).
 - Автоматический baseline для КП без сверки прайса провайдера на дату.
-
-#### Связанные документы {: #sizing_related_docs }
-
-- [Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)
-- [Курс USD и правила для смет](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy)
-- [Отчёт. Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
-- [«Приложение B: отчуждение ИС и кода (KT, IP)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
-- [Приложение C. Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
-- [Приложение D. Безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
-- [Приложение E. Рыночные и технические сигналы (справочно)](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)
 
 ### Обоснование подхода (SCQA) {: #sizing_scqa }
 
@@ -113,7 +121,7 @@ tags:
 
 **Ориентир рынка:** рейтинги трафика и долей отражают глобальную динамику потребления GenAI. Для клиентского бюджета использовать юнит-экономику токена, тарифы РФ и локальный/on-prem контур.
 
-**Источник:** a16z Top 100 AI Apps [[источник]](https://a16z.com/100-gen-ai-apps-6/)
+**Источник:** [a16z Top 100 AI Apps ](https://a16z.com/100-gen-ai-apps-6/)
 
 ### Распределение рынка {: #sizing_market_distribution }
 
@@ -256,7 +264,9 @@ tags:
 
 !!! note "Цены Сбера"
 
-    Актуальны на март 2026 (с учётом снижения цен в 3 раза в феврале 2026 г.). Цены едины для Cloud.ru и SberCloud. GigaChat 3.1 (MIT) — на Hugging Face. Минимальный ежемесячный платёж — 600 ₽.
+    Актуальны на март 2026. Цены едины для Cloud.ru и SberCloud.
+    
+    Модели семейства GigaChat 3 предоставляются с открытыми весами (MIT) на Hugging Face для локального инференса.
 
 #### Китайские модели (доступны в РФ) {: #sizing_chinese_models }
 
@@ -753,7 +763,7 @@ vLLM имеет более высокий оверхед по сравнению
 
 ### Qwen3.5-397B на M3 Max 48GB: локальный инференс для корпоративного R&D {: #sizing_community_qwen_consumer_hardware }
 
-**Источник:** @llm_under_hood [[источник]](https://t.me/llm_under_hood)
+**Источник:** [LLM под капотом](https://t.me/llm_under_hood)
 
 **Метод:** Claude Code + autoresearch + оптимизации памяти для edge-инференса
 
@@ -775,7 +785,7 @@ vLLM имеет более высокий оверхед по сравнению
 
 ### Picoclaw на Raspberry Pi4: edge-агенты для промышленной автоматизации {: #sizing_picoclaw_raspberry_pi4 }
 
-**Источник:** @neuraldeep [[источник]](https://t.me/neuraldeep)
+**Источник:** [Валерий Ковальский. Red Mad Robot](https://t.me/neuraldeep)
 
 ### Характеристики
 
@@ -1023,7 +1033,7 @@ vLLM имеет более высокий оверхед по сравнению
 
 Связка с моделью затрат: рычаги ниже напрямую бьют по веткам **Инференс** и **Эксплуатация** в дереве факторов стоимости и снижают требования к GPU при тех же SLO — их стоит явно закладывать в чувствительность сценарного сайзинга.
 
-**Источник:** Канал [@Redmadnews (red_mad_robot)](https://t.me/Redmadnews)
+**Источник:** [Канал @Redmadnews (red_mad_robot)](https://t.me/Redmadnews)
 
 ### Снижение вычислительных затрат {: #sizing_reducing_computational_costs }
 
@@ -1082,6 +1092,10 @@ vLLM имеет более высокий оверхед по сравнению
 - **Передаваемая экспертиза** — код, конфигурации, регламенты эксплуатации и обучение команды
 
 **Следующий шаг:** пилот по методологии PoC → Пилот → Масштабирование с фиксацией метрик качества и экономики до промышленного запуска.
+
+## Источники
+
+- Полный консолидированный реестр  _[Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_sources_registry)_.
 
 ### Инженерия обвязки и мультиагентная разработка {: #sizing_scaffolding_engineering_multiagent_dev }
 

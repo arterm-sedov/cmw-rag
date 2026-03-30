@@ -70,7 +70,15 @@ tags:
 | MOSEC | Унифицированный HTTP-сервис для хостинга моделей, например через SentenceTransformers и vLLM |
 | Агентный слой платформы (Comindware Platform) | Агентные сценарии управления платформой |
 
-## Валюта: пересчёт USD для смет {: #app_a_fx_policy }
+## Единые KPI и их интерпретация {: #app_a_kpi_semantics }
+
+Используйте следующие KPI как **операционные ориентиры**, они не заменяют юридические критерии соответствия и комплаенса:
+
+- `>60 %` — доля регулярного использования ИИ в целевой группе пользователей.
+- `30–40 %` — целевой диапазон сокращения времени выполнения типового сценария.
+- `>95 %` — доля ответов, прошедших внутреннюю рубрику качества.
+
+## Курс USD для смет {: #app_a_fx_policy }
 
 **1 USD = 85 RUB** — единый ориентир для сопоставления USD-прайсов и рублёвых оценок в материалах на март 2026.
 
@@ -81,7 +89,7 @@ tags:
 ## Связанные документы {: #app_a_related_documents }
 
 - [Comindware: корпоративный ИИ для промышленного предприятия — предложение для руководства (внедрение + передача экспертизы)](./20260325-comindware-ai-commercial-offer-ru.md)
-- [Резюме для руководства: методология внедрения и отчуждения ИИ (C-level)](./20260325-research-executive-methodology-ru.md)»_
+- [Резюме для руководства: методология внедрения и отчуждения ИИ](./20260325-research-executive-methodology-ru.md)
 - [Резюме для руководства: сайзинг, CapEx и OpEx (C-level)](./20260325-research-executive-sizing-ru.md)
 - [Отчёт. Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
 - [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
@@ -102,7 +110,7 @@ tags:
 | Безопасность, комплаенс, наблюдаемость (углубление) | [Приложение D: безопасность, комплаенс и наблюдаемость (observability)](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview) |
 | Рыночный и инженерный контекст (сигналы, дайджесты, публичные кейсы; не для смет) | [Приложение E. Рыночные и технические сигналы (справочно)](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root) |
 | Навигация по комплекту, реестр документов и источников | [Обзор и ведомость документов](#app_a_pack_overview) (этот документ) |
-| Краткое резюме: методология и отчуждение | [Резюме для руководства: методология внедрения и отчуждения ИИ (C-level)](./20260325-research-executive-methodology-ru.md) |
+| Краткое резюме: методология и отчуждение | [Резюме для руководства: методология внедрения и отчуждения ИИ](./20260325-research-executive-methodology-ru.md) |
 | Краткое резюме: сайзинг и экономика | [Резюме для руководства: сайзинг, CapEx и OpEx (C-level)](./20260325-research-executive-sizing-ru.md) |
 
 ## Навигация «вопрос → документ» {: #app_a_question_document_navigation }
@@ -125,7 +133,7 @@ tags:
 - Где цифры и барьеры зрелости GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot × CMO Club, 2025)? → [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market); [Отчёт. Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams); [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_barriers_risk_survey_2025); для концентрации SaaS, каталога моделей и ИС в договоре — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)
 - Где ландшафт российского рынка GenAI (онтология сегментов, сценарный контур до 2030, публичные материалы red_mad_robot 2025) и согласование с цифрами IMARC/сегментами? → [Отчёт. Методология](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map); [Основной отчёт: сайзинг — ИИ-рынок России](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_ai_market_stats_forecasts); [AI TRiSM — Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__ai_trism_trust_management)
 - Нужен единый реестр источников и расширенные списки по темам? → [Сводный реестр источников (часть III)](#app_a_sources_registry) (этот документ)
-- Нужен **сжатый** обзор по методологии, TOM и суверенитету? → [Резюме для руководства: методология внедрения и отчуждения ИИ (C-level)](./20260325-research-executive-methodology-ru.md)
+- Нужен **сжатый** обзор по методологии, TOM и суверенитету? → [Резюме для руководства: методология внедрения и отчуждения ИИ](./20260325-research-executive-methodology-ru.md)
 - Нужен **сжатый** обзор по TCO, CapEx/OpEx, валюте и матрице РБК? → [Резюме для руководства: сайзинг, CapEx и OpEx (C-level)](./20260325-research-executive-sizing-ru.md)
 
 ## Краткие резюме (март 2026) {: #app_a_executive_level_summaries }
