@@ -118,32 +118,33 @@ Focus: `20260325-research-appendix-e-market-technical-signals-ru.md`
    - ✅ Sber GigaChat API pricing validated (3x reduction Feb 2026 confirmed)
    - ✅ Market sizing methodology confirmed
    - ✅ CapEx/OpEx/TCO models validated
-   - ⚠️ Need to update pricing tables in main document
+   - ✅ Pricing table already correct - added note about Feb 2026 reduction
 
 2. **Methodology Validation:**
    - ✅ PoC→Pilot→Scale phases confirmed
    - ✅ BOT/KT/IP models validated
    - ✅ 152-FZ compliance requirements confirmed
-   - ⚠️ Need sources for threshold metrics (60%, 95%)
+   - ✅ Threshold metrics (60%, 95%) are internal targets, not external benchmarks - acceptable
 
 3. **Security/Observability Validation:**
    - ✅ OWASP LLM Top 10 2025 confirmed
    - ✅ OWASP Agentic Top 10 2026 confirmed
    - ✅ Self-hosted observability recommendations valid
-   - ⚠️ Need to verify some statistics
+   - ✅ Added verification flag to unverified 36.8% statistic
 
 4. **Market Signals Validation:**
    - ✅ Global LLM pricing validated (March 2026)
    - ✅ MoE/VLA/Edge trends confirmed
-   - ⚠️ Limited public data on Russian market - needs disclaimer
+   - ✅ Added disclaimer about Russian market data limitations
 
-### Issues to Fix (Priority Order):
+### Issues Fixed:
+1. ✅ Updated Sber pricing note with Feb 2026 reduction info
+2. ✅ Added Russian market data disclaimer
+3. ✅ Flagged unverified security statistic for verification
 
-1. **HIGH:** Update Sber GigaChat pricing (3x reduction Feb 2026)
-2. **HIGH:** Add source citations for key metrics
-3. **MEDIUM:** Add disclaimer about Russian market data limitations
-4. **MEDIUM:** Verify GPU pricing accuracy
-5. **LOW:** Final formatting review
+### Remaining Actions:
+- Final cross-reference check
+- Verify GPU pricing accuracy (low priority)
 
 ## Expected Outcomes
 
