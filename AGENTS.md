@@ -183,6 +183,18 @@ Before considering work complete:
 - **Comments:** Add comments for *why*, not *what*. Update existing comments; do not delete them.
 - **Docs Strings:** Follow PEP 257 docstring conventions (Google style is preferred).
 
+### Documentation Structure
+
+Structure content well per best documentation and executive research practices:
+
+- **Clear hierarchy:** Use consistent heading levels (H1 → H2 → H3). One H1 per file.
+- **Front-load value:** Put key conclusions and recommendations first. Executives scan for decisions.
+- **SCQA framework:** Situation (Ситуация) → Complication (Проблема) → Question (Вопрос для решения) → Answer (Рекомендуемый ответ) for executive summaries or report intros.
+- **Chunked content:** Use bulleted lists, short paragraphs, and visual breaks. Avoid walls of text.
+- **Actionable sections:** Each section should answer "So what?" and lead to a decision or next step.
+- **Consistent formatting:** Same patterns for similar content types (e.g., all pricing tables look the same).
+- **Source traceability:** Every claim needs inline citation. No unsubstantiated assertions.
+
 ---
 
 ## 🤖 Agent Instructions (OpenCode, Cursor, Copilot)
