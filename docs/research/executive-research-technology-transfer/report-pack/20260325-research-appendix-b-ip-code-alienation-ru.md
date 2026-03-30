@@ -208,7 +208,7 @@ tags:
 **Подходы:**
 - **Neuraldeep.ru** — база навыков для российских сервисов (Яндекс, Битрикс24, 1С).
 - **SGR Agent Core** — Schema-Guided Reasoning для агентов.
-- **OpenClaw** — self-hosted AI-агент (170K звезд за неделю).
+- **OpenClaw** — self-hosted AI-агент (335K+ GitHub звёзд, март 2026) [OpenClawVPS](https://openclawvps.io/blog/openclaw-statistics).
 
 ### Национальная стратегия развития ИИ (Россия) {: #app_b_national_ai_strategy_russia }
 **Указ Президента РФ №124 (февраль 2024):**

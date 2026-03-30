@@ -62,7 +62,7 @@ tags:
 | 9 | ASI09:2026 | Эксплуатация доверия человек–агент |
 | 10 | ASI10:2026 | Вредоносные агенты |
 
-Статистика инцидентов (2026): 36,8% AI-навыков содержат уязвимости _(требует уточнения источника)_; 135 000+ экземпляров OpenClaw подвержены атакам.
+Статистика инцидентов (2026): **26,1%** AI-навыков содержат уязвимости [arXiv:2601.10338](https://arxiv.org/abs/2601.10338); ~40 000 экземпляров OpenClaw уязвимы (из 42 665 публично доступных) [Clawctl](https://www.clawctl.com/blog/42665-exposed-openclaw-instances).
 
 **Не использовать как:**
 
@@ -604,7 +604,7 @@ User Query
 
 **Требования к операторам персональных данных:**
 
-С 1 сентября 2025 года все операторы персональных данных обязаны предоставлять анонимизированные наборы данных в государственную информационную систему по запросу Минцифры [[источник]](https://acsour.com/en/news-and-articles/tpost/2g13ahnab1-mandatory-anonymized-personal-data-shari).
+С 1 сентября 2025 года все операторы персональных данных обязаны предоставлять анонимизированные наборы данных в государственную информационную систему по запросу Минцифры [источник](https://acsour.com/en/news-and-articles/tpost/2g13ahnab1-mandatory-anonymized-personal-data-shari).
 
 **Ключевые требования:**
 - **Локализация данных:** Первичный сбор персональных данных граждан РФ должен осуществляться в базах данных на территории России. Локализация данных и обработки в контуре ИИ-агента с локальным хранилищем является обязательной.
@@ -921,6 +921,11 @@ User Query
 - [Securelist — webinar: AI agents vs. prompt injections](https://securelist.com/webinars/ai-agents-vs-prompt-injections/)
 - [Kaspersky — press release: training Large Language Models Security (описание программы)](https://www.kaspersky.com/about/press-releases/kaspersky-introduces-a-new-training-large-language-models-security)
 - [CodeWall — How we hacked McKinsey’s AI platform (разбор red team)](https://codewall.ai/blog/how-we-hacked-mckinseys-ai-platform)
+
+### Эмпирический анализ уязвимостей навыков агентов и экспозиция OpenClaw (2026) {: #app_d__agent_skills_openclaw_sources }
+
+- [arXiv — Agent Skills in the Wild: An Empirical Study of Security Vulnerabilities at Scale, 2601.10338](https://arxiv.org/abs/2601.10338)
+- [Clawctl — 42 665 exposed OpenClaw instances (оценка уязвимых экземпляров)](https://www.clawctl.com/blog/42665-exposed-openclaw-instances)
 
 ### Управляемые песочницы, gVisor и исследования container runtime {: #app_d__sandboxes_gvisor_container_runtime }
 
