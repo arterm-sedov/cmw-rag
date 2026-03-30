@@ -295,6 +295,16 @@ These principles apply regardless of specific topic, industry, or organization:
 - Structure for easy consumption (SCQA: Situation-Complication-Question-Answer)
 - Focus on knowledge transfer, not scenario building
 
+**Execution Principles**
+
+| Principle | Application |
+| :--- | :--- |
+| **Better, not bigger** | Perfect coherence over volume; clarify, don't inflate |
+| **Grounded synthesis** | Generate original research rather than copy-pasting |
+| **C-Level enablement** | Support decision-making, don't teach executives their job |
+| **Worldwide scope** | Explore global research, reports, and surveys |
+| **Autonomous refinement** | Iterate until perfect without requiring approval for each step |
+
 ### Current data requirement (Web search mandatory)
 
 **Always use Web search for model versions, pricing, and vendor data.**
@@ -484,13 +494,3 @@ Use git to version the **single** master plan file instead of creating multiple 
 - Full traceability of how research scope evolved through recursive refinement
 - Easy diff between iterations (`git diff HEAD~2`)
 - Recovery to any previous checkpoint if research direction needs adjustment
-
-### Research Principles
-
-| Principle | Application |
-| :--- | :--- |
-| **Better, not bigger** | Perfect coherence over volume; clarify, don't inflate |
-| **Grounded synthesis** | Generate original research rather than copy-pasting |
-| **C-Level enablement** | Support decision-making, don't teach executives their job |
-| **Worldwide scope** | Explore global research, reports, and surveys |
-| **Autonomous refinement** | Iterate until perfect without requiring approval for each step |
