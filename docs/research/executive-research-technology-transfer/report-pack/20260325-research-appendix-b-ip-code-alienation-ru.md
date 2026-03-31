@@ -49,7 +49,7 @@ tags:
 ## Связанные документы {: #app_b_related_docs }
 
 - [Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)
-- [Отчёт. Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
 - [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
 - [Профиль on-prem GPU в проектах Comindware](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) (реф. consumer 24 ГБ, 4090 48 ГБ коммерческая аренда, PRO 6000 96 ГБ)
 - [Приложение C. Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
@@ -162,7 +162,7 @@ tags:
 | **Шаблоны промптов** для структурированных не-кодовых артефактов (пример: **BPMN 2.0 XML** с согласованными `id` семантики и диаграммы) | Воспроизводимая формализация процессов при KT; меньше правок после генерации LLM при явных правилах и проверке в редакторе |
 | Регламент **синхронизации док ↔ код** (периодические прогоны, ответственный) | Борьба с устареванием знаний в репозитории |
 
-Практика по **BPMN 2.0**, шаблонам промптов и валидации XML — в _«[Отчёт. Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm)»_ (подраздел «Справочно: формализация процессов (BPMN 2.0) и генерация с помощью LLM»).
+Практика по **BPMN 2.0**, шаблонам промптов и валидации XML — в _«[Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm)»_ (подраздел «Справочно: формализация процессов (BPMN 2.0) и генерация с помощью LLM»).
 
 ### Справочно: агент в PR и артефакты вместо прямой записи в ИС {: #app_b_reference_agent_pr_artifacts }
 
