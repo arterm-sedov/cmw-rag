@@ -72,7 +72,7 @@ tags:
 ## Подробности {: #exec_sizing_where_to_find }
 
 - _[Отчёт. Сайзинг и экономика (CapEx / OpEx / TCO)](./20260325-research-report-sizing-economics-main-ru.md)_
-- _[Отчёт. Методология внедрения и разработки](./20260325-research-report-methodology-main-ru.md)_
+- _[Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md)_
 - _[Обзор и ведомость документов: навигация, реестр и источники](./20260325-research-appendix-a-index-ru.md)_
 - _[Приложение B. Отчуждение ИС и кода (KT, IP, лицензии, приёмка)](./20260325-research-appendix-b-ip-code-alienation-ru.md)_
 - _[Приложение C. Имеющиеся наработки Comindware (состав, границы, артефакты)](./20260325-research-appendix-c-cmw-existing-work-ru.md)_
