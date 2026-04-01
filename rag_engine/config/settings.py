@@ -227,6 +227,14 @@ class Settings(BaseSettings):
     # MANDATORY in .env - must be present (empty = skip auth, present = require it)
     cmw_api_key: str
 
+    # Phoenix Observability
+    # Phoenix endpoint for tracing (e.g., http://localhost:6006)
+    phoenix_endpoint: str | None = None
+    # Phoenix project name for traces
+    phoenix_project_name: str = "cmw-rag"
+    # Enable Phoenix tracing (requires phoenix_endpoint)
+    phoenix_enabled: bool = False
+
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(
         env_file=".env",
