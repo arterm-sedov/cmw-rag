@@ -27,6 +27,16 @@ The consolidated **20260325-** research pack is **not** internal authoring docum
 - [Research pack task (authoritative)](./20260324-research-task.md) — **authoritative** scope, acceptance, workflow, evidence and FX: **Russian** body (§§1–8). It points agents here for English workflow rules and non-duplication.
 - [Original task snapshot](./20260324-research-task_original.md) — historical manager brief; if it conflicts with the main task file, **follow the main task file**.
 
+### Agent execution contract (for `executive-research-technology-transfer/report-pack`)
+
+Treat `tasks/` as **authoring instructions** and `report-pack/` as **reader-facing executive content**.
+
+- **Primary purpose:** enable Comindware C-level leaders to make decisions and shape commercial offers when selling or transferring Comindware AI expertise.
+- **Audience outcome:** a CEO/CFO/CTO/Commercial lead can reuse the text directly in board briefs, proposal narratives, and negotiation positioning.
+- **Hard prohibition in report text:** no authoring remarks, no workflow/process-writing commentary, no “how this file was prepared” language, and no repository-mechanics narrative.
+- **Reference boundaries:** authoring paths and repo mechanics stay in tasks/plans; report text keeps business-technology meaning and evidence only.
+- **If uncertain:** prefer decision usefulness over methodological self-description.
+
 ## Permission Boundaries
 
 ### Always Allowed
