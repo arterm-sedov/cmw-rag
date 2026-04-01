@@ -10,6 +10,20 @@ This file defines research workflow, document standards, and formatting requirem
 - If a specific task file introduces stricter requirements, follow the stricter rule.
 - Do not relax or omit rules from this file unless explicitly requested.
 
+## Agent modes: plans and business alignment
+
+### Any mode
+
+- **Business goals:** derive scope, priorities, and acceptance from [`executive-research-technology-transfer/tasks/`](./executive-research-technology-transfer/tasks/) — authoritative `*-research-task.md`; `*_original.md` only as non-conflicting history (see **Business goals and task authority**).
+
+### Plan mode
+
+- **Drafting:** ask when scope, goals, or evidence bar are unclear; put resolved assumptions and scope into the plan.
+- **Plan shape:** ordered steps; each step → one primary **artifact** + which task-file objective it serves.
+- **Checkpoints:** after named steps, self-check evidence, task fit, and consistency — continue or realign. For **agent self-control**, not routine user stops (escalate per **Permission Boundaries** or real blockers).
+- **Execution:** run the plan **autonomously**; involve the user only where this file, the task, or a blocker requires it.
+- **Progress:** while executing, add **dated** notes under [`docs/progress_reports/`](../progress_reports/) (`YYYYMMDD-topic.md` or one log per thread): done, checkpoint results, blockers, remaining work — brief ops trail, not the final deliverable.
+
 ## Business goals and task authority
 
 **Read this before any edits** to the **consolidated research pack** in `docs/research/` (full methodology and sizing reports, appendices A–D, and the two short executive summaries). The corpus serves **Comindware’s commercial work**: evidence and narrative to **win and deliver** customer AI programs—**budget, architecture, compliance, handover (KT/IP), and roadmap**—not a standalone SKU for “selling research” or “curating publications.”
@@ -443,7 +457,7 @@ Before starting any research task, you **must** read:
 - [ ] Create **single** master plan under `.opencode/plans/YYYYMMDD-descriptive-name.md`
 - [ ] Define research scope based on task requirements
 - [ ] Identify specific gaps requiring deep research (competitor analysis, pricing models, market sizing)
-- [ ] Set verification checkpoints
+- [ ] Set **self-review checkpoints** in the plan (agent verification gates; see **Plan mode**)
 - [ ] Use subagents recursively to compile and refine the plan
 - [ ] **Version the plan with git** — commit iterations to trace evolution (see **Master Plan Versioning** below)
 
