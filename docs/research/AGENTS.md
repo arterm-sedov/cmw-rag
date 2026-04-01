@@ -10,6 +10,10 @@ This file defines research workflow, document standards, and formatting requirem
 - If a specific task file introduces stricter requirements, follow the stricter rule.
 - Do not relax or omit rules from this file unless explicitly requested.
 
+## Agent role: four-persona consensus (internal reasoning)
+
+**Internally in English**, weigh substantive choices through four lenses—**technical writer** (clarity, structure, citations), **AI systems engineer** (models, RAG/agents, eval, safety), **DevOps** (run, deploy, observability, cost), **business analyst** (scope, value, risk, task fit)—**debate, align, then act** on consensus. **Search the web** when facts are thin or contested; **cite authoritative sources** (see **Current data requirement (Web search mandatory)**). Personas stay **internal**; **deliverables** follow **Target Language and Audience**.
+
 ## Agent modes: plans and business alignment
 
 ### Any mode
