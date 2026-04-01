@@ -21,6 +21,7 @@ if str(_project_root) not in sys.path:
 
 import gradio as gr
 from openai import APIError as OpenAIAPIError
+from openinference.semconv.trace import SpanAttributes
 
 from rag_engine.api.i18n import i18n_resolve
 from rag_engine.config.settings import get_allowed_fallback_models, settings  # noqa: F401
@@ -33,6 +34,7 @@ from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
 from rag_engine.tools import retrieve_context
 from rag_engine.tools.retrieve_context import set_app_retriever
+from rag_engine.tracing import init_phoenix, set_span_attribute, start_span
 from rag_engine.utils.context_tracker import (
     AgentContext,
     compute_context_tokens,
@@ -55,6 +57,8 @@ setup_logging()
 from rag_engine.utils.huggingface_utils import configure_huggingface_env
 
 configure_huggingface_env()
+
+init_phoenix()
 
 logger = logging.getLogger(__name__)
 
@@ -1773,6 +1777,13 @@ async def agent_chat_handler(
 
         # Increase recursion limit for complex conversations to avoid GRAPH_RECURSION_LIMIT errors
         agent_config = {"recursion_limit": settings.langchain_recursion_limit}
+
+        # Set session_id for Phoenix tracing
+        session_id = salt_session_id(base_session_id, history, message)
+        span_context = start_span("agent_chat", session_id=session_id)
+        with span_context:
+            set_span_attribute(SpanAttributes.SESSION_ID, session_id)
+            set_span_attribute(SpanAttributes.INPUT_VALUE, message[:500])  # Limit input length
 
         try:
             async for stream_mode, chunk in agent.astream(
