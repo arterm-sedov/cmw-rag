@@ -22,7 +22,7 @@ tags:
 
 ## Обзор {: #app_a_pack_overview }
 
-Настоящее приложение помогает **быстро найти ответ** в комплекте отчётов Comindware «**Внедрение ИИ: методология и сайзинг**» (март 2026, v1) по ключевым вопросам внедрения GenAI под резидентный контур:
+Настоящее приложение помогает **быстро найти ответ** в комплекте отчётов _«Внедрение ИИ: методология и сайзинг»_ по ключевым вопросам внедрения GenAI в резидентном контуре:
 
 - **Организация внедрения и эксплуатации** — фазы, роли, контрольные точки
 - **Диапазоны CapEx/OpEx/TCO** — ориентиры для смет и бюджетов
@@ -34,7 +34,7 @@ tags:
 
 **В этом документе:** навигация по вопросам → документам, ведомость комплекта и **единый реестр источников** (дополняется перекрёстными ссылками внутри отчётов).
 
-**База материалов:** публичные прайсы, отраслевые публикации и инженерная практика Comindware (открытые репозитории экосистемы). Используйте как основу для собственных презентаций, смет и управленческих решений — с перепроверкой цифр на дату и адаптацией под профиль заказчика.
+**База материалов:** публичные прайсы, отраслевые публикации и инженерная практика **Comindware** (открытые репозитории экосистемы). Используйте как основу для собственных презентаций, смет и управленческих решений — с перепроверкой цифр на дату и адаптацией под профиль заказчика.
 
 ## Как пользоваться комплектом {: #app_a_reading_guide_executives }
 
@@ -58,13 +58,13 @@ tags:
 
 ## Термины и условные обозначения {: #app_a_conventions_and_scope }
 
-В тексте комплекта **корпоративный RAG-контур**, **vLLM**, **MOSEC**, и **агентный слой Comindware Platform** — это **условные названия ролей** иллюстративного референс-стека Comindware, а не обязательный коммерческий продукт или фиксированные SKU.
+В тексте комплекта **корпоративный RAG-контур**, **vLLM**, **MOSEC**, и агентный слой **Comindware Platform** — это **условные названия ролей** иллюстративного референс-стека **Comindware**, а не обязательный коммерческий продукт или фиксированные SKU.
 
 Подробные формулировки для договоров и переговоров — в _[Приложении B «Отчуждение ИС и кода (KT, IP)»](20260325-research-appendix-b-ip-code-alienation-ru.md)_.
 
 | Термины | Определение |
 | --- | --- |
-| Корпоративный RAG-контур | Ассистент инженеров поддержки Comindware на основе RAG |
+| Корпоративный RAG-контур | Ассистент инженеров поддержки **Comindware** на основе RAG |
 | vLLM | Высокопроизводительный сервис инференса LLM |
 | MOSEC | Унифицированный HTTP-сервис для хостинга моделей, например через SentenceTransformers и vLLM |
 | Агентный слой платформы (Comindware Platform) | Агентные сценарии управления платформой |
@@ -103,7 +103,7 @@ tags:
 | Экономика: цифры, тарифы, сценарии сайзинга, CapEx / OpEx / TCO | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) |
 | Методология: TOM, фазы внедрения, производственная модель (таблицы затрат — в отчёте по сайзингу) | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview) |
 | Отчуждение ИС и кода: KT / IP, лицензии, комплект передачи, приёмка | [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview) |
-| Наработки Comindware: состав стека, границы «что есть сегодня» | [Приложение C. Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview) |
+| Наработки **Comindware**: состав стека, границы «что есть сегодня» | [Приложение C. Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview) |
 | Безопасность, комплаенс, наблюдаемость (углубление) | [Приложение D: безопасность, комплаенс и наблюдаемость (observability)](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview) |
 | Рыночный и инженерный контекст (сигналы, дайджесты, публичные кейсы; не для смет) | [Приложение E. Рыночные и технические сигналы (справочно)](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root) |
 | Навигация по комплекту, реестр документов и источников | [Обзор и ведомость документов](#app_a_pack_overview) (этот документ) |
@@ -120,7 +120,7 @@ tags:
 - Где примерные расчёты расхода токенов по данным портала поддержки и допущениям? → [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates) (подраздел Примерные расчёты расхода токенов на доступных данных (портал поддержки))
 - Как устроен комплект отчуждения ИС/кода и что именно передаём клиенту (KT/IP)? → [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
 - Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)? → [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm) и [Приложение B: комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)
-- Что есть в Comindware сегодня (состав стека, границы ‘что есть’ vs ‘методология’)? → [Приложение C: имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
+- Что есть в **Comindware** сегодня (состав стека, границы ‘что есть’ vs ‘методология’)? → [Приложение C: имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
 - Как обеспечить security, комплаенс и промышленную observability (контур контроля, data minimization posture)? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
 - Как проектировать изоляцию и сеть для агентского исполнения (граница доверия, egress, краткоживущие учётные данные)? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__trust_boundary_agent_environment)
 - Какие паттерны среды для агента в PR и долгоживущей dev, модель риска по сценарию и минимальный состав платформы задач? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_model_platform_patterns); для KT/IP и PR — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)
@@ -221,7 +221,7 @@ tags:
 #### Нормативные и стратегические материалы {: #app_a_regulatory_strategic_materials }
 
 - [Официальное опубликование — Приказ Роскомнадзора от 19.06.2025 № 140 (обезличивание ПДн)](http://publication.pravo.gov.ru/document/0001202508010002)
-- [ACSOUR — обязанность операторов передавать анонимизированные ПД в ГИС (152-ФЗ)](https://acsour.com/en/news-and-articles/tpost/2g13ahnab1-mandatory-anonymized-personal-data-shari)
+- [ACSOUR — обязанность операторов передавать анонимизированные ПДн в ГИС (152-ФЗ)](https://acsour.com/en/news-and-articles/tpost/2g13ahnab1-mandatory-anonymized-personal-data-shari)
 - [NIST AIRC — Roadmap for the AI Risk Management Framework](https://airc.nist.gov/airmf-resources/roadmap)
 - [NIST — AI RMF to ISO/IEC 42001 Crosswalk (PDF)](https://airc.nist.gov/docs/NIST_AI_RMF_to_ISO_IEC_42001_Crosswalk.pdf)
 - [Известия (EN) — создание офисов внедрения ИИ](https://en.iz.ru/en/node/1985740)
@@ -697,8 +697,8 @@ tags:
 - [Банк России: Пять принципов ответственного использования ИИ (Июль 2025)](https://www.cbr.ru/press/event/?id=25755)
 - [Банк России: Информационное письмо №ИН-016-13/91 (Июль 2025)](https://www.consultant.ru/document/cons_doc_LAW_509514/)
 - [Банк России: Доклад о применении ИИ на финансовом рынке (Consultation Paper)](http://www.cbr.ru/analytics/d_ok/Consultation_Paper_03112023/)
-- [Роскомнадзор: Приказ №140 «Об утверждении требований к обезличиванию ПД» (2025)](https://normativ.kontur.ru/document?documentId=500957&moduleId=1)
-- [Постановление Правительства РФ №1154: Требования и методы обезличивания ПД (2025)](https://klerk.ru/doc/657888)
+- [Роскомнадзор: Приказ №140 «Об утверждении требований к обезличиванию ПДн» (2025)](https://normativ.kontur.ru/document?documentId=500957&moduleId=1)
+- [Постановление Правительства РФ №1154: Требования и методы обезличивания ПДн (2025)](https://klerk.ru/doc/657888)
 - [ФЗ-152 «О персональных данных»: Ст. 18.1 (Меры защиты)](https://legalacts.ru/doc/152_FZ-o-personalnyh-dannyh/glava-4/statja-18.1/)
 - [ФЗ-152: Обзор поправок о локализации и сборе с 30 мая 2025 года](https://riverstart.ru/blog/novyie-trebovaniya-kpersonalnyim-dannyim-v2025-pravila-rabotyi-dlya-biznesa-s152-fz)
 - [ФЗ-572 «О биометрических данных»: Регулирование в контуре ИИ (2025)](https://www.consultant.ru/document/cons_doc_LAW_435801/)
