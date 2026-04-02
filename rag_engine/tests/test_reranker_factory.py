@@ -120,11 +120,11 @@ class TestCrossEncoderReranker:
         doc = MockDocument("Doc with tags", metadata={"tags": ["important"]})
         candidates = [(doc, 0.0)]
 
-        boost_weights = {"tag_match": 0.2}
+        boost_weights = {"tag_match": 0.05}
         result = reranker.rerank("query", candidates, top_k=1, metadata_boost_weights=boost_weights)
 
-        # Score should be boosted: 0.8 * (1 + 0.2) = 0.96
-        assert result[0][1] == pytest.approx(0.96, 0.01)
+        # Score should be boosted: 0.8 * (1 + 0.05) = 0.84
+        assert result[0][1] == pytest.approx(0.84, 0.01)
 
 
 class TestInfinityReranker:
@@ -212,11 +212,11 @@ class TestInfinityReranker:
         doc = MockDocument("Code example", metadata={"has_code": True})
         candidates = [(doc, 0.0)]
 
-        boost_weights = {"code_presence": 0.3}
+        boost_weights = {"code_presence": 0.05}
         result = reranker.rerank("query", candidates, top_k=1, metadata_boost_weights=boost_weights)
 
-        # Score should be boosted: 0.8 * (1 + 0.3) = 1.04
-        assert result[0][1] == pytest.approx(1.04, 0.01)
+        # Score should be boosted: 0.8 * (1 + 0.05) = 0.84
+        assert result[0][1] == pytest.approx(0.84, 0.01)
 
     @patch("rag_engine.retrieval.reranker.HTTPClientMixin._post")
     def test_infinity_custom_instruction_override(self, mock_post, caplog):
@@ -311,11 +311,12 @@ class TestCreateRerankerFactory:
 
     @patch("rag_engine.retrieval.reranker.ModelRegistry")
     def test_factory_infinity_dity(self, mock_registry_cls):
-        """Test factory creates Infinity reranker for DiTy."""
+        """Test factory creates RerankerAdapter for DiTy (cross-encoder)."""
         mock_registry = MagicMock()
         mock_registry.get_model.return_value = {
             "canonical_slug": "DiTy/cross-encoder-russian-msmarco",
             "type": "reranker",
+            "reranker_type": "cross_encoder",
         }
         mock_registry.get_provider_config.return_value = {}
         mock_registry.get_default_instruction.return_value = None
@@ -325,23 +326,26 @@ class TestCreateRerankerFactory:
         settings.reranker_provider_type = "infinity"
         settings.reranker_model = "DiTy/cross-encoder-russian-msmarco"
         settings.infinity_reranker_endpoint = "http://localhost:7998"
+        settings.reranker_timeout = 60.0
+        settings.reranker_max_retries = 3
 
-        with patch("rag_engine.retrieval.reranker.InfinityReranker") as mock_infinity:
+        with patch("rag_engine.retrieval.reranker.RerankerAdapter") as mock_adapter:
             mock_instance = MagicMock()
-            mock_infinity.return_value = mock_instance
+            mock_adapter.return_value = mock_instance
 
             reranker = create_reranker(settings)
 
-            mock_infinity.assert_called_once()
+            mock_adapter.assert_called_once()
             assert reranker == mock_instance
 
     @patch("rag_engine.retrieval.reranker.ModelRegistry")
     def test_factory_infinity_qwen3(self, mock_registry_cls):
-        """Test factory creates Infinity reranker for Qwen3."""
+        """Test factory creates RerankerAdapter for Qwen3 (llm_reranker)."""
         mock_registry = MagicMock()
         mock_registry.get_model.return_value = {
             "canonical_slug": "Qwen/Qwen3-Reranker-8B",
             "type": "reranker",
+            "reranker_type": "llm_reranker",
         }
         mock_registry.get_provider_config.return_value = {}
         mock_registry.get_default_instruction.return_value = (
@@ -351,16 +355,18 @@ class TestCreateRerankerFactory:
 
         settings = MagicMock()
         settings.reranker_provider_type = "infinity"
-        settings.reranker_model = "DiTy/cross-encoder-russian-msmarco"
+        settings.reranker_model = "Qwen/Qwen3-Reranker-8B"
         settings.infinity_reranker_endpoint = "http://localhost:7998"
+        settings.reranker_timeout = 60.0
+        settings.reranker_max_retries = 3
 
-        with patch("rag_engine.retrieval.reranker.InfinityReranker") as mock_infinity:
+        with patch("rag_engine.retrieval.reranker.RerankerAdapter") as mock_adapter:
             mock_instance = MagicMock()
-            mock_infinity.return_value = mock_instance
+            mock_adapter.return_value = mock_instance
 
             reranker = create_reranker(settings)
 
-            mock_infinity.assert_called_once()
+            mock_adapter.assert_called_once()
             assert reranker == mock_instance
 
     @patch("rag_engine.retrieval.reranker.ModelRegistry")

@@ -62,6 +62,40 @@ EmbeddingProviderConfig = Annotated[
 # ============ RERANKER CONFIGS ============
 
 
+class RerankerFormatting(BaseModel):
+    """Client-side formatting for LLM rerankers.
+
+    Templates use Python format strings with placeholders:
+    - {query}: The search query
+    - {doc}: The document text
+    - {instruction}: The task instruction
+    - {prefix}: Query prefix (Qwen3: system prompt)
+    - {suffix}: Document suffix (Qwen3: end tokens)
+    - {prompt}: Task prompt (BGE-Gemma)
+    """
+
+    query_template: str = Field(
+        default="{query}",
+        description="Query formatting template",
+    )
+    doc_template: str = Field(
+        default="{doc}",
+        description="Document formatting template",
+    )
+    prefix: str = Field(
+        default="",
+        description="Query prefix (e.g., ChatML system prompt)",
+    )
+    suffix: str = Field(
+        default="",
+        description="Document suffix (e.g., end tokens)",
+    )
+    prompt: str | None = Field(
+        default=None,
+        description="Task prompt for BGE-Gemma format",
+    )
+
+
 class DirectRerankerConfig(BaseModel):
     """Direct CrossEncoder reranker (current implementation)."""
 
@@ -79,7 +113,18 @@ class ServerRerankerConfig(BaseModel):
     endpoint: str = Field(
         ..., description="Complete API endpoint URL (e.g., http://localhost:7998/v1/rerank)"
     )
-    default_instruction: str | None = Field(None)  # Qwen3 only
+    reranker_type: Literal["cross_encoder", "llm_reranker"] = Field(
+        default="cross_encoder",
+        description="Model architecture type",
+    )
+    formatting: RerankerFormatting | None = Field(
+        default=None,
+        description="Client-side formatting (LLM rerankers only)",
+    )
+    default_instruction: str | None = Field(
+        default=None,
+        description="Default instruction for LLM rerankers",
+    )
     timeout: float = Field(default=60.0, description="Request timeout in seconds")
     max_retries: int = Field(default=3, description="Max retries on failure")
 

@@ -1,0 +1,19 @@
+{
+  "mapped_total": 62,
+  "sources": {
+    "methodology": {
+      "file": "docs\\research\\20260323-ai-implementation-methodology-ru.md",
+      "found_h2_headings": 26,
+      "mapped_h2_headings": 26,
+      "unmapped_h2_headings": [],
+      "missing_mapped_h2_headings": []
+    },
+    "sizing": {
+      "file": "docs\\research\\20260323-sizing-capex-opex-ru.md",
+      "found_h2_headings": 36,
+      "mapped_h2_headings": 36,
+      "unmapped_h2_headings": [],
+      "missing_mapped_h2_headings": []
+    }
+  }
+}

@@ -9,11 +9,10 @@ import warnings
 from typing import Any
 
 from rag_engine.config.schemas import (
-    ApiEmbeddingConfig,
     DirectEmbeddingConfig,
     DirectRerankerConfig,
     ModelRegistry,
-    ServerEmbeddingConfig,
+    OpenAIEmbeddingConfig,
     ServerRerankerConfig,
 )
 
@@ -61,22 +60,28 @@ def load_embedding_config(provider_key: str) -> Any:
             max_seq_length=provider_config.get("max_seq_length", 512),
         )
     elif provider_type == "infinity":
-        return ServerEmbeddingConfig(
-            type="server",
-            endpoint=f"http://localhost:7997/v1",  # Default, should come from settings
+        model_instruction = registry.get_default_instruction(model_slug)
+        return OpenAIEmbeddingConfig(
+            type="openai_compatible",
+            provider="infinity",
+            endpoint=f"http://localhost:7997/v1/embeddings",  # Default, should come from settings
+            model=model_slug,
+            dimensions=registry.get_dimension(model_slug),
+            local=True,
             query_prefix=provider_config.get("query_prefix"),
             doc_prefix=provider_config.get("doc_prefix"),
-            default_instruction=provider_config.get("default_instruction"),
+            default_instruction=model_instruction,
         )
     elif provider_type == "openrouter":
-        return ApiEmbeddingConfig(
-            type="api",
+        model_instruction = registry.get_default_instruction(model_slug)
+        return OpenAIEmbeddingConfig(
+            type="openai_compatible",
+            provider="openrouter",
             endpoint="https://openrouter.ai/api/v1",
             model=provider_config.get("model_id", model_slug.lower()),
-            default_instruction=provider_config.get(
-                "default_instruction",
-                "Given a web search query, retrieve relevant passages that answer the query",
-            ),
+            dimensions=registry.get_dimension(model_slug),
+            local=False,
+            default_instruction=model_instruction,
         )
     else:
         raise ValueError(f"Unknown provider type: {provider_type}")
@@ -123,10 +128,24 @@ def load_reranker_config(provider_key: str) -> Any:
             batch_size=provider_config.get("batch_size", 16),
         )
     elif provider_type == "infinity":
+        reranker_type = registry.get_model(model_slug).get("reranker_type", "cross_encoder")
+        model_instruction = registry.get_default_instruction(model_slug)
         return ServerRerankerConfig(
             type="server",
-            endpoint=f"http://localhost:7998",  # Default, should come from settings
-            default_instruction=provider_config.get("default_instruction"),
+            provider="infinity",
+            endpoint="http://localhost:7998/v1/rerank",  # Default, should come from settings
+            reranker_type=reranker_type,
+            default_instruction=model_instruction,
+        )
+    elif provider_type == "mosec":
+        reranker_type = registry.get_model(model_slug).get("reranker_type", "cross_encoder")
+        model_instruction = registry.get_default_instruction(model_slug)
+        return ServerRerankerConfig(
+            type="server",
+            provider="mosec",
+            endpoint="http://localhost:7998/v1/rerank",  # Default, should come from settings
+            reranker_type=reranker_type,
+            default_instruction=model_instruction,
         )
     else:
         raise ValueError(f"Unknown provider type: {provider_type}")

@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import os
-import sqlite3
+import asyncio
 import sys
 from pathlib import Path
 
@@ -18,22 +17,64 @@ if str(_project_root) not in sys.path:
 from rag_engine.config.settings import settings
 from rag_engine.storage.vector_store import ChromaStore
 
+# ── Async HTTP client helpers ────────────────────────────────────────────────
 
-def get_all_metadata_paginated(store: ChromaStore, limit_per_batch: int = 1000) -> list[dict]:
-    """Get all document metadatas with pagination (utility for maintenance scripts).
 
-    Args:
-        store: ChromaStore instance
-        limit_per_batch: Number of documents to fetch per batch (default: 1000)
+async def get_async_client():
+    """Create an async HTTP client connected to the running ChromaDB server."""
+    import chromadb
 
-    Returns:
-        List of all metadata dictionaries
-    """
+    return await chromadb.AsyncHttpClient(
+        host=settings.chroma_client_host,
+        port=settings.chromadb_port,
+        ssl=settings.chromadb_ssl,
+    )
+
+
+async def list_collections_async() -> list[dict]:
+    """List all collections via the HTTP API with their dimensions and chunk counts."""
+    client = await get_async_client()
+    collections = await client.list_collections()
+
+    result = []
+    for col in collections:
+        col_name = getattr(col, "name", None) or str(col)
+        col_id = getattr(col, "id", None)
+        col_metadata = getattr(col, "metadata", {})
+
+        try:
+            coll = await client.get_collection(name=col_name)
+            count = await coll.count()
+        except Exception:  # noqa: BLE001
+            count = 0
+
+        result.append(
+            {
+                "name": col_name,
+                "id": col_id or "unknown",
+                "metadata": col_metadata,
+                "chunks": count,
+            }
+        )
+
+    return result
+
+
+async def delete_collection_async(collection_name: str) -> bool:
+    """Delete a collection by name via the HTTP API. Returns True on success."""
+    client = await get_async_client()
+    await client.delete_collection(name=collection_name)
+    return True
+
+
+async def get_all_metadata_paginated(store: ChromaStore, limit_per_batch: int = 1000) -> list[dict]:
+    """Get all document metadatas with pagination (utility for maintenance scripts)."""
     all_metadata = []
     offset = 0
+    collection = await store.get_collection()
 
     while True:
-        res = store.collection.get(limit=limit_per_batch, offset=offset, include=["metadatas"])
+        res = await collection.get(limit=limit_per_batch, offset=offset, include=["metadatas"])
         batch_metas = res.get("metadatas", [])
         if not batch_metas:
             break
@@ -45,6 +86,9 @@ def get_all_metadata_paginated(store: ChromaStore, limit_per_batch: int = 1000) 
     return all_metadata
 
 
+# ── PersistentClient helpers (local SQLite diagnostics) ──────────────────────
+
+
 def get_db_info(persist_dir: str) -> dict:
     """Get database information from SQLite metadata and ChromaDB API."""
     sqlite_path = Path(persist_dir) / "chroma.sqlite3"
@@ -53,7 +97,6 @@ def get_db_info(persist_dir: str) -> dict:
 
     info = {}
     try:
-        # Use ChromaDB API to get collection info (more reliable than direct SQLite)
         import chromadb
 
         client = chromadb.PersistentClient(path=persist_dir)
@@ -65,7 +108,6 @@ def get_db_info(persist_dir: str) -> dict:
             col_id = getattr(col, "id", None)
             col_metadata = getattr(col, "metadata", {})
 
-            # Get actual collection to count items
             try:
                 collection = client.get_collection(name=col_name)
                 count = collection.count()
@@ -81,13 +123,11 @@ def get_db_info(persist_dir: str) -> dict:
                 }
             )
 
-        # Check for WAL files
         wal_path = sqlite_path.with_suffix(".sqlite3-wal")
         info["wal_exists"] = wal_path.exists()
         if info["wal_exists"]:
             info["wal_size"] = wal_path.stat().st_size
 
-        # Database file size
         info["sqlite_size"] = sqlite_path.stat().st_size
     except Exception as e:  # noqa: BLE001
         info["error"] = str(e)
@@ -102,7 +142,6 @@ def list_vector_dirs(persist_dir: str) -> list[dict]:
 
     for item in persist_path.iterdir():
         if item.is_dir() and len(item.name) == 36 and item.name.count("-") == 4:
-            # Looks like a UUID
             data_file = item / "data_level0.bin"
             if data_file.exists():
                 vector_dirs.append(
@@ -118,7 +157,7 @@ def list_vector_dirs(persist_dir: str) -> list[dict]:
     return vector_dirs
 
 
-def check_consistency(persist_dir: str, collection_name: str | None = None) -> dict:
+def check_consistency(persist_dir: str) -> dict:
     """Check consistency between ChromaDB collections and vector data directories."""
     db_info = get_db_info(persist_dir)
     vector_dirs = list_vector_dirs(persist_dir)
@@ -133,7 +172,6 @@ def check_consistency(persist_dir: str, collection_name: str | None = None) -> d
         result["issues"].append(f"Failed to read collections: {db_info['error']}")
         return result
 
-    # Match collections with vector directories
     for col in db_info.get("collections", []):
         col_uuid = col.get("id", "")
         matching_vector = next((v for v in vector_dirs if v["uuid"] == col_uuid), None)
@@ -154,7 +192,6 @@ def check_consistency(persist_dir: str, collection_name: str | None = None) -> d
 
         result["metadata_collections"].append(col_info)
 
-    # Check for orphaned vector directories
     metadata_uuids = {col.get("id") for col in db_info.get("collections", [])}
     for vec_dir in vector_dirs:
         if vec_dir["uuid"] not in metadata_uuids:
@@ -165,19 +202,22 @@ def check_consistency(persist_dir: str, collection_name: str | None = None) -> d
     return result
 
 
-def diagnose(persist_dir: str, collection_name: str | None = None) -> None:
+# ── Actions ──────────────────────────────────────────────────────────────────
+
+
+async def diagnose(persist_dir: str, collection_name: str | None = None) -> None:
     """Run comprehensive diagnostics."""
     print("=" * 80)
     print("ChromaDB Diagnostics")
     print("=" * 80)
     print(f"Persist directory: {persist_dir}\n")
 
-    # Database info
+    # Database info (PersistentClient)
     print("ChromaDB Collections:")
     print("-" * 80)
     db_info = get_db_info(persist_dir)
     if "error" in db_info:
-        print(f"❌ Error: {db_info['error']}")
+        print(f"Error: {db_info['error']}")
     else:
         sqlite_path = Path(persist_dir) / "chroma.sqlite3"
         if sqlite_path.exists():
@@ -186,14 +226,14 @@ def diagnose(persist_dir: str, collection_name: str | None = None) -> None:
             print(f"WAL exists: {db_info.get('wal_exists', False)}")
             if db_info.get("wal_exists"):
                 print(f"WAL size: {db_info.get('wal_size', 0) / 1024:.2f} KB")
-                print("⚠️  WARNING: WAL file exists - uncommitted transactions may be present")
+                print("WARNING: WAL file exists - uncommitted transactions may be present")
 
         print(f"\nCollections: {len(db_info.get('collections', []))}")
         for col in db_info.get("collections", []):
             print(f"  - {col.get('name')} (UUID: {col.get('id')})")
             print(f"    Chunks: {col.get('embedding_count', 0)}")
             if collection_name and col.get("name") == collection_name:
-                print(f"    ⭐ Target collection")
+                print("    * Target collection")
 
     # Vector directories
     print("\n" + "=" * 80)
@@ -213,47 +253,43 @@ def diagnose(persist_dir: str, collection_name: str | None = None) -> None:
     print("\n" + "=" * 80)
     print("Consistency Check:")
     print("-" * 80)
-    consistency = check_consistency(persist_dir, collection_name)
+    consistency = check_consistency(persist_dir)
     if not consistency["issues"]:
-        print("✅ All collections have matching vector data")
-        print("✅ No orphaned vector directories found")
+        print("All collections have matching vector data")
+        print("No orphaned vector directories found")
     else:
-        print("⚠️  Issues found:")
+        print("Issues found:")
         for issue in consistency["issues"]:
             print(f"  - {issue}")
 
-        # If UUID mismatch but data is accessible, it might be okay
         if consistency["issues"] and db_info.get("collections"):
-            print("\n📝 Note: UUID mismatch detected, but if ChromaDB can query data")
+            print("\nNote: UUID mismatch detected, but if ChromaDB can query data")
             print("   (verified by matching chunk counts), this may be benign.")
-            print("   The old directory might be from a previous collection version.")
-            print("   ChromaDB may handle this internally via SQLite metadata mappings.")
 
-    # Count actual chunks and articles in ChromaDB
+    # Collection statistics (async HTTP API)
     print("\n" + "=" * 80)
     print("ChromaDB Collection Statistics:")
     print("-" * 80)
     try:
         store = ChromaStore(collection_name=collection_name or settings.chromadb_collection)
-        # Use ChromaDB's built-in count() method (most efficient)
-        api_count = store.collection.count()
+        collection = await store.get_collection()
+        api_count = await collection.count()
         print(f"Total chunks: {api_count}")
 
-        # Optionally count unique articles (requires loading all metadata - can be slow)
         try:
-            all_metadata = get_all_metadata_paginated(store)
+            all_metadata = await get_all_metadata_paginated(store)
             unique_doc_ids = {
                 meta.get("doc_stable_id") for meta in all_metadata if meta.get("doc_stable_id")
             }
             print(f"Unique articles (by doc_stable_id): {len(unique_doc_ids)}")
             if len(all_metadata) != api_count:
                 print(
-                    f"⚠️  Note: Metadata pagination count ({len(all_metadata)}) != API count ({api_count})"
+                    f"  Note: Metadata pagination count ({len(all_metadata)}) != API count ({api_count})"
                 )
         except Exception as e:  # noqa: BLE001
-            print(f"⚠️  Could not count unique articles (may be slow for large collections): {e}")
+            print(f"  Could not count unique articles: {e}")
     except Exception as e:  # noqa: BLE001
-        print(f"⚠️  Could not get collection statistics: {e}")
+        print(f"  Could not get collection statistics: {e}")
 
     # Summary
     print("\n" + "=" * 80)
@@ -264,7 +300,34 @@ def diagnose(persist_dir: str, collection_name: str | None = None) -> None:
     print(f"Issues: {len(consistency['issues'])}")
 
     if db_info.get("wal_exists"):
-        print("\n💡 Recommendation: Run with --commit-wal to commit pending transactions")
+        print("\nRecommendation: Run with --action commit-wal to commit pending transactions")
+
+
+async def list_collections() -> None:
+    """List all collections with dimensions and chunk counts."""
+    print("Collections:")
+    print("-" * 60)
+    try:
+        collections = await list_collections_async()
+        if not collections:
+            print("  (none)")
+            return
+        for col in collections:
+            print(f"  {col['name']}")
+            print(f"    ID: {col['id']}")
+            print(f"    Chunks: {col['chunks']}")
+    except Exception as e:  # noqa: BLE001
+        print(f"Error listing collections: {e}")
+
+
+async def delete_collection(collection_name: str) -> None:
+    """Delete a collection by name."""
+    try:
+        await delete_collection_async(collection_name)
+        print(f"Deleted collection: {collection_name}")
+    except Exception as e:  # noqa: BLE001
+        print(f"Error deleting collection '{collection_name}': {e}")
+        sys.exit(1)
 
 
 def commit_wal(persist_dir: str) -> None:
@@ -281,60 +344,68 @@ def commit_wal(persist_dir: str) -> None:
 
         print(f"Found {len(collections)} collection(s)")
 
-        # Force a commit by accessing each collection
         for col in collections:
             name = getattr(col, "name", None) or str(col)
             collection = client.get_collection(name=name)
-            # Access collection to trigger any pending operations
             count = collection.count()
             print(f"  - {name}: {count} items")
 
-        # Close client to ensure all operations are flushed
         del client
 
-        # Check if WAL still exists
         sqlite_path = Path(persist_dir) / "chroma.sqlite3"
         wal_path = sqlite_path.with_suffix(".sqlite3-wal")
         if wal_path.exists():
-            print(f"\n⚠️  WAL file still exists: {wal_path}")
+            print(f"\nWAL file still exists: {wal_path}")
             print("This is normal if ChromaDB is actively being used.")
             print("The WAL will be committed when the database is closed.")
         else:
-            print("\n✅ WAL committed successfully")
+            print("\nWAL committed successfully")
 
     except Exception as e:  # noqa: BLE001
-        print(f"❌ Error committing WAL: {e}")
+        print(f"Error committing WAL: {e}")
+
+
+# ── Entry point ──────────────────────────────────────────────────────────────
 
 
 def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="ChromaDB maintenance and diagnostics")
     parser.add_argument(
-        "--action",
-        choices=["diagnose", "commit-wal"],
+        "action",
+        choices=["diagnose", "list-collections", "delete-collection", "commit-wal"],
         default="diagnose",
+        nargs="?",
         help="Action to perform (default: diagnose)",
     )
     parser.add_argument(
-        "--collection",
+        "collection",
         type=str,
+        nargs="?",
         default=None,
-        help="Collection name to focus on (optional)",
+        help="Collection name (required for delete-collection, optional for diagnose)",
     )
     parser.add_argument(
         "--persist-dir",
         type=str,
         default=None,
-        help="ChromaDB persist directory (default: from settings)",
+        help="ChromaDB persist directory for local diagnostics (default: from settings)",
     )
     args = parser.parse_args()
 
     load_dotenv()
 
+    if args.action == "delete-collection" and not args.collection:
+        parser.error("collection name is required for delete-collection")
+
     persist_dir = args.persist_dir or settings.chromadb_persist_dir
 
     if args.action == "diagnose":
-        diagnose(persist_dir, args.collection)
+        asyncio.run(diagnose(persist_dir, args.collection))
+    elif args.action == "list-collections":
+        asyncio.run(list_collections())
+    elif args.action == "delete-collection":
+        asyncio.run(delete_collection(args.collection))
     elif args.action == "commit-wal":
         commit_wal(persist_dir)
 

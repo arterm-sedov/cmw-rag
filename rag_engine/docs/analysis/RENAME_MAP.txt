@@ -1,0 +1,22 @@
+# File renaming map for analysis files
+# Format: OLD_NAME -> NEW_NAME
+
+benchmark_state_20260321_142256.json -> 20260321-benchmark-state.json
+embed_rerank_investigation_20260321_191906.json -> 20260321-embedding-reranker-investigation.json
+qwen3-reranker-instruction-optimization-report_20260321.md -> 20260321-qwen3-reranker-instruction-optimization-report.md
+reranker_benchmark_final_20260321_160241.md -> 20260321-reranker-benchmark-final.md
+reranker_benchmark_results_20260321_142256.json -> 20260321-reranker-benchmark-results.json
+reranker_benchmark_semantic_20260321_144351.json -> 20260321-reranker-benchmark-semantic-initial.json
+reranker_benchmark_semantic_20260321_202349.json -> 20260321-reranker-benchmark-semantic-final.json
+reranker_dataset_20260321_150753.json -> 20260321-reranker-dataset-initial.json
+reranker_dataset_20260321_150753_complete.json -> 20260321-reranker-dataset-complete.json
+reranker_dataset_extended_20260321_202715.json -> 20260321-reranker-dataset-extended.json
+reranker_extended_results_20260321_190713.json -> 20260321-reranker-extended-results.json
+reranker_fast_results_20260321_152649.json -> 20260321-reranker-fast-results-initial.json
+reranker_fast_results_20260321_152900.json -> 20260321-reranker-fast-results-intermediate.json
+reranker_fast_results_20260321_153921.json -> 20260321-reranker-fast-results-final.json
+reranker_hybrid_state_20260321_145737.json -> 20260321-reranker-hybrid-state.json
+reranker_instruction_analysis_20260321.md -> 20260321-reranker-instruction-analysis.md
+reranker_instruction_benchmark_20260321_135248.json -> 20260321-reranker-instruction-benchmark-initial.json
+reranker_instruction_benchmark_20260321_135726.json -> 20260321-reranker-instruction-benchmark-final.json
+reranker_research_state_20260321_144833.json -> 20260321-reranker-research-state.json
