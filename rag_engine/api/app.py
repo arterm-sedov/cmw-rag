@@ -34,7 +34,7 @@ from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
 from rag_engine.tools import retrieve_context
 from rag_engine.tools.retrieve_context import set_app_retriever
-from rag_engine.tracing import init_phoenix, set_span_attribute, start_span
+from rag_engine.tracing import init_phoenix, record_exception_safe, set_span_attribute, start_span
 from rag_engine.utils.context_tracker import (
     AgentContext,
     compute_context_tokens,
@@ -368,6 +368,7 @@ except Exception as e:
         settings.chromadb_port,
         str(e),
     )
+    record_exception_safe(e, "ChromaDB connection error")
     raise RuntimeError(
         f"Cannot connect to ChromaDB server at {settings.chroma_client_host}:{settings.chromadb_port}. "
         "Ensure 'chroma run' is started or Docker container is running."
@@ -2930,6 +2931,7 @@ async def agent_chat_handler(
 
     except Exception as e:
         logger.error("Error in agent_chat_handler: %s", e, exc_info=True)
+        record_exception_safe(e, "agent_chat_handler exception")
         # Variables are initialized at function start, so they should always exist
         # Handle context-length overflow gracefully by switching to a larger model (once)
         err_text = str(e).lower()
@@ -3255,6 +3257,7 @@ try:
     logger.info(f"Gradio static allowed paths: {os.environ['GRADIO_ALLOWED_PATHS']}")
 except Exception as e:
     logger.warning(f"Could not set GRADIO_ALLOWED_PATHS: {e}")
+    record_exception_safe(e, "Gradio allowed paths error")
 
 
 # Wrapper function to expose retrieve_context tool as API endpoint
@@ -3414,6 +3417,7 @@ async def ask_comindware(message: str) -> str:
         return f"Error processing response: {str(e)}. Please try again."
     except Exception as e:
         logger.error("Error in ask_comindware: %s", e, exc_info=True)
+        record_exception_safe(e, "ask_comindware error")
         import traceback
 
         error_details = traceback.format_exc()
