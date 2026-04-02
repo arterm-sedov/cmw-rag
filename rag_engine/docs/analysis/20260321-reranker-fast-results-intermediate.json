@@ -1,0 +1,208 @@
+{
+  "results": {
+    "metadata": {
+      "timestamp": "20260321_152900",
+      "questions": 52,
+      "instructions": 13
+    },
+    "semantic": {
+      "baseline_default": {
+        "instruction": "Given a web search query, retrieve relevant passages that answer the query",
+        "avg_score": 0.5407067392386642,
+        "count": 255,
+        "by_lang": {
+          "en": 0.7194545200892857,
+          "ru": 0.5141442549856086,
+          "mixed": 0.500396728515625
+        },
+        "by_type": {
+          "keyword": 0.44698056821469906,
+          "natural": 0.646148681640625
+        }
+      },
+      "en_context_ru_docs": {
+        "instruction": "Find relevant documentation. Documents are primarily in Russian with code snippets in English",
+        "avg_score": 0.36802469889322914,
+        "count": 255,
+        "by_lang": {
+          "en": 0.5331891741071428,
+          "ru": 0.3331362272563734,
+          "mixed": 0.3962931315104167
+        },
+        "by_type": {
+          "keyword": 0.30094333224826386,
+          "natural": 0.4434912363688151
+        }
+      },
+      "en_context_mixed": {
+        "instruction": "Retrieve technical documentation (Russian text, English code examples) that answers the query",
+        "avg_score": 0.38157794658954325,
+        "count": 260,
+        "by_lang": {
+          "en": 0.5039154052734375,
+          "ru": 0.3519642076994243,
+          "mixed": 0.4060150146484375
+        },
+        "by_type": {
+          "keyword": 0.3232421875,
+          "natural": 0.4496363321940104
+        }
+      },
+      "en_context_platform": {
+        "instruction": "Find Comindware Platform documentation in Russian/English with configuration examples and code",
+        "avg_score": 0.42758125892052284,
+        "count": 260,
+        "by_lang": {
+          "en": 0.57645263671875,
+          "ru": 0.39905933580900493,
+          "mixed": 0.40972493489583334
+        },
+        "by_type": {
+          "keyword": 0.3582178388323103,
+          "natural": 0.5085052490234375
+        }
+      },
+      "en_platform": {
+        "instruction": "Find documentation about Comindware Platform features, configurations, and APIs",
+        "avg_score": 0.45969379131610577,
+        "count": 260,
+        "by_lang": {
+          "en": 0.600408935546875,
+          "ru": 0.4293784693667763,
+          "mixed": 0.4640706380208333
+        },
+        "by_type": {
+          "keyword": 0.38472202845982145,
+          "natural": 0.5471608479817708
+        }
+      },
+      "en_integration": {
+        "instruction": "Find integration guides, API documentation, and configuration examples",
+        "avg_score": 0.4189385047325721,
+        "count": 260,
+        "by_lang": {
+          "en": 0.5090850830078125,
+          "ru": 0.3952138800370066,
+          "mixed": 0.4489990234375
+        },
+        "by_type": {
+          "keyword": 0.3498770577566964,
+          "natural": 0.49951019287109377
+        }
+      },
+      "en_concise": {
+        "instruction": "Find relevant technical documentation",
+        "avg_score": 0.5046990027794471,
+        "count": 260,
+        "by_lang": {
+          "en": 0.64656982421875,
+          "ru": 0.4750022486636513,
+          "mixed": 0.5036173502604167
+        },
+        "by_type": {
+          "keyword": 0.4375878470284598,
+          "natural": 0.582995351155599
+        }
+      },
+      "ru_platform": {
+        "instruction": "Найдите документацию по платформе Comindware: руководства, примеры кода, конфигурации",
+        "avg_score": 0.4567982600285457,
+        "count": 260,
+        "by_lang": {
+          "en": 0.61822509765625,
+          "ru": 0.43143422980057566,
+          "mixed": 0.4022013346354167
+        },
+        "by_type": {
+          "keyword": 0.3882016863141741,
+          "natural": 0.5368275960286458
+        }
+      },
+      "ru_integration": {
+        "instruction": "Найдите руководства по интеграции, документацию API и примеры конфигураций",
+        "avg_score": 0.4818157489483173,
+        "count": 260,
+        "by_lang": {
+          "en": 0.55909423828125,
+          "ru": 0.46215627569901313,
+          "mixed": 0.5032877604166667
+        },
+        "by_type": {
+          "keyword": 0.3911690848214286,
+          "natural": 0.5875701904296875
+        }
+      },
+      "ru_concise": {
+        "instruction": "Найдите релевантную техническую документацию",
+        "avg_score": 0.553271249624399,
+        "count": 260,
+        "by_lang": {
+          "en": 0.6755859375,
+          "ru": 0.5309779116981908,
+          "mixed": 0.5313761393229167
+        },
+        "by_type": {
+          "keyword": 0.48900626046316964,
+          "natural": 0.6282470703125
+        }
+      },
+      "bilingual_platform": {
+        "instruction": "Find Comindware Platform documentation. Найдите документацию по платформе Comindware",
+        "avg_score": 0.42108060396634617,
+        "count": 260,
+        "by_lang": {
+          "en": 0.576318359375,
+          "ru": 0.3881142064144737,
+          "mixed": 0.42288411458333336
+        },
+        "by_type": {
+          "keyword": 0.362841796875,
+          "natural": 0.48902587890625
+        }
+      },
+      "bilingual_integration": {
+        "instruction": "Find integration guides. Найдите руководства по интеграции",
+        "avg_score": 0.469437496478741,
+        "count": 260,
+        "by_lang": {
+          "en": 0.571478271484375,
+          "ru": 0.44241385208932976,
+          "mixed": 0.5045328776041667
+        },
+        "by_type": {
+          "keyword": 0.38251805986676896,
+          "natural": 0.570843505859375
+        }
+      },
+      "bilingual_context": {
+        "instruction": "Retrieve technical documentation (Russian/English). Получите техническую документацию (русский/английский)",
+        "avg_score": 0.4202726510854868,
+        "count": 260,
+        "by_lang": {
+          "en": 0.5108642578125,
+          "ru": 0.3982570447419819,
+          "mixed": 0.438916015625
+        },
+        "by_type": {
+          "keyword": 0.37430692400251114,
+          "natural": 0.4738993326822917
+        }
+      }
+    }
+  },
+  "processed": [
+    "semantic_ru_platform",
+    "semantic_en_context_mixed",
+    "semantic_en_context_ru_docs",
+    "semantic_baseline_default",
+    "semantic_bilingual_platform",
+    "semantic_en_concise",
+    "semantic_bilingual_integration",
+    "semantic_en_integration",
+    "semantic_bilingual_context",
+    "semantic_ru_concise",
+    "semantic_en_platform",
+    "semantic_en_context_platform",
+    "semantic_ru_integration"
+  ]
+}

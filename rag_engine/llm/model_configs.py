@@ -111,6 +111,12 @@ MODEL_CONFIGS: dict[str, dict] = {
         "temperature": 0,
         "supports_forced_tool_choice": False,  # OpenRouter Qwen 3.5 models don't honor explicit tool_choice
     },
+    "qwen/qwen3.5-9b": {
+        "token_limit": 256_000,  # 256,000 context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+        "supports_forced_tool_choice": False,  # OpenRouter Qwen 3.5 models don't honor explicit tool_choice
+    },
     # Additional Qwen Models
     "qwen/qwen3-235b-a22b": {
         # Native window ~40,960; some routes may extend via scaling

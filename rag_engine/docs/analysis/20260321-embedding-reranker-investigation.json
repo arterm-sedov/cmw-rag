@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "timestamp": "20260321_191906",
+    "questions": 52,
+    "embedding_variants": 5,
+    "reranker_variants": 5
+  },
+  "combinations": {
+    "current_default": {
+      "embedding": "none",
+      "reranker": "baseline_default",
+      "avg_score": 0.5313113872821514,
+      "count": 260,
+      "by_lang": {
+        "en": 0.636041259765625,
+        "ru": 0.5141442549856086,
+        "mixed": 0.500396728515625
+      }
+    },
+    "both_baseline": {
+      "embedding": "baseline",
+      "reranker": "baseline_default",
+      "avg_score": 0.8413808419154241,
+      "count": 260,
+      "by_lang": {
+        "en": 0.9027069091796875,
+        "ru": 0.8374441899751363,
+        "mixed": 0.7845448811848958
+      }
+    }
+  }
+}

@@ -217,8 +217,8 @@ class RetrieveContextSchema(BaseModel):
             if isinstance(v, str):
                 try:
                     v = int(v)
-                except ValueError:
-                    raise ValueError("top_k must be a valid integer")
+                except ValueError as exc:
+                    raise ValueError("top_k must be a valid integer") from exc
             if v <= 0:
                 raise ValueError("top_k must be a positive integer")
         return v
@@ -273,8 +273,7 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
     return json.dumps(result, ensure_ascii=False, separators=(",", ":"))
 
 
-@tool("retrieve_context", args_schema=RetrieveContextSchema, description=RetrieveContextSchema.__doc__)
-async def retrieve_context(
+async def _retrieve_context_core(
     query: str,
     top_k: int | None = None,
     exclude_kb_ids: list[str] | None = None,
@@ -326,3 +325,18 @@ async def retrieve_context(
             },
             ensure_ascii=False,
         )
+
+
+@tool("retrieve_context", args_schema=RetrieveContextSchema, description=RetrieveContextSchema.__doc__)
+async def retrieve_context(
+    query: str,
+    top_k: int | None = None,
+    exclude_kb_ids: list[str] | None = None,
+    runtime: ToolRuntime[AgentContext, None] | None = None,
+) -> str:
+    return await _retrieve_context_core(
+        query=query,
+        top_k=top_k,
+        exclude_kb_ids=exclude_kb_ids,
+        runtime=runtime,
+    )

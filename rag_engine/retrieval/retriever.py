@@ -49,9 +49,9 @@ class RAGRetriever:
         self.top_k_rerank = top_k_rerank
         self.reranker = create_reranker(settings) if rerank_enabled else None
         self.metadata_boost_weights = metadata_boost_weights or {
-            "tag_match": 1.2,
-            "code_presence": 1.15,
-            "section_match": 1.1,
+            "tag_match": 0.0,
+            "code_presence": 0.0,
+            "section_match": 0.0,
         }
         self._encoding = tiktoken.get_encoding("cl100k_base")
         logger.info(

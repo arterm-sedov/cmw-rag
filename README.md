@@ -446,6 +446,26 @@ RERANK_SCORE_THRESHOLD=0.5                  # Minimum rerank score (articles bel
 
 - `RERANK_SCORE_THRESHOLD`: Articles with rerank score below this threshold are excluded before loading from disk. Set to `0.0` to disable filtering (default).
 
+**Supported Reranker Types:**
+
+| Type | Models | Formatting |
+|------|--------|------------|
+| `cross_encoder` | DiTy, BGE-m3 | None (raw query/documents) |
+| `llm_reranker` | Qwen3-Reranker | ChatML prefix/suffix (see `models.yaml`) |
+
+**Endpoint:** Uses `/v1/score` (vLLM format). The RAG engine has documents locally and applies metadata boosts client-side, so the lightweight score endpoint is sufficient.
+
+**API Format:**
+```json
+// Request: {query, documents}
+// Response: {data: [{index, score}, ...]}
+```
+
+**Configuration:**
+```bash
+MOSEC_RERANKER_ENDPOINT=http://localhost:7998/v1/score
+```
+
 #### LLM Context Budgeting
 
 The engine uses summarization-first budgeting guided by the user question:

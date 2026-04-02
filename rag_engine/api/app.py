@@ -32,8 +32,7 @@ from rag_engine.llm.usage_accounting import accumulate_conversation_usage
 from rag_engine.retrieval.embedder import create_embedder
 from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
-from rag_engine.tools import retrieve_context
-from rag_engine.tools.retrieve_context import set_app_retriever
+from rag_engine.tools.retrieve_context import _retrieve_context_core, set_app_retriever
 from rag_engine.tracing import (
     init_phoenix,
     record_exception_safe,
@@ -374,7 +373,6 @@ except Exception as e:
         settings.chromadb_port,
         str(e),
     )
-    record_exception_safe(e, "ChromaDB connection error")
     raise RuntimeError(
         f"Cannot connect to ChromaDB server at {settings.chroma_client_host}:{settings.chromadb_port}. "
         "Ensure 'chroma run' is started or Docker container is running."
@@ -392,6 +390,11 @@ retriever = RAGRetriever(
     top_k_retrieve=settings.top_k_retrieve,
     top_k_rerank=settings.top_k_rerank,
     rerank_enabled=settings.rerank_enabled,
+    metadata_boost_weights={
+        "tag_match": settings.rerank_boost_tag,
+        "code_presence": settings.rerank_boost_code,
+        "section_match": settings.rerank_boost_section,
+    },
 )
 # Use same retriever in retrieve_context tool so FRIDA/direct embedder is never
 # loaded in a worker thread (avoids crash when agent first calls the tool).
@@ -928,15 +931,16 @@ def _parse_think_tags(
 
 # ── Per-turn reasoning state ────────────────────────────────────────────────────
 
+
 @dataclasses.dataclass
 class _ReasoningCtx:
     """Mutable per-turn state for streaming reasoning extraction and routing."""
 
-    buffer: str = ""            # accumulated reasoning text
-    in_block: bool = False      # currently inside a <think> block
-    inter_tool_text: str = ""   # text added to `answer` since last tool boundary
+    buffer: str = ""  # accumulated reasoning text
+    in_block: bool = False  # currently inside a <think> block
+    inter_tool_text: str = ""  # text added to `answer` since last tool boundary
     bubble_id: str | None = None
-    bubble_text: str = ""       # last content shown in the reasoning bubble
+    bubble_text: str = ""  # last content shown in the reasoning bubble
 
 
 def _has_generating_spinner(gradio_history: list, generating_answer_id: str) -> bool:
@@ -989,12 +993,7 @@ def _process_reasoning_chunk(
             else:
                 ctx.buffer = old_buffer
         # Orphan </think> between tool calls → reclassify inter-tool chat text as reasoning.
-        if (
-            saw_orphan
-            and not harmony_strip_only
-            and has_seen_tool_results
-            and ctx.inter_tool_text
-        ):
+        if saw_orphan and not harmony_strip_only and has_seen_tool_results and ctx.inter_tool_text:
             sep = "\n" if ctx.buffer else ""
             ctx.buffer += sep + ctx.inter_tool_text
             answer = answer[: len(answer) - len(ctx.inter_tool_text)]
@@ -1016,7 +1015,7 @@ def _process_reasoning_chunk(
             if changed:
                 yield list(gradio_history)
         if not text or saw_orphan:
-            return text, True   # orphan context / empty chunk — caller must continue
+            return text, True  # orphan context / empty chunk — caller must continue
 
     # Remaining text is user-facing answer (from Harmony assistantfinal or outside <think>).
     # Stream it to chat; do not route to reasoning bubble (fixes no-tool turns eating the answer).
@@ -1044,7 +1043,13 @@ async def _apply_reasoning_chunk(
     text has already been routed (caller must ``continue``).
     """
     gen = _process_reasoning_chunk(
-        text, ctx, answer, has_seen_tool_results, reasoning_enabled, harmony_parser, gradio_history,
+        text,
+        ctx,
+        answer,
+        has_seen_tool_results,
+        reasoning_enabled,
+        harmony_parser,
+        gradio_history,
         harmony_strip_only=harmony_strip_only,
     )
     frames: list[list] = []
@@ -1344,6 +1349,12 @@ async def agent_chat_handler(
     base_session_id = getattr(request, "session_hash", None) if request is not None else None
     session_id = salt_session_id(base_session_id, history, message)
 
+    # Set session_id for Phoenix tracing
+    span_context = start_span("agent_chat", session_id=session_id)
+    with span_context:
+        set_span_attribute(SpanAttributes.SESSION_ID, session_id)
+        set_span_attribute(SpanAttributes.INPUT_VALUE, message[:500])
+
     # Wrap user message in template only for the first question in the conversation
     # Note: dynamic_context will be built after moderation check below
     from rag_engine.llm.prompts import (
@@ -1574,12 +1585,8 @@ async def agent_chat_handler(
             sgr_model = selected_model or settings.default_model
             sgr_cfg = MODEL_CONFIGS.get(sgr_model, {})
             sgr_supports_forced = sgr_cfg.get("supports_forced_tool_choice", True)
-            sgr_tool_choice = (
-                "analyse_user_request" if sgr_supports_forced else "auto"
-            )
-            sgr_llm_forced = sgr_llm.bind_tools(
-                [analyse_user_request], tool_choice=sgr_tool_choice
-            )
+            sgr_tool_choice = "analyse_user_request" if sgr_supports_forced else "auto"
+            sgr_llm_forced = sgr_llm.bind_tools([analyse_user_request], tool_choice=sgr_tool_choice)
             response = await sgr_llm_forced.ainvoke(messages)
             logger.info("SGR LLM returned: %s", type(response))
 
@@ -1785,16 +1792,12 @@ async def agent_chat_handler(
         # Increase recursion limit for complex conversations to avoid GRAPH_RECURSION_LIMIT errors
         agent_config = {"recursion_limit": settings.langchain_recursion_limit}
 
-        # Set session_id for Phoenix tracing
-        session_id = salt_session_id(base_session_id, history, message)
-        span_context = start_span("agent_chat", session_id=session_id)
-        with span_context:
-            set_span_attribute(SpanAttributes.SESSION_ID, session_id)
-            set_span_attribute(SpanAttributes.INPUT_VALUE, message[:500])  # Limit input length
-
         try:
             async for stream_mode, chunk in agent.astream(
-                {"messages": messages}, context=agent_context, config=agent_config, stream_mode=["updates", "messages"]
+                {"messages": messages},
+                context=agent_context,
+                config=agent_config,
+                stream_mode=["updates", "messages"],
             ):
                 # Check for cancellation at each iteration
                 if is_cancelled():
@@ -1895,7 +1898,9 @@ async def agent_chat_handler(
                         logger.debug("Tool result received, %d total results", len(tool_results))
                         tool_executing = False
                         has_seen_tool_results = True
-                        rctx.inter_tool_text = ""  # new inter-tool phase; reset reclassification window
+                        rctx.inter_tool_text = (
+                            ""  # new inter-tool phase; reset reclassification window
+                        )
 
                         # Flush any middleware-enqueued UI messages BEFORE we mutate bubbles to completed.
                         # This guarantees the user sees pending -> complete as two yields,
@@ -2183,7 +2188,9 @@ async def agent_chat_handler(
 
                         if not tool_executing:
                             tool_executing = True
-                            rctx.inter_tool_text = ""  # tool boundary; reset reclassification window
+                            rctx.inter_tool_text = (
+                                ""  # tool boundary; reset reclassification window
+                            )
                             # Remove generating_answer block when a new tool call is detected
                             # So the next generating_answer block can appear after this tool completes
                             if has_seen_tool_results:
@@ -2332,13 +2339,15 @@ async def agent_chat_handler(
                             elif block.get("type") == "reasoning" and reasoning_enabled:
                                 has_seen_content_blocks_reasoning = True
                                 reasoning_text = str(
-                                    block.get("reasoning")
-                                    or block.get("text")
-                                    or ""
+                                    block.get("reasoning") or block.get("text") or ""
                                 )
                                 # Strip Harmony channel label that may leak into reasoning blocks.
-                                if not rctx.buffer and reasoning_text.lstrip().startswith("analysis"):
-                                    reasoning_text = reasoning_text.lstrip().removeprefix("analysis")
+                                if not rctx.buffer and reasoning_text.lstrip().startswith(
+                                    "analysis"
+                                ):
+                                    reasoning_text = reasoning_text.lstrip().removeprefix(
+                                        "analysis"
+                                    )
                                 if reasoning_text:
                                     reasoning_delta, reasoning_stream_text = _extract_stream_delta(
                                         reasoning_text, reasoning_stream_text
@@ -2383,8 +2392,11 @@ async def agent_chat_handler(
                                     if strip_only and rctx.buffer.rstrip().endswith(_THINK_OPEN):
                                         rctx.in_block = True
                                     frames, text_chunk, should_skip = await _apply_reasoning_chunk(
-                                        text_chunk, rctx, answer,
-                                        has_seen_tool_results, reasoning_enabled,
+                                        text_chunk,
+                                        rctx,
+                                        answer,
+                                        has_seen_tool_results,
+                                        reasoning_enabled,
                                         harmony_parser,
                                         gradio_history,
                                         harmony_strip_only=strip_only,
@@ -2397,10 +2409,13 @@ async def agent_chat_handler(
                                     # First answer chunk: finalize bubble, disclaimer, spinners.
                                     if not answer:
                                         rctx.bubble_id = _finalize_reasoning_bubble(
-                                            gradio_history, rctx.bubble_id, rctx.buffer,
+                                            gradio_history,
+                                            rctx.bubble_id,
+                                            rctx.buffer,
                                         )
-                                        if not disclaimer_prepended and not _disclaimer_injected_in_history(
-                                            gradio_history
+                                        if (
+                                            not disclaimer_prepended
+                                            and not _disclaimer_injected_in_history(gradio_history)
                                         ):
                                             from rag_engine.api.stream_helpers import (
                                                 yield_disclaimer_display,
@@ -2410,8 +2425,12 @@ async def agent_chat_handler(
                                             disclaimer_prepended = True
                                             yield list(gradio_history)
                                         remove_message_by_id(gradio_history, thinking_id)
-                                        update_message_status_in_history(gradio_history, "search_started", "done")
-                                        update_message_status_in_history(gradio_history, "sgr_planning", "done")
+                                        update_message_status_in_history(
+                                            gradio_history, "search_started", "done"
+                                        )
+                                        update_message_status_in_history(
+                                            gradio_history, "sgr_planning", "done"
+                                        )
                                         if has_seen_tool_results and not _has_generating_spinner(
                                             gradio_history, generating_answer_id
                                         ):
@@ -2420,13 +2439,20 @@ async def agent_chat_handler(
                                             )
 
                                             gradio_history.append(
-                                                yield_generating_answer(block_id=generating_answer_id)
+                                                yield_generating_answer(
+                                                    block_id=generating_answer_id
+                                                )
                                             )
                                             yield list(gradio_history)
 
                                     prev_answer_len = len(answer)
-                                    answer, disclaimer_prepended = _process_text_chunk_for_streaming(
-                                        text_chunk, answer, disclaimer_prepended, has_seen_tool_results,
+                                    answer, disclaimer_prepended = (
+                                        _process_text_chunk_for_streaming(
+                                            text_chunk,
+                                            answer,
+                                            disclaimer_prepended,
+                                            has_seen_tool_results,
+                                        )
                                     )
                                     rctx.inter_tool_text += answer[prev_answer_len:]
                                     _update_or_append_assistant_message(gradio_history, answer)
@@ -2450,8 +2476,11 @@ async def agent_chat_handler(
                             if strip_only and rctx.buffer.rstrip().endswith(_THINK_OPEN):
                                 rctx.in_block = True
                             frames, token_content, should_skip = await _apply_reasoning_chunk(
-                                token_content, rctx, answer,
-                                has_seen_tool_results, reasoning_enabled,
+                                token_content,
+                                rctx,
+                                answer,
+                                has_seen_tool_results,
+                                reasoning_enabled,
                                 harmony_parser,
                                 gradio_history,
                                 harmony_strip_only=strip_only,
@@ -2466,7 +2495,9 @@ async def agent_chat_handler(
                                 if has_seen_tool_results:
                                     remove_message_by_id(gradio_history, generating_answer_id)
                                 rctx.bubble_id = _finalize_reasoning_bubble(
-                                    gradio_history, rctx.bubble_id, rctx.buffer,
+                                    gradio_history,
+                                    rctx.bubble_id,
+                                    rctx.buffer,
                                 )
                                 if not disclaimer_prepended and not _disclaimer_injected_in_history(
                                     gradio_history
@@ -2823,9 +2854,7 @@ async def agent_chat_handler(
                 srp_model = current_model or settings.default_model
                 srp_cfg = MODEL_CONFIGS.get(srp_model, {})
                 srp_supports_forced = srp_cfg.get("supports_forced_tool_choice", True)
-                srp_tool_choice = (
-                    "generate_resolution_plan" if srp_supports_forced else "auto"
-                )
+                srp_tool_choice = "generate_resolution_plan" if srp_supports_forced else "auto"
                 srp_llm_forced = srp_llm.bind_tools(
                     [generate_resolution_plan], tool_choice=srp_tool_choice
                 )
@@ -3037,7 +3066,9 @@ async def agent_chat_handler(
                             if hasattr(token, "type") and token.type == "tool":
                                 tool_results.append(token.content)
                                 has_seen_tool_results = True
-                                rctx.inter_tool_text = ""  # new inter-tool phase; reset reclassification window
+                                rctx.inter_tool_text = (
+                                    ""  # new inter-tool phase; reset reclassification window
+                                )
                                 # keep agent_context.accumulated_tool_tokens updated
                                 _, acc_tool_toks = estimate_accumulated_tokens([], tool_results)
                                 agent_context.accumulated_tool_tokens = acc_tool_toks
@@ -3294,7 +3325,6 @@ try:
     logger.info(f"Gradio static allowed paths: {os.environ['GRADIO_ALLOWED_PATHS']}")
 except Exception as e:
     logger.warning(f"Could not set GRADIO_ALLOWED_PATHS: {e}")
-    record_exception_safe(e, "Gradio allowed paths error")
 
 
 # Wrapper function to expose retrieve_context tool as API endpoint
@@ -3342,8 +3372,17 @@ def get_knowledge_base_articles(
         if converted_top_k <= 0:
             raise ValueError(f"top_k must be a positive integer, got: {converted_top_k}")
 
-    # Access the underlying function from the StructuredTool
-    return retrieve_context.func(query=query, top_k=converted_top_k, exclude_kb_ids=exclude_kb_ids)
+    # Delegate to the shared async core used by the LangChain tool
+    import asyncio
+
+    return asyncio.run(
+        _retrieve_context_core(
+            query=query,
+            top_k=converted_top_k,
+            exclude_kb_ids=exclude_kb_ids,
+            runtime=None,
+        )
+    )
 
 
 # MCP-compatible wrapper for agent_chat_handler
@@ -3454,7 +3493,6 @@ async def ask_comindware(message: str) -> str:
         return f"Error processing response: {str(e)}. Please try again."
     except Exception as e:
         logger.error("Error in ask_comindware: %s", e, exc_info=True)
-        record_exception_safe(e, "ask_comindware error")
         import traceback
 
         error_details = traceback.format_exc()
@@ -3526,8 +3564,8 @@ async def ask_comindware_structured(
     if context.final_articles:
         scores = []
         for article in context.final_articles:
-            metadata = article.get('metadata', {})
-            rerank_score = metadata.get('rerank_score')
+            metadata = article.get("metadata", {})
+            rerank_score = metadata.get("rerank_score")
             if rerank_score is not None:
                 scores.append(rerank_score)
         if scores:
@@ -3561,21 +3599,15 @@ async def ask_comindware_structured(
         if isinstance(usage_conversation_summary, dict):
             usage_conversation = UsageTotals(
                 prompt_tokens=int(usage_conversation_summary.get("prompt_tokens", 0) or 0),
-                completion_tokens=int(
-                    usage_conversation_summary.get("completion_tokens", 0) or 0
-                ),
+                completion_tokens=int(usage_conversation_summary.get("completion_tokens", 0) or 0),
                 total_tokens=int(usage_conversation_summary.get("total_tokens", 0) or 0),
-                reasoning_tokens=int(
-                    usage_conversation_summary.get("reasoning_tokens", 0) or 0
-                ),
+                reasoning_tokens=int(usage_conversation_summary.get("reasoning_tokens", 0) or 0),
                 cached_tokens=int(usage_conversation_summary.get("cached_tokens", 0) or 0),
                 cache_write_tokens=int(
                     usage_conversation_summary.get("cache_write_tokens", 0) or 0
                 ),
                 cost=float(usage_conversation_summary.get("cost", 0.0) or 0.0),
-                upstream_cost=float(
-                    usage_conversation_summary.get("upstream_cost", 0.0) or 0.0
-                ),
+                upstream_cost=float(usage_conversation_summary.get("upstream_cost", 0.0) or 0.0),
             )
         else:
             usage_conversation = usage_turn
@@ -3590,9 +3622,9 @@ async def ask_comindware_structured(
     # Augment diagnostics with usage_conversation and timing/model metadata for downstream mapping.
     diagnostics = dict(getattr(context, "diagnostics", {}) or {})
     last_turn_ms = getattr(context, "turn_time_ms", 0) or 0
-    total_conv_ms = (
-        (usage_conversation_summary or {}).get("total_conversation_time_ms", last_turn_ms) or 0
-    )
+    total_conv_ms = (usage_conversation_summary or {}).get(
+        "total_conversation_time_ms", last_turn_ms
+    ) or 0
     if isinstance(usage_conversation_summary, dict):
         diagnostics["usage_conversation"] = usage_conversation_summary
     diagnostics["last_turn_time_s"] = round(float(last_turn_ms) / 1000.0, 6)
@@ -4238,6 +4270,24 @@ if __name__ == "__main__":
         logger.info(
             "Share link enabled. If share link creation fails, the app will still run locally."
         )
+        try:
+            from gradio import networking
+
+            share_url = networking.setup_tunnel(
+                local_host=settings.gradio_server_name,
+                local_port=settings.gradio_server_port,
+                share_token=demo.share_token,
+                share_server_address=None,
+                share_server_tls_certificate=None,
+            )
+            print(f"* Running on public URL: {share_url}")
+            print(
+                "\nThis share link expires in 1 week. For free permanent hosting and GPU upgrades, "
+                "run `gradio deploy` from the terminal in the working directory to deploy to "
+                "Hugging Face Spaces (https://huggingface.co/spaces)"
+            )
+        except Exception as e:
+            logger.warning("Could not create share link: %s", e)
 
     # Configure queue
     demo.queue(
@@ -4283,5 +4333,19 @@ if __name__ == "__main__":
         allowed_paths=allowed_paths_list or None,
     )
 
+    import asyncio
+    import logging
+
     import uvicorn
+
+    _error_logger = logging.getLogger("uvicorn.error")
+
+    class _FilterCancelled(logging.Filter):
+        def filter(self, record):
+            if record.exc_info and issubclass(record.exc_info[0], asyncio.CancelledError):
+                return False
+            return True
+
+    _error_logger.addFilter(_FilterCancelled())
+
     uvicorn.run(app, host=settings.gradio_server_name, port=settings.gradio_server_port)

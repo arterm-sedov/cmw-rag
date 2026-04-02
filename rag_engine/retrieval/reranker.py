@@ -15,7 +15,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from rag_engine.config.schemas import ModelRegistry, ServerRerankerConfig
+from rag_engine.config.schemas import ModelRegistry, RerankerFormatting, ServerRerankerConfig
 from rag_engine.utils.device_utils import detect_device
 
 logger = logging.getLogger(__name__)
@@ -182,7 +182,11 @@ class CrossEncoderReranker:
 
 
 class InfinityReranker(HTTPClientMixin):
-    """DiTy/BGE/Qwen3 via Infinity/Mosec HTTP server."""
+    """DiTy/BGE/Qwen3 via Infinity/Mosec HTTP server.
+
+    DEPRECATED: Use RerankerAdapter instead for vLLM/Cohere compatible endpoints.
+    This class uses old /v1/rerank format with {scores: [...]} response.
+    """
 
     def __init__(self, config: ServerRerankerConfig):
         super().__init__(
@@ -200,13 +204,11 @@ class InfinityReranker(HTTPClientMixin):
         metadata_boost_weights: Optional[dict[str, float]] = None,
         instruction: Optional[str] = None,
     ) -> list[tuple[Any, float]]:
-        """Rerank candidates via HTTP server."""
+        """Rerank candidates via HTTP server (old format)."""
         if self.config.default_instruction:
-            # Qwen3 format: "Instruct: {task}\nQuery: {query}"
             task = instruction or self.config.default_instruction
             formatted_query = f"Instruct: {task}\nQuery: {query}"
         else:
-            # DiTy/BGE format: raw query
             if instruction:
                 logger.warning("This reranker doesn't support dynamic instructions, ignoring")
             formatted_query = query
@@ -221,7 +223,6 @@ class InfinityReranker(HTTPClientMixin):
 
         scores = response["scores"]
 
-        # Apply metadata boosts if provided
         scored: list[tuple[Any, float]] = []
         for (doc, _), score in zip(candidates, scores, strict=False):
             boost = 0.0
@@ -236,6 +237,127 @@ class InfinityReranker(HTTPClientMixin):
             final_score = float(score) * (1.0 + boost)
             scored.append((doc, final_score))
 
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return scored[:top_k]
+
+
+class RerankerAdapter(HTTPClientMixin):
+    """Client-side formatting adapter for server rerankers.
+
+    Handles both cross-encoder (no formatting) and LLM reranker (formatting required).
+    Uses the endpoint configured in .env - uses it directly for scoring.
+
+    The endpoint is expected to be /v1/score (vLLM format):
+    - Request: {query, documents}
+    - Response: {data: [{index, score}, ...]}
+    """
+
+    def __init__(self, config: ServerRerankerConfig):
+        super().__init__(
+            endpoint=config.endpoint,
+            timeout=config.timeout,
+            max_retries=config.max_retries,
+        )
+        self.config = config
+
+    def format_query(self, query: str, instruction: str | None = None) -> str:
+        """Format query based on reranker type.
+
+        Cross-encoder: raw query (no transformation)
+        LLM reranker: apply template with prefix/instruction
+        """
+        if self.config.reranker_type == "cross_encoder":
+            if instruction:
+                logger.warning("Cross-encoder doesn't support instructions, ignoring")
+            return query
+
+        if not self.config.formatting:
+            return query
+
+        fmt = self.config.formatting
+        task = instruction or self.config.default_instruction or ""
+
+        return fmt.query_template.format(
+            prefix=fmt.prefix,
+            instruction=task,
+            query=query,
+        )
+
+    def format_document(self, doc: str) -> str:
+        """Format document based on reranker type.
+
+        Cross-encoder: raw document
+        LLM reranker: apply template with suffix/prompt
+        """
+        if self.config.reranker_type == "cross_encoder":
+            return doc
+
+        if not self.config.formatting:
+            return doc
+
+        return self.config.formatting.doc_template.format(
+            doc=doc,
+            suffix=self.config.formatting.suffix,
+            prompt=self.config.formatting.prompt or "",
+        )
+
+    def _get_scores(
+        self, query: str, documents: list[str], instruction: str | None = None
+    ) -> list[tuple[int, float]]:
+        """Get scores from endpoint (vLLM format).
+
+        Returns list of (index, score) tuples in original order.
+        """
+        formatted_query = self.format_query(query, instruction)
+        formatted_docs = [self.format_document(d) for d in documents]
+
+        response = self._post(
+            {"queries": formatted_query, "documents": formatted_docs},
+        )
+
+        # Parse vLLM format: {data: [{index, score}, ...]}
+        data = response["data"]
+        return [(item["index"], item["score"]) for item in data]
+
+    def rerank(
+        self,
+        query: str,
+        candidates: Sequence[tuple[Any, float]],
+        top_k: int,
+        metadata_boost_weights: Optional[dict[str, float]] = None,
+        instruction: Optional[str] = None,
+    ) -> list[tuple[Any, float]]:
+        """Rerank candidates using configured endpoint.
+
+        Uses /v1/score endpoint (vLLM format), then sorts client-side.
+        Returns (document, score) tuples sorted by relevance.
+        """
+        documents = [
+            doc.page_content if hasattr(doc, "page_content") else str(doc) for doc, _ in candidates
+        ]
+
+        # Get scores from endpoint
+        indexed_scores = self._get_scores(query, documents, instruction)
+
+        # Apply metadata boosts and create scored list
+        scored: list[tuple[Any, float]] = []
+        for idx, score in indexed_scores:
+            doc, _ = candidates[idx]
+
+            boost = 0.0
+            if metadata_boost_weights and hasattr(doc, "metadata"):
+                meta = getattr(doc, "metadata", {})
+                if meta.get("tags") and metadata_boost_weights.get("tag_match"):
+                    boost += metadata_boost_weights["tag_match"]
+                if meta.get("has_code") and metadata_boost_weights.get("code_presence"):
+                    boost += metadata_boost_weights["code_presence"]
+                if meta.get("section_heading") and metadata_boost_weights.get("section_match"):
+                    boost += metadata_boost_weights["section_match"]
+
+            final_score = float(score) * (1.0 + boost)
+            scored.append((doc, final_score))
+
+        # Sort by score (highest first) and return top_k
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored[:top_k]
 
@@ -262,8 +384,15 @@ def create_reranker(settings) -> Reranker:
     model_data = registry.get_model(model_slug)
     canonical_slug = model_data["canonical_slug"]
 
-    # Get model-level default_instruction (centralized per model)
+    # Get model-level configuration
     model_instruction = registry.get_default_instruction(canonical_slug)
+    reranker_type = model_data.get("reranker_type", "cross_encoder")
+
+    # Get formatting config for LLM rerankers
+    formatting_data = model_data.get("formatting")
+    formatting = None
+    if formatting_data:
+        formatting = RerankerFormatting(**formatting_data)
 
     # Get provider-specific configuration
     provider_config = registry.get_provider_config(canonical_slug, provider)
@@ -284,7 +413,6 @@ def create_reranker(settings) -> Reranker:
     elif provider == "mosec":
         endpoint = settings.mosec_reranker_endpoint
     elif provider == "openrouter":
-        # OpenRouter reranker API (when available)
         raise NotImplementedError(
             "OpenRouter reranker support is not yet implemented. Use infinity or mosec provider for now."
         )
@@ -297,11 +425,13 @@ def create_reranker(settings) -> Reranker:
         type="server",
         provider=provider,
         endpoint=endpoint,
+        reranker_type=reranker_type,
+        formatting=formatting,
         default_instruction=model_instruction,
         timeout=settings.reranker_timeout,
         max_retries=settings.reranker_max_retries,
     )
-    return InfinityReranker(config)
+    return RerankerAdapter(config)
 
 
 # Legacy function for backward compatibility

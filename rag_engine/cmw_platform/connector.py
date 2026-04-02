@@ -8,7 +8,7 @@ import asyncio
 import logging
 import threading
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from rag_engine.cmw_platform import config, records
 from rag_engine.cmw_platform.mapping import map_agent_response
@@ -32,7 +32,7 @@ def _build_success_message() -> str:
     Returns:
         Human-readable status message for the platform.
     """
-    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    timestamp = datetime.now(UTC).isoformat(timespec="seconds")
     return f"Request fetched, agent started at {timestamp}"
 
 

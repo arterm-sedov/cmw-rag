@@ -51,4 +51,5 @@ ruff>=0.1.0
 # Observability
 openinference-instrumentation-langchain>=0.1.0
 openinference-instrumentation-openai>=0.1.0
+arize-phoenix>=0.0.1
 

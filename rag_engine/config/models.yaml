@@ -32,6 +32,7 @@ models:
     dimensions: 1024
     description: "Lightweight Qwen3 embedding model (1B params)"
     default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
     provider_formats:
       direct:
         device: auto
@@ -46,6 +47,7 @@ models:
     dimensions: 2560
     description: "Mid-size Qwen3 embedding model (4B params)"
     default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
     provider_formats:
       direct:
         device: auto
@@ -58,6 +60,7 @@ models:
     dimensions: 4096
     description: "Large Qwen3 embedding model (8B params, best quality)"
     default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
     provider_formats:
       direct:
         device: auto
@@ -69,53 +72,75 @@ models:
 
   DiTy/cross-encoder-russian-msmarco:
     type: reranker
+    reranker_type: cross_encoder
     dimensions: 1
     description: "Russian-optimized cross-encoder reranker"
     provider_formats:
       direct:
         batch_size: 16
         device: auto
+      mosec: {}
 
   BAAI/bge-reranker-v2-m3:
     type: reranker
+    reranker_type: cross_encoder
     dimensions: 1
     description: "Multilingual BGE reranker"
     provider_formats:
       direct:
         batch_size: 16
         device: auto
+      mosec: {}
 
   Qwen/Qwen3-Reranker-0.6B:
     type: reranker
+    reranker_type: llm_reranker
     dimensions: 1
     description: "Lightweight Qwen3 reranker"
     default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
+    formatting:
+      query_template: "{prefix}<Instruct>: {instruction}\n<Query>: {query}\n"
+      doc_template: "<Document>: {doc}{suffix}"
+      prefix: "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n"
+      suffix: "<|im_end|>\n<|im_start|>assistant\n\n\n\n\n"
     provider_formats:
       direct:
         supported: false
-      infinity: {}
       mosec: {}
 
   Qwen/Qwen3-Reranker-4B:
     type: reranker
+    reranker_type: llm_reranker
     dimensions: 1
     description: "Mid-size Qwen3 reranker"
     default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
+    formatting:
+      query_template: "{prefix}<Instruct>: {instruction}\n<Query>: {query}\n"
+      doc_template: "<Document>: {doc}{suffix}"
+      prefix: "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n"
+      suffix: "<|im_end|>\n<|im_start|>assistant\n\n\n\n\n"
     provider_formats:
       direct:
         supported: false
-      infinity: {}
       mosec: {}
 
   Qwen/Qwen3-Reranker-8B:
     type: reranker
+    reranker_type: llm_reranker
     dimensions: 1
     description: "Large Qwen3 reranker"
     default_instruction: "Given a web search query, retrieve relevant passages that answer the query"
+    # default_instruction: "Найди релевантную техническую документацию"
+    formatting:
+      query_template: "{prefix}<Instruct>: {instruction}\n<Query>: {query}\n"
+      doc_template: "<Document>: {doc}{suffix}"
+      prefix: "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n"
+      suffix: "<|im_end|>\n<|im_start|>assistant\n\n\n\n\n"
     provider_formats:
       direct:
         supported: false
-      infinity: {}
       mosec: {}
 
   # ============ INFERENCE MODELS ============
