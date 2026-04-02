@@ -1,59 +1,61 @@
 # Agent Guide for CMW RAG Engine
 
-This document provides essential commands, code style guidelines, and development rules for agents.
-
-**Philosophy:** Lean, dry, minimal, abstract, modular, pythonic, beautiful code. Deduplicated, reusable, non-breaking.
+**Philosophy:** Lean, dry, minimal, abstract, modular, pythonic, deduplicated, non-breaking code.
 
 ---
 
 ## 🛠️ Environment & Commands
 
-### Virtual Environment
-Always activate venv before running commands:
-- Linux/WSL: `source .venv/bin/activate` (or `.venv-wsl/bin/activate`)
-- PowerShell: `.venv\Scripts\Activate.ps1`
-- Install deps: `pip install -r rag_engine/requirements.txt`
-
-### Testing (pytest - configured in pyproject.toml)
+### Virtual Environment (ALWAYS activate first)
 ```bash
-pytest                                            # Run all tests
-pytest rag_engine/tests/test_tools_utils.py      # Specific file
-pytest rag_engine/tests/test_tools_utils.py::test_accumulate_articles  # Specific function
+source .venv/bin/activate        # Linux/WSL
+.venv\Scripts\Activate.ps1        # PowerShell
+pip install -r rag_engine/requirements.txt
+```
+
+### Testing
+```bash
+pytest                                           # All tests
+pytest rag_engine/tests/test_tools_utils.py      # Single file
+pytest rag_engine/tests/test_tools_utils.py::test_accumulate_articles  # Single function
 pytest --cov=rag_engine --cov-report=term-missing  # With coverage
-pytest -m "not external"                         # Skip external tests (requires model downloads)
-pytest -m external                               # Run only external tests
+pytest -m "not external"                          # Skip external tests
+pytest -m external                                # Only external tests
 ```
 
 ### Linting & Type Checking
 - **Lint:** `ruff check <file_path>` (configured in pyproject.toml)
-- **Lint all:** `ruff check .`
-- **Line length:** 100 characters
-- **Target Python:** 3.11
-- **Coverage:** Minimum 95% required
+- **Line length:** 100 characters | **Target Python:** 3.11
+- **Coverage:** Minimum 95% required (fails CI below)
 
 ### Running the App
-- **Start App:** `python rag_engine/api/app.py` or `bash rag_engine/scripts/start_app.sh`
-- **Build Index:** `python rag_engine/scripts/build_index.py --source "path/to/docs" --mode folder`
+```bash
+python rag_engine/api/app.py
+bash rag_engine/scripts/start_app.sh
+python rag_engine/scripts/build_index.py --source "path/to/docs" --mode folder
+```
 
 ---
 
 ## 📐 Code Style & Conventions
 
+### Before Coding
+1. Search internet for framework/library references
+2. Scan official documentation hierarchy for best practices
+3. Gather ground truth before planning
+4. **PLAN** your course of action after gathering reference info
+
 ### General
 - **Style:** LangChain-pure for LangChain code, Gradio-pure for Gradio code
 - **Architecture:** Separation of concerns. Group code by function in different files
-- **Extensibility:** Ensure testability and extensibility
 - **Purity:** Prefer purity for respective frameworks
-- Produce flawless code. Reanalyze changes twice for any issues introduced.
+- Produce flawless code. Reanalyze changes twice for issues introduced
 
-### Imports
+### Imports & Formatting
 - Place imports always at top of file
 - Ruff handles sorting (isort compatible)
-- Use `known-first-party = ["rag_engine"]` in pyproject.toml
-
-### Formatting
-- **Line Length:** 100 characters
-- **Whitespace:** No orphan spaces on empty lines
+- `known-first-party = ["rag_engine"]` in pyproject.toml
+- **Line Length:** 100 characters | **Whitespace:** No orphan spaces on empty lines
 - Follow PEP 8 (https://peps.python.org/pep-0008/)
 
 ### Naming Conventions
@@ -88,8 +90,7 @@ pytest -m external                               # Run only external tests
 
 ## 🧪 Test Practices
 
-Test **behavior**, not implementation (Google Test Primer, IBM Unit Testing Guidelines):
-
+Test **behavior**, not implementation:
 1. **Test Outcomes, Not Mechanisms** - Don't test internal function calls
 2. **Avoid Hardcoded Values** - Assert functional requirements, not specific ports/paths
 3. **Test Behavior Contracts** - Define inputs → outputs, test the contract
@@ -97,25 +98,20 @@ Test **behavior**, not implementation (Google Test Primer, IBM Unit Testing Guid
 5. **Test Real Scenarios** - User-facing behavior, edge cases, error handling
 6. Always run test suite after any changes
 
+### Verification Checklist
+- [ ] Run `ruff check <modified_file>` after any changes
+- [ ] Run relevant tests after changes
+- [ ] Ensure test coverage stays above 95%
+
 ---
 
 ## 🤖 Agent Instructions
 
-### Before Coding
-1. Search docs/internet for framework/library references
-2. Scan official documentation hierarchy for best practices
-3. Gather ground truth before planning
-4. PLAN your course of action after gathering reference info
-
-### Verification
-- Run `ruff check <modified_file>` after any changes
-- Run relevant tests after changes
-- Ensure test coverage stays above 95%
-
 ### Commit Discipline (per .cursor/rules/cmw_rag_commit.mdc)
 - Do NOT create/push commits unless explicitly asked
+- Generate commit message text only (do not stage or push)
 - Keep messages concise, structured, and strictly relevant
-- Keep length to necessary minimum. Avoid blabber.
+- Keep length to necessary minimum. Avoid blabber
 - Focus on the "why" not the "what"
 
 ### No Breakage
@@ -127,30 +123,36 @@ Test **behavior**, not implementation (Google Test Primer, IBM Unit Testing Guid
 
 ## 📁 Project Structure
 
-- **Tests:** `rag_engine/tests`
-- **Docs:** `docs/progress_reports/`
-- **Scripts:** `rag_engine/scripts/`
-- **Config:** `pyproject.toml` (linting), `.env-example`
+```
+rag_engine/
+├── tests/              # Test files
+├── api/                # API/app entry points
+├── scripts/            # Build/maintenance scripts
+├── llm/                # LLM provider configs
+├── core/                # Indexing pipeline (indexer, chunker, document_processor)
+├── retrieval/           # Retrieval pipeline
+├── storage/             # Vector store (ChromaDB)
+├── tools/               # LangChain tools
+├── utils/               # Utilities (token counting, etc.)
+└── ...                  # Other modules
+```
+
+**Config:** `pyproject.toml` (linting), `.env-example`
 
 ---
 
-## 📚 References
+## 📚 Key References
 
 ### LangChain
 - https://docs.langchain.com/oss/python/langchain/overview
 - https://docs.langchain.com/oss/python/langchain/agents
 - https://reference.langchain.com/python/langchain/
 - https://langchain-ai.github.io/langgraph/concepts/
-- https://docs.langchain.com/oss/python/langchain/tools
-- https://docs.langchain.com/oss/python/langchain/messages
-- https://docs.langchain.com/oss/python/langchain/short-term-memory
-- https://docs.langchain.com/oss/python/langchain/test
 
 ### Gradio
 - https://www.gradio.app/docs
 - https://www.gradio.app/guides/the-interface-class/
 - https://www.gradio.app/guides/blocks-and-event-listeners/
-- https://www.gradio.app/guides/interface-state/
 
 ### Python
 - https://peps.python.org/pep-0008/ (Style)
