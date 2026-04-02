@@ -34,7 +34,13 @@ from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
 from rag_engine.tools import retrieve_context
 from rag_engine.tools.retrieve_context import set_app_retriever
-from rag_engine.tracing import init_phoenix, record_exception_safe, set_span_attribute, start_span
+from rag_engine.tracing import (
+    init_phoenix,
+    record_exception_safe,
+    set_span_attribute,
+    start_session_span,
+    start_span,
+)
 from rag_engine.utils.context_tracker import (
     AgentContext,
     compute_context_tokens,
@@ -2698,26 +2704,29 @@ async def agent_chat_handler(
         # Update final response tracking
         final_response = final_text
 
-        # Record output for Phoenix tracing
-        if final_response:
-            set_span_attribute(SpanAttributes.OUTPUT_VALUE, final_response[:500])
+        # Record output for Phoenix tracing - use session span context
+        with start_session_span(session_id):
+            output_span = start_span("agent_response", session_id=session_id)
+            with output_span:
+                if final_response:
+                    set_span_attribute(SpanAttributes.OUTPUT_VALUE, final_response[:500])
 
-        # Record token usage and cost for Phoenix tracing
-        usage_turn_summary = getattr(agent_context, "usage_turn_summary", {}) or {}
-        if usage_turn_summary:
-            prompt_tokens = int(usage_turn_summary.get("prompt_tokens", 0) or 0)
-            completion_tokens = int(usage_turn_summary.get("completion_tokens", 0) or 0)
-            total_tokens = int(usage_turn_summary.get("total_tokens", 0) or 0)
-            reasoning_tokens = int(usage_turn_summary.get("reasoning_tokens", 0) or 0)
-            cost = float(usage_turn_summary.get("cost", 0.0) or 0.0)
+            # Record token usage and cost for Phoenix tracing
+            usage_turn_summary = getattr(agent_context, "usage_turn_summary", {}) or {}
+            if usage_turn_summary:
+                prompt_tokens = int(usage_turn_summary.get("prompt_tokens", 0) or 0)
+                completion_tokens = int(usage_turn_summary.get("completion_tokens", 0) or 0)
+                total_tokens = int(usage_turn_summary.get("total_tokens", 0) or 0)
+                reasoning_tokens = int(usage_turn_summary.get("reasoning_tokens", 0) or 0)
+                cost = float(usage_turn_summary.get("cost", 0.0) or 0.0)
 
-            set_span_attribute(SpanAttributes.LLM_TOKEN_COUNT_PROMPT, prompt_tokens)
-            set_span_attribute(SpanAttributes.LLM_TOKEN_COUNT_COMPLETION, completion_tokens)
-            set_span_attribute(SpanAttributes.LLM_TOKEN_COUNT_TOTAL, total_tokens)
-            if reasoning_tokens > 0:
-                set_span_attribute(SpanAttributes.LLM_TOKEN_COUNT_COMPLETION_DETAILS_REASONING, reasoning_tokens)
-            if cost > 0:
-                set_span_attribute(SpanAttributes.LLM_COST_TOTAL, cost)
+                set_span_attribute(SpanAttributes.LLM_TOKEN_COUNT_PROMPT, prompt_tokens)
+                set_span_attribute(SpanAttributes.LLM_TOKEN_COUNT_COMPLETION, completion_tokens)
+                set_span_attribute(SpanAttributes.LLM_TOKEN_COUNT_TOTAL, total_tokens)
+                if reasoning_tokens > 0:
+                    set_span_attribute(SpanAttributes.LLM_TOKEN_COUNT_COMPLETION_DETAILS_REASONING, reasoning_tokens)
+                if cost > 0:
+                    set_span_attribute(SpanAttributes.LLM_COST_TOTAL, cost)
 
         # Save conversation turn (reuse existing pattern)
         # Streaming completed successfully - save complete response to memory
@@ -3142,6 +3151,13 @@ async def agent_chat_handler(
 
                     # Update final response tracking
                     final_response = final_text
+
+                    # Record output for Phoenix tracing - use session span context
+                    with start_session_span(session_id):
+                        output_span = start_span("agent_response", session_id=session_id)
+                        with output_span:
+                            if final_response:
+                                set_span_attribute(SpanAttributes.OUTPUT_VALUE, final_response[:500])
 
                     # Save conversation turn
                     if final_response and session_id:
