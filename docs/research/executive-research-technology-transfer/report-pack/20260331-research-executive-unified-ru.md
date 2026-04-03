@@ -118,7 +118,7 @@ tags:
 - **Качество:** целевой ориентир >95 % по внутренней рубрике (LLM-as-judge) при стабильной методике оценки.
 - **TCO break-even:** рассматривайте переход к on-prem/гибриду при устойчивой нагрузке и подтверждённой утилизации >60 %.
 
-Единая трактовка KPI в комплекте — _«[Приложение A](./20260325-research-appendix-a-index-ru.md#app_a_kpi_semantics)»_.
+Единая трактовка KPI в комплекте — _Приложение A «[Единые KPI и их интерпретация](./20260325-research-appendix-a-index-ru.md#app_a_kpi_semantics)»_.
 
 ## Валюта и правила для коммерческих предложений {: #exec_unified_fx_policy }
 
@@ -128,13 +128,13 @@ tags:
 
 ## Минимальные условия передачи экспертизы (go/no-go перед BOT) {: #exec_unified_transfer_gates }
 
-- Согласован минимально целостный пакет отчуждения и распределение прав: _«[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)»_.
+- Согласован минимально целостный пакет отчуждения и распределение прав: _Приложение B «[Пакет отчуждения (минимально целостный)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)»_.
 - Пройдены критерии приёмки передачи (чек-лист): _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_transfer_acceptance_criteria_checklist)_.
 - Зафиксируйте организационные условия после передачи и уровни обучения: _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_org_conditions_post_transfer)_, _[Уровни обучения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_training_levels_transfer)_.
 
 ## Минимальные условия безопасности и наблюдаемости (pre-scale gate) {: #exec_unified_security_gates }
 
-- Проверены CISO/CIO trust-критерии перед промышленным запуском: _«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__ciso_trust_summary)»_.
+- Проверены CISO/CIO trust-критерии перед промышленным запуском: _Приложение D «[Сводка доверия для CISO/CIO: что проверять перед промышленным запуском](./20260325-research-appendix-d-security-observability-ru.md#app_d__ciso_trust_summary)»_.
 - Утверждены правила телеметрии и ПДн (минимизация, ретенция, доступ): _«[телеметрия и 152-ФЗ](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_.
 - Формализован периметр до LLM и пакет observability в передаче: _«[периметр до LLM](./20260325-research-appendix-d-security-observability-ru.md#app_d__llm_perimeter_data_minimization)»_, _«[пакет отчуждения observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__handoff_package_observability)»_.
 
@@ -184,8 +184,8 @@ tags:
 - Тарифы РФ и влияние открытых весов на TCO: в параграфах _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ и _«[Открытые веса и API: влияние на TCO](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_ отчёта «Отчёт. Сайзинг и экономика (CapEx / OpEx / TCO)»_.
 - Риски бюджета и меры снижения: _«[Риски и оптимизация](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)»_.
 - Передача ИС/кода и критерии приёмки: _«[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
-- Security/compliance/observability для защиты сделки: _«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
-- Единые политики KPI/FX и навигация по комплекту: _«[Приложение A](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
+- Security/compliance/observability для защиты сделки: _Приложение D «[Управление рисками и соответствие (Compliance)](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
+- Единые политики KPI/FX и навигация по комплекту: _Приложение A «[Обзор](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
 
 ## Источники {: #exec_unified_sources }
 
