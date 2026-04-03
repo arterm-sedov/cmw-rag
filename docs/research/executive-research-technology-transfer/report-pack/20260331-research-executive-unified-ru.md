@@ -138,6 +138,8 @@ tags:
 - Утверждены правила телеметрии и ПДн (минимизация, ретенция, доступ): _«[телеметрия и 152-ФЗ](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_.
 - Формализован периметр до LLM и пакет observability в передаче: _«[периметр до LLM](./20260325-research-appendix-d-security-observability-ru.md#app_d__llm_perimeter_data_minimization)»_, _«[пакет отчуждения observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__handoff_package_observability)»_.
 - Проект ФЗ об ИИ (НПА): ориентир **вступления в силу — 1 сентября 2027** (**ст. 21** проекта), маркировка и пороги аудитории — _«[Проектный контур: законопроект об ИИ (2026)](./20260325-research-appendix-d-security-observability-ru.md#app_d__ai_bill_draft_2026)»_.
+- **EU AI Act — 2 августа 2026** (для сделок с EU-составляющей): с этой даты вступает в силу основной массив правил, включая требования к высокорисковым системам и прозрачности; применимость зависит от роли и характера использования в ЕС — при наличии EU-клиентов провести юридическую классификацию до вывода продукта на рынок; тиры штрафов, Digital Omnibus и детали охвата — _«[Международный регуляторный контекст: EU AI Act](./20260325-research-appendix-d-security-observability-ru.md#app_d__eu_ai_act_context)»_.
+
 ## Типовые возражения и ответы {: #exec_unified_objections }
 
 **«Сложно обосновать ROI».**
@@ -206,3 +208,5 @@ tags:
 - [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197)
 - [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
 - [RB.RU — вакансии с ИИ-навыками: +170% YoY в I кв. 2026 (~2,7× к I кв. 2025; hh.ru × PR DEV, март 2026)](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/)
+- [EUR-Lex: Regulation (EU) 2024/1689 — Artificial Intelligence Act (официальный текст)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689)
+- [EU AI Act Service Desk — Implementation Timeline](https://ai-act-service-desk.ec.europa.eu/en/ai-act/eu-ai-act-implementation-timeline)
