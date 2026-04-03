@@ -424,6 +424,16 @@ When researching solutions, vendors, or technologies, apply this priority order:
 
 This ordering reflects the business context: Russia-resident defaults, 152-FZ compliance, and local deployment feasibility come first. International solutions serve as technology baseline or for foreign client engagements.
 
+### Technology & Innovation Profiles
+
+When listing tools, frameworks, or architectural patterns, avoid unstructured "flat" bullet points or mixed metadata. Apply a strict executive triplet (a micro-SCQA format):
+
+- **Проблема** (or **Концепция**): The specific business or technical pain point being solved.
+- **Решение**: The core mechanism, architecture, or tool used to address it.
+- **Результат**: The measurable business or technical impact (speed, cost reduction, quality improvement) and the target audience.
+
+This ensures clarity, eliminates tautology, and immediately answers "So What?" for C-level decision-makers, making the text ready for direct reuse in commercial offers and presentations.
+
 ### Real-World Case Integration
 
 When adding case studies to frameworks:
