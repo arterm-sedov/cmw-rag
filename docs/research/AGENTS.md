@@ -231,7 +231,9 @@ Use MkDocs admonitions (`!!! type "Title"`) instead of bold text for recommendat
 
 ### Citations and references
 
-- Cite sources inline with hyperlinks where claims are made.
+- **Traceability modes** (pick what fits the document; sources remain mandatory):
+  - **Inline** — prefer when you name a specific publication or report **by title**, cite **law or regulator** text, or introduce **pricing or quantitative norms** as a baseline (per task file: first occurrence of a figure). External web sources may use `_«[Source title](https://...)»_` in body text when the sentence hinges on that source.
+  - **Grouped** — for **multi-item signal digests** (e.g. Appendix E-style market/technical bullets), body text may stay scannable without a link on every line; add **plain** URLs under `## Источники`, optionally under a **thematic subheading** (e.g. «Инфраструктура и модели»), so the cluster remains verifiable. Do not use grouped mode to hide uncited high-impact numbers in **short** C-level summaries (those still need explicit support per **Permission Boundaries**).
 - **Inline mentions** (body text and ordinary lists; not inside the references section): when you name an internal document or external source by title, use a **quoted italic** Markdown link—guillemets `«»` around an italic link built with underscores `_..._`:
   - **Internal** `.md` in this repo (typically under `docs/research/`): `_«[Document title](relative-path/file-name.md)»_`. Path **relative to the current file** (for example `./20260323-topic-ru.md` or `../other/file.md`).
   - **External** web sources: `_«[Source title](https://...)»_` with the real URL as the link target.
@@ -301,8 +303,8 @@ These principles apply regardless of specific topic, industry, or organization:
 
 **Traceability and Verifiability**
 
-- Every significant claim requires inline citations to sources
-- Maintain a complete references section with all sources used
+- Significant external claims must be **traceable**: **inline citations and/or** plain links under `## Источники` with enough grouping or labels that a reader can map section/table → URLs. Inline is preferred for law, regulator, first-use pricing, and named publications.
+- Maintain a complete references section with all sources used (including those supporting grouped digest blocks).
 - Document validation processes for time-sensitive data (versions, pricing, etc.)
 
 **Progressive Refinement with Checkpoints**
@@ -372,7 +374,7 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Russian numeric and currency standards are applied consistently (for Russian files).
 - Terminology rules are applied (Russian-first, translated first use for English terms).
 - Markdown formatting rules are followed (headings, lists, links placement).
-- All claims are traceable with inline citations; inline document/source titles follow **Citations and references** (quoted italic links in body text).
+- All significant claims are traceable (inline **and/or** plain links under `## Источники` per **Traceability modes**); inline document/source titles follow **Citations and references** (quoted italic links in body text) when cited by name.
 - Final `## Источники` section is present with all used references as plain bullet links (no guillemets or italic wrapper on list entries).
 - No critical statement remains without a source.
 - Related research in `docs/research/` has been cross-validated per **Cross-validation of related research** when semantic overlap, business line, or the active task scope applies.
@@ -383,7 +385,7 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Keep the repository lean (raw data stays outside).
 - Process once, document once.
 - Maintain **Russian market** focus and sovereign-default framing per the task file.
-- Keep full source traceability via inline citations and final references list.
+- Keep full source traceability via inline citations **where appropriate** and a complete `## Источники` list (grouped thematic subsections allowed for digest-style appendices).
 - Reuse abstract patterns and avoid unnecessary duplication.
 - Cross-validate sibling research so the corpus stays internally consistent where topics intersect.
 
@@ -428,7 +430,7 @@ When adding case studies to frameworks:
 
 - **Inline, not standalone** — integrate into relevant doc
 - **Ground with numbers** — specific metrics over vague statements
-- **Cite sources** — sources hyperlinked inline and in bibliography
+- **Cite sources** — traceable via inline links **where appropriate** and/or plain links under `## Источники` (see **Traceability modes**)
 
 ### Russian Technical Terms
 
