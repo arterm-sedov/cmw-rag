@@ -142,25 +142,6 @@ tags:
 - SISO: лучшая суммарная латентность prefill + decode
 - MIMO: сопоставимая скорость, но заметно точнее
 
-### Робототехника и аппаратные платформы {: #app_e_robotics_hardware }
-
-**Unitree As2:**
-
-- Четвероногий робот в 3 версиях: AIR, PRO, EDU
-- 18 кг, 12 степеней свободы, до 3,7 м/с
-- EDU: NVIDIA Jetson Orin NX support
-
-**Huawei Atlas 350:**
-
-- AI-ускоритель для китайского рынка
-- 2.87x быстрее Nvidia H20
-
-**Pokemon Go → Robot Navigation:**
-
-- 30 млрд фото от фанатов для обучения пространственного ИИ
-- Niantic Spatial: визуальная навигация с точностью до сантиметров
-- Coco Robotics: курьеры с 4 камерами
-
 ### Корпоративные ИИ-сервисы {: #app_e_enterprise_ai }
 
 **Google AI Studio — Vibe Coding:**
