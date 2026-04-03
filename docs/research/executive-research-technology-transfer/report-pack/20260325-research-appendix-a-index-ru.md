@@ -162,7 +162,7 @@ tags:
 
 | Тема | Документ |
 | --- | --- |
-| **Аренда GPU (IaaS РФ): дополнительные поставщики и ориентиры** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_rental_iaas_providers) |
+| **Цены на GPU-оборудование (покупка и аренда)** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_hardware_pricing_all) |
 | **Профиль on-prem-GPU в проектах Comindware** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) |
 | **Топология ёмкости GPU и типы источников цифр** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_capacity_topology_bench_classes) |
 | **Ориентиры для углублённого аппаратного сайзинга (официальные бенчмарки и документация)** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_hardware_deep_research_pointers) |
