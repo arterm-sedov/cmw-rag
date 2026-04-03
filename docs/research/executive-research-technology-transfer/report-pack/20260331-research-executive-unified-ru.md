@@ -137,7 +137,7 @@ tags:
 - Проверены CISO/CIO trust-критерии перед промышленным запуском: _«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__ciso_trust_summary)»_.
 - Утверждены правила телеметрии и ПДн (минимизация, ретенция, доступ): _«[телеметрия и 152-ФЗ](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_.
 - Формализован периметр до LLM и пакет observability в передаче: _«[периметр до LLM](./20260325-research-appendix-d-security-observability-ru.md#app_d__llm_perimeter_data_minimization)»_, _«[пакет отчуждения observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__handoff_package_observability)»_.
-
+- Проект ФЗ об ИИ (НПА): ориентир **вступления в силу — 1 сентября 2027** (**ст. 21** проекта), маркировка и пороги аудитории — _«[Проектный контур: законопроект об ИИ (2026)](./20260325-research-appendix-d-security-observability-ru.md#app_d__ai_bill_draft_2026)»_.
 ## Типовые возражения и ответы {: #exec_unified_objections }
 
 **«Сложно обосновать ROI».**
@@ -190,6 +190,7 @@ tags:
 ## Источники {: #exec_unified_sources }
 
 - [152-ФЗ «О персональных данных»](https://www.consultant.ru/document/cons_doc_LAW_61801/)
+- [Портал НПА — проект ФЗ об основах госрегулирования применения технологий ИИ (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
 - [Национальная стратегия развития ИИ до 2030 года (Указ Президента РФ №124, февраль 2024)](http://kremlin.ru/acts/bank/49930)
 - [NIST AI Risk Management Framework 1.0](https://nist.gov/itl/ai-risk-management-framework)
 - [OpenAI — The state of enterprise AI (обзор, декабрь 2025)](https://openai.com/index/the-state-of-enterprise-ai-2025-report)
