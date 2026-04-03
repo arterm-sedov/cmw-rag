@@ -154,7 +154,7 @@ tags:
 | **Публичные ориентиры рынка (@Redmadnews, 2026)** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_market_benchmarks_2026) |
 | **Обзор текущей архитектуры Comindware** | [Приложение C: имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview) |
 | **Карта российского рынка GenAI (обзор red_mad_robot, публичные материалы 2025)** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map) |
-| **Сводная таблица по карте GenAI (ноябрь 2025; ограниченное извлечение)** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_genai_map_nov2025_metrics_extract) |
+| **Сводка по карте GenAI (ноябрь 2025; ограниченное извлечение)** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_genai_map_nov2025_metrics_extract) |
 | **Эмпирика корпоративного внедрения (отчёт OpenAI, 2025; оговорки по выборке)** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report) |
 | **Управление рисками и соответствие (Compliance)** | [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview) |
 
