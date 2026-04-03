@@ -575,7 +575,7 @@ flowchart LR
 - **LlamaIndex** — структурированная работа с данными [GitHub](https://github.com/run-llama/llama_index)
 - **Mastra** — AI-фреймворк для продакшна [GitHub](https://github.com/mastra-ai/mastra)
 
-### Архетиктура агентного RAG {: #method_agentic_rag_architecture }
+### Архитектура агентного RAG {: #method_agentic_rag_architecture }
 
 **SGR (Schema-Guided Reasoning)** — фреймворк для агентов от neuraldeep:
 - SGR Agent Core [GitHub](https://github.com/vamplabAI/sgr-agent-core) — 1k+ stars
@@ -592,7 +592,7 @@ flowchart LR
 ### Безопасность {: #method_security }
 
 - **NVIDIA NeMo Guardrails** — удержание бота в рамках темы [GitHub](https://github.com/NVIDIA-NeMo/Guardrails)
-- **Lakera / Rebuff** — детекторы инъекций [Platform]](https://platform.lakera.ai/) [GitHub](https://github.com/protectai/rebuff)
+- **Lakera / Rebuff** — детекторы инъекций [Platform](https://platform.lakera.ai/), [GitHub](https://github.com/protectai/rebuff)
 - **Garak** — сканер уязвимостей LLM [GitHub](https://github.com/NVIDIA/garak)
 
 ### Кейс: RAG для ФСК (Строительная компания) {: #method_rag_case_fsk_construction }
