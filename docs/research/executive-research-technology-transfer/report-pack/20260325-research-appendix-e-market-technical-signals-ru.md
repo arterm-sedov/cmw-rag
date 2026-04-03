@@ -429,7 +429,7 @@ _Источник:_ [Сайзинг и экономика](./20260325-research-r
 
 ### Цены на модели — единый источник {: #app_e_inference_pricing }
 
-**Все актуальные цены** — в отчёте _«[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_.
+**Все актуальные цены** — в параграфе _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)» отчёта «Отчёт. Сайзинг и экономика (CapEx / OpEx / TCO)»_.
 
 ### Глобальные шлюзы разработки: OpenRouter и OpenCode Zen {: #app_e_dev_gateways_openrouter_opencode }
 

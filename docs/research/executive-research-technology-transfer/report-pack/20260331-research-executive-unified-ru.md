@@ -181,7 +181,7 @@ tags:
 
 - TOM, роли, фазы внедрения и контроль качества: _«[Методология](./20260325-research-report-methodology-main-ru.md#method_target_operating_model)»_.
 - Экономика решения и матрица вариантов: _«[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_decision_matrix)»_.
-- Тарифы РФ и влияние открытых весов на TCO: _«[Тарифы и провайдеры РФ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_, _«[Открытые веса и API](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_.
+- Тарифы РФ и влияние открытых весов на TCO: в параграфах _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ и _«[Открытые веса и API: влияние на TCO](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_ отчёта «Отчёт. Сайзинг и экономика (CapEx / OpEx / TCO)»_.
 - Риски бюджета и меры снижения: _«[Риски и оптимизация](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)»_.
 - Передача ИС/кода и критерии приёмки: _«[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
 - Security/compliance/observability для защиты сделки: _«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
