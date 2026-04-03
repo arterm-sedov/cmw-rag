@@ -574,7 +574,7 @@ tags:
 - [vamplabAI/sgr-agent-core](https://github.com/vamplabAI/sgr-agent-core) (ветка tool-confluence)
 - [vamplabAI/sgr-agent-core — ветка tool-confluence](https://github.com/vamplabAI/sgr-agent-core/tree/tool-confluence)
 - [Lakera — платформа](https://platform.lakera.ai/)
-- [Neuraldeep.ru — навыки для российских Сервисов](https://neuraldeep.ru/)
+- [Neuraldeep.ru - база навыков для российских сервисов](https://neuraldeep.ru/)
 
 #### Регулирование (проектный контур 2026) {: #app_a_regulation_project_context_2026 }
 
