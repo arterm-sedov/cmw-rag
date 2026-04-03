@@ -582,6 +582,14 @@ flowchart LR
 
 **Рыночные RAG-цепочки интеграторов** — в открытых обзорах и кейсах встречаются собственные конвейеры: декомпозиция запроса (query decomposition), гипотетические документы для ретрива (HyDE), двойной вызов с порогом сходства (DCD), schema-guided рассуждения (SGR), извлечение структуры из PDF (Marker, Docling), хранение метаданных в PostgreSQL и векторный слой (Qdrant, Chroma). Это иллюстрация зрелости рынка интеграции, а не требование воспроизвести все приёмы; пересечение с референс-стеком **Comindware** оценивают по целевому threat model и TOM.
 
+### Кейс: RAG для ФСК (Строительная компания) {: #method_rag_case_fsk_construction }
+
+- **Задача:** RAG-чат-бот для ФСК (5млн+ токенов) — B2B
+- **Результат:** Снижение нагрузки на команду поддержки на **30–40%**
+
+- **Архитектура:** Router-компонент + два workflow AI-агента
+- **Фокус:** Предотвращение галлюцинаций для минимизации репутационных рисков
+
 ### Оценка (Eval) {: #method_evaluation }
 
 - **RAGAS** — метрики для RAG [Docs](https://docs.ragas.io/en/stable/)
@@ -590,16 +598,8 @@ flowchart LR
 ### Безопасность {: #method_security }
 
 - **NVIDIA NeMo Guardrails** — удержание бота в рамках темы [GitHub](https://github.com/NVIDIA-NeMo/Guardrails)
-- **Lakera / Rebuff** — детекторы инъекций [Platform]](https://platform.lakera.ai/) [GitHub](https://github.com/protectai/rebuff)
+- **Lakera / Rebuff** — детекторы инъекций [Platform](https://platform.lakera.ai/) [GitHub](https://github.com/protectai/rebuff)
 - **Garak** — сканер уязвимостей LLM [GitHub](https://github.com/NVIDIA/garak)
-
-### Кейс: RAG для ФСК (Строительная компания) {: #method_rag_case_fsk_construction }
-
-- **Задача:** RAG-чат-бот для ФСК (5млн+ токенов) — B2B
-- **Результат:** Снижение нагрузки на команду поддержки на **30–40%**
-
-- **Архитектура:** Router-компонент + два workflow AI-агента
-- **Фокус:** Предотвращение галлюцинаций для минимизации репутационных рисков
 
 ### Продвинутая индексация, качество ответа и экономика ретрива (@ai_archnadzor) {: #method_advanced_indexing_retrieval_economics }
 
