@@ -178,7 +178,7 @@ tags:
 
 **Ключевые тренды:** 40% корпоративных приложений будут включать автономных AI-агентов к концу 2026 г.; 76% организаций отмечают Shadow AI как значимую проблему; только 26% имеют комплексные политики AI-безопасности.
 
-**Model Context Protocol (MCP):** при проектировании агентов и реестров инструментов используйте официальное наименование **Model Context Protocol** (см. раздел _«[MCP, мультиагентная маршрутизация и воспроизводимые навыки](./20260325-research-appendix-d-security-observability-ru.md#app_d__mcp_multiagent_routing_skills)_»_); не смешивать с бытовыми расшифровками вроде «Model Communication Protocol».
+**Model Context Protocol (MCP):** при проектировании агентов и реестров инструментов используйте официальное наименование **Model Context Protocol** (см. раздел _«[MCP, мультиагентная маршрутизация и воспроизводимые навыки](./20260325-research-appendix-d-security-observability-ru.md#app_d__mcp_multiagent_routing_skills)»_); не смешивать с бытовыми расшифровками вроде «Model Communication Protocol».
 
 ### Персональные данные и содержимое в телеметрии (152-ФЗ) {: #app_d__personal_data_telemetry_152fz }
 
