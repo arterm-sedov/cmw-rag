@@ -584,7 +584,7 @@ flowchart LR
 
 ### Кейс: RAG для ФСК (Строительная компания) {: #method_rag_case_fsk_construction }
 
-По _«[Хабр — red_mad_robot: кейс RAG для ФСК](https://habr.com/ru/companies/redmadrobot/articles/892882/)»_ (публичный кейс):
+По _«[Хабр — red_mad_robot: кейс RAG для ФСК](https://habr.com/ru/companies/redmadrobot/articles/892882/)»_:
 
 - **Задача:** RAG-чат-бот для ФСК (корпус **> 5 млн** токенов) — B2B
 - **Результат:** снижение нагрузки на команду поддержки на **30–40%**
