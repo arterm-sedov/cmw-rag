@@ -115,7 +115,7 @@ tags:
 
 **Наличие SKU в каталоге не заменяет** юридическую и ИБ-проверку сценария заказчика.
 
-**Почасовые тарифы** для таких каналов см. в отчёте _«[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ и параграфе _«[Аренда GPU (IaaS РФ): дополнительные поставщики и ориентиры](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_rental_iaas_providers)»_.
+**Почасовые тарифы** для таких каналов см. в параграфах _«[Тарифы и провайдеры РФ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ и _«[Цены на GPU-оборудование (покупка и аренда)](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_hardware_pricing_all)» отчёта «Отчёт. Сайзинг и экономика (CapEx / OpEx / TCO)»_.
 
 ### Модели поставки и передачи (интеллектуальная собственность (ИС) и передача знаний) {: #app_b_delivery_transfer_models_ip_knowledge }
 
