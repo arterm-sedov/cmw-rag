@@ -178,6 +178,49 @@ These rules apply to Russian research articles in `docs/research/`.
 - Example: `RAG (Retrieval-Augmented Generation — генерация с дополненной выборкой)`.
 - **Engineering acronyms** such as `CI`, `CD`, `TCO` may appear without expansion when the audience and context are clear.
 
+### Russian prose quality and executive register
+
+Every Russian deliverable must read as if written by a native-speaking executive editor. Grammar, morphology, case government (управление), and word order must be flawless. The standard is **деловой стиль высшего уровня** — the register used in board-level memos and strategy documents, not academic papers or bureaucratic correspondence.
+
+**AI-generated anti-patterns to eliminate:**
+
+- **Calques from English** (literal structural borrowings): do not transplant English syntax into Russian. Examples: avoid «в терминах» (calque of "in terms of") — use «с точки зрения» or rephrase; avoid «имеет место быть» — use «существует» or a direct verb.
+- **Unnatural word order:** Russian word order is flexible and meaning-driven; do not force English SVO (subject-verb-object) when theme-rheme or emphasis demands a different order.
+- **Wrong prepositional and case government:** verify that each verb, noun, and preposition governs the correct case (e.g. «согласно + дат.», «благодаря + дат.», «вопреки + дат.», not genitive).
+- **Unidiomatic collocations:** use established Russian collocations (e.g. «принять решение», not «сделать решение»; «провести аудит», not «выполнить аудит»).
+
+**Executive register rules:**
+
+- **Active, direct constructions.** Minimize passive voice and reflexive passives (`-ся`). Prefer «компания внедрила» over «внедрение было осуществлено компанией».
+- **No канцелярит.** Eliminate chains of отглагольные существительные: «осуществление реализации внедрения» → «внедрить». Prefer verbs to heavy nominalizations: «внедрить» over «произвести внедрение», «оценить» over «провести оценку».
+- **Short, front-loaded sentences.** State the conclusion or action before the explanation (pyramid principle applied to sentence structure). Split any sentence with more than one subordinate clause.
+- **No hedging filler.** Cut gratuitous «возможно», «в целом», «определённым образом», «как бы», «достаточно», «в некотором роде» unless they carry genuine epistemic meaning.
+- **Imperatives for recommendations.** Use direct imperative: «используйте», «зафиксируйте», «утвердите» — not «следует использовать» or «рекомендуется зафиксировать».
+
+**Lexical precision:**
+
+- Eliminate **pleonasms**: «свободная вакансия» → «вакансия», «главный приоритет» → «приоритет», «полностью завершить» → «завершить».
+- Eliminate **tautologies**: do not repeat the same meaning in adjacent words or clauses.
+- Cut **semantically empty words**: «данный» when «этот» suffices, «является» when a dash or a concrete verb works, «определённый» without specific reference.
+- Use **concrete verbs and nouns**, not abstract bureaucratic chains. Replace «произвести расчёт стоимости» with «рассчитать стоимость».
+
+**Sentence-level discipline:**
+
+- Maximum one subordinate clause per sentence in executive text; split complex constructions into separate sentences.
+- Every sentence must pass the "so what?" test — if it adds no decision value, cut it.
+- Avoid starting sentences with weak demonstratives («Это является…», «Данный подход…») — lead with the subject or action.
+
+**Reference benchmark:** Розенталь Д.Э. ("Справочник по правописанию и литературной правке") and Мильчин А.Э. / Чельцова Л.К. ("Справочник издателя и автора") as linguistic authority; ГОСТ Р 7.0.97-2016 for formal business document structure where applicable.
+
+### Executive communication discipline
+
+- **Pyramid principle:** state the answer or recommendation first, then the supporting evidence. Never bury the conclusion at the end of a paragraph or section.
+- **One idea per paragraph.** Each paragraph opens with its topic sentence; supporting detail follows. If a paragraph covers two ideas, split it.
+- **Action-oriented language.** Every recommendation or next-step section uses imperative voice addressed to the reader: «утвердите план», «зафиксируйте KPI», «проведите аудит».
+- **Quantify or qualify.** No vague claims. Attach a number, a range, or an explicit qualifier: «по данным X», «в диапазоне Y–Z», «по оценке Yakov Partners (2025)». If a number is approximate, say so explicitly: «порядка», «~», or «ориентировочно».
+- **No self-referential text.** Do not describe the document, its structure, or how it was written. Let content speak. Examples of prohibited phrases: «в данном разделе мы рассмотрим…», «этот документ предназначен для…», «ниже приводится обзор…».
+- **Coherence across the pack.** When the same concept (KPI threshold, cost range, compliance requirement) appears in multiple documents, use identical wording and values. Contradictions undermine executive trust.
+
 ## Markdown and document formatting
 
 ### Prose and line breaks
@@ -380,6 +423,7 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - No critical statement remains without a source.
 - Related research in `docs/research/` has been cross-validated per **Cross-validation of related research** when semantic overlap, business line, or the active task scope applies.
 - If the output is a **consolidated pack** (several linked articles under `docs/research/`), satisfy **Consolidated packs (optional)** in full; ordinary single articles ignore that subsection.
+- Russian prose has been self-reviewed for grammar, case government, word order, канцелярит, calques, and executive register per **Russian prose quality and executive register** and **Executive communication discipline**.
 
 ## Operating principles
 
