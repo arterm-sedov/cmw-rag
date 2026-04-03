@@ -218,7 +218,7 @@ Every Russian deliverable must read as if written by a native-speaking executive
 - **One idea per paragraph.** Each paragraph opens with its topic sentence; supporting detail follows. If a paragraph covers two ideas, split it.
 - **Action-oriented language.** Every recommendation or next-step section uses imperative voice addressed to the reader: «утвердите план», «зафиксируйте KPI», «проведите аудит».
 - **Quantify or qualify.** No vague claims. Attach a number, a range, or an explicit qualifier: «по данным X», «в диапазоне Y–Z», «по оценке Yakov Partners (2025)». If a number is approximate, say so explicitly: «порядка», «~», or «ориентировочно».
-- **No self-referential text.** Do not describe the document, its structure, or how it was written. Let content speak. Examples of prohibited phrases: «в данном разделе мы рассмотрим…», «этот документ предназначен для…», «ниже приводится обзор…».
+- **No self-referential text.** Do not describe the document, its structure, or how it was written. Let content speak. Examples of prohibited phrases: «в данном разделе мы рассмотрим…», «этот документ предназначен для…», «ниже приводится обзор…». This includes **positional navigation words**: avoid «ниже», «выше», «в разделе … ниже/выше», «как в дайджестах», «детализация тезисов». Use a **named `.md#anchor` link** instead: `_«[Section title](#anchor)»_`.
 - **Coherence across the pack.** When the same concept (KPI threshold, cost range, compliance requirement) appears in multiple documents, use identical wording and values. Contradictions undermine executive trust.
 
 ## Markdown and document formatting
