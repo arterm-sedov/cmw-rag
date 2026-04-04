@@ -134,9 +134,9 @@ tags:
 
 ## Минимальные условия безопасности и наблюдаемости (pre-scale gate) {: #exec_unified_security_gates }
 
-- Проверены CISO/CIO trust-критерии перед промышленным запуском: _Приложение D «[Сводка доверия для CISO/CIO: что проверять перед промышленным запуском](./20260325-research-appendix-d-security-observability-ru.md#app_d__ciso_trust_summary)»_.
-- Утверждены правила телеметрии и ПДн (минимизация, ретенция, доступ): _«[телеметрия и 152-ФЗ](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_.
-- Формализован периметр до LLM и пакет observability в передаче: _«[периметр до LLM](./20260325-research-appendix-d-security-observability-ru.md#app_d__llm_perimeter_data_minimization)»_, _«[пакет отчуждения observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__handoff_package_observability)»_.
+- Проверены CISO/CIO trust-критерии перед промышленным запуском: _Приложение D, параграф «[Сводка доверия для CISO/CIO: что проверять перед промышленным запуском](./20260325-research-appendix-d-security-observability-ru.md#app_d__ciso_trust_summary)»_.
+- Утверждены правила телеметрии и ПДн (минимизация, ретенция, доступ): _«[Персональные данные и содержимое в телеметрии (152-ФЗ)](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_.
+- Формализован периметр до LLM и пакет observability в передаче: _«[Периметр до LLM: минимизация данных, обезличивание и обратимые подстановки](./20260325-research-appendix-d-security-observability-ru.md#app_d__llm_perimeter_data_minimization)»_, _«[Пакет отчуждения: что добавить по наблюдаемости](./20260325-research-appendix-d-security-observability-ru.md#app_d__handoff_package_observability)»_.
 
 ## Типовые возражения и ответы {: #exec_unified_objections }
 
@@ -184,7 +184,7 @@ tags:
 - Тарифы РФ и влияние открытых весов на TCO: в параграфах _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ и _«[Открытые веса и API: влияние на TCO](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)»_.
 - Риски бюджета и меры снижения: _«[Риски и оптимизация](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)»_.
 - Передача ИС/кода и критерии приёмки: _«[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
-- Security/compliance/observability для защиты сделки: _Приложение D «[Управление рисками и соответствие (Compliance)](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
+- Security/compliance/observability для защиты сделки: _Приложение D, параграф «[Управление рисками и соответствие (Compliance)](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
 - Единые политики KPI/FX и навигация по комплекту: _Приложение A «[Обзор](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
 
 ## Источники {: #exec_unified_sources }
