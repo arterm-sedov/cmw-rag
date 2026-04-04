@@ -246,7 +246,7 @@ tags:
 
 **Подходы:**
 
-- **Neuraldeep.ru** - база навыков для российских сервисов (Яндекс, Битрикс24, 1С).
+- **[Neuraldeep.ru](https://neuraldeep.ru/)** — база навыков для российских сервисов (Яндекс, Битрикс24, 1С).
 - **SGR Agent Core** — Schema-Guided Reasoning для агентов.
 - **OpenClaw** — self-hosted AI-агент (335K+ GitHub звёзд, март 2026) [OpenClawVPS](https://openclawvps.io/blog/openclaw-statistics).
 
@@ -296,7 +296,7 @@ tags:
 ### Создание агентов для клиентов {: #app_b_client_agent_creation_2 }
 
 **Подходы:**
-1. **neuraldeep.ru** — база навыков для российских сервисов
+1. **[Neuraldeep.ru](https://neuraldeep.ru/)** — база навыков для российских сервисов
 2. **SGR Agent Core** — Schema-Guided Reasoning для агентов
 3. **OpenClaw** — self-hosted AI-агент с ACP
 
