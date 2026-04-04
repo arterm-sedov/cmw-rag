@@ -1087,6 +1087,7 @@ _Пересчёт в рубли — по курсу ЦБ РФ на дату ра
 - [NVIDIA/garak](https://github.com/NVIDIA/garak)
 - [EvilFreelancer/openapi-to-cli](https://github.com/EvilFreelancer/openapi-to-cli)
 - [RAGAS — документация](https://docs.ragas.io/en/stable/)
+- [Neuraldeep.ru — база навыков для российских сервисов](https://neuraldeep.ru/)
 - [OpenCode](https://opencode.ai/)
 - [OpenCode — документация (Intro)](https://opencode.ai/docs)
 - [OpenCode — Ecosystem](https://opencode.ai/docs/ecosystem/)
