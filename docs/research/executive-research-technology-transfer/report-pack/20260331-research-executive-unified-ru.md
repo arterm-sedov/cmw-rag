@@ -186,6 +186,7 @@ tags:
 - Передача ИС/кода и критерии приёмки: _«[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
 - Security/compliance/observability для защиты сделки: _«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
 - Единые политики KPI/FX и навигация по комплекту: _«[Приложение A](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
+- Для расширенного чтения и внешних бенчмарков: _«[Приложение F](./20260325-research-appendix-f-extended-reading-ru.md#app_f_root)»_.
 
 ## Источники {: #exec_unified_sources }
 
