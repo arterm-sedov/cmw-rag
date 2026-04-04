@@ -43,6 +43,7 @@ tags:
 - [Приложение C. Имеющиеся наработки **Comindware** (состав, границы, артефакты)](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
 - [Приложение D. Безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
 - [Приложение E. Рыночные и технические сигналы (справочно)](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)
+- [Приложение F. Дополнительное чтение и расширенные ориентиры](./20260325-research-appendix-f-extended-reading-ru.md#app_f_root) (внешние бенчмарки и расширенный круг чтения)
 
 ### Как использовать для управленческих решений {: #method_how_to_use }
 
