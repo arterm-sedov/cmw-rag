@@ -51,7 +51,7 @@ tags:
 - [Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)
 - [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
 - [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
-- [Профиль on-prem-GPU в проектах Comindware](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) (24 ГБ GeForce, кастомные/серверные исполнения RTX 4090 48 ГБ, PRO 6000 96 ГБ)
+- [Профиль on-prem-GPU в проектах Comindware](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) (RTX 4090 24 ГБ, RTX 4090 48 ГБ, PRO 6000 96 ГБ)
 - [Приложение C. Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
 - [Приложение D. Безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
 - [Приложение E. Рыночные и технические сигналы (справочно)](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)

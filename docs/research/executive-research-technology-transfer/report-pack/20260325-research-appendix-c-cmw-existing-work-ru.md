@@ -53,7 +53,7 @@ tags:
 
 Здесь описывается методология внедрения и управления инфраструктурой ИИ в экосистеме **Comindware** с фокусом на российские облачные провайдеры и локальный инференс. Архитектура основана на **модульном, контейнеризованном подходе**, объединяющем RAG-движок (**корпоративный RAG-контур**) с серверами инференса на базе **MOSEC/vLLM** (состав — в таблице ниже), агентным слоем **Comindware Platform** и интеграцией с российскими облачными платформами.
 
-Экономика сайзинга, CapEx/OpEx и TCO — в параграфе _«[Роль документа в комплекте](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)»; **профили on-prem-GPU** (потребительские **24 ГБ**, **RTX 4090 48 ГБ** в кастомных и серверных исполнениях, доступных в продаже и аренде, **RTX PRO 6000 Blackwell 96 ГБ** в проектах **Comindware**) — в параграфе _«[Профиль on-prem-GPU в проектах Comindware](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw)»_ того же отчёта.
+Экономика сайзинга, CapEx/OpEx и TCO — в параграфе _«[Роль документа в комплекте](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)»; **профили on-prem-GPU** (**RTX 4090 24 ГБ**, **RTX 4090 48 ГБ**, **RTX PRO 6000 Blackwell 96 ГБ** в проектах **Comindware**) — в параграфе _«[Профиль on-prem-GPU в проектах Comindware](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw)»_ того же отчёта.
 
 Для корректного сравнения вариантов интерпретируйте эти данные через _[Топологию ёмкости GPU и типы источников цифр](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_capacity_topology_bench_classes)_.
 
