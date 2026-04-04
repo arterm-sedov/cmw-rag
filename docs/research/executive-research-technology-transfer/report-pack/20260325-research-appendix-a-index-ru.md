@@ -61,9 +61,11 @@ tags:
 ## Термины и условные обозначения {: #app_a_conventions_and_scope }
 
 Ниже — краткий словарь ключевых терминов, который фиксирует их употребление в этом комплекте и снижает риск разночтений при обсуждении архитектуры, экономики и модели передачи.
-В тексте комплекта **корпоративный RAG-контур**, **сервер инференса на базе MOSEC/vLLM** и **агентный слой Comindware Platform** — **условные названия ролей компонентов** иллюстративного референс-стека **Comindware**, а не обязательные коммерческие SKU.
 
-Подробные формулировки для договоров — _[Приложение B](20260325-research-appendix-b-ip-code-alienation-ru.md)_; раздельные подписи строк экосистемы — _[Приложение C](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)_.
+В тексте комплекта **корпоративный RAG-контур**, **сервер инференса на базе vLLM/MOSEC** и **агентный слой Comindware Platform** — это **условные названия ролей компонентов** иллюстративного референс-стека **Comindware**, а не обязательные коммерческие SKU.
+
+Подробные формулировки для договоров и переговоров — в _[Приложении B «Отчуждение ИС и кода (KT, IP, лицензии, приёмка)»](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)_ и _[Приложении C «Имеющиеся наработки Comindware»](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)_.
+
 | Термин | Определение в контексте комплекта |
 | --- | --- |
 | Агентный RAG | Вариант RAG, где модель не только получает контекст, но и планирует шаги, вызывает инструменты и при необходимости делает несколько итераций поиска и проверки. |
@@ -159,7 +161,6 @@ tags:
 - Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)? → [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm) и [Приложение B: комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)
 - Что есть в **Comindware** сегодня (состав стека, границы ‘что есть’ vs ‘методология’)? → [Приложение C: имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
 - Как обеспечить security, комплаенс и промышленную observability (контур контроля, data minimization posture)? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
-- Сделки с **EU-составляющей**: справочно EU AI Act (сроки, штрафы, Digital Omnibus / трилог)? → [Приложение D — международный контекст EU AI Act](./20260325-research-appendix-d-security-observability-ru.md#app_d__eu_ai_act_context)
 - Как проектировать изоляцию и сеть для агентского исполнения (граница доверия, egress, краткоживущие учётные данные)? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__trust_boundary_agent_environment)
 - Какие паттерны среды для агента в PR и долгоживущей dev, модель риска по сценарию и минимальный состав платформы задач? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_model_platform_patterns); для KT/IP и PR — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)
 - Как сравнивать E2B / Modal / Daytona и бенчмаркать песочницы (сеть, сессии, метрики прода)? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__managed_sandboxes_benchmarks) и [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_sandbox_evaluation_benchmarks)
@@ -203,8 +204,8 @@ tags:
 | **Цены на GPU-оборудование (покупка и аренда)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_hardware_pricing_all) |
 | **Профиль on-prem-GPU в проектах Comindware** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) |
 | **Топология ёмкости GPU и типы источников цифр** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_capacity_topology_bench_classes) |
-| **Ориентиры для углублённого аппаратного сайзинга (официальные бенчмарки и документация)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_inference_benchmarks_vram_tools) |
-| **Бенчмарки RTX 4090 (потребительская 24 ГБ GeForce; 48 ГБ — коммерческая аренда)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_inference_benchmarks_vram_tools) |
+| **Ориентиры для углублённого аппаратного сайзинга (официальные бенчмарки и документация)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_hardware_deep_research_pointers) |
+| **Бенчмарки RTX 4090 (реф. 24 ГБ GeForce; 48 ГБ — коммерческая аренда)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_rtx_4090_benchmarks) |
 | **Ориентиры сообщества: Qwen3.5-35B-A3B и потребительское железо (март 2026)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_community_qwen_consumer_hardware) |
 | **Требования к VRAM при инференсе LLM** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_vram_requirements_llm_inference) |
 | **Сегментные ориентиры РФ (GPU-облако, B2B LLM)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_segment_benchmarks) |
@@ -227,8 +228,8 @@ tags:
 #### OWASP GenAI Security, тестирование и адаптации на русском {: #app_a_owasp_genai_security_ru }
 
 - [OWASP Gen AI Security Project — Introduction](https://genai.owasp.org/introduction-genai-security-project/)
-- [GenAI Security — OWASP ТОП-10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
-- [GenAI Security — OWASP ТОП-10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
+- [GenAI Security — OWASP Top 10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
+- [GenAI Security — OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/)
 - [GitHub — OWASP Application Security Verification Standard 5.0.0 (PDF, RU)](https://github.com/OWASP/ASVS/blob/master/5.0/OWASP_Application_Security_Verification_Standard_5.0.0_ru.pdf)
 - [GitHub — OWASP www-project-ai-testing-guide](https://github.com/OWASP/www-project-ai-testing-guide)
 - [Habr — OWASP (вводные по тестированию и материалам сообщества)](https://habr.com/ru/companies/owasp/articles/817241/)

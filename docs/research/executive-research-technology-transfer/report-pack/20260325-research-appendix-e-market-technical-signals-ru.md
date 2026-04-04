@@ -32,9 +32,9 @@ tags:
 
 ## Связанные документы
 
-- [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
-- [Отчёт. Сайзинг и экономика (CapEx / OpEx / TCO)](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
-- [Приложение D. Безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
+- [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
+- [Приложение D «Безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
 
 ## Архитектурный и продуктовый радар (детализация дайджестов) {: #app_e_architecture_product_radar }
 
