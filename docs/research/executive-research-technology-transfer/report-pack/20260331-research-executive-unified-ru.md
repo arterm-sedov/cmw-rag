@@ -118,7 +118,7 @@ tags:
 - **Качество:** целевой ориентир >95 % по внутренней рубрике (LLM-as-judge) при стабильной методике оценки.
 - **TCO break-even:** рассматривайте переход к on-prem/гибриду при устойчивой нагрузке и подтверждённой утилизации >60 %.
 
-Единая трактовка KPI в комплекте — _«[Приложение A](./20260325-research-appendix-a-index-ru.md#app_a_kpi_semantics)»_.
+Единая трактовка KPI в комплекте — _Приложение A, параграф «[Единые KPI и их интерпретация](./20260325-research-appendix-a-index-ru.md#app_a_kpi_semantics)»_.
 
 ## Валюта и правила для коммерческих предложений {: #exec_unified_fx_policy }
 
@@ -128,7 +128,7 @@ tags:
 
 ## Минимальные условия передачи экспертизы (go/no-go перед BOT) {: #exec_unified_transfer_gates }
 
-- Согласован минимально целостный пакет отчуждения и распределение прав: _«[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)»_.
+- Согласован минимально целостный пакет отчуждения и распределение прав: _Приложение B, параграф «[Пакет отчуждения (минимально целостный)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)»_.
 - Пройдены критерии приёмки передачи (чек-лист): _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_transfer_acceptance_criteria_checklist)_.
 - Зафиксируйте организационные условия после передачи и уровни обучения: _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_org_conditions_post_transfer)_, _[Уровни обучения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_training_levels_transfer)_.
 
@@ -181,13 +181,13 @@ tags:
 
 ## Материалы для подготовки переговоров и КП {: #exec_unified_drilldown }
 
-- TOM, роли, фазы внедрения и контроль качества: _«[Методология](./20260325-research-report-methodology-main-ru.md#method_target_operating_model)»_.
-- Экономика решения и матрица вариантов: _«[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_decision_matrix)»_.
-- Тарифы РФ и влияние открытых весов на TCO: _«[Тарифы и провайдеры РФ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_, _«[Открытые веса и API](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_.
-- Риски бюджета и меры снижения: _«[Риски и оптимизация](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)»_.
-- Передача ИС/кода и критерии приёмки: _«[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
-- Security/compliance/observability для защиты сделки: _«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
-- Единые политики KPI/FX и навигация по комплекту: _«[Приложение A](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
+- TOM, роли, фазы внедрения и контроль качества: в параграфе _«[Целевая операционная модель (Target Operating Model)](./20260325-research-report-methodology-main-ru.md#method_target_operating_model)»_ отчёта «Методология разработки и внедрения ИИ».
+- Экономика решения и матрица вариантов: в параграфе _«[Матрица принятия решений (РБК 2026)](./20260325-research-report-sizing-economics-main-ru.md#sizing_decision_matrix)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
+- Тарифы РФ и влияние открытых весов на TCO: в параграфах _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ и _«[Открытые веса и API: влияние на TCO](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
+- Риски бюджета и меры снижения: в параграфе _«[Риски бюджета и меры снижения](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
+- Передача ИС/кода и критерии приёмки: в _Приложении B «[Отчуждение ИС и кода (KT, IP, лицензии, приёмка)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
+- Security/compliance/observability для защиты сделки: _Приложение D, параграф «[Управление рисками и соответствие (Compliance)](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
+- Единые политики KPI/FX и навигация по комплекту: _Приложение A «[Обзор](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
 
 ## Источники {: #exec_unified_sources }
 
