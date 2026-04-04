@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     top_k_rerank: int
     rerank_score_threshold: float | None = None
     rerank_enabled: bool
+    rerank_boost_code: float = 0.0
+    rerank_boost_tag: float = 0.0
+    rerank_boost_section: float = 0.0
     chunk_size: int
     chunk_overlap: int
 

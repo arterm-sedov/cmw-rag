@@ -1,0 +1,88 @@
+{
+  "results": {
+    "metadata": {
+      "timestamp": "20260321_152649",
+      "questions": 52,
+      "instructions": 13
+    },
+    "semantic": {
+      "baseline_default": {
+        "instruction": "Given a web search query, retrieve relevant passages that answer the query",
+        "avg_score": 0.5313113872821514,
+        "count": 260,
+        "by_lang": {
+          "en": 0.636041259765625,
+          "ru": 0.5141442549856086,
+          "mixed": 0.500396728515625
+        },
+        "by_type": {
+          "keyword": 0.4328794206891741,
+          "natural": 0.646148681640625
+        }
+      },
+      "en_context_ru_docs": {
+        "instruction": "Find relevant documentation. Documents are primarily in Russian with code snippets in English",
+        "avg_score": 0.36273610041691706,
+        "count": 260,
+        "by_lang": {
+          "en": 0.478167724609375,
+          "ru": 0.3331362272563734,
+          "mixed": 0.3962931315104167
+        },
+        "by_type": {
+          "keyword": 0.29351741245814733,
+          "natural": 0.4434912363688151
+        }
+      },
+      "en_context_mixed": {
+        "instruction": "Retrieve technical documentation (Russian text, English code examples) that answers the query",
+        "avg_score": 0.38157794658954325,
+        "count": 260,
+        "by_lang": {
+          "en": 0.5039154052734375,
+          "ru": 0.3519642076994243,
+          "mixed": 0.4060150146484375
+        },
+        "by_type": {
+          "keyword": 0.3232421875,
+          "natural": 0.4496363321940104
+        }
+      },
+      "en_context_platform": {
+        "instruction": "Find Comindware Platform documentation in Russian/English with configuration examples and code",
+        "avg_score": 0.42758125892052284,
+        "count": 260,
+        "by_lang": {
+          "en": 0.57645263671875,
+          "ru": 0.39905933580900493,
+          "mixed": 0.40972493489583334
+        },
+        "by_type": {
+          "keyword": 0.3582178388323103,
+          "natural": 0.5085052490234375
+        }
+      },
+      "en_platform": {
+        "instruction": "Find documentation about Comindware Platform features, configurations, and APIs",
+        "avg_score": 0.46027449065563725,
+        "count": 255,
+        "by_lang": {
+          "en": 0.600408935546875,
+          "ru": 0.42935955975506757,
+          "mixed": 0.4640706380208333
+        },
+        "by_type": {
+          "keyword": 0.38472202845982145,
+          "natural": 0.5522514011548914
+        }
+      }
+    }
+  },
+  "processed": [
+    "semantic_en_context_platform",
+    "semantic_en_context_mixed",
+    "semantic_baseline_default",
+    "semantic_en_platform",
+    "semantic_en_context_ru_docs"
+  ]
+}

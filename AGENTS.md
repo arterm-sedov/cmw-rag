@@ -32,7 +32,7 @@ Use `pytest` for testing. Configuration is in `pyproject.toml`.
   pytest --cov=rag_engine --cov-report=term-missing
   ```
 
-### 5. Test Practices
+### 3. Test Practices
 
 Following industry best practices from Google Test Primer and IBM Unit Testing Guidelines:
 
@@ -106,7 +106,42 @@ def test_infinity_embeddings_returns_vector_of_expected_size(infinity_client):
 - [Google Test Primer](https://google.github.io/googletest/primer.html)
 - [IBM Unit Testing Best Practices](https://www.ibm.com/think/insights/unit-testing-best-practices)
 
-### 4. Running the Application
+#### Integration Tests
+
+For endpoints, test actual HTTP requests. Use pytest markers for slow/integration tests:
+```bash
+pytest -m "not slow"         # Run fast unit tests only
+pytest -m integration        # Run integration tests only
+```
+
+#### Cross-Model Testing
+
+Test multiple models/configurations with same logic. Don't duplicate test code. Use parametrized tests for different configs or inputs.
+
+#### Shared Logic Verification
+
+When multiple endpoints compute the same thing, verify they produce identical results.
+
+### 4. Design Principles
+
+- **TDD:** Write tests first, define behavior contracts before implementation
+- **SDD:** Plan with specs, understand requirements before coding
+- **Non-breaking:** Never break existing functionality - verify all endpoints still work
+- **Lean:** Minimal code, no overengineering, delete unnecessary complexity
+- **Pythonic:** Follow Python idioms, use standard library, prefer clarity over cleverness
+- **Brilliant:** Simple solutions that work, not complex ones that impress
+
+### 5. Verification Checklist
+
+Before considering work complete:
+
+1. Tests pass
+2. Lint passes
+3. Shared logic (DRY)
+4. All endpoints unchanged (no breakage)
+5. README updated if applicable
+
+### 6. Running the Application
 - **Start App (Bash):** `bash rag_engine/scripts/start_app.sh`
 - **Start App (Python):** `python rag_engine/api/app.py`
 - **Build Index:** `python rag_engine/scripts/build_index.py --source "path/to/docs" --mode folder`
@@ -148,6 +183,18 @@ def test_infinity_embeddings_returns_vector_of_expected_size(infinity_client):
 - **Comments:** Add comments for *why*, not *what*. Update existing comments; do not delete them.
 - **Docs Strings:** Follow PEP 257 docstring conventions (Google style is preferred).
 
+### Documentation Structure
+
+Structure content well per best documentation and executive research practices:
+
+- **Clear hierarchy:** Use consistent heading levels (H1 → H2 → H3). One H1 per file.
+- **Front-load value:** Put key conclusions and recommendations first. Executives scan for decisions.
+- **SCQA framework:** Situation (Ситуация) → Complication (Проблема) → Question (Вопрос для решения) → Answer (Рекомендуемый ответ) for executive summaries or report intros.
+- **Chunked content:** Use bulleted lists, short paragraphs, and visual breaks. Avoid walls of text.
+- **Actionable sections:** Each section should answer "So what?" and lead to a decision or next step.
+- **Consistent formatting:** Same patterns for similar content types (e.g., all pricing tables look the same).
+- **Source traceability:** Every claim needs inline citation. No unsubstantiated assertions.
+
 ---
 
 ## 🤖 Agent Instructions (OpenCode, Cursor, Copilot)
@@ -163,7 +210,7 @@ def test_infinity_embeddings_returns_vector_of_expected_size(infinity_client):
 - **Information Gathering:**
     - Search docs/internet before coding. Digest best practices from official sources.
     - Do not read just one page; scan the docs, links, and hierarchy to ground actions in truth.
-- **Planning:** PLAN your course of action before implementing.
+- **Planning:** PLAN your course of action before implementing. Write a plan to `.opencode/plans/` (or `.cursor/plans/` for Cursor agent) that is lean, dry, actionable, step-by-step, verifiable, brilliant, and follows best SWE practices — TDD-first, SDD/DDD, clean architecture.
 - **Verification:**
     - Run `ruff check <modified_file>` after making changes.
     - Run relevant tests after changes.
@@ -171,6 +218,7 @@ def test_infinity_embeddings_returns_vector_of_expected_size(infinity_client):
 - **Secrets:** NEVER hardcode secrets. Use environment variables.
 - **.env Files:** NEVER commit `.env` files to version control. Use `.env-example` as a template with placeholder values only. The `.env` file contains sensitive credentials and deployment-specific settings.
 - **No Breakage:** Never break existing code.
+- **Documentation:** After changes, update `.opencode/README.md` and related docs if affected.
 
 ### 12-Factor App Principles
 

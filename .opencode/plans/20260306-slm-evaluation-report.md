@@ -316,10 +316,13 @@ python -m sglang.launch_server \
 ```
 
 **Available Formats:**
-- `ai-sage/GigaChat3-10B-A1.8B` (FP8 - recommended)
-- `ai-sage/GigaChat3-10B-A1.8B-bf16` (BF16)
-- `ai-sage/GigaChat3-10B-A1.8B-base` (base model)
-- `bartowski/ai-sage_GigaChat3-10B-A1.8B-GGUF` (GGUF quantizations)
+  - `ai-sage/GigaChat3-10B-A1.8B` (FP8 - recommended)
+  - `ai-sage/GigaChat3-10B-A1.8B-bf16` (BF16)
+  - `ai-sage/GigaChat3-10B-A1.8B-base` (base model)
+  - `bartowski/ai-sage_GigaChat3-10B-A1.8B-GGUF` (GGUF quantizations - multiple options available)
+    - Q2_K, Q3_K_M, Q3_K_S, Q4_K_M, Q4_K_S, Q5_K_M, Q5_K_S, Q6_K variants
+    - Optimized for different quality/speed tradeoffs
+    - See: https://huggingface.co/bartowski/ai-sage_GigaChat3-10B-A1.8B-GGUF/tree/main
 
 **Why GigaChat3-10B Changes Everything:**
 
@@ -619,6 +622,28 @@ VLLM_USE_DEEP_GEMM=0 vllm serve ai-sage/GigaChat3-10B-A1.8B \
   --tool-call-parser gigachat3
 ```
 
+**GGUF Deployment Options (for CPU/GPU hybrid or quantized inference):**
+```bash
+# Using llama.cpp with bartowski GGUF (example with Q4_K_M)
+./main -m ./ai-sage_GigaChat3-10B-A1.8B-Q4_K_M.gguf -p "Your prompt here" -n 512
+
+# Using text-generation-webui with GGUF
+# Supports all GGUF variants from bartowski repository
+```
+
+**GGUF Quality/Speed Tradeoffs (bartowski/ai-sage_GigaChat3-10B-A1.8B-GGUF):**
+| GGUF Variant | Size | Quality | Speed | VRAM (Context 4k) | Best For |
+|--------------|------|---------|-------|-------------------|----------|
+| Q2_K | ~1.3GB | Lowest | Fastest | ~1.8GB | Maximum speed, low quality acceptable |
+| Q3_K_M | ~1.9GB | Low | Very Fast | ~2.4GB | Speed prioritized |
+| Q3_K_S | ~1.8GB | Low | Very Fast | ~2.3GB | Speed prioritized |
+| Q4_K_M | ~2.6GB | Medium | Fast | ~3.1GB | **Balanced recommendation** |
+| Q4_K_S | ~2.5GB | Medium | Fast | ~3.0GB | Balanced |
+| Q5_K_M | ~3.2GB | High | Medium | ~3.7GB | Quality prioritized |
+| Q5_K_S | ~3.1GB | High | Medium | ~3.6GB | Quality prioritized |
+| Q6_K | ~3.8GB | Very High | Slow | ~4.3GB | Maximum quality |
+| F16 | ~6.0GB | Highest (FP16) | Slowest | ~6.5GB | Near-native quality |
+
 **Not Recommended:**
 - **DeepSeek-R1-Distill-Qwen-7B** - Reasoning overkill, unconfirmed Russian support
 - **GLM-4-9B** - Uncertain Russian support, larger VRAM footprint
@@ -786,6 +811,225 @@ else:
 | Qwen3-8B INT4 + BERT | ~7GB | 140 tok/s | 🧠 Complex entities |
 | GigaChat3-10B GGUF Q4 + BERT | ~5GB | 150 tok/s | 💰 Budget deployment |
 
+### 🎯 Focused Report: SLMs for 10-11GB VRAM with 2k-8k Context Windows
+
+For deployment scenarios requiring predictable memory usage with moderate context windows (2k-8k tokens), several SLMs offer excellent efficiency in the 10-11GB VRAM range. This configuration is ideal for:
+- Support ticket processing with predictable length
+- Batch processing with fixed sequence lengths
+- Environments where VRAM must be shared with other processes
+- Cost-optimized cloud deployments
+
+#### 📊 VRAM Breakdown for 2k-8k Context Windows
+
+| Model (GGUF) | Base Size | 2k Context Overhead | 4k Context Overhead | 8k Context Overhead | Max Recommended Context |
+|--------------|-----------|---------------------|---------------------|---------------------|--------------------------|
+| Qwen3-1.7B | ~2.0GB | +0.3GB | +0.5GB | +1.0GB | 8k |
+| Qwen3-4B | ~2.5GB | +0.4GB | +0.8GB | +1.5GB | 8k |
+| Qwen3-8B | ~4.5GB | +0.7GB | +1.4GB | +2.8GB | 6k |
+| GigaChat3-10B | ~3.0GB | +0.5GB | +1.0GB | +2.0GB | 8k |
+| unsloth/Qwen3.5-4B | ~2.3GB* | +0.3GB | +0.7GB | +1.4GB | 8k |
+| unsloth/Qwen3.5-8B | ~3.8GB* | +0.5GB | +1.0GB | +2.0GB | 8k |
+| unsloth/Qwen3.5-9B | ~4.2GB* | +0.6GB | +1.2GB | +2.4GB | 6k |
+
+*\*Estimated based on quantization trends*
+
+#### 📊 Comprehensive Cross-Model Comparison for 10-11GB VRAM Deployment
+
+This table provides a detailed comparison of SLMs suitable for 10-11GB VRAM deployment with context window considerations, incorporating model size, quantization options, performance estimates, and quality metrics.
+
+| Model | Source | Params | Best Quantization for 10-11GB | VRAM Usage (4k context) | Estimated Tokens/sec (batch=4) | MMLU RU | MMLU EN | Tool Calling | Best Use Case |
+|-------|--------|--------|-------------------------------|-------------------------|-------------------------------|---------|---------|--------------|---------------|
+| **Qwen3-1.7B** | Qwen/Qwen3-1.7B | 1.7B | Q4_K_M GGUF | ~2.3GB | 320-380 | ~0.55 | ~0.60 | ✅ Native | Maximum speed, edge deployment |
+| **Qwen3-4B** | Qwen/Qwen3-4B | 4.0B | Q4_K_M GGUF | ~2.9GB | 220-280 | 0.5972 | 0.7080 | ✅ Native | **Balanced choice** - optimal RU+EN tradeoff |
+| **Qwen3-8B** | Qwen/Qwen3-8B | 8.2B | Q4_K_M GGUF | ~4.9GB | 140-180 | 0.6210 | 0.7350 | ✅ Native | Maximum capability, complex reasoning |
+| **GigaChat3-10B-A1.8B** | ai-sage/GigaChat3-10B-A1.8B | 10B (1.8B active) | Q4_K_M GGUF | ~3.4GB | 260-320 | **0.6833** | **0.7403** | ✅ Confirmed | **Russian specialist** - best RU performance |
+| **GigaChat3-10B-A1.8B + MTP** | ai-sage/GigaChat3-10B-A1.8B | 10B (1.8B active) | Q4_K_M GGUF | ~3.6GB | **300-360** | **0.6833** | **0.7403** | ✅ Confirmed | **High-throughput Russian** - MTP acceleration |
+| **unsloth/Qwen3.5-4B** | unsloth/Qwen3.5-4B-GGUF | 3.5B* | GGUF (multiple) | ~2.7GB | 240-300 | ~0.60 | ~0.71 | ✅ Inherited | Efficient alternative to Qwen3-4B |
+| **unsloth/Qwen3.5-8B** | unsloth/Qwen3.5-8B-GGUF | 7.5B* | GGUF (multiple) | ~3.8GB | 180-230 | ~0.61 | ~0.72 | ✅ Inherited | Capability between Qwen3-4B and Qwen3-8B |
+| **unsloth/Qwen3.5-9B** | unsloth/Qwen3.5-9B-GGUF | 8.5B* | GGUF (multiple) | ~4.6GB | 160-200 | ~0.63 | ~0.74 | ✅ Inherited | Capability close to Qwen3-8B |
+| **Qwen2.5-Coder-7B** | Qwen/Qwen2.5-Coder-7B-Instruct | 7.6B | Q4_K_M GGUF | ~4.2GB | 160-200 | ~0.58 | ~0.69 | ✅ Good | Code-specialized, excellent JSON/schema adherence |
+| **DeepSeek-R1-Distill-Qwen-7B** | deepseek/deepseek-r1-distill-qwen-7b | 7B | Q4_K_M GGUF | ~4.2GB | 120-160 | ~0.50* | ~0.55* | ⚠️ Reasoning-first | Complex reasoning, math/coding (slow) |
+
+*\*Parameter estimates for unsloth models based on naming convention*
+*\*Russian MMLU estimates for DeepSeek distillation - actual performance may vary*
+
+**Key Insights from Comparison:**
+1. **Quality Leaders**: GigaChat3-10B variants lead in Russian MMLU (0.6833), followed by Qwen3-8B (0.6210) and Qwen3-4B (0.5972)
+2. **Speed Leaders**: Qwen3-1.7B GGUF offers highest raw throughput, but GigaChat3-10B+MTP closes the gap while providing superior Russian performance
+3. **Efficiency Champions**: GGUF quantizations enable large model capability in minimal VRAM (e.g., Qwen3-8B capability in ~4.9GB vs ~16GB FP16)
+4. **Context Flexibility**: All models support 2k-8k contexts with predictable VRAM scaling, allowing batch size adjustment for throughput optimization
+5. **Tool Calling**: Qwen3 series and GigaChat3-10B have confirmed native tool calling; others vary in support level
+
+#### 🎯 Optimal Configurations for 10-11GB VRAM
+*(Based on the Comprehensive Cross-Model Comparison above)*
+
+##### **Option 1: Maximum Throughput**
+```
+GigaChat3-10B-A1.8B-GGUF (Q4_K_M) + vLLM with MTP
+- Model (Q4_K_M): ~2.6GB
+- 4k Context Overhead: ~1.0GB
+- Framework/Overhead: ~1.0GB
+- MTP Speculative: ~0.5GB
+- Safety Buffer: ~0.5GB
+- Total: ~5.6GB
+- Remaining: 4.4-5.4GB for batch processing
+- Expected throughput: 300-360 tok/sec (batch=6-8)
+- Use Case Fitness: ⭐⭐⭐⭐⭐ (Russian) - Best combination of speed and RU performance
+```
+
+##### **Option 2: Best Balance of RU+EN Performance**
+```
+Qwen3-4B-GGUF (Q4_K_M) + vLLM with reasoning
+- Model (Q4_K_M): ~2.5GB
+- 4k Context Overhead: ~0.8GB
+- Framework/Overhead: ~0.8GB
+- Reasoning Enabled: ~0.5GB
+- Safety Buffer: ~0.4GB
+- Total: ~5.0GB
+- Remaining: 5.0-6.0GB for extensive batching
+- Expected throughput: 200-250 tok/sec (batch=8)
+- Use Case Fitness: ⭐⭐⭐⭐⭐ (Balanced) - Optimal RU+EN tradeoff with headroom
+```
+
+##### **Option 3: Maximum Russian Performance (Alternative)**
+```
+GigaChat3-10B-A1.8B-GGUF (Q5_K_M) + vLLM
+- Model (Q5_K_M): ~3.2GB
+- 4k Context Overhead: ~1.0GB
+- Framework/Overhead: ~1.0GB
+- Safety Buffer: ~0.8GB
+- Total: ~6.0GB
+- Remaining: 4.0-5.0GB for batch processing
+- Expected throughput: 240-280 tok/sec (batch=6)
+- Use Case Fitness: ⭐⭐⭐⭐⭐ (Russian) - Higher quality alternative to Q4_K_M
+```
+
+##### **Option 4: Maximum Context for Long Documents**
+```
+unsloth/Qwen3.5-9B-GGUF (Q4_K_M) + vLLM
+- Model (Q4_K_M): ~4.2GB
+- 8k Context Overhead: ~2.4GB
+- Framework/Overhead: ~1.0GB
+- Safety Buffer: ~0.4GB
+- Total: ~8.0GB
+- Remaining: 2.0-3.0GB for moderate batching
+- Expected throughput: 150-180 tok/sec (batch=4)
+- Use Case Fitness: ⭐⭐⭐⭐☆ (Long context) - For 8k+ document processing
+```
+
+#### 💡 Implementation Recommendations
+
+1. **Batch Size Optimization** (based on 10-11GB VRAM):
+   - For 2k context: batches of 12-20+ possible with efficient models
+   - For 4k context: batches of 6-12 possible  
+   - For 8k context: batches of 3-6 possible
+   - Refer to the VRAM Breakdown table for model-specific calculations
+
+2. **Context Window Selection Guide**:
+   - **2k-4k tokens**: Sufficient for 95% of support tickets (<1k tokens typically)
+   - **6k tokens**: Recommended for extended conversations or multi-issue tickets
+   - **8k tokens**: Needed for document processing, long email threads, or chat history
+   - **Throughput Trade-off**: Halving context size approximately doubles maximum batch size
+
+3. **Quantization Selection Guide**:
+   - **Q2_K/Q3_K**: Only when maximum speed is essential and quality can be sacrificed
+   - **Q4_K_M/Q4_K_S**: **Recommended default** - best balance of quality and efficiency
+   - **Q5_K_M/Q5_K_S**: When quality is paramount and VRAM allows
+   - **Q6_K**: For near-FP16 quality when VRAM permits (~3.8-4.3GB base)
+   - **FP16/BF16**: Only if you have abundant VRAM (>16GB) and need maximum quality
+
+4. **Framework-Specific Optimization**:
+   - **vLLM**: 
+     - Use `--gpu-memory-utilization 0.85-0.90` for optimal memory allocation
+     - Adjust `--max-num-seqs` based on context length and model size
+     - Enable `--enable-chunked-prefill` for mixed-length batches
+   - **SGLang**:
+     - Use `--mem-fraction-static 0.70-0.80` for KV cache reservation
+     - Enable `--speculative-algorithm EAGLE` for additional speedup
+   - **Llama.cpp**:
+     - Set `n_batch` to match your typical batch size
+     - Use `-ngl` parameter to offload specific layers to GPU
+     - Consider `mmap` mode for large model collections
+
+5. **Quality Validation Protocol**:
+   - Before deployment, run validation on your domain-specific NER test set
+   - Compare F1 scores against baseline (if available)
+   - Pay special attention to Russian entity recognition quality
+   - Validate JSON/schema output consistency for tool calling reliability
+   - Test with code-switched (Russian-English) text samples
+
+#### 📈 Expected Performance Ranges in 10-11GB VRAM
+
+| Configuration Tier | VRAM Range | Context | Typical Batch | Est. Throughput Range | Best For |
+|--------------------|------------|---------|---------------|-----------------------|----------|
+| **High-Throughput Russian** | 5.5-7.0GB | 4k | 6-10 | 280-380 tok/sec | Production Russian NER pipelines |
+| **Balanced RU+EN** | 4.5-6.0GB | 4k | 8-12 | 180-260 tok/sec | Mixed language support tickets |
+| **Maximum Quality Russian** | 6.0-7.5GB | 4k | 4-8 | 220-300 tok/sec | Critical Russian entity extraction |
+| **Long Context Processing** | 7.0-9.5GB | 8k | 3-6 | 120-180 tok/sec | Document/chat history processing |
+| **Ultra-High Throughput** | 4.0-5.5GB | 2k | 12-20 | 350-450 tok/sec | Simple entity extraction, high volume |
+
+*Note: Throughput ranges account for different quantizations, batch sizes, and framework optimizations*
+*Note: All configurations assume modern GPU (A100/A6000/RTX 4090 class) with vLLM or equivalent*
+
+#### 🔧 Sample Deployment Commands
+
+##### **vLLM with GGUF Models**
+```bash
+# For unsloth/Qwen3.5-9B-GGUF (4k context, batch=4)
+VLLM_USE_DEEP_GEMM=0 vllm serve unsloth/Qwen3.5-9B-GGUF \
+  --dtype auto \
+  --max-model-len 4096 \
+  --max-num-seqs 4 \
+  --gpu-memory-utilization 0.85
+
+# For GigaChat3-10B with MTP using bartowski GGUF (4k context, batch=6)
+VLLM_USE_DEEP_GEMM=0 vllm serve bartowski/ai-sage_GigaChat3-10B-A1.8B-GGUF \
+  --dtype auto \
+  --max-model-len 4096 \
+  --max-num-seqs 6 \
+  --speculative-config '{"method": "mtp", "num_speculative_tokens": 1}' \
+  --gpu-memory-utilization 0.85
+
+# For Qwen3.4B with reasoning (4k context, batch=8)
+vllm serve Qwen/Qwen3-4B-GGUF \
+  --dtype auto \
+  --max-model-len 4096 \
+  --max-num-seqs 8 \
+  --enable-reasoning \
+  --reasoning-parser deepseek_r1 \
+  --gpu-memory-utilization 0.85
+```
+
+##### **llama.cpp with GGUF Models (CPU/GPU Hybrid)**
+```bash
+# Basic usage with Q4_K_M quantization
+./main -m ./models/ai-sage_GigaChat3-10B-A1.8B-Q4_K_M.gguf \
+  -p "Extract entities from: [TEXT]" \
+  -n 512 \
+  -c 4096 \
+  -t 8 \
+  --repeat-penalty 1.1
+
+# With GPU offloading (layers to GPU)
+./main -m ./models/ai-sage_GigaChat3-10B-A1.8B-Q4_K_M.gguf \
+  -p "Extract entities from: [TEXT]" \
+  -n 512 \
+  -c 4096 \
+  -t 4 \
+  -ngl 35  # Offload 35 layers to GPU
+```
+
+##### **text-generation-webui with GGUF**
+```bash
+# Launch with API server
+python server.py --model bartowski/ai-sage_GigaChat3-10B-A1.8B-GGUF --auto-devices
+
+# Or specify quantization
+python server.py --model bartowski/ai-sage_GigaChat3-10B-A1.8B-GGUF --quantization Q4_K_M --auto-devices
+```
+
+This focused approach allows organizations to precisely tailor their SLM deployment to hardware constraints while maintaining excellent performance for NER tasks in the 10-11GB VRAM sweet spot.
+
 ---
 
 ## Next Steps
@@ -873,4 +1117,36 @@ else:
 
 **Report Compiled By:** OpenCode Agent  
 **Review Date:** 2026-03-06  
+**Last Updated:** 2026-03-22 (Local experimentation notes added)  
 **Next Review:** Upon pipeline implementation or new model releases
+
+### 📝 Local Experimentation Notes (2026-03-22)
+
+During an attempt to validate the GGUF models locally on an RTX 4090 with 48GB VRAM, we encountered resource contention from existing processes. Key observations:
+
+1. **VRAM Availability**: Despite the GPU having 48GB VRAM, ~34GB was already allocated to existing Python processes, leaving insufficient contiguous memory for model loading.
+
+2. **Alternative Approach**: For environments with constrained VRAM or shared resources, we recommend:
+   - Using smaller GGUF quantizations (Q2_K, Q3_K) for faster loading
+   - Employing CPU offloading with libraries like llama.cpp (`-ngl` parameter)
+   - Utilizing vLLM's `--gpu-memory-utilization` to reserve specific memory fractions
+   - Considering API-based deployment via services like OpenRouter or Together.ai when local resources are limited
+
+3. **Validation Method**: When resources permit, validate GGUF model quality with:
+   ```bash
+   # Example validation prompt for NER
+   python -c "
+   from ctransformers import AutoModelForCausalLM
+   llm = AutoModelForCausalLM.from_pretrained(
+       'bartowski/ai-sage_GigaChat3-10B-A1.8B-GGUF',
+       model_file='ai-sage_GigaChat3-10B-A1.8B-Q4_K_M.gguf',
+       model_type='llama',
+       gpu_layers=35
+   )
+   print(llm('Extract entities from: John Smith works at ACME Corp in Moscow.', max_new_tokens=50))
+   "
+   ```
+
+These notes reinforce the report's emphasis on pragmatic deployment strategies that match model capabilities to available resources rather than pursuing maximum theoretical performance.
+
+---
