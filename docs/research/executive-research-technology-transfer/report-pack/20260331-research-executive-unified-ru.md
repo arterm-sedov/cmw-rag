@@ -138,7 +138,7 @@ tags:
 - Утверждены правила телеметрии и ПДн (минимизация, ретенция, доступ): _«[телеметрия и 152-ФЗ](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_.
 - Формализован периметр до LLM и пакет observability в передаче: _«[периметр до LLM](./20260325-research-appendix-d-security-observability-ru.md#app_d__llm_perimeter_data_minimization)»_, _«[пакет отчуждения observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__handoff_package_observability)»_.
 - Проект ФЗ об ИИ (НПА): ориентир **вступления в силу — 1 сентября 2027** (**ст. 21** проекта), маркировка и пороги аудитории — _«[Проектный контур: законопроект об ИИ (2026)](./20260325-research-appendix-d-security-observability-ru.md#app_d__ai_bill_draft_2026)»_.
-- **EU AI Act — 2 августа 2026** (для сделок с EU-составляющей): с этой даты вступает в силу основной массив правил, включая требования к высокорисковым системам и прозрачности; применимость зависит от роли и характера использования в ЕС — при наличии EU-клиентов провести юридическую классификацию до вывода продукта на рынок; тиры штрафов, Digital Omnibus и детали охвата — _«[Международный регуляторный контекст: EU AI Act](./20260325-research-appendix-d-security-observability-ru.md#app_d__eu_ai_act_context)»_.
+- **EU AI Act — 2 августа 2026** (для сделок с EU-составляющей): по **действующему** Регламенту это базовая дата для основного массива правил; **Digital Omnibus** может сдвинуть часть категорий, поэтому ориентир для сделок — действующий текст плюс мониторинг **трехсторонних переговоров (trilogue)**. При EU-клиентах до вывода на рынок нужна юридическая классификация системы; даты, штрафы и охват — _«[Международный регуляторный контекст: EU AI Act](./20260325-research-appendix-d-security-observability-ru.md#app_d__eu_ai_act_context)»_.
 
 ## Типовые возражения и ответы {: #exec_unified_objections }
 
@@ -210,3 +210,5 @@ tags:
 - [RB.RU — вакансии с ИИ-навыками: +170% YoY в I кв. 2026 (~2,7× к I кв. 2025; hh.ru × PR DEV, март 2026)](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/)
 - [EUR-Lex: Regulation (EU) 2024/1689 — Artificial Intelligence Act (официальный текст)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689)
 - [EU AI Act Service Desk — Implementation Timeline](https://ai-act-service-desk.ec.europa.eu/en/ai-act/eu-ai-act-implementation-timeline)
+- [EU AI Act Service Desk — ст. 99 (штрафы)](https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-99)
+- [European Parliament — Digital Omnibus / AI Act, позиция комитетов (18.03.2026)](https://www.europarl.europa.eu/news/en/press-room/20260316IPR38219/meps-support-postponement-of-certain-rules-on-artificial-intelligence)
