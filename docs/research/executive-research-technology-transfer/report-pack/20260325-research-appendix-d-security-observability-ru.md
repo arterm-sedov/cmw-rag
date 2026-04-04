@@ -165,18 +165,11 @@ tags:
 
 **AI TRiSM** (в [глоссарии Gartner](https://www.gartner.com/en/information-technology/glossary/ai-trism) — **AI Trust, Risk and Security Management**; в ряде русскоязычных обзоров встречается написание «AI-TRISM») — это **рамка** для операционализации доверия к ИИ: объяснимость и интерпретируемость, защита моделей и данных, соответствие требованиям, устойчивость и надёжность процессов вокруг модели. Для контура **корпоративный RAG-контур** / агентный слой **Comindware Platform** это стыкуется с уже принятыми в комплекте практиками: [OWASP LLM Top 10 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/), [OWASP Agentic Top 10 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/), минимизация содержимого в телеметрии, ModelOps и red teaming — **без** подмены внутренней модели угроз заказчика брендом аналитика. Сметные последствия (OpEx) — в параграфе _«[OpEx безопасности GenAI и агентов (переменная статья)](./20260325-research-report-sizing-economics-main-ru.md#sizing_genai_security_opex)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
 
-**Рыночный ландшафт AI TRiSM (2026):**
+**Что это меняет для CISO/CIO:** AI TRiSM полезно трактовать не как «отдельный рынок решений», а как управленческую рамку для бюджета и контроля: кто отвечает за допуск моделей, как проверяются агенты и инструменты, где проходит граница допустимого логирования и как фиксируется реакция на инцидент.
 
-Рынок AI TRiSM оценивается в ~$3,2 млрд (2025), прогноз — $4,83 млрд к 2034 г.
+**Что подтверждают актуальные сигналы 2026:** по [HiddenLayer — AI Threat Landscape 2026](https://hiddenlayer.com/report-and-guide/threatreport2026) **76%** организаций называют shadow AI определённой или вероятной проблемой; только **19%** выполняют ручной или автоматизированный AI red teaming, а лишь **29%** имеют выделенный AI incident response plan. Для executive-пакета это сильнее, чем абстрактная оценка «роста рынка»: дефицит сегодня не в словаре технологий, а в зрелости контуров контроля.
 
-| Категория | Представители |
-|-----------|---------------|
-| Платформы AI-безопасности | Palo Alto Networks Prisma AIRS, Microsoft Azure AI Studio |
-| AI Governance | Mindgard, Zenity, PointGuard AI |
-| Защита данных | Securiti, Knosti AI |
-| Red Teaming | Microsoft PyRIT, NVIDIA Garak, Giskard |
-
-**Ключевые тренды:** 40% корпоративных приложений будут включать автономных AI-агентов к концу 2026 г.; 76% организаций отмечают Shadow AI как значимую проблему; только 26% имеют комплексные политики AI-безопасности.
+**Практический вывод для бюджета и внедрения:** если заказчик допускает агентные сценарии, MCP и подключение инструментов, в смету заранее включают runtime monitoring, adversarial testing, владельца AI governance и отдельный план реагирования на инциденты ИИ — рядом с уже знакомыми статьями на observability, red teaming и комплаенс. В этом смысле AI TRiSM не заменяет OWASP/NIST, а собирает их в один управленческий контур.
 
 **Model Context Protocol (MCP):** при проектировании агентов и реестров инструментов используйте официальное наименование **Model Context Protocol** (см. раздел _«[MCP, мультиагентная маршрутизация и воспроизводимые навыки](./20260325-research-appendix-d-security-observability-ru.md#app_d__mcp_multiagent_routing_skills)»_); не смешивать с бытовыми расшифровками вроде «Model Communication Protocol».
 
@@ -922,6 +915,7 @@ User Query
 
 ### Угрозы GenAI и иллюстративные материалы третьих лиц (не реклама) {: #app_d__genai_threats_third_party_materials }
 
+- [HiddenLayer — AI Threat Landscape 2026](https://hiddenlayer.com/report-and-guide/threatreport2026)
 - [Kaspersky Resource Center — What Is Prompt Injection?](https://www.kaspersky.com/resource-center/threats/prompt-injection)
 - [Kaspersky Blog — How LLMs can be compromised in 2025](https://www.kaspersky.com/blog/new-llm-attack-vectors-2025/54323/)
 - [Kaspersky Blog — Agentic AI security measures and OWASP ASI Top 10](https://www.kaspersky.com/blog/top-agentic-ai-risks-2026/29988/)

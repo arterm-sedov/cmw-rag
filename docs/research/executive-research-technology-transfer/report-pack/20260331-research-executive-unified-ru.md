@@ -118,6 +118,8 @@ tags:
 - **Качество:** целевой ориентир >95 % по внутренней рубрике (LLM-as-judge) при стабильной методике оценки.
 - **TCO break-even:** рассматривайте переход к on-prem/гибриду при устойчивой нагрузке и подтверждённой утилизации >60 %.
 
+Это **внутренние операционные пороги** для go/no-go и масштабирования, а не универсальные рыночные нормативы: заказчик фиксирует базовую группу, окно измерения и методику оценки до старта пилота.
+
 Единая трактовка KPI в комплекте — _Приложение A, параграф «[Единые KPI и их интерпретация](./20260325-research-appendix-a-index-ru.md#app_a_kpi_semantics)»_.
 
 ## Валюта и правила для коммерческих предложений {: #exec_unified_fx_policy }
@@ -150,7 +152,7 @@ tags:
 
 ## Рыночные сигналы для переговоров (контекст, не норма КП) {: #exec_unified_market_limits }
 
-- Российский спрос на GenAI растёт, но дефицит смещён в область внедрения и масштабирования под требования комплаенса и экономики.
+- По данным [Yakov & Partners, 2025](https://www.yakovpartners.com/publications/ai-2025/), GenAI уже используется хотя бы в одной функции у **71%** российских компаний; при этом по [McKinsey, 2025](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai-how-organizations-are-rewiring-to-capture-value) лишь **21%** организаций, использующих GenAI, сообщили о фундаментальной переработке хотя бы части workflows. Для коммерческой рамки это означает: дефицит сегодня смещён не в область интереса к технологии, а в область промышленного внедрения и масштабирования под требования комплаенса и экономики.
 - В инфраструктуре РФ усиливается предложение управляемых LLM-платформ и enterprise-инструментов (примерные ориентиры описаны в _«[Приложении E](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)»_ и отчёте _«[Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)»_).
 - Используйте международные отчёты (OpenAI, McKinsey, Stanford) как сравнительный контекст, а не как юридически значимое обещание результата в КП.
 
@@ -183,6 +185,7 @@ tags:
 - Тарифы РФ и влияние открытых весов на TCO: в параграфах _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ и _«[Открытые веса и API: влияние на TCO](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
 - Риски бюджета и меры снижения: в параграфе _«[Риски бюджета и меры снижения](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
 - Передача ИС/кода и критерии приёмки: в _Приложении B «[Отчуждение ИС и кода (KT, IP, лицензии, приёмка)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
+- Текущий состав референс-стека и границы «что есть сегодня»: _Приложение C «[Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)»_.
 - Security/compliance/observability для защиты сделки: _Приложение D, параграф «[Управление рисками и соответствие (Compliance)](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
 - Единые политики KPI/FX и навигация по комплекту: _Приложение A «[Обзор](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
 
