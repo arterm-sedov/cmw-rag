@@ -88,8 +88,8 @@ tags:
 ## Связанные документы {: #app_a_related_documents }
 
 - [Резюме для руководства: коммерческое обоснование, методология и экономика внедрения ИИ](./20260331-research-executive-unified-ru.md)
-- [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
-- [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
+- [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
 - [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
 - [Приложение C. Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
 - [Приложение D: безопасность, комплаенс и наблюдаемость (observability)](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
@@ -100,8 +100,8 @@ tags:
 | Тема | Документ |
 | --- | --- |
 | Коммерческое резюме предложения: что продаём и как передаём способность | [Резюме для руководства: коммерческое обоснование, методология и экономика внедрения ИИ](./20260331-research-executive-unified-ru.md) |
-| Экономика: цифры, тарифы, сценарии сайзинга, CapEx / OpEx / TCO | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) |
-| Методология: TOM, фазы внедрения, производственная модель (таблицы затрат — в отчёте по сайзингу) | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview) |
+| Экономика: цифры, тарифы, сценарии сайзинга, CapEx / OpEx / TCO | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) |
+| Методология: TOM, фазы внедрения, производственная модель (таблицы затрат — в отчёте по сайзингу) | [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_pack_overview) |
 | Отчуждение ИС и кода: KT / IP, лицензии, комплект передачи, приёмка | [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview) |
 | Наработки **Comindware**: состав стека, границы «что есть сегодня» | [Приложение C. Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview) |
 | Безопасность, комплаенс, наблюдаемость (углубление) | [Приложение D: безопасность, комплаенс и наблюдаемость (observability)](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview) |
@@ -112,21 +112,21 @@ tags:
 ## Навигация «вопрос → документ» {: #app_a_question_document_navigation }
 
 - Нужен коммерческий C-level обзор: что именно предлагаем (типовые проектные пакеты по этапам PoC → Пилот → Масштабирование → BOT), что остаётся у заказчика после передачи и как использовать матрицу аргументов по ролям ЛПР? → [Резюме для руководства: коммерческое обоснование, методология и экономика внедрения ИИ](./20260331-research-executive-unified-ru.md)
-- Как внедрять и разрабатывать в пром контуре (роли, фазы, контрольные точки качества)? → [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
-- Где в корпоративном ИИ формируется преимущество (данные, семантика, агенты)? → [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
-- Где глобальные бенчмарки корпоративного внедрения по публичному отчёту OpenAI (2025) и оговорки по выборке (не норма для КП в РФ)? → [Отчёт. Методология разработки и внедрения ИИ — эмпирика корпоративного внедрения](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report)
-- Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)? → [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity); поведенческие риски — [Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_behavioral_risk_factors); риск бюджета организационная зрелость и пилот — [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)
-- Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать? → [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
-- Где примерные расчёты расхода токенов по данным портала поддержки и допущениям? → [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates) (подраздел Примерные расчёты расхода токенов на доступных данных (портал поддержки))
+- Как внедрять и разрабатывать в пром контуре (роли, фазы, контрольные точки качества)? → [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- Где в корпоративном ИИ формируется преимущество (данные, семантика, агенты)? → [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- Где глобальные бенчмарки корпоративного внедрения по публичному отчёту OpenAI (2025) и оговорки по выборке (не норма для КП в РФ)? → [Отчёт «Методология разработки и внедрения ИИ» — эмпирика корпоративного внедрения](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report)
+- Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)? → [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity); поведенческие риски — [Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_behavioral_risk_factors); риск бюджета организационная зрелость и пилот — [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)
+- Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать? → [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
+- Где примерные расчёты расхода токенов по данным портала поддержки и допущениям? → [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates) (подраздел Примерные расчёты расхода токенов на доступных данных (портал поддержки))
 - Как устроен комплект отчуждения ИС/кода и что именно передаём клиенту (KT/IP)? → [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
-- Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)? → [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm) и [Приложение B: комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)
+- Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)? → [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm) и [Приложение B: комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)
 - Что есть в **Comindware** сегодня (состав стека, границы ‘что есть’ vs ‘методология’)? → [Приложение C: имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
 - Как обеспечить security, комплаенс и промышленную observability (контур контроля, data minimization posture)? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
 - Как проектировать изоляцию и сеть для агентского исполнения (граница доверия, egress, краткоживущие учётные данные)? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__trust_boundary_agent_environment)
 - Какие паттерны среды для агента в PR и долгоживущей dev, модель риска по сценарию и минимальный состав платформы задач? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_model_platform_patterns); для KT/IP и PR — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)
-- Как сравнивать E2B / Modal / Daytona и бенчмаркать песочницы (сеть, сессии, метрики прода)? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__managed_sandboxes_benchmarks) и [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_sandbox_evaluation_benchmarks)
-- Как за ~30 дней вывести безопасный MVP контура исполнения агента, какие враждебные сценарии и критерии готовности? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__secure_mvp_execution_environment) и [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_agent_execution_mvp)
-- Где цифры и барьеры зрелости GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot × CMO Club, 2025)? → [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market); [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams); [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_barriers_risk_survey_2025); для концентрации SaaS, каталога моделей и ИС в договоре — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)
+- Как сравнивать E2B / Modal / Daytona и бенчмаркать песочницы (сеть, сессии, метрики прода)? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__managed_sandboxes_benchmarks) и [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_sandbox_evaluation_benchmarks)
+- Как за ~30 дней вывести безопасный MVP контура исполнения агента, какие враждебные сценарии и критерии готовности? → [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__secure_mvp_execution_environment) и [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_agent_execution_mvp)
+- Где цифры и барьеры зрелости GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot × CMO Club, 2025)? → [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market); [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams); [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_barriers_risk_survey_2025); для концентрации SaaS, каталога моделей и ИС в договоре — [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)
 - Где ландшафт российского рынка GenAI (онтология сегментов, сценарный контур до 2030, публичные материалы red_mad_robot 2025) и согласование с цифрами IMARC/сегментами? → [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map); [ИИ-рынок России — отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_ai_market_stats_forecasts); [AI TRiSM — Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__ai_trism_trust_management)
 - Нужен единый реестр источников и расширенные списки по темам? → [Сводный реестр источников (часть III)](#app_a_sources_registry) (этот документ)
 - Нужен **сжатый** C-level обзор по методологии, TCO, CapEx/OpEx, валюте, передаче и аргументации по ролям ЛПР? → [Резюме для руководства: коммерческое обоснование, методология и экономика внедрения ИИ](./20260331-research-executive-unified-ru.md)
@@ -146,33 +146,33 @@ tags:
 
 | Тема | Документ |
 | --- | --- |
-| **Назначение документа и границы применения** | Отчёт. Методология разработки и внедрения ИИ |
-| **Резюме для руководства** | Отчёт. Методология разработки и внедрения ИИ |
-| **Источник преимущества в корпоративном ИИ (2026): внутренний контекст и рабочий слой данных** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_corporate_ai_advantage_source) |
-| **Стратегия внедрения ИИ и организационная зрелость** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity) |
-| **Целевая операционная модель (Target Operating Model)** | Отчёт. Методология разработки и внедрения ИИ |
-| **Публичные ориентиры рынка (@Redmadnews, 2026)** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_market_benchmarks_2026) |
+| **Назначение документа и границы применения** | Отчёт «Методология разработки и внедрения ИИ» |
+| **Резюме для руководства** | Отчёт «Методология разработки и внедрения ИИ» |
+| **Источник преимущества в корпоративном ИИ (2026): внутренний контекст и рабочий слой данных** | [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_corporate_ai_advantage_source) |
+| **Стратегия внедрения ИИ и организационная зрелость** | [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity) |
+| **Целевая операционная модель (Target Operating Model)** | Отчёт «Методология разработки и внедрения ИИ» |
+| **Публичные ориентиры рынка (@Redmadnews, 2026)** | [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_market_benchmarks_2026) |
 | **Обзор текущей архитектуры Comindware** | [Приложение C: имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview) |
-| **Карта российского рынка GenAI (обзор red_mad_robot, публичные материалы 2025)** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map) |
-| **Сводка по карте GenAI (ноябрь 2025)** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_genai_map_nov2025_metrics_extract) |
-| **Эмпирика корпоративного внедрения (отчёт OpenAI, 2025; оговорки по выборке)** | [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report) |
+| **Карта российского рынка GenAI (обзор red_mad_robot, публичные материалы 2025)** | [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map) |
+| **Сводка по карте GenAI (ноябрь 2025)** | [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_genai_map_nov2025_metrics_extract) |
+| **Эмпирика корпоративного внедрения (отчёт OpenAI, 2025; оговорки по выборке)** | [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report) |
 | **Управление рисками и соответствие (Compliance)** | [Приложение D: безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview) |
 
 ### Темы из отчета «Сайзинг, CapEx и OpEx для клиентов» (март 2026) {: #app_a_sizing_capex_opex_source }
 
 | Тема | Документ |
 | --- | --- |
-| **Цены на GPU-оборудование (покупка и аренда)** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_hardware_pricing_all) |
-| **Профиль on-prem-GPU в проектах Comindware** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) |
-| **Топология ёмкости GPU и типы источников цифр** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_capacity_topology_bench_classes) |
-| **Ориентиры для углублённого аппаратного сайзинга (официальные бенчмарки и документация)** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_hardware_deep_research_pointers) |
-| **Бенчмарки RTX 4090 (реф. 24 ГБ GeForce; 48 ГБ — коммерческая аренда)** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_rtx_4090_benchmarks) |
-| **Ориентиры сообщества: Qwen3.5-35B-A3B и потребительское железо (март 2026)** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_community_qwen_consumer_hardware) |
-| **Требования к VRAM при инференсе LLM** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_vram_requirements_llm_inference) |
-| **Сегментные ориентиры РФ (GPU-облако, B2B LLM)** | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_segment_benchmarks) |
-| **Практические рекомендации по сайзингу (дерево решений)** | Отчёт. Сайзинг и экономика |
-| **Новые тренды 2026 (Дополнительно)** | Отчёт. Сайзинг и экономика |
-| **Планирование мощности ИИ-инфраструктуры (2025-2030)** | Отчёт. Сайзинг и экономика |
+| **Цены на GPU-оборудование (покупка и аренда)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_hardware_pricing_all) |
+| **Профиль on-prem-GPU в проектах Comindware** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) |
+| **Топология ёмкости GPU и типы источников цифр** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_capacity_topology_bench_classes) |
+| **Ориентиры для углублённого аппаратного сайзинга (официальные бенчмарки и документация)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_hardware_deep_research_pointers) |
+| **Бенчмарки RTX 4090 (реф. 24 ГБ GeForce; 48 ГБ — коммерческая аренда)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_rtx_4090_benchmarks) |
+| **Ориентиры сообщества: Qwen3.5-35B-A3B и потребительское железо (март 2026)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_community_qwen_consumer_hardware) |
+| **Требования к VRAM при инференсе LLM** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_vram_requirements_llm_inference) |
+| **Сегментные ориентиры РФ (GPU-облако, B2B LLM)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_segment_benchmarks) |
+| **Практические рекомендации по сайзингу (дерево решений)** | Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)» |
+| **Новые тренды 2026 (Дополнительно)** | Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)» |
+| **Планирование мощности ИИ-инфраструктуры (2025-2030)** | Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)» |
 
 ## Часть III. Сводный реестр источников {: #app_a_sources_registry }
 

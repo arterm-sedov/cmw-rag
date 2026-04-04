@@ -37,7 +37,7 @@ tags:
 
 - [Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)
 - [Курс USD и правила для смет](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy)
-- [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) (детализированные цифры и TCO)
+- [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) (детализированные цифры и TCO)
 - [Профиль on-prem-GPU в проектах Comindware](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) (реф. GeForce 24 ГБ, 4090 48 ГБ коммерческая аренда, RTX PRO 6000 Blackwell 96 ГБ)
 - [Приложение B. Отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
 - [Приложение C. Имеющиеся наработки **Comindware** (состав, границы, артефакты)](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)

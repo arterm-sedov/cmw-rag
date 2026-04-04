@@ -37,7 +37,7 @@ tags:
 
 - [Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)
 - [Курс USD и правила для смет](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy)
-- [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
 - [Приложение B. Отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
 - [Приложение C. Имеющиеся наработки **Comindware** (состав, границы, артефакты)](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
 - [Приложение D. Безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)

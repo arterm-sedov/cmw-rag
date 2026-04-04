@@ -118,7 +118,7 @@ tags:
 - **Качество:** целевой ориентир >95 % по внутренней рубрике (LLM-as-judge) при стабильной методике оценки.
 - **TCO break-even:** рассматривайте переход к on-prem/гибриду при устойчивой нагрузке и подтверждённой утилизации >60 %.
 
-Единая трактовка KPI в комплекте — _Приложение A «[Единые KPI и их интерпретация](./20260325-research-appendix-a-index-ru.md#app_a_kpi_semantics)»_.
+Единая трактовка KPI в комплекте — _Приложение A, параграф «[Единые KPI и их интерпретация](./20260325-research-appendix-a-index-ru.md#app_a_kpi_semantics)»_.
 
 ## Валюта и правила для коммерческих предложений {: #exec_unified_fx_policy }
 
@@ -128,7 +128,7 @@ tags:
 
 ## Минимальные условия передачи экспертизы (go/no-go перед BOT) {: #exec_unified_transfer_gates }
 
-- Согласован минимально целостный пакет отчуждения и распределение прав: _Приложение B «[Пакет отчуждения (минимально целостный)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)»_.
+- Согласован минимально целостный пакет отчуждения и распределение прав: _Приложение B, параграф «[Пакет отчуждения (минимально целостный)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)»_.
 - Пройдены критерии приёмки передачи (чек-лист): _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_transfer_acceptance_criteria_checklist)_.
 - Зафиксируйте организационные условия после передачи и уровни обучения: _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_org_conditions_post_transfer)_, _[Уровни обучения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_training_levels_transfer)_.
 
