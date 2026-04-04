@@ -1042,7 +1042,7 @@ User Query
 - [EvilFreelancer/openapi-to-cli](https://github.com/EvilFreelancer/openapi-to-cli)
 - [GitHub — redmadrobot-rnd/mcp-registry (MCP Tool Registry)](https://github.com/redmadrobot-rnd/mcp-registry)
 - [Хабр — red_mad_robot: MCP Tool Registry и автоматизация RAG](https://habr.com/ru/companies/redmadrobot/articles/982004/)
-- [Neuraldeep.ru — навыки для российских Сервисов](https://neuraldeep.ru/)
+- [Neuraldeep.ru - база навыков для российских сервисов](https://neuraldeep.ru/)
 - [OpenCode](https://opencode.ai/)
 - [OpenCode — документация (Intro)](https://opencode.ai/docs)
 - [OpenCode — Ecosystem](https://opencode.ai/docs/ecosystem/)
