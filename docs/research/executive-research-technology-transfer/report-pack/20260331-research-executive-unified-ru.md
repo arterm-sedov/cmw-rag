@@ -189,6 +189,7 @@ tags:
 - Текущий состав референс-стека и границы «что есть сегодня»: _Приложение C «[Имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)»_.
 - Security/compliance/observability для защиты сделки: _Приложение D, параграф «[Управление рисками и соответствие (Compliance)](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
 - Единые политики KPI/FX и навигация по комплекту: _Приложение A «[Обзор](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
+- Для расширенного чтения и внешних бенчмарков: _Приложение F «[Дополнительное чтение и расширенные ориентиры](./20260325-research-appendix-f-extended-reading-ru.md#app_f_root)»_.
 
 ## Источники {: #exec_unified_sources }
 
