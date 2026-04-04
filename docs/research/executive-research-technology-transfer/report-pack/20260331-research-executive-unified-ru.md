@@ -25,9 +25,9 @@ tags:
 ## Решение для руководства за 60 секунд {: #exec_unified_decision_card }
 
 - **Коммерческое решение:** **Comindware** продаёт не «доступ к модели», а промышленное внедрение с передачей способности заказчику эксплуатировать и развивать контур (KT/IP/BOT).
-- **Операционная траектория:** PoC -> Пилот -> Масштабирование -> BOT/Create-Transfer; решение о переходе между этапами принимается по метрикам качества, утилизации и экономики.
+- **Операционная траектория:** PoC -> Пилот -> Масштабирование -> BOT/Create-Transfer; принимайте решение о переходе между этапами по метрикам качества, утилизации и экономики.
 - **Финансовая дисциплина:** используйте CapEx/OpEx/TCO-вилки как порядок величин; фиксируйте договорные значения только после стендовых замеров и проверки прайсов на дату.
-- **Ключевая оговорка:** глобальные enterprise-бенчмарки используются как контекст рынка, не как договорная норма для резидентного контура РФ.
+- **Ключевая оговорка:** используйте глобальные enterprise-бенчмарки только как контекст рынка, не как договорную норму для резидентного контура РФ.
 - **Следующее управленческое решение:** утвердить 30/60/90-план, владельцев TOM и критерии приёмки передачи.
 
 !!! warning "Единая граница применимости"
@@ -118,7 +118,7 @@ tags:
 - **Качество:** целевой ориентир >95 % по внутренней рубрике (LLM-as-judge) при стабильной методике оценки.
 - **TCO break-even:** рассматривайте переход к on-prem/гибриду при устойчивой нагрузке и подтверждённой утилизации >60 %.
 
-Единая трактовка KPI в комплекте — _«[Приложение A](./20260325-research-appendix-a-index-ru.md#app_a_kpi_semantics)»_.
+Единая трактовка KPI в комплекте — _Приложение A, параграф «[Единые KPI и их интерпретация](./20260325-research-appendix-a-index-ru.md#app_a_kpi_semantics)»_.
 
 ## Валюта и правила для коммерческих предложений {: #exec_unified_fx_policy }
 
@@ -128,7 +128,7 @@ tags:
 
 ## Минимальные условия передачи экспертизы (go/no-go перед BOT) {: #exec_unified_transfer_gates }
 
-- Согласован минимально целостный пакет отчуждения и распределение прав: _«[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)»_.
+- Согласован минимально целостный пакет отчуждения и распределение прав: _Приложение B, параграф «[Пакет отчуждения (минимально целостный)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)»_.
 - Пройдены критерии приёмки передачи (чек-лист): _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_transfer_acceptance_criteria_checklist)_.
 - Зафиксируйте организационные условия после передачи и уровни обучения: _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_org_conditions_post_transfer)_, _[Уровни обучения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_training_levels_transfer)_.
 
@@ -137,6 +137,8 @@ tags:
 - Проверены CISO/CIO trust-критерии перед промышленным запуском: _«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__ciso_trust_summary)»_.
 - Утверждены правила телеметрии и ПДн (минимизация, ретенция, доступ): _«[телеметрия и 152-ФЗ](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_.
 - Формализован периметр до LLM и пакет observability в передаче: _«[периметр до LLM](./20260325-research-appendix-d-security-observability-ru.md#app_d__llm_perimeter_data_minimization)»_, _«[пакет отчуждения observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__handoff_package_observability)»_.
+- Проект ФЗ об ИИ (НПА): ориентир **вступления в силу — 1 сентября 2027** (**ст. 21** проекта), маркировка и пороги аудитории — _«[Проектный контур: законопроект об ИИ (2026)](./20260325-research-appendix-d-security-observability-ru.md#app_d__ai_bill_draft_2026)»_.
+- **EU AI Act — 2 августа 2026** (для сделок с EU-составляющей): по **действующему** Регламенту это базовая дата для основного массива правил; **Digital Omnibus** может сдвинуть часть категорий, поэтому ориентир для сделок — действующий текст плюс мониторинг **трехсторонних переговоров (trilogue)**. При EU-клиентах до вывода на рынок нужна юридическая классификация системы; даты, штрафы и охват — _«[Международный регуляторный контекст: EU AI Act](./20260325-research-appendix-d-security-observability-ru.md#app_d__eu_ai_act_context)»_.
 
 ## Типовые возражения и ответы {: #exec_unified_objections }
 
@@ -147,7 +149,7 @@ tags:
 Передача по BOT/Create-Transfer включает код, конфигурации, runbook, eval и обучение; клиент получает операционную автономию в контуре.
 
 **«Риски ИБ и 152-ФЗ слишком высокие».**
-Архитектура строится под требования заказчика: периметр до LLM, минимизация данных, маскирование и политика журналирования; для управляемых API отдельно проверяется договорной контур обработки данных.
+Архитектура строится под требования заказчика: периметр до LLM, минимизация данных, маскирование и политика журналирования; для управляемых API проверьте отдельно договорной контур обработки данных.
 
 ## Рыночные сигналы для переговоров (контекст, не норма КП) {: #exec_unified_market_limits }
 
@@ -159,38 +161,39 @@ tags:
 
 ### 0-30 дней {: #exec_unified_action_30 }
 
-- Провести workshop и выбрать 2-5 приоритетных сценариев.
-- Аудировать готовность данных и требования 152-ФЗ.
-- Зафиксировать baseline: время выполнения сценария, эскалации, текущую стоимость.
-- Согласовать KPI, состав пилота и критерии перехода между этапами.
+- Проведите workshop и выберите 2-5 приоритетных сценариев.
+- Аудируйте готовность данных и требования 152-ФЗ.
+- Зафиксируйте baseline: время выполнения сценария, эскалации, текущую стоимость.
+- Согласуйте KPI, состав пилота и критерии перехода между этапами.
 
 ### 30-60 дней {: #exec_unified_action_60 }
 
-- Развернуть PoC/пилотный контур (RAG + инференс + наблюдаемость) в выбранной среде.
-- Провести техническую и бизнес-валидацию сценариев.
-- Подготовить первичную оценку ROI и управленческое решение: расширение сделки или стоп до фазы пилота.
+- Разверните PoC/пилотный контур (RAG + инференс + наблюдаемость) в выбранной среде.
+- Проведите техническую и бизнес-валидацию сценариев.
+- Подготовьте первичную оценку ROI и управленческое решение: расширение сделки или стоп до фазы пилота.
 
 ### 60-90 дней {: #exec_unified_action_90 }
 
-- Запустить промышленный пилот на реальной нагрузке.
-- Подтвердить целевые метрики качества/экономики/утилизации.
-- Формализовать комплект передачи, график отчуждения и модель сопровождения.
-- Утвердить дорожную карту масштабирования в контуре заказчика.
+- Запустите промышленный пилот на реальной нагрузке.
+- Подтвердите целевые метрики качества/экономики/утилизации.
+- Формализуйте комплект передачи, график отчуждения и модель сопровождения.
+- Утвердите дорожную карту масштабирования в контуре заказчика.
 
 ## Материалы для подготовки переговоров и КП {: #exec_unified_drilldown }
 
-- TOM, роли, фазы внедрения и контроль качества: _«[Методология](./20260325-research-report-methodology-main-ru.md#method_target_operating_model)»_.
-- Экономика решения и матрица вариантов: _«[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_decision_matrix)»_.
-- Тарифы РФ и влияние открытых весов на TCO: _«[Тарифы и провайдеры РФ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_, _«[Открытые веса и API](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_.
-- Риски бюджета и меры снижения: _«[Риски и оптимизация](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)»_.
-- Передача ИС/кода и критерии приёмки: _«[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
-- Security/compliance/observability для защиты сделки: _«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
-- Единые политики KPI/FX и навигация по комплекту: _«[Приложение A](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
-- Для расширенного чтения и внешних бенчмарков: _«[Приложение F](./20260325-research-appendix-f-extended-reading-ru.md#app_f_root)»_.
+- TOM, роли, фазы внедрения и контроль качества: в параграфе _«[Целевая операционная модель (Target Operating Model)](./20260325-research-report-methodology-main-ru.md#method_target_operating_model)»_ отчёта «Методология разработки и внедрения ИИ».
+- Экономика решения и матрица вариантов: в параграфе _«[Матрица принятия решений (РБК 2026)](./20260325-research-report-sizing-economics-main-ru.md#sizing_decision_matrix)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
+- Тарифы РФ и влияние открытых весов на TCO: в параграфах _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ и _«[Открытые веса и API: влияние на TCO](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
+- Риски бюджета и меры снижения: в параграфе _«[Риски бюджета и меры снижения](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
+- Передача ИС/кода и критерии приёмки: в _Приложении B «[Отчуждение ИС и кода (KT, IP, лицензии, приёмка)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
+- Security/compliance/observability для защиты сделки: _Приложение D, параграф «[Управление рисками и соответствие (Compliance)](./20260325-research-appendix-d-security-observability-ru.md#app_d__risk_management_compliance)»_.
+- Единые политики KPI/FX и навигация по комплекту: _Приложение A «[Обзор](./20260325-research-appendix-a-index-ru.md#app_a_pack_overview)»_.
+- Для расширенного чтения и внешних бенчмарков: _Приложение F «[Дополнительное чтение и расширенные ориентиры](./20260325-research-appendix-f-extended-reading-ru.md#app_f_root)»_.
 
 ## Источники {: #exec_unified_sources }
 
 - [152-ФЗ «О персональных данных»](https://www.consultant.ru/document/cons_doc_LAW_61801/)
+- [Портал НПА — проект ФЗ об основах госрегулирования применения технологий ИИ (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
 - [Национальная стратегия развития ИИ до 2030 года (Указ Президента РФ №124, февраль 2024)](http://kremlin.ru/acts/bank/49930)
 - [NIST AI Risk Management Framework 1.0](https://nist.gov/itl/ai-risk-management-framework)
 - [OpenAI — The state of enterprise AI (обзор, декабрь 2025)](https://openai.com/index/the-state-of-enterprise-ai-2025-report)
@@ -206,3 +209,7 @@ tags:
 - [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197)
 - [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
 - [RB.RU — вакансии с ИИ-навыками: +170% YoY в I кв. 2026 (~2,7× к I кв. 2025; hh.ru × PR DEV, март 2026)](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/)
+- [EUR-Lex: Regulation (EU) 2024/1689 — Artificial Intelligence Act (официальный текст)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689)
+- [EU AI Act Service Desk — Implementation Timeline](https://ai-act-service-desk.ec.europa.eu/en/ai-act/eu-ai-act-implementation-timeline)
+- [EU AI Act Service Desk — ст. 99 (штрафы)](https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-99)
+- [European Parliament — Digital Omnibus / AI Act, позиция комитетов (18.03.2026)](https://www.europarl.europa.eu/news/en/press-room/20260316IPR38219/meps-support-postponement-of-certain-rules-on-artificial-intelligence)
