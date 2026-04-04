@@ -10,6 +10,24 @@ This file defines research workflow, document standards, and formatting requirem
 - If a specific task file introduces stricter requirements, follow the stricter rule.
 - Do not relax or omit rules from this file unless explicitly requested.
 
+## Agent role: four-persona consensus (internal reasoning)
+
+**Internally in English**, weigh substantive choices through four lenses—**technical writer** (clarity, structure, citations), **AI systems engineer** (models, RAG/agents, eval, safety), **DevOps** (run, deploy, observability, cost), **business analyst** (scope, value, risk, task fit)—**debate, align, then act** on consensus. **Search the web** when facts are thin or contested; **cite authoritative sources** (see **Current data requirement (Web search mandatory)**). Personas stay **internal**; **deliverables** follow **Target Language and Audience**.
+
+## Agent modes: plans and business alignment
+
+### Any mode
+
+- **Business goals:** derive scope, priorities, and acceptance from [`executive-research-technology-transfer/tasks/`](./executive-research-technology-transfer/tasks/) — authoritative `*-research-task.md`; `*_original.md` only as non-conflicting history (see **Business goals and task authority**).
+
+### Plan mode
+
+- **Drafting:** ask when scope, goals, or evidence bar are unclear; put resolved assumptions and scope into the plan.
+- **Plan shape:** ordered steps; each step → one primary **artifact** + which task-file objective it serves.
+- **Checkpoints:** after named steps, self-check evidence, task fit, and consistency — continue or realign. For **agent self-control**, not routine user stops (escalate per **Permission Boundaries** or real blockers).
+- **Execution:** run the plan **autonomously**; involve the user only where this file, the task, or a blocker requires it.
+- **Progress:** while executing, add **dated** notes under [`docs/progress_reports/`](../progress_reports/) (`YYYYMMDD-topic.md` or one log per thread): done, checkpoint results, blockers, remaining work — brief ops trail, not the final deliverable.
+
 ## Business goals and task authority
 
 **Read this before any edits** to the **consolidated research pack** in `docs/research/` (full methodology and sizing reports, appendices A–D, and the two short executive summaries). The corpus serves **Comindware’s commercial work**: evidence and narrative to **win and deliver** customer AI programs—**budget, architecture, compliance, handover (KT/IP), and roadmap**—not a standalone SKU for “selling research” or “curating publications.”
@@ -27,15 +45,15 @@ The consolidated **20260325-** research pack is **not** internal authoring docum
 - [Research pack task (authoritative)](./20260324-research-task.md) — **authoritative** scope, acceptance, workflow, evidence and FX: **Russian** body (§§1–8). It points agents here for English workflow rules and non-duplication.
 - [Original task snapshot](./20260324-research-task_original.md) — historical manager brief; if it conflicts with the main task file, **follow the main task file**.
 
-### Agent execution contract (for `executive-research-technology-transfer/report-pack`)
+### Agent execution contract (`report-pack/`)
 
 Treat `tasks/` as **authoring instructions** and `report-pack/` as **reader-facing executive content**.
 
-- **Primary purpose:** enable Comindware C-level leaders to make decisions and shape commercial offers when selling or transferring Comindware AI expertise.
-- **Audience outcome:** a CEO/CFO/CTO/Commercial lead can reuse the text directly in board briefs, proposal narratives, and negotiation positioning.
-- **Hard prohibition in report text:** no authoring remarks, no workflow/process-writing commentary, no “how this file was prepared” language, and no repository-mechanics narrative.
-- **Reference boundaries:** authoring paths and repo mechanics stay in tasks/plans; report text keeps business-technology meaning and evidence only.
-- **If uncertain:** prefer decision usefulness over methodological self-description.
+- **Primary purpose:** Enable Comindware C-level leaders to make decisions and shape commercial AI offers.
+- **Audience outcome:** Executives can reuse the text directly in board briefs and proposals without edits.
+- **Hard prohibition:** NO authoring remarks, workflow commentary, or repository-mechanics narrative in report text.
+- **Reference boundaries:** Repo mechanics stay in tasks/plans; report text retains only business/technical meaning and evidence.
+- **If uncertain:** Prefer decision usefulness over methodological self-description.
 
 ## Permission Boundaries
 
@@ -104,15 +122,11 @@ channel_snapshot.yml
 ### Logic and Storyline
 
 - Use SCQA logic:
-  - **Situation:** market context and current state.
-
-  - **Complication:** key challenge or opportunity.
-
-  - **Question:** core business question.
-
-  - **Answer:** concrete recommendation and implications.
-
-- Ensure recommendations are MECE where applicable.
+  - **Ситуация:** Market context and current state.
+  - **Проблема:** Key challenge or opportunity.
+  - **Вопрос для решения:** Core business question.
+  - **Рекомендуемый ответ:** Concrete recommendation and implications.
+- Ensure recommendations are MECE.
 - Focus on “So what?” (business meaning and impact).
 
 ### Required Analytical Content
@@ -125,28 +139,26 @@ channel_snapshot.yml
 
 ### Content to Exclude
 
-- Raw scraping outputs.
+- Raw scraping outputs, intermediate artifacts, and unverified marketing fluff.
 - Duplicate language versions unless explicitly requested.
-- Intermediate processing artifacts.
-- Unverified marketing fluff or filler.
 
 ### Authoring inputs vs published executive text
 
-- Internal repositories, slide decks, and local paths are **authoring inputs only**. Published executive summaries (for example `20260323-*-ru.md`) state **generic, transferable practice**; they must not treat repositories as a product SKU or require readers to open the codebase.
+- Internal repositories, slide decks, and local paths are **authoring inputs only**. Published executive summaries (`20260323-*-ru.md`) state **generic, transferable practice** and must not require readers to open the codebase.
 
-## Russian-language documents: numbers, currency, typography
+## Russian-Language Documents: Numbers, Currency, Typography
 
-These rules apply to **Russian** research articles under `docs/research/` (the default language for this corpus).
+These rules apply to Russian research articles in `docs/research/`.
 
 ### Numbers and Values
 
-- Use a space as the thousands separator (for example, `1 000 000`).
-- Use a comma as the decimal separator (for example, `2,5%`).
+- Use a non-breaking space as the thousands separator (e.g., `1 000 000`, `10 000`, but `5000`).
+- Use a comma as the decimal separator (e.g., `2,5%`).
 
 ### Currency
 
 - Express financial values in **Russian rubles** (`руб.`).
-- Recalculate USD using the pack’s fixed conversion unless the task states otherwise (typically **`1 USD = 85 RUB`** for internal comparison; proposals use CBR or contract rate per task file).
+- Convert USD using the pack’s fixed rate (typically `1 USD = 85 RUB`) unless the task specifies otherwise.
 - Example: `$1,200` → `102 000 руб.`
 
 ### Typography and punctuation (Russian)
@@ -165,6 +177,49 @@ These rules apply to **Russian** research articles under `docs/research/` (the d
 - At first use, provide translation or short gloss in parentheses.
 - Example: `RAG (Retrieval-Augmented Generation — генерация с дополненной выборкой)`.
 - **Engineering acronyms** such as `CI`, `CD`, `TCO` may appear without expansion when the audience and context are clear.
+
+### Russian prose quality and executive register
+
+Every Russian deliverable must read as if written by a native-speaking executive editor. Grammar, morphology, case government (управление), and word order must be flawless. The standard is **деловой стиль высшего уровня** — the register used in board-level memos and strategy documents, not academic papers or bureaucratic correspondence.
+
+**AI-generated anti-patterns to eliminate:**
+
+- **Calques from English** (literal structural borrowings): do not transplant English syntax into Russian. Examples: avoid «в терминах» (calque of "in terms of") — use «с точки зрения» or rephrase; avoid «имеет место быть» — use «существует» or a direct verb.
+- **Unnatural word order:** Russian word order is flexible and meaning-driven; do not force English SVO (subject-verb-object) when theme-rheme or emphasis demands a different order.
+- **Wrong prepositional and case government:** verify that each verb, noun, and preposition governs the correct case (e.g. «согласно + дат.», «благодаря + дат.», «вопреки + дат.», not genitive).
+- **Unidiomatic collocations:** use established Russian collocations (e.g. «принять решение», not «сделать решение»; «провести аудит», not «выполнить аудит»).
+
+**Executive register rules:**
+
+- **Active, direct constructions.** Minimize passive voice and reflexive passives (`-ся`). Prefer «компания внедрила» over «внедрение было осуществлено компанией».
+- **No канцелярит.** Eliminate chains of отглагольные существительные: «осуществление реализации внедрения» → «внедрить». Prefer verbs to heavy nominalizations: «внедрить» over «произвести внедрение», «оценить» over «провести оценку».
+- **Short, front-loaded sentences.** State the conclusion or action before the explanation (pyramid principle applied to sentence structure). Split any sentence with more than one subordinate clause.
+- **No hedging filler.** Cut gratuitous «возможно», «в целом», «определённым образом», «как бы», «достаточно», «в некотором роде» unless they carry genuine epistemic meaning.
+- **Imperatives for recommendations.** Use direct imperative: «используйте», «зафиксируйте», «утвердите» — not «следует использовать» or «рекомендуется зафиксировать».
+
+**Lexical precision:**
+
+- Eliminate **pleonasms**: «свободная вакансия» → «вакансия», «главный приоритет» → «приоритет», «полностью завершить» → «завершить».
+- Eliminate **tautologies**: do not repeat the same meaning in adjacent words or clauses.
+- Cut **semantically empty words**: «данный» when «этот» suffices, «является» when a dash or a concrete verb works, «определённый» without specific reference.
+- Use **concrete verbs and nouns**, not abstract bureaucratic chains. Replace «произвести расчёт стоимости» with «рассчитать стоимость».
+
+**Sentence-level discipline:**
+
+- Maximum one subordinate clause per sentence in executive text; split complex constructions into separate sentences.
+- Every sentence must pass the "so what?" test — if it adds no decision value, cut it.
+- Avoid starting sentences with weak demonstratives («Это является…», «Данный подход…») — lead with the subject or action.
+
+**Reference benchmark:** Розенталь Д.Э. ("Справочник по правописанию и литературной правке") and Мильчин А.Э. / Чельцова Л.К. ("Справочник издателя и автора") as linguistic authority; ГОСТ Р 7.0.97-2016 for formal business document structure where applicable.
+
+### Executive communication discipline
+
+- **Pyramid principle:** state the answer or recommendation first, then the supporting evidence. Never bury the conclusion at the end of a paragraph or section.
+- **One idea per paragraph.** Each paragraph opens with its topic sentence; supporting detail follows. If a paragraph covers two ideas, split it.
+- **Action-oriented language.** Every recommendation or next-step section uses imperative voice addressed to the reader: «утвердите план», «зафиксируйте KPI», «проведите аудит».
+- **Quantify or qualify.** No vague claims. Attach a number, a range, or an explicit qualifier: «по данным X», «в диапазоне Y–Z», «по оценке Yakov Partners (2025)». If a number is approximate, say so explicitly: «порядка», «~», or «ориентировочно».
+- **No self-referential text.** Do not describe the document, its structure, or how it was written. Let content speak. Examples of prohibited phrases: «в данном разделе мы рассмотрим…», «этот документ предназначен для…», «ниже приводится обзор…». This includes **positional navigation words**: avoid «ниже», «выше», «в разделе … ниже/выше», «как в дайджестах», «детализация тезисов». Use a **named `.md#anchor` link** instead: `_«[Section title](#anchor)»_`.
+- **Coherence across the pack.** When the same concept (KPI threshold, cost range, compliance requirement) appears in multiple documents, use identical wording and values. Contradictions undermine executive trust.
 
 ## Markdown and document formatting
 
@@ -213,7 +268,9 @@ Use MkDocs admonitions (`!!! type "Title"`) instead of bold text for recommendat
 
 ### Citations and references
 
-- Cite sources inline with hyperlinks where claims are made.
+- **Traceability modes** (pick what fits the document; sources remain mandatory):
+  - **Inline** — prefer when you name a specific publication or report **by title**, cite **law or regulator** text, or introduce **pricing or quantitative norms** as a baseline (per task file: first occurrence of a figure). External web sources may use `_«[Source title](https://...)»_` in body text when the sentence hinges on that source.
+  - **Grouped** — for **multi-item signal digests** (e.g. Appendix E-style market/technical bullets), body text may stay scannable without a link on every line; add **plain** URLs under `## Источники`, optionally under a **thematic subheading** (e.g. «Инфраструктура и модели»), so the cluster remains verifiable. Do not use grouped mode to hide uncited high-impact numbers in **short** C-level summaries (those still need explicit support per **Permission Boundaries**).
 - **Inline mentions** (body text and ordinary lists; not inside the references section): when you name an internal document or external source by title, use a **quoted italic** Markdown link—guillemets `«»` around an italic link built with underscores `_..._`:
   - **Internal** `.md` in this repo (typically under `docs/research/`): `_«[Document title](relative-path/file-name.md)»_`. Path **relative to the current file** (for example `./20260323-topic-ru.md` or `../other/file.md`).
   - **External** web sources: `_«[Source title](https://...)»_` with the real URL as the link target.
@@ -249,18 +306,23 @@ Use this compact structure for consistency. **Headings below are Russian** becau
 # <Document title>
 
 ## Резюме для руководства
+
 <SCQA in brief>
 
 ## Ключевые выводы
+
 - ...
 
 ## Рекомендации
+
 - ...
 
 ## Риски и ограничения
+
 - ...
 
 ## Источники
+
 - [Source title](https://...)
 ```
 
@@ -283,8 +345,8 @@ These principles apply regardless of specific topic, industry, or organization:
 
 **Traceability and Verifiability**
 
-- Every significant claim requires inline citations to sources
-- Maintain a complete references section with all sources used
+- Significant external claims must be **traceable**: **inline citations and/or** plain links under `## Источники` with enough grouping or labels that a reader can map section/table → URLs. Inline is preferred for law, regulator, first-use pricing, and named publications.
+- Maintain a complete references section with all sources used (including those supporting grouped digest blocks).
 - Document validation processes for time-sensitive data (versions, pricing, etc.)
 
 **Progressive Refinement with Checkpoints**
@@ -320,12 +382,14 @@ These principles apply regardless of specific topic, industry, or organization:
 **Always use Web search for model versions, pricing, and vendor data.**
 
 LLM versions, API pricing, and model capabilities change monthly. Your training data is outdated by months. **Do not rely on memory** for:
+
 - Model version numbers (e.g., GPT-5.4 vs GPT-5.2, Claude 4.6 vs 3.7, GigaChat 3.1 vs 2.x)
 - Pricing tiers and token costs
 - Release dates and feature availability
 - Regional provider catalogs (Yandex, Cloud.ru, SberCloud)
 
 **Procedure:**
+
 1. Before citing any model or price, run Web search with year 2026 in the query: `"Claude 4.6 2026 pricing"`, `"GigaChat 3.1 March 2026"`, `"MiniMax M2.7 latest"`.
 2. Verify the top 2–3 sources agree; if conflict, prefer official vendor docs or reputable aggregators (modelpricing.ai, llmoney.ru).
 3. Document the search date in the article’s sources or as a note: `_Проверено: март 2026._`
@@ -354,18 +418,19 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Russian numeric and currency standards are applied consistently (for Russian files).
 - Terminology rules are applied (Russian-first, translated first use for English terms).
 - Markdown formatting rules are followed (headings, lists, links placement).
-- All claims are traceable with inline citations; inline document/source titles follow **Citations and references** (quoted italic links in body text).
+- All significant claims are traceable (inline **and/or** plain links under `## Источники` per **Traceability modes**); inline document/source titles follow **Citations and references** (quoted italic links in body text) when cited by name.
 - Final `## Источники` section is present with all used references as plain bullet links (no guillemets or italic wrapper on list entries).
 - No critical statement remains without a source.
 - Related research in `docs/research/` has been cross-validated per **Cross-validation of related research** when semantic overlap, business line, or the active task scope applies.
 - If the output is a **consolidated pack** (several linked articles under `docs/research/`), satisfy **Consolidated packs (optional)** in full; ordinary single articles ignore that subsection.
+- Russian prose has been self-reviewed for grammar, case government, word order, канцелярит, calques, and executive register per **Russian prose quality and executive register** and **Executive communication discipline**.
 
 ## Operating principles
 
 - Keep the repository lean (raw data stays outside).
 - Process once, document once.
 - Maintain **Russian market** focus and sovereign-default framing per the task file.
-- Keep full source traceability via inline citations and final references list.
+- Keep full source traceability via inline citations **where appropriate** and a complete `## Источники` list (grouped thematic subsections allowed for digest-style appendices).
 - Reuse abstract patterns and avoid unnecessary duplication.
 - Cross-validate sibling research so the corpus stays internally consistent where topics intersect.
 
@@ -404,13 +469,23 @@ When researching solutions, vendors, or technologies, apply this priority order:
 
 This ordering reflects the business context: Russia-resident defaults, 152-FZ compliance, and local deployment feasibility come first. International solutions serve as technology baseline or for foreign client engagements.
 
+### Technology & Innovation Profiles
+
+When listing tools, frameworks, or architectural patterns, avoid unstructured "flat" bullet points or mixed metadata. Apply a strict executive triplet (a micro-SCQA format):
+
+- **Проблема** (or **Концепция**): The specific business or technical pain point being solved.
+- **Решение**: The core mechanism, architecture, or tool used to address it.
+- **Результат**: The measurable business or technical impact (speed, cost reduction, quality improvement) and the target audience.
+
+This ensures clarity, eliminates tautology, and immediately answers "So What?" for C-level decision-makers, making the text ready for direct reuse in commercial offers and presentations.
+
 ### Real-World Case Integration
 
 When adding case studies to frameworks:
 
 - **Inline, not standalone** — integrate into relevant doc
 - **Ground with numbers** — specific metrics over vague statements
-- **Cite sources** — sources hyperlinked inline and in bibliography
+- **Cite sources** — traceable via inline links **where appropriate** and/or plain links under `## Источники` (see **Traceability modes**)
 
 ### Russian Technical Terms
 
@@ -431,54 +506,49 @@ This section defines the step-by-step workflow for conducting deep research on t
 
 ### Pre-Research: Read Required Context
 
-Before starting any research task, you **must** read:
+Read before starting:
 
-1. **Task definition:** `docs/research/executive-research-technology-transfer/tasks/*-research-task.md`
-2. **Business goals:** Refer to Comindware's positioning (implementation and guidance on customer AI programs)
-3. **Existing deep-research files:** `docs/research/executive-research-technology-transfer/deep-researches/`
-4. **Raw materials:** `~/Documents/cmw-rag-channel-extractions/`
+1. `docs/research/executive-research-technology-transfer/tasks/*-research-task.md`
+2. Comindware's business goals (implementation/guidance on AI programs).
+3. `deep-researches/` files.
+4. Raw materials in `~/Documents/cmw-rag-channel-extractions/`.
 
 ### Step 1: Create and Version the Master Plan
 
-- [ ] Create **single** master plan under `.opencode/plans/YYYYMMDD-descriptive-name.md`
-- [ ] Define research scope based on task requirements
-- [ ] Identify specific gaps requiring deep research (competitor analysis, pricing models, market sizing)
-- [ ] Set verification checkpoints
-- [ ] Use subagents recursively to compile and refine the plan
-- [ ] **Version the plan with git** — commit iterations to trace evolution (see **Master Plan Versioning** below)
+- [ ] Create a **single** master plan in `.opencode/plans/YYYYMMDD-descriptive-name.md`.
+- [ ] Define scope and identify deep research gaps.
+- [ ] Set **self-review checkpoints** (agent verification gates).
+- [ ] Use subagents recursively to compile/refine the plan.
+- [ ] **Version with git** to trace evolution.
 
 ### Step 2: Execute Parallel Research
 
-Use subagents to parallelize work across multiple phases:
-
-- [ ] Assign subagents to specific research tracks (competitors, pricing, market stats)
-- [ ] Direct subagents to use skills: `agent-browser`, `playwright`, `exa`, `searxng`, `tavily` for web scraping. Note: `webfetch` may fail sometimes, `tivaly` has limits.
-- [ ] Subagents write findings to `docs/research/executive-research-technology-transfer/deep-researches/`
-- [ ] Collect worldwide research, reports, and surveys
+- [ ] Assign subagents to specific tracks (competitors, pricing, etc.).
+- [ ] Use skills: `agent-browser`, `playwright`, `tavily`, etc. Note: `webfetch` may fail sometimes, `tavily` has limits.
+- [ ] Write findings to `deep-researches/`.
+- [ ] Collect worldwide reports and surveys.
 
 ### Step 3: Validate and Ground Findings
 
-- [ ] Web search mandatory for all model versions, pricing, and vendor data (see **Current data requirement** above)
-- [ ] Cross-validate 2-3 independent sources for every key figure
-- [ ] Resolve contradictions or flag them explicitly
-- [ ] Use rounded values for macro figures (avoid 4+ decimal places)
+- [ ] Mandatory web search for versions, pricing, vendor data.
+- [ ] Cross-validate 2-3 independent sources for key figures.
+- [ ] Resolve or flag contradictions.
+- [ ] Use rounded values for macro figures.
 
 ### Step 4: Synthesize and Enhance
 
-- [ ] Use subagent reports to refine the master plan
-- [ ] **Commit plan iterations** — each significant evolution of the master plan gets a git commit with descriptive message
-- [ ] Combine figures from multiple sources into original conclusions
-- [ ] Group scattered information into coherent sections
-- [ ] Clarify confused or conflicting content
-- [ ] Add missing valuable insights
+- [ ] Refine master plan using subagent reports.
+- [ ] **Commit plan iterations** via git.
+- [ ] Combine figures into original conclusions, group data.
+- [ ] Clarify conflicting content and add missing insights.
 
 ### Step 5: Produce C-Level Output
 
-- [ ] Target: deeply worked, grounded material for C-Level decision making
-- [ ] Enable executives to make decisions easier—do not teach them their job
-- [ ] Focus on knowledge transfer, not sales scenarios
-- [ ] Ensure perfect coherence: better, not bigger
-- [ ] Write final reports in **Russian** (internal thinking/plans in English)
+- [ ] Write deeply worked, grounded C-Level material.
+- [ ] Enable decision-making (don't teach executives their job).
+- [ ] Focus on knowledge transfer, not sales scenarios.
+- [ ] Ensure perfect coherence.
+- [ ] Write final reports in **Russian**.
 
 ### Step 6: Final Review and Iteration
 
