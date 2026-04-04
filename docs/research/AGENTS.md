@@ -30,7 +30,7 @@ This file defines research workflow, document standards, and formatting requirem
 
 ## Business goals and task authority
 
-**Read this before any edits** to the **consolidated research pack** in `docs/research/` (full methodology and sizing reports, appendices A–D, and the two short executive summaries). The corpus serves **Comindware’s commercial work**: evidence and narrative to **win and deliver** customer AI programs—**budget, architecture, compliance, handover (KT/IP), and roadmap**—not a standalone SKU for “selling research” or “curating publications.”
+**Read this before any edits** to the **consolidated research pack** under `docs/research/executive-research-technology-transfer/report-pack/` (full methodology and sizing reports, akappendices, and the executive summaries). The corpus serves **Comindware’s commercial work**: evidence and narrative to **win and deliver** customer AI programs—**budget, architecture, compliance, handover (KT/IP), and roadmap**—not a standalone SKU for “selling research” or “curating publications.”
 
 **When you edit, optimize for:** decision-ready prose, **RF-resident defaults** (152-FZ, local clouds, data residency), and **honest limits** on global/vendor telemetry (sample scope; not an automatic baseline for RF production). Readers **reuse** claims in **their own** board packs and proposals; avoid meta-text about “how we wrote this for executives.”
 
@@ -218,7 +218,7 @@ Every Russian deliverable must read as if written by a native-speaking executive
 - **One idea per paragraph.** Each paragraph opens with its topic sentence; supporting detail follows. If a paragraph covers two ideas, split it.
 - **Action-oriented language.** Every recommendation or next-step section uses imperative voice addressed to the reader: «утвердите план», «зафиксируйте KPI», «проведите аудит».
 - **Quantify or qualify.** No vague claims. Attach a number, a range, or an explicit qualifier: «по данным X», «в диапазоне Y–Z», «по оценке Yakov Partners (2025)». If a number is approximate, say so explicitly: «порядка», «~», or «ориентировочно».
-- **No self-referential text.** Do not describe the document, its structure, or how it was written. Let content speak. Examples of prohibited phrases: «в данном разделе мы рассмотрим…», «этот документ предназначен для…», «ниже приводится обзор…». This includes **positional navigation words**: avoid «ниже», «выше», «в разделе … ниже/выше», «как в дайджестах», «детализация тезисов». Use a **named `.md#anchor` link** instead: `_«[Section title](#anchor)»_`.
+- **No self-referential text.** Do not describe the document, its structure, or how it was written. Let content speak. Avoid meta openers («в данном разделе…», «этот документ предназначен для…», «ниже приводится обзор…»). **Positional navigation** («ниже/выше», «см. ниже», «перечень/таблица ниже по документу», «Ниже — …» meaning scroll order only): replace with a **named anchor**—`_«[Заголовок](#anchor)»_` in-file or `./sibling.md#anchor` (see **Consolidated packs**). **OK:** semantic «ниже/выше» («риск ниже», «порог выше»).
 - **Coherence across the pack.** When the same concept (KPI threshold, cost range, compliance requirement) appears in multiple documents, use identical wording and values. Contradictions undermine executive trust.
 
 ## Markdown and document formatting
@@ -290,7 +290,7 @@ Use for multi-file research sets under `docs/research/` when you want stable dee
 
 **YAML front matter** — When the pack uses it, at the very top: `title` (same as H1 without the `{: #… }` suffix), `date` (ISO), `status`, `tags` (about 5–12; English alphabetically, then Russian alphabetically), `` if tags are for filtering/search only. Optional: `description` (one line). If `date` / `status` are in YAML, drop redundant **Дата пакета** / **Статус** lines under H1.
 
-**Cross-links** — `./sibling.md#anchor` from the current file’s directory. Body mentions of titled internals: **Citations and references**. Under `## Источники`: plain `[title](url)` only. No path for a document that is not a real file—title in guillemets only.
+**Cross-links** — `./sibling.md#anchor` from the current file’s directory. Body mentions of titled internals: **Citations and references**. Under `## Источники`: plain `[title](url)` only. No path for a document that is not a real file—title in guillemets only. Long tables/lists: link the **section heading** (or a subheading with its own `#anchor`), not “the list below”—see **Executive communication discipline** (positional navigation).
 
 **Cross-references vs C-level summaries:** All documents in the pack **should** include cross-references (`.md#anchor` links) to sibling documents for navigation and coherence. C-level executive summaries may link to other documents within the same pack using human-readable names with hyperlinks (e.g., `_«[Методология внедрения](./20260325-research-report-methodology-main-ru.md)»_`). However, C-level summaries must **not** contain paths to **external repositories** or internal code paths (e.g., `../cmw-mosec/README.md`, `rag_engine/`)—these are authoring inputs only.
 
