@@ -117,7 +117,7 @@ tags:
 - Где глобальные бенчмарки корпоративного внедрения по публичному отчёту OpenAI (2025) и оговорки по выборке (не норма для КП в РФ)? → [Отчёт. Методология разработки и внедрения ИИ — эмпирика корпоративного внедрения](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report)
 - Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)? → [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity); поведенческие риски — [Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_behavioral_risk_factors); риск бюджета организационная зрелость и пилот — [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)
 - Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать? → [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
-- Где примерные расчёты расхода токенов по данным портала поддержки и допущениям? → [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates) (подраздел Примерные расчёты расхода токенов на доступных данных (портал поддержки))
+- Где примерные расчёты расхода токенов по данным портала поддержки и допущениям? → параграф _«[Примерные расчёты расхода токенов по данным корпуса заявок (портал поддержки)](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)», отчёта _«Сайзинг и экономика»_
 - Как устроен комплект отчуждения ИС/кода и что именно передаём клиенту (KT/IP)? → [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
 - Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)? → [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm) и [Приложение B: комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)
 - Что есть в **Comindware** сегодня (состав стека, границы ‘что есть’ vs ‘методология’)? → [Приложение C: имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
@@ -574,7 +574,7 @@ tags:
 - [vamplabAI/sgr-agent-core](https://github.com/vamplabAI/sgr-agent-core) (ветка tool-confluence)
 - [vamplabAI/sgr-agent-core — ветка tool-confluence](https://github.com/vamplabAI/sgr-agent-core/tree/tool-confluence)
 - [Lakera — платформа](https://platform.lakera.ai/)
-- [Neuraldeep.ru — навыки для российских Сервисов](https://neuraldeep.ru/)
+- [Neuraldeep.ru - база навыков для российских сервисов](https://neuraldeep.ru/)
 
 #### Регулирование (проектный контур 2026) {: #app_a_regulation_project_context_2026 }
 
