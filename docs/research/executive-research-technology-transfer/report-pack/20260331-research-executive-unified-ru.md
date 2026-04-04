@@ -26,7 +26,7 @@ tags:
 
 - **Коммерческое решение:** **Comindware** продаёт не «доступ к модели», а промышленное внедрение с передачей способности заказчику эксплуатировать и развивать контур (KT/IP/BOT).
 - **Операционная траектория:** PoC -> Пилот -> Масштабирование -> BOT/Create-Transfer; решение о переходе между этапами принимается по метрикам качества, утилизации и экономики.
-- **Финансовая дисциплина:** используйте CapEx/OpEx/TCO-вилки как порядок величин; фиксируйте договорные значения только после стендовых замеров и проверки прайсов на дату.
+- **Финансовая дисциплина:** используйте CapEx/OpEx/TCO-вилки как порядок величин; фиксируйте договорные значения только после стендовых замеров и сверки актуальных прайсов.
 - **Ключевая оговорка:** глобальные enterprise-бенчмарки используются как контекст рынка, не как договорная норма для резидентного контура РФ.
 - **Следующее управленческое решение:** утвердить 30/60/90-план, владельцев TOM и критерии приёмки передачи.
 
@@ -109,7 +109,7 @@ tags:
 **Рамка применимости цифр:**
 
 - Вилки и бенчмарки задают порядок величин для переговоров и бюджетного коридора.
-- Фиксируйте финальные значения для КП после сверки прайсов на дату и стендовых замеров под целевой SLO.
+- Фиксируйте финальные значения для КП после сверки актуальных прайсов и стендовых замеров под целевой SLO.
 
 ## Числовые пороги решения (единый benchmark) {: #exec_unified_guardrails }
 
@@ -125,7 +125,7 @@ tags:
 ## Валюта и правила для коммерческих предложений {: #exec_unified_fx_policy }
 
 - Для сопоставления ориентиров применяйте единую политику курса из _[Приложения A](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy)_.
-- В сметах и договорных КП применяйте курс ЦБ РФ на дату расчёта (или курс, зафиксированный в договоре).
+- В сметах и договорных КП применяйте курс ЦБ РФ на момент расчёта или курс, зафиксированный в договоре.
 - Рассчитывайте чувствительность бюджета по правилам валютной политики из _«[Приложения A](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy)»_, а не по фиксированному «вечному» курсу.
 
 ## Минимальные условия передачи экспертизы (go/no-go перед BOT) {: #exec_unified_transfer_gates }
@@ -138,6 +138,8 @@ tags:
 
 - Проверены CISO/CIO trust-критерии перед промышленным запуском: _Приложение D, параграф «[Сводка доверия для CISO/CIO: что проверять перед промышленным запуском](./20260325-research-appendix-d-security-observability-ru.md#app_d__ciso_trust_summary)»_.
 - Утверждены правила телеметрии и ПДн (минимизация, ретенция, доступ), периметр до LLM и пакет observability в передаче: в Приложении D, параграфы _«[Персональные данные и содержимое в телеметрии (152-ФЗ)](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_, _«[Периметр до LLM: минимизация данных, обезличивание и обратимые подстановки](./20260325-research-appendix-d-security-observability-ru.md#app_d__llm_perimeter_data_minimization)»_, _«[Пакет отчуждения: что добавить по наблюдаемости](./20260325-research-appendix-d-security-observability-ru.md#app_d__handoff_package_observability)»_.
+- Проект ФЗ об ИИ использовать как ориентир дорожной карты, а не как действующую норму: _«[Проектный контур: законопроект об ИИ (2026)](./20260325-research-appendix-d-security-observability-ru.md#app_d__ai_bill_draft_2026)»_.
+- Для сделок с EU-составляющей отдельно проверять роль по регламенту, требования прозрачности и штрафные риски: _Приложение D, параграф «[Международный регуляторный контекст: EU AI Act (справочно)](./20260325-research-appendix-d-security-observability-ru.md#app_d__eu_ai_act_context)»_.
 
 ## Типовые возражения и ответы {: #exec_unified_objections }
 
@@ -192,6 +194,7 @@ tags:
 ## Источники {: #exec_unified_sources }
 
 - [152-ФЗ «О персональных данных»](https://www.consultant.ru/document/cons_doc_LAW_61801/)
+- [Портал НПА — проект ФЗ об основах госрегулирования применения технологий ИИ (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
 - [Национальная стратегия развития ИИ до 2030 года (Указ Президента РФ №124, февраль 2024)](http://kremlin.ru/acts/bank/49930)
 - [NIST AI Risk Management Framework 1.0](https://nist.gov/itl/ai-risk-management-framework)
 - [OpenAI — The state of enterprise AI (обзор, декабрь 2025)](https://openai.com/index/the-state-of-enterprise-ai-2025-report)
@@ -205,6 +208,8 @@ tags:
 - [CNews — Российский рынок генеративного ИИ в 2025 году](https://www.cnews.ru/news/top/2025-12-09_v_2025_godu_rossijskij_rynok)
 - [Sber Developers — Тарифы GigaChat API для юрлиц (февраль 2026)](https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs)
 - [Банк России — официальные курсы валют](https://www.cbr.ru/currency_base/daily/)
+- [EUR-Lex — Regulation (EU) 2024/1689 — Artificial Intelligence Act](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689)
+- [EU AI Act Service Desk — Implementation Timeline](https://ai-act-service-desk.ec.europa.eu/en/ai-act/eu-ai-act-implementation-timeline)
 - [red_mad_robot — исследования и материалы рынка GenAI](https://redmadrobot.ru/issledovaniya-1/)
 - [Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)](https://t.me/cmoclub/197)
 - [RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)](https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/)
