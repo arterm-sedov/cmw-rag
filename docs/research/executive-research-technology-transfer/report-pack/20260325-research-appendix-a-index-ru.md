@@ -204,8 +204,8 @@ tags:
 | **Цены на GPU-оборудование (покупка и аренда)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_hardware_pricing_all) |
 | **Профиль on-prem-GPU в проектах Comindware** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw) |
 | **Топология ёмкости GPU и типы источников цифр** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_capacity_topology_bench_classes) |
-| **Ориентиры для углублённого аппаратного сайзинга (официальные бенчмарки и документация)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_hardware_deep_research_pointers) |
-| **Бенчмарки RTX 4090 (реф. 24 ГБ GeForce; 48 ГБ — коммерческая аренда)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_rtx_4090_benchmarks) |
+| **Ориентиры для углублённого аппаратного сайзинга (официальные бенчмарки и документация)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_inference_benchmarks_vram_tools) |
+| **Бенчмарки RTX 4090 (потребительская 24 ГБ GeForce; 48 ГБ — коммерческая аренда)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_inference_benchmarks_vram_tools) |
 | **Ориентиры сообщества: Qwen3.5-35B-A3B и потребительское железо (март 2026)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_community_qwen_consumer_hardware) |
 | **Требования к VRAM при инференсе LLM** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_vram_requirements_llm_inference) |
 | **Сегментные ориентиры РФ (GPU-облако, B2B LLM)** | [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_segment_benchmarks) |

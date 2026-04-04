@@ -1076,7 +1076,7 @@ vLLM имеет более высокий оверхед по сравнению
 
 ### Актуальные тренды AI/ML {: #sizing_ai_ml_trends_channel }
 
-Актуальные тренды AI/ML для стратегического планирования — см. _[Приложение E](./20260325-research-appendix-e-market-technical-signals-ru.md#sizing_ai_ml_trends_channel)_.
+Актуальные тренды AI/ML для стратегического планирования — см. _[Приложение E](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_trends_2026_summary)_.
 
 ### Оптимизация затрат на инференс (практический опыт) {: #sizing_inference_cost_optimization_practical }
 
