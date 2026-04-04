@@ -40,6 +40,8 @@ tags:
 
 По [таблице «вопрос → документ»](#app_a_question_document_navigation) перейдите к требуемому разделу.
 
+Для первичной ориентации используйте **каноническую карту тем и документов** ниже; для точечного запроса — раздел _«вопрос → документ»_.
+
 ### Быстрый маршрут {: #app_a_reading_guide_quick_route }
 
 1. **Обосновать бюджет** — _[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md)_.
@@ -130,9 +132,10 @@ tags:
 - [Приложение D: безопасность, комплаенс и наблюдаемость (observability)](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
 - [Приложение E. Рыночные и технические сигналы (справочно)](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)
 
-## Базовые документы по теме {: #app_a_topic_owners_canonical_docs }
+## Каноническая карта тем и документов {: #app_a_topic_owners_canonical_docs }
 
-| Тема | Документ |
+Ниже — опорная карта комплекта: какой документ является **основным** по каждой теме. Если нужен быстрый ответ на прикладной вопрос, используйте следующий раздел _«Навигация «вопрос → документ»»_.
+| Тема | Основной документ |
 | --- | --- |
 | Коммерческое резюме предложения: что продаём и как передаём способность | [Резюме для руководства: коммерческое обоснование, методология и экономика внедрения ИИ](./20260331-research-executive-unified-ru.md) |
 | Экономика: цифры, тарифы, сценарии сайзинга, CapEx / OpEx / TCO | [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview) |
@@ -152,7 +155,7 @@ tags:
 - Где глобальные бенчмарки корпоративного внедрения по публичному отчёту OpenAI (2025) и оговорки по выборке (не норма для КП в РФ)? → [Отчёт. Методология разработки и внедрения ИИ — эмпирика корпоративного внедрения](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report)
 - Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)? → [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity); поведенческие риски — [Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__org_behavioral_risk_factors); риск бюджета организационная зрелость и пилот — [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)
 - Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать? → [Отчёт. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
-- Где примерные расчёты расхода токенов по данным портала поддержки и допущениям? → параграф _«[Примерные расчёты расхода токенов по данным корпуса заявок (портал поддержки)](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)», отчёта _«Сайзинг и экономика»_
+- Где примерные расчёты расхода токенов по данным портала поддержки и допущениям? → параграф _«[Примерные расчёты расхода токенов по данным корпуса заявок (портал поддержки)](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)»_ в отчёте _«[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)»_
 - Как устроен комплект отчуждения ИС/кода и что именно передаём клиенту (KT/IP)? → [Приложение B: отчуждение ИС и кода (KT, IP)](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
 - Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)? → [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm) и [Приложение B: комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)
 - Что есть в **Comindware** сегодня (состав стека, границы ‘что есть’ vs ‘методология’)? → [Приложение C: имеющиеся наработки Comindware](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
@@ -211,7 +214,7 @@ tags:
 
 ## Часть III. Сводный реестр источников {: #app_a_sources_registry }
 
-Ниже — **единый перечень** внешних ссылок комплекта, сгруппированный по темам. Каждый URL приведён **один раз**.
+Ниже — **канонический перечень** внешних ссылок комплекта, сгруппированный по темам. Каждый URL приведён **один раз** и может использоваться как базовая опора для ссылок и перепроверки тезисов внутри пакета.
 
 #### Инженерия обвязки и мультиагентная разработка {: #app_a_wrapper_engineering_multiagent }
 
@@ -615,9 +618,11 @@ tags:
 
 - [Портал НПА — проект федерального закона (ID 166424)](https://regulation.gov.ru/projects#npa=166424)
 
-## Часть IV. Дополнительные источники (backlog из ТЗ) {: #app_a_additional_sources_backlog }
+## Часть IV. Дополнительные источники и ориентиры (справочно) {: #app_a_additional_sources_backlog }
 
-### 16.1 Международные стандарты и регулирование (Приоритет 1) {: #app_a_international_standards_regulation }
+Ниже — расширенный круг чтения по теме: международные стандарты, консалтинговые материалы, кейсы и инженерные блоги. Эти источники полезны для углубления, обновления повестки и дополнительных проверок, но **не заменяют** канонический реестр части III для ссылок внутри пакета.
+
+### Международные стандарты и регулирование {: #app_a_international_standards_regulation }
 
 - [ISO/IEC 42001:2023 - PDF Sample and Core Requirements](https://cdn.standards.iteh.ai/samples/81230/4c1911ebc9a641fcb6ee21aa09c28ad3/ISO-IEC-42001-2023.pdf)
 - [NIST AI Risk Management Framework 1.0 (Full Portal)](https://nist.gov/itl/ai-risk-management-framework)
@@ -636,7 +641,7 @@ tags:
 - [G7 Hiroshima AI Process: International Guiding Principles](https://www.moff.go.jp/files/100573473.pdf)
 - [UK AI Safety Institute: Systemic Safety Framework (2025)](https://www.gov.uk/government/organisations/ai-safety-institute)
 
-### 16.2 Управленческие методологии внедрения (Big Three & Big Four) {: #app_a_executive_implementation_methodologies }
+### Управленческие методологии внедрения (Big Three & Big Four) {: #app_a_executive_implementation_methodologies }
 
 - [McKinsey: Rewiring the Enterprise for GenAI (2025)](https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/rewiring-for-the-era-of-gen-ai)
 - [McKinsey: The GenAI Operating Model Leader's Guide (2025)](https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/a-data-leaders-operating-guide-to-scaling-gen-ai)
@@ -668,7 +673,7 @@ tags:
 - [Everest Group: Enterprise Generative AI Adoption 2025 Playbook](https://www.everestgrp.com/report/generative-ai-playbook)
 - [HFS Research: The Generative AI 2025 Horizon Report](https://www.hfsresearch.com/research/genai-horizon-2025/)
 
-### 16.3 Технические паттерны и инженерные блоги (Промышленный ИИ / Production AI) {: #app_a_technical_patterns_engineering_blogs }
+### Технические паттерны и инженерные блоги (промышленный ИИ / Production AI) {: #app_a_technical_patterns_engineering_blogs }
 
 - [DoorDash: How We Built an Internal AI Platform That Works (2025)](https://www.getdot.ai/blog/doordash-ai-platform-agents)
 - [DoorDash: Building a Collaborative Multi-Agent AI Ecosystem (2026)](https://www.zenml.io/llmops-database/building-a-collaborative-multi-agent-ai-ecosystem-for-enterprise-knowledge-access)
@@ -700,7 +705,7 @@ tags:
 - [Portkey AI Gateway: Cost Management and Observability (2026)](https://docs.portkey.ai/)
 - [Helicone: Provider Routing and AI Gateway Docs (2026)](https://docs.helicone.ai/)
 
-### 16.4 Экономика ИИ, FinOps и сайзинг {: #app_a_ai_economics_finops_sizing }
+### Экономика ИИ, FinOps и сайзинг {: #app_a_ai_economics_finops_sizing }
 
 - [FinOps Foundation: Cost Estimation of AI Workloads (2026 Resource)](https://www.finops.org/wg/cost-estimation-of-ai-workloads)
 - [FinOps Framework 2025: Cloud Cost Allocation PDF](https://www.finops.org/wp-content/uploads/2025/05/English-FinOps-Framework-2025.pdf)
@@ -722,7 +727,7 @@ tags:
 - [OptyxStack Case Study: Reducing Inference Cost by 60% (2026)](https://optyxstack.com/case-studies/llm-inference-cost-reduction)
 - [AI Agent Cost Optimization: Token Economics in Production (Zylos 2026)](https://zylos.ai/research/2026-02-19-ai-agent-cost-optimization-token-economics)
 
-### 16.5 Российские регуляторные и правовые источники (Приоритет 1) {: #app_a_russian_regulatory_legal_sources }
+### Российские регуляторные и правовые источники {: #app_a_russian_regulatory_legal_sources }
 
 - [Указ Президента РФ №490: Национальная стратегия развития ИИ до 2030 (Ред. 2024)](https://www.consultant.ru/document/cons_doc_LAW_470015/)
 - [Указ Президента РФ от 15.02.2024: Изменения в стратегию ИИ (Актуальная версия)](https://ai.gov.ru/national-strategy/)
@@ -746,7 +751,7 @@ tags:
 - [BGP Litigation: Законопроект об ИИ - что нужно знать бизнесу (2026)](https://bgplaw.com/news/)
 - [Melling Voitishkin: Legal Alert - Маркировка ИИ контента в РФ](https://melling.com/ru/insights/)
 
-### 16.6 Российские прикладные исследования и бенчмарки {: #app_a_russian_applied_research_benchmarks }
+### Российские прикладные исследования и бенчмарки {: #app_a_russian_applied_research_benchmarks }
 
 - [MERA Benchmark: GigaChat 2 MAX Ranking (Top-1 RU 2026)](https://setka.ru/posts/019592e7-54d7-4f94-af58-0b74d6968357)
 - [ruMMLU: Benchmarking Russian LLM Intelligence (HSE/Sber)](https://github.com/ai-forever/ru-mmlu)
@@ -761,7 +766,7 @@ tags:
 - [Sber AI: ru-Gemma и open-source инициативы 2025-2026](https://developers.sber.ru/docs/ru/gigachat/models/updates)
 - [Yandex Research: Оптимизация инференса LLM для русского языка (2025)](https://yandex.ru/company/research/)
 
-### 16.7 Модели отчуждения и передачи (BOT и передача) {: #app_a_transfer_models_bot_handover }
+### Модели отчуждения и передачи (BOT и handover) {: #app_a_transfer_models_bot_handover }
 
 - [Build-Operate-Transfer (BOT) Model: Full Guide 2025](https://build-operate-transfer.com/post/build-operate-transfer-bot-model-complete-guide-for-software-development-2025)
 - [Tech4lyf — чек‑лист передачи ПО (Software handover checklist, 2026)](https://www.tech4lyf.com/blog/software-handover-documentation-checklist-2026/)
@@ -770,7 +775,7 @@ tags:
 - [Devico: Checklist for a seamless BOT transition (2025)](https://devico.io/blog/checklist-for-a-seamless-bot-transition)
 - [Knowledge Transfer Framework for Enterprise Software Handover](https://www.knowledge-management-tools.net/knowledge-transfer-framework.html)
 
-### 16.8 Кураторские списки и репозитории (Awesome Lists) {: #app_a_curated_lists_repositories }
+### Кураторские списки и репозитории (Awesome Lists) {: #app_a_curated_lists_repositories }
 
 - [GitHub: Awesome AI Agents 2026 (300+ resources)](https://github.com/caramaschiHG/awesome-ai-agents-2026)
 - [GitHub: Awesome Production GenAI (Updated March 2026)](https://ethicalml.github.io/awesome-production-genai/)
@@ -783,7 +788,7 @@ tags:
 - [Arxiv: OrchMAS - Orchestrated Reasoning with Multi-Agents (March 2026)](https://arxiv.org/abs/2603.03005v1)
 - [Arxiv: TreePS-RAG - Tree-based Process Supervision (Jan 2026)](https://arxiv.org/abs/2601.06922)
 
-### 16.9 Кейсы внедрения в российском бизнесе (2025-2026) {: #app_a_russian_business_implementation_cases }
+### Кейсы внедрения в российском бизнесе (2025-2026) {: #app_a_russian_business_implementation_cases }
 
 - [Сбер: Эффект от внедрения ИИ в 2026 году (Прогноз 550 млрд руб)](https://www.sostav.ru/publication/sber-ozhidaet-chto-effekt-ot-vnedreniya-ii-v-2026-godu-dostignet-550-mlrd-rublej-80507.html)
 - [Сбер: Первый в России ИИ-агент для Process Mining (Янв 2026)](https://pwa.lenta.ru/news/2026/01/22/sber-predstavil-pervogo-v-rossii-ii-agenta-dlya-analiza-biznes-protsessov/)
@@ -802,7 +807,7 @@ tags:
 - [Росатом: ИИ-системы для проектирования АЭС и анализа безопасности](https://rosatom.ru/journalist/news/)
 - [Самолет: Кейс «Цифровой рабочий» и ИИ в управлении стройкой (2025)](https://samolet.ru/news/)
 
-### 16.10 Технические статьи и инженерные блоги (Россия) {: #app_a_russian_technical_articles_blogs }
+### Технические статьи и инженерные блоги (Россия) {: #app_a_russian_technical_articles_blogs }
 
 - [Хабр: Оркестрация ИИ-агентов в 2026 - Кейс ритейл-компании](https://habr.com/ru/articles/1008598/)
 - [Хабр: Продвинутые техники RAG в действии (Сбербанк 2025)](https://habr.com/ru/companies/sberbank/articles/937242/)
@@ -818,7 +823,7 @@ tags:
 - [RB.ru: Топ-100 ИИ-стартапов России 2025 - карта рынка](https://rb.ru/list/ai-100-2025/)
 - [ComNews: Экономика автоматизации ИИ и точки экономии для бизнеса (2026)](https://www.comnews.ru/digital-economy/content/244350/2026-03-23/2026-w13/1016/ekonomika-avtomatizacii-ii-i-realnye-tochki-ekonomii-dlya-biznesa)
 
-### 16.11 Российская экономика ИИ и отчеты консалтинга {: #app_a_russian_ai_economy_consulting_reports }
+### Российская экономика ИИ и отчеты консалтинга {: #app_a_russian_ai_economy_consulting_reports }
 
 - [Яков и Партнёры: Rewiring the Enterprise for GenAI - Russian Context (2025)](https://yakovpartners.ru/publications/ai-2025/)
 - [Kept (ex-KPMG): ИИ-агенты KeptStore для корпоративного сектора (2026)](https://www.vedomosti.ru/press_releases/2026/01/14/kept-zapuskaet-platformu-s-ii-agentami-keptstore-dlya-avtomatizatsii-zadach-korporativnogo-segmenta-erid-2VfnxxbJAiD)
