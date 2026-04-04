@@ -1062,8 +1062,13 @@ _Пересчёт в рубли — по курсу ЦБ РФ на дату ра
 - [NVIDIA/garak](https://github.com/NVIDIA/garak)
 - [EvilFreelancer/openapi-to-cli](https://github.com/EvilFreelancer/openapi-to-cli)
 - [RAGAS — документация](https://docs.ragas.io/en/stable/)
-- [OpenRouter](https://openrouter.ai/) и [политики логирования](https://openrouter.ai/docs/guides/privacy/logging)
-- [OpenCode](https://opencode.ai/docs), [OpenWork](https://github.com/different-ai/openwork)
+- [OpenCode](https://opencode.ai/)
+- [OpenCode — документация (Intro)](https://opencode.ai/docs)
+- [OpenCode — Ecosystem](https://opencode.ai/docs/ecosystem/)
+- [OpenCode Zen](https://opencode.ai/docs/zen)
+- [OpenWork (different-ai/openwork)](https://github.com/different-ai/openwork)
+- [OpenRouter](https://openrouter.ai/)
+- [OpenRouter — Logging и политики провайдеров](https://openrouter.ai/docs/guides/privacy/logging)
 
 ### Наблюдаемость и телеметрия: стандарты и стек {: #app_d__observability_telemetry_standards }
 
