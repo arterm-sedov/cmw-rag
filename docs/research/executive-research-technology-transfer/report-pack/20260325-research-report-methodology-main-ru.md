@@ -407,7 +407,7 @@ flowchart LR
 
     Для расчётов и ценовых сравнений опирайтесь на параграф _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)» отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)»_: количественные тарифы (руб. за токены, комплекты, руб./час GPU), дерево факторов стоимости и сценарный сайзинг.
 
-    Дополнительные ориентиры по аренде GPU (IaaS РФ) для поставщиков вне основной сводной таблицы — в параграфе _«[Цены на GPU-оборудование (покупка и аренда)](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_hardware_pricing_all)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
+    Дополнительные ориентиры по **покупке и аренде GPU** и по интерпретации **N×VRAM** — в параграфах _«[Цены на GPU-оборудование (покупка и аренда)](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_hardware_pricing_all)»_ и _«[Топология ёмкости GPU и типы источников цифр](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_capacity_topology_bench_classes)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
 
 **Cloud.ru (Evolution Foundation Models)** · [продукт](https://cloud.ru/products/evolution-foundation-models) · [тарифы](https://cloud.ru/documents/tariffs/evolution/foundation-models)
 
@@ -443,7 +443,7 @@ flowchart LR
 
 - **Открытые веса:** линейка **GigaChat 3.1** (в т. ч. Ultra и Lightning) под **MIT** на Hugging Face и GitVerse — см. [обзор релиза на Хабре](https://habr.com/ru/companies/sberbank/articles/1014146/); по сравнению с комплектами **GigaChat API** основная стоимость смещается в **CapEx/OpEx GPU** и эксплуатацию. Вилку TCO и сценарии — в _«[Открытые веса и API: влияние на TCO](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_ сопутствующего резюме по сайзингу.
 
-**Selectel (Foundation Models Catalog)** [источник](https://selectel.ru/services/cloud/foundation-models-catalog)
+**Selectel (Foundation Models Catalog)** · [источник](https://selectel.ru/services/cloud/foundation-models-catalog)
 
 - Каталог с выделенным endpoint, API **совместим с OpenAI**; оплата за **CPU, GPU, RAM, диски**, не за токены. **Private Preview**, список моделей в панели (ссылки на HF). Свои веса **не** заявлены (FAQ на сайте).
 
@@ -479,7 +479,7 @@ flowchart LR
 | **NVIDIA Nemotron 3** | [NVIDIA-Nemotron-3-Nano-30B-A3B-FP8](https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8) и др. в org [nvidia](https://huggingface.co/nvidia) | MoE, заявленный контекст до **1M** токенов ([обзор](https://research.nvidia.com/labs/nemotron/Nemotron-3/)); **не** готовый **API РФ** без своего контура |
 | **Kimi (Moonshot)** | [moonshotai/Kimi-K2-Base](https://huggingface.co/moonshotai/Kimi-K2-Base); линейка K2.5 — в org [moonshotai](https://huggingface.co/moonshotai) | Часто в IDE и агрегаторах; в КП укажите явный контур и лицензию |
 
-Все **числовые** ориентиры по управляемым API — в параграфе _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)». Отдельно Сбер публикует **открытые веса** GigaChat‑3.1‑Ultra и Lightning под **MIT** ([Хабр](https://habr.com/ru/companies/sberbank/articles/1014146/)): экономика смещается в **CapEx/OpEx GPU** — см. параграф _«[Открытые веса и API: влияние на TCO](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)».
+Все **числовые** ориентиры по управляемым API — в параграфе _«[Тарифы российских облачных провайдеров ИИ](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_ai_cloud_tariffs)»_ отчёта «Сайзинг и экономика (CapEx / OpEx / TCO)». Сравнение экономики **GigaChat API** и **открытых весов** — в блоке **SberCloud** выше и параграфе _«[Открытые веса и API: влияние на TCO](./20260325-research-report-sizing-economics-main-ru.md#sizing_open_weights_api_tco_impact)»_ того же отчёта.
 
 **Паттерн «чекпойнт на Hugging Face + отдельная лицензия»** (не эквивалент permissive open source вроде MIT) меняет комплект отчуждения и учёт: у публичной ветки **YandexGPT-5-Lite-8B** применяется **кастомное лицензионное соглашение**, где при коммерческом использовании при достижении **10 миллионов выходных токенов в месяц** лицензиат в течение **30 календарных дней** после такого месяца обязан связаться с правообладателем для согласования дальнейшего использования, иначе лицензии прекращаются ([полный текст](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE)). В том же тексте зафиксированы **применимое право РФ** и требования к **указанию авторства** при распространении — это входит в юридический контур передачи и в **мониторинг объёма генерации**, параллельно со сдвигом TCO в сторону **GPU и эксплуатации**, как у любого self-hosted чекпойнта.
 
