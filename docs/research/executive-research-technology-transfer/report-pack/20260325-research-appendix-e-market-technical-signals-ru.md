@@ -32,9 +32,9 @@ tags:
 
 ## Связанные документы
 
-- [Отчёт. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
-- [Отчёт. Сайзинг и экономика (CapEx / OpEx / TCO)](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
-- [Приложение D. Безопасность, комплаенс и observability](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
+- [Отчёт «Методология разработки и внедрения ИИ»](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
+- [Отчёт «Сайзинг и экономика (CapEx / OpEx / TCO)»](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
+- [Приложение D «Безопасность, комплаенс и observability»](./20260325-research-appendix-d-security-observability-ru.md#app_d__pack_overview)
 
 ## Архитектурный и продуктовый радар (детализация дайджестов) {: #app_e_architecture_product_radar }
 
@@ -42,19 +42,19 @@ tags:
 
 ### GraphOS для RAG: 16-слойная архитектура {: #app_e__graphos_rag_16_layer_architecture }
 
-По публичным инженерным разборам **GraphOS** для RAG здесь используется как обозначение **референс-архитектуры из открытого обзора**, а не как нормативная спецификация отдельного вендорского продукта. В таком разборе стек описывается как многослойный продакшн-контур (в т.ч. граф знаний **Neo4j**, оркестрация **LangGraph**, **LiteLLM**, observability в духе **Prometheus** / **Grafana** / **LangSmith**, развёртывание в **Docker**/**Kubernetes**). Заявляется **маршрутизация запросов** к разным стратегиям ретрива и **экономия стоимости** запросов **порядка 30–50%** относительно «всегда полный» пайплайна; в дайджестах отдельно фигурирует ориентир **~47%** — подтверждение на данных и SLA заказчика обязательно. Ориентир по архитектуре и цифрам: _«[Building Agentic GraphOS: The 16-Layer Architecture Behind Production-Ready Knowledge Graphs](https://medium.com/@aiwithakashgoyal/building-agentic-graphos-the-16-layer-architecture-behind-production-ready-knowledge-graphs-9ca632bc74c5)»_ (Medium, вторичный обзор).
+По публичным инженерным разборам платформа **GraphOS** для RAG описывается как многослойный продакшн-стек (в т.ч. граф знаний **Neo4j**, оркестрация **LangGraph**, **LiteLLM**, observability в духе **Prometheus** / **Grafana** / **LangSmith**, развёртывание в **Docker**/**Kubernetes**). Заявляется **маршрутизация запросов** к разным стратегиям ретрива и **экономия стоимости** запросов **порядка 30–50%** относительно «всегда полный» пайплайна; в дайджестах отдельно фигурирует ориентир **~47%** — подтверждение на данных и SLA заказчика обязательно. Ориентир по архитектуре и цифрам: _«[Building Agentic GraphOS: The 16-Layer Architecture Behind Production-Ready Knowledge Graphs](https://medium.com/@aiwithakashgoyal/building-agentic-graphos-the-16-layer-architecture-behind-production-ready-knowledge-graphs-9ca632bc74c5)»_ (Medium, вторичный обзор).
 
 **Стек (по обзору):** Request Routers; трёхуровневая память (**Redis** + **Neo4j** и др.); полный стек observability.
 
 ### Nested Learning: Transformer 2.0 {: #app_e__nested_learning_transformer_2 }
 
-**Исследовательский горизонт (концепции из препринтов и дайджестов 2025–2026 гг.):**
+**Исследовательский горизонт (концепции в дайджестах 2025–2026 гг., включая отсылки к NeurIPS 2025):**
 
 - модели с «быстрыми весами» под текущую задачу и «медленными» под фундаментальные знания;
 - модуль **HOPE** (Higher-Order Processing Engine);
 - акцент на **continual learning**.
 
-В коммерческом внедрении — **НИОКР**, не обязательная строка сметы до зрелых API и лицензирования в контуре заказчика; юрисдикция размещения данных и обучения — отдельный комплаенс-разбор. Для исследовательской опоры используйте препринт [Nested Learning: The Illusion of Deep Learning Architectures](https://arxiv.org/abs/2512.24695) и дайджестный комментарий [_«Nested Learning — @ai_archnadzor»_](https://t.me/ai_archnadzor/157).
+В коммерческом внедрении — **НИОКР**, не обязательная строка сметы до зрелых API и лицензирования в контуре заказчика; юрисдикция размещения данных и обучения — отдельный комплаенс-разбор. Первичный канал дайджеста — [_«Nested Learning — @ai_archnadzor»_](https://t.me/ai_archnadzor/157).
 
 ### Perplexica: открытый стек в духе Perplexity {: #app_e__perplexica_open_source_perplexity }
 
@@ -66,17 +66,15 @@ tags:
 4. переранжирование (**Reranking**, эмбеддинги);
 5. генерация ответа с опорой на источники (**Answer Generation**).
 
-**Особенности по официальной документации и дайджестам:** поддержка **Ollama** (локальный инференс), API-first (`/api/search`, `/api/chat`), self-hosted контур с cited answers и backend на **SearXNG** — см. [Perplexica Docs](https://itzcrazykns-perplexica.mintlify.app/introduction). Цепочка «веб-поиск + реранк + генерация» задаёт политику исходящего трафика, журналирование запросов к внешним поисковикам и минимизацию ПДн в логах — в соответствии с моделью угроз (_«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_).
+**Особенности дайджестов:** поддержка **Ollama** (локальный инференс), API-first (`/api/search`, `/api/chat`). Цепочка «веб-поиск + реранк + генерация» задаёт политику исходящего трафика, журналирование запросов к внешним поисковикам и минимизацию ПДн в логах — в соответствии с моделью угроз (_«[Приложение D](./20260325-research-appendix-d-security-observability-ru.md#app_d__personal_data_telemetry_152fz)»_).
 
 ### LEANN: компактный векторный индекс {: #app_e__leann_vector_index }
 
-**Идея:** вместо хранения всех плотных эмбеддингов — индекс, предполагающий **пересчёт представлений по требованию** (компромисс **хранилище ↔ вычисления на запрос**). В статье [LEANN: A Low-Storage Vector Index](https://arxiv.org/abs/2506.08276) заявлен класс результатов порядка **<5%** от объёма исходных данных и **до ~50x** меньшего хранения относительно традиционных подходов; в открытых обзорах и репозитории приводится частный пример масштаба **~60 млн** текстовых чанков: классический вариант с хранением векторов **~201 ГБ** против **~6 ГБ** для подхода LEANN (**оценка «~97%» снижения объёма индекса** — требует подтверждения на корпусе заказчика и SLA по latency). Первичные источники: _[arXiv — LEANN: A Low-Storage Vector Index](https://arxiv.org/abs/2506.08276)_, _[GitHub — yichuan-w/LEANN](https://github.com/yichuan-w/leann)_; обзорный контекст — [_«[LEANN — @ai_archnadzor](https://t.me/ai_archnadzor/161)»_](https://t.me/ai_archnadzor/161).
+**Идея:** вместо хранения всех плотных эмбеддингов — индекс, предполагающий **пересчёт представлений по требованию** (компромисс **хранилище ↔ вычисления на запрос**). В открытых обзорах и репозитории приводится пример масштаба **~60 млн** текстовых чанков: классический вариант с хранением векторов **~201 ГБ** против **~6 ГБ** для подхода LEANN (**оценка «~97%» снижения объёма индекса** — требует подтверждения на корпусе заказчика и SLA по latency). Первичные источники: _[GitHub — yichuan-w/LEANN](https://github.com/yichuan-w/leann)_, _[Semantic Scholar — LEANN: A Low-Storage Vector Index](https://www.semanticscholar.org/paper/LEANN%3A-A-Low-Storage-Vector-Index-Wang-Liu/a7f376d23f5e12132e5ebddd9558a6d99f48a49f)_; обзорный контекст — [_«[LEANN — @ai_archnadzor](https://t.me/ai_archnadzor/161)»_](https://t.me/ai_archnadzor/161).
 
 ### Тренды 2026 года: Резюме {: #app_e_trends_2026_summary }
 
 Из каналов **@ai_archnadzor** и **NeuralDeep**:
-
-Ниже — **сигналы технологического мониторинга**, а не готовые нормы для бюджета, SLA или дорожной карты внедрения. Любой конкретный процент, прирост или ускорение подтверждается на данных заказчика и в контуре выбранного стека.
 
 **Тренды архитектуры:**
 
@@ -96,7 +94,7 @@ tags:
 
 **Тренды инфраструктуры:**
 
-- В ряде практик **CLI** рассматривают как более лёгкую альтернативу **MCP** для части задач доступа к инструментам
+- CLI заменяет MCP для доступа агентов к инструментам (нулевой оверхед)
 - Фреймворк EffGen для эффективности SLM (+11,2% для моделей 1.5B)
 - Arize Phoenix для полной обсервабильности
 - Guardrails как обязательный инфраструктурный слой
