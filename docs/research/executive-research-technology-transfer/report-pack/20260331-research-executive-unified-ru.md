@@ -36,8 +36,8 @@ tags:
 
 ## SCQA для коммерческого решения {: #exec_unified_scqa }
 
-- **Ситуация:** спрос на GenAI растёт, но у заказчиков дефицит управляемого внедрения и масштабирования.
-- **Проблема:** без прозрачной экономики, контроля качества и формализованной передачи пилоты не капитализируются в устойчивый внутренний актив.
+- **Ситуация:** спрос на GenAI растёт, но у заказчиков дефицит управляемого внедрения и масштабирования; при этом международные исследования фиксируют разрыв между масштабом использования ИИ и реально подтверждённым эффектом на уровне бизнеса.
+- **Проблема:** без прозрачной экономики, контроля качества и формализованной передачи пилоты не капитализируются в устойчивый внутренний актив: по _«[McKinsey — The State of AI](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)»_ регулярное использование ИИ есть уже у **88%** организаций хотя бы в одной функции, но только **39%** фиксируют enterprise-level EBIT impact; по _«[BCG — Closing the AI Impact Gap](https://www.bcg.com/publications/2025/closing-the-ai-impact-gap)»_ ИИ входит в top-3 приоритетов у **75%** руководителей, тогда как значимую ценность видят лишь **25%**.
 - **Вопрос:** как внедрить корпоративный ИИ с предсказуемой экономикой и контролируемой передачей владения?
 - **Ответ:** поэтапная программа внедрения с едиными KPI, формальными критериями приёмки и пакетом отчуждения.
 
@@ -194,7 +194,9 @@ tags:
 - [NIST AI Risk Management Framework 1.0](https://nist.gov/itl/ai-risk-management-framework)
 - [OpenAI — The state of enterprise AI (обзор, декабрь 2025)](https://openai.com/index/the-state-of-enterprise-ai-2025-report)
 - [McKinsey — The State of AI 2025 (March 2025)](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)
+- [BCG — Closing the AI Impact Gap (2025)](https://www.bcg.com/publications/2025/closing-the-ai-impact-gap)
 - [Stanford HAI — AI Index Report 2025](https://hai.stanford.edu/ai-index/2025-ai-index-report)
+- [Gartner — Lack of AI-Ready Data Puts AI Projects at Risk (26.02.2025)](https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk)
 - [Yakov Partners — Прогноз экономического эффекта ИИ в России, 2025](https://yakovpartners.ru/)
 - [РБК Education — во сколько обойдётся ИИ-агент: подсчёты экспертов (2026)](https://www.rbc.ru/education/05/02/2026/697162269a794772c9cf9991)
 - [Ведомости — ИИ-рывок 2026: что изменится для российских компаний](https://www.vedomosti.ru/technologies/trendsrub/articles/2026/03/04/1180756-ii-rivok-2026-chto)
