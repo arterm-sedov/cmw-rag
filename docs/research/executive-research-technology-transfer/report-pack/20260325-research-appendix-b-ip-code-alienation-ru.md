@@ -15,7 +15,7 @@ hide:
   - tags
 ---
 
-# Отчуждение ИС и кода: KT, IP, лицензии, критерии приёмки передачи {: #app_b_pack_overview .pageBreakBefore }
+# Отчуждение ИС и кода: KT, IP, лицензии, критерии приёмки передачи {: #app_b_pack_overview }
 
 ## Обзор {: #app_b_overview }
 

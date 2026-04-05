@@ -17,7 +17,7 @@ hide:
   - tags
 ---
 
-# Отчёт. Методология разработки и внедрения ИИ {: #method_pack_overview .pageBreakBefore }
+# Отчёт. Методология разработки и внедрения ИИ {: #method_pack_overview }
 
 ## Описание документа {: #method_intro_and_summary }
 

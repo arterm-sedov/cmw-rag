@@ -12,7 +12,7 @@ tags:
   - KT
 ---
 
-# Приложение C. Имеющиеся наработки **Comindware** (состав, границы, артефакты) {: #app_c_pack_overview .pageBreakBefore }
+# Приложение C. Имеющиеся наработки **Comindware** (состав, границы, артефакты) {: #app_c_pack_overview }
 
 ## Обзор {: #app_c_overview }
 

@@ -12,7 +12,7 @@ hide:
   - tags
 ---
 
-# Рыночные и технические сигналы {: #app_e_root .pageBreakBefore }
+# Рыночные и технические сигналы {: #app_e_root }
 
 ## Обзор и назначение {: #app_e_sales_strategy }
 

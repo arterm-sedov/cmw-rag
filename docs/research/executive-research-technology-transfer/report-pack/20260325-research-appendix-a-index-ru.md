@@ -20,7 +20,7 @@ hide:
   - tags
 ---
 
-# Перечень {: #app_a_pack_overview .pageBreakBefore }
+# Перечень {: #app_a_pack_overview }
 
 ## Сводный Перечень {: #app_a_sources_registry }
 

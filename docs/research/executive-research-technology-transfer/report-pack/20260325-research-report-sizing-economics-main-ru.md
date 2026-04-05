@@ -17,7 +17,7 @@ hide:
   - tags
 ---
 
-# Отчёт. Сайзинг и экономика (CapEx / OpEx / TCO) {: #sizing .pageBreakBefore }
+# Отчёт. Сайзинг и экономика (CapEx / OpEx / TCO) {: #sizing }
 
 ## Описание документа {: #sizing_intro_and_summary }
 

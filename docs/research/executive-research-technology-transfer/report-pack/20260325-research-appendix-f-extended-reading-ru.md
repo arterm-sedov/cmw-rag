@@ -15,7 +15,7 @@ hide:
   - tags
 ---
 
-# Дополнительное чтение {: #app_f_root .pageBreakBefore }
+# Дополнительное чтение {: #app_f_root }
 
 ## Обзор {: #app_f_overview }
 
