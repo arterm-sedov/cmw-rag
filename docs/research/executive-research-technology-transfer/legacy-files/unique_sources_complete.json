@@ -1,0 +1,2402 @@
+[
+  {
+    "title": "Хабр — Инженер будущего строит обвязку для агентов",
+    "url": "https://habr.com/ru/articles/1005032/",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Martin Fowler — Harness Engineering (Thoughtworks)",
+    "url": "https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "OpenAI — Harness engineering",
+    "url": "https://openai.com/ru-RU/index/harness-engineering/",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Anthropic — Effective harnesses for long-running agents",
+    "url": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Anthropic — Harness design for long-running application development",
+    "url": "https://www.anthropic.com/engineering/harness-design-long-running-apps",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "GenAI Security — OWASP Top 10 for Agentic Applications for 2026",
+    "url": "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Securelist — webinar: AI agents vs. prompt injections",
+    "url": "https://securelist.com/webinars/ai-agents-vs-prompt-injections/",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Kaspersky Blog — Agentic AI security measures and OWASP ASI Top 10",
+    "url": "https://www.kaspersky.com/blog/top-agentic-ai-risks-2026/29988/",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Bain & Company — The Three Layers of an Agentic AI Platform (апрель 2026)",
+    "url": "https://www.bain.com/insights/the-three-layers-of-an-agentic-ai-platform/",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "LangGraph — документация",
+    "url": "https://docs.langchain.com/",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Microsoft Research — Fara-7B: An Efficient Agentic Model for Computer Use (PDF)",
+    "url": "https://www.microsoft.com/en-us/research/wp-content/uploads/2025/11/Fara-7B-An-Efficient-Agentic-Model-for-Computer-Use.pdf",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "arXiv — Agent0: co-evolving curriculum and executor agents",
+    "url": "https://arxiv.org/pdf/2511.16043",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "arXiv — General Agentic Memory (GAM)",
+    "url": "https://arxiv.org/pdf/2511.18423",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Medium — Qwen 3.5 35B A3B (AgentNativeDev)",
+    "url": "https://agentnativedev.medium.com/qwen-3-5-35b-a3b-why-your-800-gpu-just-became-a-frontier-class-ai-workstation-63cc4d4ebac1",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "MWS AI — MWS AI Agents Platform (описание модулей)",
+    "url": "https://mts.ai/product/ai-agents-platform/",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Agentic RAG / SGR",
+    "url": "https://t.me/neuraldeep/1605",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "EffGen / agentic SLM",
+    "url": "https://t.me/ai_archnadzor/171",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "vamplabAI/sgr-agent-core",
+    "url": "https://github.com/vamplabAI/sgr-agent-core",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "vamplabAI/sgr-agent-core — ветка tool-confluence",
+    "url": "https://github.com/vamplabAI/sgr-agent-core/tree/tool-confluence",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "arXiv — Agent Skills in the Wild: An Empirical Study of Security Vulnerabilities at Scale, 2601.10338",
+    "url": "https://arxiv.org/abs/2601.10338",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "SGR Agent Core on GitHub",
+    "url": "https://github.com/vamplabAI/sgr-agent-core/",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "Yandex Agent Atelier",
+    "url": "https://aistudio.yandex.ru/ru/agent-atelier",
+    "context": "Инженерия агентов и мультиагентные системы"
+  },
+  {
+    "title": "BCG — AI Transformation Is a Workforce Transformation",
+    "url": "https://www.bcg.com/publications/2026/ai-transformation-is-a-workforce-transformation",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "OWASP Gen AI Security Project — Introduction",
+    "url": "https://genai.owasp.org/introduction-genai-security-project/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "GenAI Security — OWASP Top 10 for LLM Applications 2025",
+    "url": "https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "GitHub — OWASP Application Security Verification Standard 5.0.0 (PDF, RU)",
+    "url": "https://github.com/OWASP/ASVS/blob/master/5.0/OWASP_Application_Security_Verification_Standard_5.0.0_ru.pdf",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "GitHub — OWASP www-project-ai-testing-guide",
+    "url": "https://github.com/OWASP/www-project-ai-testing-guide",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Habr — OWASP (вводные по тестированию и материалам сообщества)",
+    "url": "https://habr.com/ru/companies/owasp/articles/817241/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Habr — OWASP: LLM TOP 10 2025 (адаптация)",
+    "url": "https://habr.com/ru/companies/owasp/articles/893712/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Habr — OWASP (смежные публикации сообщества)",
+    "url": "https://habr.com/ru/companies/owasp/articles/896328/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Habr — OWASP (смежные публикации сообщества)",
+    "url": "https://habr.com/ru/companies/owasp/articles/900276/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "OWASP — проект Top 10 for Large Language Model Applications",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "OWASP — Web Security Testing Guide (WSTG), stable",
+    "url": "https://owasp.org/www-project-web-security-testing-guide/stable/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "CodeWall — How we hacked McKinsey’s AI platform (разбор red team)",
+    "url": "https://codewall.ai/blog/how-we-hacked-mckinseys-ai-platform",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "GitHub — NVIDIA Garak (сканер для LLM, только изолированные стенды)",
+    "url": "https://github.com/NVIDIA/garak",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "OpenAI — приобретение PromptFoo (контекст рынка тестирования)",
+    "url": "https://openai.com/index/openai-to-acquire-promptfoo/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Kaspersky — пресс-релиз: угрозы под видом популярных ИИ-сервисов (бенчмарк тренда)",
+    "url": "https://www.kaspersky.com/about/press-releases/kaspersky-chatgpt-mimicking-cyberthreats-surge-115-in-early-2025-smbs-increasingly-targeted",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "The Hacker News — TeamPCP: LiteLLM и Telnyx скомпрометированы через PyPI (март 2026)",
+    "url": "https://thehackernews.com/2026/03/teampcp-pushes-malicious-telnyx.html",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Datadog Security Labs — LiteLLM and Telnyx compromised on PyPI: Tracing the TeamPCP supply chain campaign",
+    "url": "https://securitylabs.datadoghq.com/articles/litellm-compromised-pypi-teampcp-supply-chain-campaign/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Коммерсантъ — рынок и атаки на ИИ-системы (журналистский контекст)",
+    "url": "https://www.kommersant.ru/doc/8363105",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Kaspersky — press release: training Large Language Models Security (описание программы)",
+    "url": "https://www.kaspersky.com/about/press-releases/kaspersky-introduces-a-new-training-large-language-models-security",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Kaspersky Blog — How LLMs can be compromised in 2025",
+    "url": "https://www.kaspersky.com/blog/new-llm-attack-vectors-2025/54323/",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "Kaspersky Resource Center — What Is Prompt Injection?",
+    "url": "https://www.kaspersky.com/resource-center/threats/prompt-injection",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "HiddenLayer — AI Threat Landscape 2026",
+    "url": "https://hiddenlayer.com/report-and-guide/threatreport2026",
+    "context": "Безопасность GenAI: OWASP, стандарты и практики тестирования"
+  },
+  {
+    "title": "GitHub — llm-attacks/llm-attacks",
+    "url": "https://github.com/llm-attacks/llm-attacks",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "Официальное опубликование — Приказ Роскомнадзора от 19.06.2025 № 140 (обезличивание ПДн)",
+    "url": "http://publication.pravo.gov.ru/document/0001202508010002",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "ACSOUR — обязанность операторов передавать анонимизированные ПДн в ГИС (152-ФЗ)",
+    "url": "https://acsour.com/en/news-and-articles/tpost/2g13ahnab1-mandatory-anonymized-personal-data-shari",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "NIST AIRC — Roadmap for the AI Risk Management Framework",
+    "url": "https://airc.nist.gov/airmf-resources/roadmap",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "NIST — AI RMF to ISO/IEC 42001 Crosswalk (PDF)",
+    "url": "https://airc.nist.gov/docs/NIST_AI_RMF_to_ISO_IEC_42001_Crosswalk.pdf",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "Известия (EN) — создание офисов внедрения ИИ",
+    "url": "https://en.iz.ru/en/node/1985740",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "DataGuidance — поправки к национальной стратегии развития ИИ РФ",
+    "url": "https://www.dataguidance.com/news/russia-president-issues-amendments-national-ai",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "Фонтанка — проект закона о госрегулировании ИИ (Минцифры, 18.03.2026)",
+    "url": "https://www.fontanka.ru/2026/03/18/76318717/",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "ISO/IEC 42001:2023 — Artificial intelligence management system",
+    "url": "https://www.iso.org/standard/81230.html",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "NIST — AI RMF: Generative AI Profile (NIST.AI.600-1, 2024)",
+    "url": "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "Redmadnews — AI-first стратегия: подкаст",
+    "url": "https://t.me/Redmadnews/5170",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "Национальная стратегия развития ИИ до 2030 года (Указ Президента РФ №124, февраль 2024)",
+    "url": "http://kremlin.ru/acts/bank/49930",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "NIST AI Risk Management Framework 1.0",
+    "url": "https://nist.gov/itl/ai-risk-management-framework",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "EUR-Lex — Regulation (EU) 2024/1689 — Artificial Intelligence Act",
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "EU AI Act Service Desk — статья 99",
+    "url": "https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-99",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "E2B — Sandbox lifecycle",
+    "url": "https://e2b.dev/docs/sandbox",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "E2B Blog — Up to 5x faster sandboxes",
+    "url": "https://e2b.dev/blog/up-to-5x-faster-sandboxes",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "Modal — Sandboxes",
+    "url": "https://modal.com/docs/guide/sandbox",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "Daytona — Documentation",
+    "url": "https://www.daytona.io/docs",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "gVisor — Production guide",
+    "url": "https://gvisor.dev/docs/user_guide/production/",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "gVisor — Compatibility",
+    "url": "https://gvisor.dev/docs/user_guide/compatibility/",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "gVisor — Performance",
+    "url": "https://gvisor.dev/docs/architecture_guide/performance/",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "IEEE Xplore — Security-Performance Trade-offs of Kubernetes Container Runtimes (Viktorsson, Klein, Tordsson)",
+    "url": "https://ieeexplore.ieee.org/document/9285946/",
+    "context": "Регуляторика ИИ, управление рисками и изолированные среды (песочницы)"
+  },
+  {
+    "title": "NIST — SP 800-190, Application Container Security Guide",
+    "url": "https://csrc.nist.gov/publications/detail/sp/800-190/final",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Контур — агрегатор норматекста (документ по обезличиванию ПДн)",
+    "url": "https://normativ.kontur.ru/document?documentId=500957&moduleId=1",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Москва 24 — публикация о проекте закона об ИИ, 18.03.2026",
+    "url": "https://www.m24.ru/news/politika/18032026/883742",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Указ Президента РФ №124 от 15.02.2024 (Национальная стратегия ИИ)",
+    "url": "https://kremlin.ru/acts/bank/50326",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Сколково — программа «Переход в ИИ: трансформация бизнес-процессов» (CDTO)",
+    "url": "https://www.skolkovo.ru/programmes/cdto/",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Gartner — пресс-релиз: нехватка AI-ready data подрывает ИИ-проекты (26.02.2025)",
+    "url": "https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Хабр — red_mad_robot: анонс тренд-репорта и события в Сколково",
+    "url": "https://habr.com/ru/companies/redmadrobot/articles/879750/",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "red_mad_robot — исследования и материалы рынка GenAI",
+    "url": "https://redmadrobot.ru/issledovaniya-1/",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "red_mad_robot — мероприятие: тренд-репорт рынка GenAI (2025)",
+    "url": "https://redmadrobot.ru/meropriyatiya/trend-report-rynok-gen-ai-v-2025-godu/",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Gartner — AI TRiSM (глоссарий)",
+    "url": "https://www.gartner.com/en/information-technology/glossary/ai-trism",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "McKinsey — The State of AI 2025 (March 2025)",
+    "url": "https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "РБК — объём рынка B2B LLM в России (~35 млрд руб., MTS AI)",
+    "url": "https://www.rbc.ru/technology_and_media/26/11/2024/67449d909a79478a2052d490",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Сколково — событие «Состояние рынка GenAI в России и в мире» (12.02.2025)",
+    "url": "https://www.skolkovo.ru/events/120225-sostoyanie-rynka-genai-v-rossii-i-v-mire/",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Ведомости — рынок облачных сервисов с GPU (МНИАП, прогноз ~17,1 млрд руб.)",
+    "url": "https://www.vedomosti.ru/technology/articles/2024/12/11/1080600-rinok-oblachnih-servisov-s-gpu-virastet",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "a16z — Top 100 Gen AI Apps (6)",
+    "url": "https://a16z.com/100-gen-ai-apps-6/",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "OpenAI — The state of enterprise AI 2025 (PDF)",
+    "url": "https://cdn.openai.com/pdf/7ef17d82-96bf-4dd1-9df2-228f7f377a29/the-state-of-enterprise-ai_2025-report.pdf",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Dataoorts — GPU cloud providers in Russia",
+    "url": "https://dataoorts.com/top-5-plus-gpu-cloud-providers-in-russia/",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Хабр — Релиз Claude Opus 4.6 (новость)",
+    "url": "https://habr.com/ru/news/993322/",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "ITNext — GPU infrastructure as foundational to enterprise AI strategy",
+    "url": "https://itnext.io/why-gpu-infrastructure-is-foundational-to-an-enterprise-ai-strategy-5b574ef1eebc",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Larridin — State of Enterprise AI in 2025 (независимый обзор, не первоисточник OpenAI)",
+    "url": "https://larridin.com/blog/state-of-enterprise-ai-in-2025",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "OpenAI — The state of enterprise AI (обзор, декабрь 2025)",
+    "url": "https://openai.com/index/the-state-of-enterprise-ai-2025-report",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Правила тарификации Anthropic Claude",
+    "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+    "context": "Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI"
+  },
+  {
+    "title": "Claude Docs — What's new in Claude 4.6",
+    "url": "https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Anthropic — Introducing Claude Opus 4.6",
+    "url": "https://www.anthropic.com/news/claude-opus-4-6",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Anthropic — Introducing Claude Sonnet 4.6",
+    "url": "https://www.anthropic.com/news/claude-sonnet-4-6",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "FinOps Foundation — Framework: Unit Economics (Capability)",
+    "url": "https://www.finops.org/framework/capabilities/unit-economics/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "FinOps Foundation — Generative AI / Unit Economics",
+    "url": "https://www.finops.org/wg/generative-ai/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "IMARC — Russia Artificial Intelligence Market",
+    "url": "https://www.imarcgroup.com/russia-artificial-intelligence-market",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "MarketsandMarkets — Russia AI Inference Platform as a Service (PaaS)",
+    "url": "https://www.marketsandmarkets.com/ResearchInsight/russia-ai-inference-platform-as-a-service-paas-market.asp",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "РБК Education — во сколько обойдётся ИИ-агент: подсчёты экспертов (2026)",
+    "url": "https://www.rbc.ru/education/05/02/2026/697162269a794772c9cf9991",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Yakov & Partners — AI 2025 (экономический эффект)",
+    "url": "https://yakovpartners.com/publications/ai-2025/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Cloud.ru — Тарифы «Evolution Compute GPU», Приложение №7G.EVO.1 (январь 2026)",
+    "url": "https://cloud.ru/documents/tariffs/evolution/evolution-compute-gpu",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Elish Tech — Почасовая аренда GPU A100 vs H100: что выгоднее в 2026 году",
+    "url": "https://www.elishtech.com/arenda-gpu-a100-vs-h100-2026/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Elish Tech — Где арендовать GPU-серверы дешевле и выгоднее: сравнение рынка в России и за рубежом",
+    "url": "https://www.elishtech.com/gpu-server-rent-market-comparison/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Yandex Cloud — GPU (графические ускорители), документация",
+    "url": "https://yandex.cloud/ru/docs/compute/concepts/gpus",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Yandex Cloud — Прайс-лист (текущие тарифы)",
+    "url": "https://yandex.cloud/ru/prices",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Selectel — Cloud GPU (облачные серверы с GPU)",
+    "url": "https://selectel.ru/services/cloud/servers/gpu",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Selectel — Новости: новые конфигурации GPU-серверов от 50 руб./час",
+    "url": "https://myseldon.com/ru/news/index/262426281",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Hugging Face — Qwen/Qwen3.5-35B-A3B",
+    "url": "https://huggingface.co/Qwen/Qwen3.5-35B-A3B",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Introl — планирование мощностей ИИ-инфраструктуры (прогнозы, McKinsey в обзоре)",
+    "url": "https://introl.com/blog/ai-infrastructure-capacity-planning-forecasting-gpu-2025-2030",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Introl — финансирование CapEx/OpEx и инвестиции в GPU",
+    "url": "https://introl.com/blog/ai-infrastructure-financing-capex-opex-gpu-investment-guide-2025",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "PitchGrade — AI Infrastructure Primer",
+    "url": "https://pitchgrade.com/research/ai-infrastructure-primer",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "OpenAI — Prompt caching (снижение стоимости повторяющегося контекста)",
+    "url": "https://platform.openai.com/docs/guides/prompt-caching",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Slyd — калькулятор TCO (on-prem и облако)",
+    "url": "https://slyd.com/resources/tco-calculator",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Runpod — LLM inference optimization playbook (throughput)",
+    "url": "https://www.runpod.io/articles/guides/llm-inference-optimization-playbook",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "SWFTE — экономика частного AI / on-prem",
+    "url": "https://www.swfte.com/blog/private-ai-enterprises-onprem-economics",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Redmadnews — AI + Economy: китайская модель масштабирования (пост канала, рыночный фон)",
+    "url": "https://t.me/Redmadnews/5159",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Yakov Partners — Прогноз экономического эффекта ИИ в России, 2025",
+    "url": "https://yakovpartners.ru/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "CNews — Российский рынок генеративного ИИ в 2025 году",
+    "url": "https://www.cnews.ru/news/top/2025-12-09_v_2025_godu_rossijskij_rynok",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Ivchenko, O. — Cloud vs On-Premise Economics for AI: A Structured Cost Framework (Zenodo, DOI 10.5281/zenodo.18678386, 2026)",
+    "url": "https://doi.org/10.5281/zenodo.18678386",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Trend Micro — Your AI Gateway Was a Backdoor: Inside the LiteLLM Supply Chain Compromise",
+    "url": "https://www.trendmicro.com/en_us/research/26/c/inside-litellm-supply-chain-compromise.html",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "TrendForce — Atlas 350 на Ascend 950PR",
+    "url": "https://www.trendforce.com/news/2026/03/23/news-huawei-debuts-atlas-350-on-ascend-950pr-with-in-house-hbm-touting-2-8x-h20-performance/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "ИИ в России — 2025: тренды и перспективы (Яков и Партнёры + Яндекс)",
+    "url": "https://www.yacapital.ru/press_releases",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "McKinsey — The State of AI 2025",
+    "url": "https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/the-state-of-ai",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Ouroboros (Cloud.ru Marketplace)",
+    "url": "https://cloud.ru/marketplace/products/ouroboros",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Yandex AI Studio — доступные генеративные модели",
+    "url": "https://aistudio.yandex.ru/docs/ru/ai-studio/concepts/generation/models.html",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Yandex AI Studio — правила тарификации",
+    "url": "https://aistudio.yandex.ru/docs/ru/ai-studio/pricing.html",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "CIO — MTS AI перенесла обучение моделей в облако",
+    "url": "https://cio.osp.ru/articles/140525-MTS-AI-perenesla-obuchenie-modeley-v-oblako",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "МТС Cloud — виртуальная инфраструктура с GPU",
+    "url": "https://cloud.mts.ru/services/virtual-infrastructure-gpu/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "VK Cloud — машинное обучение в облаке (документация)",
+    "url": "https://cloud.vk.com/docs/ru/ml",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Sber Developers — Тарифы GigaChat API для юрлиц (февраль 2026)",
+    "url": "https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Сбер — портал GigaChat API",
+    "url": "https://developers.sber.ru/portal/products/gigachat-api",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "MWS — тарифы MWS GPT",
+    "url": "https://mws.ru/docs/docum/cloud_terms_mwsgpt_pricing.html",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "MWS — MWS GPT (продукт)",
+    "url": "https://mws.ru/mws-gpt/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "MWS — GPU On‑premises",
+    "url": "https://mws.ru/services/mws-gpu-on-prem/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "AKM.ru — доступ к крупнейшей языковой модели на рынке РФ (Yandex B2B)",
+    "url": "https://www.akm.ru/eng/press/yandex-b2b-tech-has-opened-access-to-the-largest-language-model-on-the-russian-market/",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "OECD — макроэкономический эффект ИИ в экономиках G7 (публикация, 2025)",
+    "url": "https://www.oecd.org/en/publications/macroeconomic-productivity-gains-from-artificial-intelligence-in-g7-economies_a5319ab5-en.html",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "РБК — объём рынка ИИ (декабрь 2024)",
+    "url": "https://www.rbc.ru/technology_and_media/24/12/2024",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "Коммерсантъ — рынок GenAI",
+    "url": "https://www.kommersant.ru/doc/8270384",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "McKinsey — The State of AI: как организации перестраиваются для извлечения ценности",
+    "url": "https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai-how-organizations-are-rewiring-to-capture-value",
+    "context": "Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem"
+  },
+  {
+    "title": "CNews — кейс: MTS AI и экономия инвестиций за счёт облака MWS (обзор)",
+    "url": "https://www.cnews.ru/reviews/provajdery_gpu_cloud_2025/cases/kak_mts_ai_sekonomila_bolee_milliarda",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct",
+    "url": "https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — LICENSE (YandexGPT-5-Lite-8B), сырой текст соглашения",
+    "url": "https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct/raw/main/LICENSE",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Yandex Research — принятые к ICML 2025 (список, в т.ч. KV-кэш)",
+    "url": "https://research.yandex.com/blog/papers-accepted-to-icml-2025",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Yandex Research — обзор направлений работ (2025)",
+    "url": "https://research.yandex.com/blog/yandex-research-in-2025",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "GitHub — sgl-project/sglang, PR #18802",
+    "url": "https://github.com/sgl-project/sglang/pull/18802",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "GitVerse — GigaTeam GigaChat 3.1",
+    "url": "https://gitverse.ru/GigaTeam/gigachat3.1",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Хабр — GigaChat-3.1: большое обновление больших моделей (блог Сбера)",
+    "url": "https://habr.com/ru/companies/sberbank/articles/1014146/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — организация ai-sage",
+    "url": "https://huggingface.co/ai-sage",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — ai-sage/GigaChat3.1-10B-A1.8B (Lightning 3.0)",
+    "url": "https://huggingface.co/ai-sage/GigaChat3-10B-A1.8B",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — ai-sage/GigaChat3.1-10B-A1.8B (Lightning 3.1)",
+    "url": "https://huggingface.co/ai-sage/GigaChat3.1-10B-A1.8B",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — ai-sage/GigaChat3.1-702B-A36B (Ultra)",
+    "url": "https://huggingface.co/ai-sage/GigaChat3.1-702B-A36B",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — коллекция GigaAM",
+    "url": "https://huggingface.co/collections/ai-sage/gigaam",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — GigaChat 3.1 Collection",
+    "url": "https://huggingface.co/collections/ai-sage/gigachat-31",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — коллекция GigaChat Lite",
+    "url": "https://huggingface.co/collections/ai-sage/gigachat-lite",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — коллекция GigaEmbeddings",
+    "url": "https://huggingface.co/collections/ai-sage/gigaembeddings",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Альянс в сфере искусственного интеллекта",
+    "url": "https://a-ai.ru/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "МТС Cloud — IaaS 152-ФЗ УЗ-1",
+    "url": "https://cloud.mts.ru/services/iaas-152-fz/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Хабр — MTS AI: взаимная оценка LLM при улучшении Cotype",
+    "url": "https://habr.com/ru/companies/mts_ai/articles/892176/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Хабр — MTS AI: граф в RAG",
+    "url": "https://habr.com/ru/companies/mts_ai/articles/915276/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Хабр — МТС: MWS Octapi и AI-агенты",
+    "url": "https://habr.com/ru/companies/ru_mts/articles/932382/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Хабр — МТС: архитектура LLM-платформы MWS GPT",
+    "url": "https://habr.com/ru/companies/ru_mts/articles/967478/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Хабр — МТС: RAG-помощник для саппорта (смежная публикация)",
+    "url": "https://habr.com/ru/companies/ru_mts/articles/970392/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Хабр — МТС: RAG для поддержки (Confluence, Jira, гибридный поиск)",
+    "url": "https://habr.com/ru/companies/ru_mts/articles/970476/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "MERA — бенчмарк русскоязычных моделей",
+    "url": "https://mera.a-ai.ru/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "MWS — MWS Octapi (продукт)",
+    "url": "https://mws.ru/dev-tools/octapi/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "MWS Docs — условия облачного сегмента 152-ФЗ",
+    "url": "https://mws.ru/docs/docum/cloud_terms_152fz.html",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "MWS Docs — лицензионные условия ПО «MWS GPT»",
+    "url": "https://mws.ru/docs/docum/lic_terms_mwsgpt.html",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "MWS — MCP в Octapi и ускорение создания ИИ-агентов",
+    "url": "https://mws.ru/news/mts-web-services-na-30-uskorila-sozdanie-ii-agentov-pri-pomoshhi-platformy-mws-octapi/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "MWS — новость: хранение персональных данных в облаке",
+    "url": "https://mws.ru/news/mts-web-services-zapustila-servis-dlya-hraneniya-personalnyh-dannyh-v-oblake/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "InCommon — BOT Transfer Readiness & Handover Mechanics",
+    "url": "https://www.incommon.ai/blog/transfer-readiness/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "GigaChat API — продукт для бизнеса (Сбер)",
+    "url": "https://developers.sber.ru/products/gigachat-api",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "GigaChat API — обзор документации",
+    "url": "https://developers.sber.ru/docs/ru/gigachat/api/overview",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Сбер — GigaChat API: модели и тарифы",
+    "url": "https://developers.sber.ru/docs/ru/gigachat/api/tariffs",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Сбер — SaluteSpeech: тарифы для юрлиц",
+    "url": "https://developers.sber.ru/docs/ru/salutespeech/tariffs/legal-tariffs",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Yandex AI Studio — тарифы SpeechKit",
+    "url": "https://aistudio.yandex.ru/docs/ru/speechkit/pricing.html",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "МК Астрахань — GigaChat Enterprise / «ГигаЧат Бизнес» (СМИ, март 2026)",
+    "url": "https://ast.mk.ru/economics/2026/03/04/sber-predstavil-gigachat-enterprise-gigachat-biznes-korporativnuyu-platformu-dlya-sozdaniya-iiagentov.html",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "MWS GPT Model Hub",
+    "url": "https://cloud.mts.ru/cloud-platform/model-hub/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Yandex AI Studio — агент с File Search",
+    "url": "https://aistudio.yandex.ru/docs/ru/ai-studio/operations/agents/create-filesearch-text-agent",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Yandex Cloud — AI Speech / SpeechKit Hybrid",
+    "url": "https://yandex.cloud/ru/solutions/speechkit-hybrid",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "SaluteSpeech (Сбер)",
+    "url": "https://developers.sber.ru/products/smartspeech",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "1dedic — GPU-серверы",
+    "url": "https://1dedic.ru/gpu-servers",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Google — условия использования Gemma",
+    "url": "https://ai.google.dev/gemma/terms",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Cloud.ru — Evolution Foundation Models, тарифы (2026)",
+    "url": "https://cloud.ru/documents/tariffs/evolution/foundation-models",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Cloud.ru — Evolution Foundation Models (продукт, перечень моделей)",
+    "url": "https://cloud.ru/products/evolution-foundation-models",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "HOSTKEY — выделенные серверы с GPU",
+    "url": "https://hostkey.ru/gpu-dedicated-servers/",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — MiniMaxAI/MiniMax-M2",
+    "url": "https://huggingface.co/MiniMaxAI/MiniMax-M2",
+    "context": "Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы"
+  },
+  {
+    "title": "Hugging Face — организация Qwen",
+    "url": "https://huggingface.co/Qwen",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+    "url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+    "url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — организация moonshotai",
+    "url": "https://huggingface.co/moonshotai",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — moonshotai/Kimi-K2-Base",
+    "url": "https://huggingface.co/moonshotai/Kimi-K2-Base",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8",
+    "url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — openai/gpt-oss-120b",
+    "url": "https://huggingface.co/openai/gpt-oss-120b",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — openai/gpt-oss-20b",
+    "url": "https://huggingface.co/openai/gpt-oss-20b",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — zai-org/GLM-4.6",
+    "url": "https://huggingface.co/zai-org/GLM-4.6",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — zai-org/GLM-4.7",
+    "url": "https://huggingface.co/zai-org/GLM-4.7",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — zai-org/GLM-4.7-Flash",
+    "url": "https://huggingface.co/zai-org/GLM-4.7-Flash",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — zai-org/GLM-5",
+    "url": "https://huggingface.co/zai-org/GLM-5",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Immers Cloud — GPU",
+    "url": "https://immers.cloud/gpu/",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Intelion Cloud",
+    "url": "https://intelion.cloud/",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "NVIDIA Research — Nemotron 3 (обзор семейства)",
+    "url": "https://research.nvidia.com/labs/nemotron/Nemotron-3/",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Selectel — Foundation Models Catalog",
+    "url": "https://selectel.ru/services/cloud/foundation-models-catalog",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Selectel — облако GPU (калькулятор)",
+    "url": "https://selectel.ru/services/gpu/",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Cloud4Y — облачный GPU-хостинг",
+    "url": "https://www.cloud4y.ru/cloud-hosting/gpu/",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "NVIDIA — GeForce Software License",
+    "url": "https://www.nvidia.com/en-us/drivers/geforce-license/",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Ouroboros Containers (Cloud.ru)",
+    "url": "https://cloud.ru/marketplace/products/container-ouroboros",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — организация nvidia",
+    "url": "https://huggingface.co/nvidia",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — openai/gpt-oss-safeguard-20b",
+    "url": "https://huggingface.co/openai/gpt-oss-safeguard-20b",
+    "context": "GPU, каталоги моделей и нишевые облачные провайдеры"
+  },
+  {
+    "title": "Hugging Face — openai/gpt-oss-safeguard-120b",
+    "url": "https://huggingface.co/openai/gpt-oss-safeguard-120b",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Hugging Face — Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "url": "https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Hugging Face — Qwen/Qwen3-Next-80B-A3B-Instruct",
+    "url": "https://huggingface.co/Qwen/Qwen3-Next-80B-A3B-Instruct",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Hugging Face — Qwen/Qwen3-Coder-30B-A3B-Instruct",
+    "url": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Hugging Face — Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    "url": "https://huggingface.co/Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "vLLM — OpenAI-Compatible Server",
+    "url": "https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Apple ML Research — LLM in a Flash: Efficient Large Language Model Inference with Limited Memory (ACL 2024)",
+    "url": "https://machinelearning.apple.com/research/efficient-large-language",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "GitHub — matt-k-wong/mlx-flash (реализация для MLX, март 2026)",
+    "url": "https://github.com/matt-k-wong/mlx-flash",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "arXiv — LLM in a Flash: Efficient Large Language Model Inference with Limited Memory (оригинальная статья, 2312.11514)",
+    "url": "https://arxiv.org/html/2312.11514v3",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Apple Developer — WWDC 2025: Explore large language models on Apple silicon with MLX",
+    "url": "https://developer.apple.com/videos/play/wwdc2025/298/",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Anthropic — Pricing",
+    "url": "https://www.anthropic.com/pricing",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "VC.ru — гайд по тарифам Claude и доступу из России",
+    "url": "https://vc.ru/ai/2757771-tarify-claude-2026-gayd-po-planam-i-dostupu-iz-rossii",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Google — Deep-Thinking Ratio (DTR), arXiv:2602.13517",
+    "url": "https://arxiv.org/pdf/2602.13517",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "arXiv — Meta (Экстремистская организация, запрещена в РФ), OpenAI, xAI: непрерывное улучшение моделей (чаты), 2603.01973",
+    "url": "https://arxiv.org/pdf/2603.01973",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "arXiv — Microsoft Research: безопасность агентов с внешними инструментами, 2603.03205",
+    "url": "https://arxiv.org/pdf/2603.03205",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "OpenAI — контроль рассуждения со скрытыми шагами (бенчмарк), 2603.05706",
+    "url": "https://arxiv.org/pdf/2603.05706",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Google — Gemini Embedding 2 (блог: нативно мультимодальные эмбеддеры)",
+    "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-embedding-2/",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Microsoft — Copilot Cowork (блог Microsoft 365)",
+    "url": "https://www.microsoft.com/en-us/microsoft-365/blog/2026/03/09/copilot-cowork-a-new-way-of-getting-work-done/",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "NVIDIA-NeMo/Guardrails",
+    "url": "https://github.com/NVIDIA-NeMo/Guardrails",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "microsoft/markitdown",
+    "url": "https://github.com/microsoft/markitdown",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "run-llama/llama_index",
+    "url": "https://github.com/run-llama/llama_index",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "OpenAI — Pricing",
+    "url": "https://platform.openai.com/docs/pricing",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "OpenAI — Reasoning Models",
+    "url": "https://developers.openai.com/api/docs/guides/reasoning",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Anthropic — Pricing",
+    "url": "https://docs.anthropic.com/en/about-claude/pricing",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Google AI — Gemini API Pricing",
+    "url": "https://ai.google.dev/gemini-api/docs/pricing",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Hugging Face — nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8",
+    "url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "NVIDIA — Nemotron 3 Super (технический блог)",
+    "url": "https://developer.nvidia.com/blog/introducing-nemotron-3-super-an-open-hybrid-mamba-transformer-moe-for-agentic-reasoning/",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "OpenAI gpt-oss (GitHub)",
+    "url": "https://github.com/openai/gpt-oss",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "OpenAI gpt-oss-20b (Hugging Face)",
+    "url": "https://huggingface.co/OpenAI/gpt-oss-20b",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "vLLM Blog — выгрузка KV-кэша (KV offloading connector)",
+    "url": "https://vllm.ai/blog/kv-offloading-connector",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "NVIDIA Technical Blog — оптимизация NVFP4 KV-кэша",
+    "url": "https://developer.nvidia.com/blog/optimizing-inference-for-long-context-and-large-batch-sizes-with-nvfp4-kv-cache/",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "AMD ROCm Blog — vLLM on ROCm Attention Backend",
+    "url": "https://blog.vllm.ai/2026/02/27/rocm-attention-backend.html",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "AMD ROCm Blog — LLM Inference Optimization Using GPU Partitioning",
+    "url": "https://rocm.blogs.amd.com/software-tools-optimization/multi-inf-engine-gpu-partition/README.html",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "AMD ROCm Blog — Best Practices for MI300X Inference",
+    "url": "https://rocm.blogs.amd.com/artificial-intelligence/LLM_Inference/README.html",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Yotta Labs — Best GPUs for LLM Inference 2026",
+    "url": "https://www.yottalabs.ai/post/best-gpus-for-llm-inference-in-2026-h100-h200-b200-rtx-6000-l40s-and-rtx-5090-compared",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "XDA — Best AMD GPU for Local AI (RX 7900 vs RTX 3090)",
+    "url": "https://www.xda-developers.com/the-best-amd-gpu-for-local-ai-performs-as-well-as-the-rtx-3090-and-costs-far-less/",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Kunal Ganglani — AMD ROCm on Consumer GPUs 2026 Guide",
+    "url": "https://www.kunalganglani.com/blog/rocm-consumer-gpu-cuda-alternative-2026",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Clarifai — llama.cpp: Hardware Choices & Tuning",
+    "url": "https://www.clarifai.com/blog/ilama.cpp",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "arXiv — Moonshot AI: ускорение синхронного RL",
+    "url": "https://arxiv.org/pdf/2511.14617",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "arXiv — Cache Me If You Must (KV-quantization), 2501.19392",
+    "url": "https://arxiv.org/abs/2501.19392",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Luxoft — модель Build–Operate–Transfer (BOT)",
+    "url": "https://www.luxoft.com/blog/master-the-build-operate-transfer-bot-model-with-luxoft",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "GLM-5 Documentation — Zhipu AI",
+    "url": "https://docs.z.ai/guides/llm/glm-5",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Hugging Face — State over Tokens",
+    "url": "https://huggingface.co/papers/2512.12777",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Hugging Face — allenai/wildjailbreak",
+    "url": "https://huggingface.co/datasets/allenai/wildjailbreak",
+    "context": "Глобальные модели, цены API и оптимизация инференса"
+  },
+  {
+    "title": "Hugging Face — lmsys/toxic-chat",
+    "url": "https://huggingface.co/datasets/lmsys/toxic-chat",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "Phemex News — Z.ai: планы открыть GLM-5.1",
+    "url": "https://phemex.com/news/article/zai-to-open-source-glm51-details-pending-67971",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "MOSEC — документация",
+    "url": "https://mosecorg.github.io/mosec/index.html",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "mosecorg/mosec (GitHub)",
+    "url": "https://github.com/mosecorg/mosec",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "infinity-emb — документация",
+    "url": "https://github.com/michaelfeil/infinity",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "LangChain Docs — Evaluation concepts (LangSmith)",
+    "url": "https://docs.langchain.com/langsmith/evaluation-concepts",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "OpenWork (different-ai/openwork)",
+    "url": "https://github.com/different-ai/openwork",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "OpenCode",
+    "url": "https://opencode.ai/",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "OpenCode — документация (Intro)",
+    "url": "https://opencode.ai/docs",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "OpenCode — Ecosystem",
+    "url": "https://opencode.ai/docs/ecosystem/",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "OpenCode Zen — документация",
+    "url": "https://opencode.ai/docs/zen",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "OpenRouter — агрегатор API",
+    "url": "https://openrouter.ai/",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "OpenRouter — журналирование и политики провайдеров",
+    "url": "https://openrouter.ai/docs/guides/privacy/logging",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "vLLM — документация",
+    "url": "https://docs.vllm.ai/",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "vLLM — репозиторий проекта (GitHub)",
+    "url": "https://github.com/vllm-project/vllm",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "GitHub — redmadrobot-rnd/mcp-registry (MCP Tool Registry)",
+    "url": "https://github.com/redmadrobot-rnd/mcp-registry",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "Хабр — red_mad_robot: MCP Tool Registry (реестр MCP для RAG/агентов, открытый код)",
+    "url": "https://habr.com/ru/companies/redmadrobot/articles/982004/",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "Redmadnews — MCP Tool Registry / RAG",
+    "url": "https://t.me/Redmadnews/5132",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "@ai_archnadzor — CLI вместо MCP",
+    "url": "https://t.me/ai_archnadzor/190",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "NeuralDeep — бенчмарки vLLM / RTX 4090",
+    "url": "https://t.me/neuraldeep/1476",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "Semantic Gravity Framework",
+    "url": "https://t.me/ai_archnadzor/155",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "langchain-ai/langchain — text-splitters",
+    "url": "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "сервер инференса MOSEC — README проекта (пример публичного зеркала)",
+    "url": "https://github.com/arterm-sedov/cmw-mosec",
+    "context": "Открытые модели, серверы инференса и маршрутизация API"
+  },
+  {
+    "title": "LangSmith — Online evaluations (how-to)",
+    "url": "https://docs.smith.langchain.com/observability/how_to_guides/online_evaluations",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "OpenInference — инструментирование ИИ для OpenTelemetry",
+    "url": "https://arize-ai.github.io/openinference/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Arize Phoenix — документация",
+    "url": "https://docs.arize.com/phoenix",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "LangSmith — документация",
+    "url": "https://docs.smith.langchain.com/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Langfuse — документация observability / tracing",
+    "url": "https://langfuse.com/docs/observability/get-started",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "OpenTelemetry — OpenTelemetry for Generative AI (блог)",
+    "url": "https://opentelemetry.io/blog/2024/otel-generative-ai",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "OpenTelemetry — Semantic conventions for generative AI metrics",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "OpenTelemetry — Semantic conventions for generative client AI spans",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "YouTube — подкаст «Ноосфера» #129: Илья Самофеев (red_mad_robot), AI-First / AI-Native (полная запись)",
+    "url": "https://www.youtube.com/watch?v=jTKhg1jqF_M",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Schema-Guided Reasoning (SGR)",
+    "url": "https://abdullin.com/schema-guided-reasoning/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Model Context Protocol — официальный сайт",
+    "url": "https://modelcontextprotocol.io/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "RB.RU — 93% команд в маркетинге используют ИИ (обзор исследования CMO Club × red_mad_robot, 2025)",
+    "url": "https://rb.ru/news/93-komand-v-marketinge-ispolzuyut-ii-nejroseti-pomogayut-s-kontentom-no-im-pochti-ne-doveryayut-strategiyu-i-byudzhety/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Telegram — CMO Club Russia: анонс исследования GenAI в маркетинге (red_mad_robot × CMO Club, 2025)",
+    "url": "https://t.me/cmoclub/197",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "GitHub — организация ozontech (открытые репозитории)",
+    "url": "https://github.com/ozontech",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Хабр — Ozon Tech: анонс ML&DS Meetup (MLOps, программа докладов)",
+    "url": "https://habr.com/ru/companies/ozontech/articles/768734/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Хабр — Ozon Tech: пересборка конструктора чат-ботов (Bots Factory, no-code, масштаб)",
+    "url": "https://habr.com/ru/companies/ozontech/articles/834812/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Хабр — Ozon Tech: Query Prediction, ANN и обратный индекс",
+    "url": "https://habr.com/ru/companies/ozontech/articles/990180/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Habr — red_mad_robot: кейс RAG для ФСК",
+    "url": "https://habr.com/ru/companies/redmadrobot/articles/892882/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "InOrg — бесшовная передача (seamless handover) в модели BOT",
+    "url": "https://inorg.com/blog/from-build-to-transfer-key-success-factors-a-seamless-bot-model-transition",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Just AI — корпоративный GenAI (упоминается как практикующий вендор)",
+    "url": "https://just-ai.com/ru/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Ведомости — CTO AI red_mad_robot (Влад Шевченко)",
+    "url": "https://www.vedomosti.ru/technologies/trendsrub/articles/2026/03/11/1181757-ii-uskoril-kod",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "@Redmadnews (red_mad_robot) — канал публикаций лаборатории и исследований",
+    "url": "https://t.me/Redmadnews",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "aider — интеграция с Git",
+    "url": "https://aider.chat/docs/git.html",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Anthropic — субагенты в Claude Code SDK",
+    "url": "https://docs.anthropic.com/en/docs/claude-code/sdk/subagents",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Cline — Auto Approve и YOLO Mode",
+    "url": "https://docs.cline.bot/features/yolo-mode",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Continue — настройка режима агента",
+    "url": "https://docs.continue.dev/ide-extensions/agent/how-to-customize",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "OpenHands — обзор SDK",
+    "url": "https://docs.openhands.dev/sdk/arch/overview",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "Roo Code — режимы использования",
+    "url": "https://docs.roocode.com/basic-usage/using-modes/",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "OpenCode (open-code.ai) — агенты",
+    "url": "https://open-code.ai/docs/en/agents",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "OpenCode (open-code.ai) — SDK",
+    "url": "https://open-code.ai/en/docs/sdk",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "OpenWork — AGENTS.md (сырой текст репозитория)",
+    "url": "https://raw.githubusercontent.com/different-ai/openwork/71957be9/AGENTS.md",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "OpenWork — ARCHITECTURE.md (сырой текст репозитория)",
+    "url": "https://raw.githubusercontent.com/different-ai/openwork/71957be9/ARCHITECTURE.md",
+    "context": "Инструменты разработки, телеметрия качества и публичные кейсы внедрений"
+  },
+  {
+    "title": "@rmr_rnd — R&D red_mad_robot",
+    "url": "https://t.me/rmr_rnd",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "GitHub — ozontech/file.d",
+    "url": "https://github.com/ozontech/file.d",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "GitHub — ozontech/framer",
+    "url": "https://github.com/ozontech/framer",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "GitHub — ozontech/seq-db",
+    "url": "https://github.com/ozontech/seq-db",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "arXiv — PRISM: Privacy-Aware Routing for Cloud-Edge LLM Inference",
+    "url": "https://arxiv.org/html/2511.22788v1",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "arXiv — HybridFlow: Resource-Adaptive Subtask Routing for Edge-Cloud LLM Inference",
+    "url": "https://arxiv.org/html/2512.22137v4",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "arXiv — MoE на стеке AMD (IBM, Zyphra и др.)",
+    "url": "https://arxiv.org/pdf/2511.17127",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Oppo AI — Search More, Think Less (SMTL), arXiv:2602.22675",
+    "url": "https://arxiv.org/pdf/2602.22675",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Accenture Memex(RL): Indexing Memory with Reinforcement Learning",
+    "url": "https://arxiv.org/pdf/2603.04257",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "SkillNet (Alibaba, Ant, Tencent, Oppo), arXiv:2603.04448",
+    "url": "https://arxiv.org/pdf/2603.04448",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Databricks KARL: Knowledge-Aware Reasoning LLM",
+    "url": "https://arxiv.org/pdf/2603.05218",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Princeton — непрерывное обучение из взаимодействия пользователя с агентом, 2603.10165",
+    "url": "https://arxiv.org/pdf/2603.10165",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Gu, Dao — Mamba: Linear-Time Sequence Modeling with Selective State Spaces (arXiv:2312.00752)",
+    "url": "https://arxiv.org/abs/2312.00752",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Deloitte — State of AI in the Enterprise 2026",
+    "url": "https://www2.deloitte.com/us/en/pages/consulting/articles/state-of-generative-ai-in-the-enterprise.html",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Menlo Ventures — State of Generative AI 2025",
+    "url": "https://menlovc.com",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Stanford HAI — AI Index Report 2025",
+    "url": "https://aiindex.stanford.edu/report/",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "METR — AI Developer Productivity Study July 2025",
+    "url": "https://metr.org",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Хабр — обзор цен на токены",
+    "url": "https://habr.com/ru/articles/1000058/",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Хабр — гид по топ-20 нейросетям для текстов (в т.ч. цены)",
+    "url": "https://habr.com/ru/articles/948672/",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "LLMoney — калькулятор цен токенов LLM",
+    "url": "https://llmoney.ru",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Портал поддержки Comindware",
+    "url": "https://support.comindware.com/",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Спецификация TOON",
+    "url": "https://toonformat.dev/",
+    "context": "НИОКР, индексы зрелости ИИ и практики учёта токенов"
+  },
+  {
+    "title": "Tensorlake: бенчмарки",
+    "url": "https://www.tensorlake.ai/blog/toon-vs-json",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Systenics: экономия токенов",
+    "url": "https://systenics.ai/blog/2026-01-24-toon-vs-json-how-token-oriented-object-notation-reduces-llm-token-costs",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "AI Cost Check — Reasoning Model Pricing",
+    "url": "https://aicostcheck.com/blog/ai-reasoning-model-pricing-thinking-tokens",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "PerUnit AI — GPT-5.4 API Pricing Analysis",
+    "url": "https://perunit.ai/blog/openai-gpt-5-4-api-pricing",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "LeanLM AI — LLM Cost Optimization",
+    "url": "https://leanlm.ai/blog/llm-cost-optimization",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Хабр — MLOps и каскады моделей",
+    "url": "https://habr.com/ru/companies/alfa/articles/801893/",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Хабр — автоматизация обучения и обновления моделей",
+    "url": "https://habr.com/ru/companies/alfa/articles/852790/",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Хабр — классификация текстов диалогов на большом числе классов",
+    "url": "https://habr.com/ru/companies/alfa/articles/900538/",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Хабр — обновление LLM: instruction following и tool calling",
+    "url": "https://habr.com/ru/companies/tbank/articles/979650/",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Ведомости — ИИ-рывок 2026: что изменится для российских компаний",
+    "url": "https://www.vedomosti.ru/technologies/trendsrub/articles/2026/03/04/1180756-ii-rivok-2026-chto",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Ведомости — ИИ-рывок 2026: что изменится для российских компаний (альтернативная публикация)",
+    "url": "https://www.vedomosti.ru/technology/articles/2026/03/04/1021857-ii-rivok-2026-izmenitsya-dlya-rossiiskih-kompanii",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "EU AI Act Service Desk — Implementation Timeline",
+    "url": "https://ai-act-service-desk.ec.europa.eu/en/ai-act/eu-ai-act-implementation-timeline",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "AGORA — Industrial AI",
+    "url": "https://t.me/AGORA",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Redmadnews — СП с «ВымпелКом», фабрика ИИ-агентов",
+    "url": "https://t.me/Redmadnews/5145",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Redmadnews — R&D в AI в 2026",
+    "url": "https://t.me/Redmadnews/5146",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Redmadnews — бизнес-завтрак КРОК",
+    "url": "https://t.me/Redmadnews/5167",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Канал @ai_archnadzor — RAG и архитектуры",
+    "url": "https://t.me/ai_archnadzor",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "@ai_archnadzor — локальные модели для кодинга и снижения затрат",
+    "url": "https://t.me/ai_archnadzor/167",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Канал @ai_machinelearning_big_data",
+    "url": "https://t.me/ai_machinelearning_big_data",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "CMO Club Russia",
+    "url": "https://t.me/cmoclub",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Telegram-канал @llm_under_hood",
+    "url": "https://t.me/llm_under_hood",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "Telegram-канал @neuraldeep",
+    "url": "https://t.me/neuraldeep",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "NeuralDeep — экономика LLM-решений",
+    "url": "https://t.me/neuraldeep/1366",
+    "context": "Отраслевые кейсы, экономика токенов и регуляторные сроки"
+  },
+  {
+    "title": "NeuralDeep — рекомендации по кластерам",
+    "url": "https://t.me/neuraldeep/1627",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "«ITипичные аспекты Артёма» (Артём Лысенко)",
+    "url": "https://t.me/virrius_tech_chat",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Raft на Habr — чанкование",
+    "url": "https://habr.com/ru/companies/raft/articles/954158/",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "CIO — интервью: чат-бот, масштаб обращений и сценарии",
+    "url": "https://cio.osp.ru/articles/5455",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "«Открытые системы» — RAG и LLM для поддержки операционистов",
+    "url": "https://www.osp.ru/articles/2025/0324/13059305",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "apxml.com — VRAM calculator",
+    "url": "https://apxml.com/tools/vram-calculator",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "MLCommons — Inference Datacenter",
+    "url": "https://mlcommons.org/benchmarks/inference-datacenter/",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "ETL, эмбеддеры, ранжировщики, фреймворки RAG, eval, безопасность",
+    "url": "https://t.me/neuraldeep/1758",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "GraphOS для RAG",
+    "url": "https://t.me/ai_archnadzor/151",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Nested Learning",
+    "url": "https://t.me/ai_archnadzor/157",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "LEANN",
+    "url": "https://t.me/ai_archnadzor/161",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "OpenClaw (ex-Moltbot)",
+    "url": "https://t.me/ai_archnadzor/165",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Perplexica",
+    "url": "https://t.me/ai_archnadzor/166",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Guardrails как архитектурный паттерн",
+    "url": "https://t.me/ai_archnadzor/168",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Типы AI-агентов",
+    "url": "https://t.me/ai_archnadzor/173",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "GenAI в продакшне: технологический манифест",
+    "url": "https://t.me/ai_archnadzor/175",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Обзор локального стека наблюдаемости (канал @ai_archnadzor)",
+    "url": "https://t.me/ai_archnadzor/177",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "REFRAG",
+    "url": "https://t.me/ai_archnadzor/178",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Cog-RAG",
+    "url": "https://t.me/ai_archnadzor/179",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "HippoRAG 2",
+    "url": "https://t.me/ai_archnadzor/180",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Topo-RAG",
+    "url": "https://t.me/ai_archnadzor/182",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Disco-RAG",
+    "url": "https://t.me/ai_archnadzor/183",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Medium — Agentic GraphOS: 16-слойная архитектура графов знаний для продакшена",
+    "url": "https://medium.com/@aiwithakashgoyal/building-agentic-graphos-the-16-layer-architecture-behind-production-ready-knowledge-graphs-9ca632bc74c5",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "GitHub — yichuan-w/LEANN",
+    "url": "https://github.com/yichuan-w/leann",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "NeuralDeep — репозиторий (GitHub, vakovalskii/neuraldeep)",
+    "url": "https://github.com/vakovalskii/neuraldeep",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "Semantic Scholar — LEANN: индекс векторов с низким объёмом хранения",
+    "url": "https://www.semanticscholar.org/paper/LEANN%3A-A-Low-Storage-Vector-Index-Wang-Liu/a7f376d23f5e12132e5ebddd9558a6d99f48a49f",
+    "context": "RAG, архитектуры и инженерные паттерны (обзорные материалы)"
+  },
+  {
+    "title": "bpmn.io — нотация BPMN и инструменты моделирования",
+    "url": "https://bpmn.io/",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "GitHub — yksi12/prompts: generate-bpmn-prompt.md",
+    "url": "https://github.com/yksi12/prompts/blob/main/generate-bpmn-prompt.md",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "DSPy 3 и GEPA",
+    "url": "https://t.me/ai_archnadzor/184",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "OCR: NEMOTRON-PARSE, Chandra, DOTS.OCR",
+    "url": "https://t.me/ai_archnadzor/185",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "BitNet",
+    "url": "https://t.me/ai_archnadzor/189",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "Doc-to-LoRA; память агентов (пост /191)",
+    "url": "https://t.me/ai_archnadzor/191",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "Multimodal LLM",
+    "url": "https://t.me/ai_archnadzor/192",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "RAGAS — документация",
+    "url": "https://docs.ragas.io/en/stable/",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "openapi-to-cli (ocli) on GitHub",
+    "url": "https://github.com/EvilFreelancer/openapi-to-cli",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "Marker-Inc-Korea/AutoRAG",
+    "url": "https://github.com/Marker-Inc-Korea/AutoRAG",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "Shubhamsaboo/awesome-llm-apps",
+    "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "chonkie-inc/chonkie",
+    "url": "https://github.com/chonkie-inc/chonkie",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "datalab-to/marker",
+    "url": "https://github.com/datalab-to/marker",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "docling-project/docling",
+    "url": "https://github.com/docling-project/docling",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "langgenius/dify",
+    "url": "https://github.com/langgenius/dify/",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "mastra-ai/mastra",
+    "url": "https://github.com/mastra-ai/mastra",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "protectai/rebuff",
+    "url": "https://github.com/protectai/rebuff",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "stanford-futuredata/ARES",
+    "url": "https://github.com/stanford-futuredata/ARES",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "Lakera — платформа",
+    "url": "https://platform.lakera.ai/",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "Neuraldeep.ru - база навыков для российских сервисов",
+    "url": "https://neuraldeep.ru/",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "Портал НПА — проект ФЗ об основах госрегулирования применения технологий ИИ (ID 166424)",
+    "url": "https://regulation.gov.ru/projects#npa=166424",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "152-ФЗ «О персональных данных»",
+    "url": "https://www.consultant.ru/document/cons_doc_LAW_61801/",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "BCG — Closing the AI Impact Gap (2025)",
+    "url": "https://www.bcg.com/publications/2025/closing-the-ai-impact-gap",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "Stanford HAI — AI Index Report 2025",
+    "url": "https://hai.stanford.edu/ai-index/2025-ai-index-report",
+    "context": "Фреймворки внедрения, оценка качества и нормативный контур"
+  },
+  {
+    "title": "Банк России — официальные курсы валют",
+    "url": "https://www.cbr.ru/currency_base/daily/",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "RB.RU — вакансии с ИИ-навыками: +170% YoY в I кв. 2026 (~2,7× к I кв. 2025; hh.ru × PR DEV, март 2026)",
+    "url": "https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "Clawctl — 42 665 exposed OpenClaw instances (оценка уязвимых экземпляров)",
+    "url": "https://www.clawctl.com/blog/42665-exposed-openclaw-instances",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "GitHub — Libr-AI/do-not-answer",
+    "url": "https://github.com/Libr-AI/do-not-answer",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "GitHub — elder-plinius/L1B3RT4S",
+    "url": "https://github.com/elder-plinius/L1B3RT4S",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "GitHub — paul-rottger/xstest",
+    "url": "https://github.com/paul-rottger/xstest",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "Tom's Hardware — Huawei Atlas 350 / Ascend 950PR",
+    "url": "https://www.tomshardware.com/pc-components/gpus/huawei-unveils-new-atlas-350-ai-accelerator-with-1-56-pflops-of-fp4-compute-and-up-to-112gb-of-hbm-claims-2-8x-more-performance-than-nvidias-h20",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "Together — Mamba-3 (блог)",
+    "url": "https://www.together.ai/blog/mamba-3",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "state-spaces/mamba (GitHub)",
+    "url": "https://github.com/state-spaces/mamba",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "GigaChain SDK (GitHub)",
+    "url": "https://github.com/ai-forever/gigachain",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "GitVerse — GigaCode-чат",
+    "url": "https://gitverse.ru/docs/ai/gigacode-chat/",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "GitVerse — GigaCode-агент",
+    "url": "https://gitverse.ru/docs/ai/gigacode-agent/",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "Ouroboros (GitHub)",
+    "url": "https://github.com/razzant/ouroboros",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "ElevenLabs",
+    "url": "https://elevenlabs.io/",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "SourceCraft",
+    "url": "https://cloud.yandex.ru/services/sourcecraft",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "GigaCode 2.0",
+    "url": "https://sbertech.ru/",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "GigaIDE",
+    "url": "https://gigacloud.ru/ide",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "Koda",
+    "url": "https://koda.ai/",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "Tabnine",
+    "url": "https://tabnine.com/",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "Sourcegraph Cody",
+    "url": "https://sourcegraph.com/cody",
+    "context": "Сообщество, рынок труда и вспомогательные вендоры"
+  },
+  {
+    "title": "EU Commission: GPAI Code of Practice (Final Draft July 2025)",
+    "url": "https://digital-strategy.ec.europa.eu/en/policies/contents-code-gpai",
+    "context": "Международные рамки и регулирование"
+  },
+  {
+    "title": "EU AI Act Compliance Guide 2026 (Unorma)",
+    "url": "https://unorma.com/eu-ai-act-compliance-guide-2026-edition/",
+    "context": "Международные рамки и регулирование"
+  },
+  {
+    "title": "OECD AI Principles and Governance Framework",
+    "url": "https://oecd.ai/en/ai-principles",
+    "context": "Международные рамки и регулирование"
+  },
+  {
+    "title": "OECD Catalogue of Tools for Trustworthy AI",
+    "url": "https://oecd.ai/en/catalogue/tools",
+    "context": "Международные рамки и регулирование"
+  },
+  {
+    "title": "IEEE P7000 Series: Process Model for Ethical AI Design",
+    "url": "https://standards.ieee.org/project/7000.html",
+    "context": "Международные рамки и регулирование"
+  },
+  {
+    "title": "UNESCO Recommendation on the Ethics of AI (Global Implementation)",
+    "url": "https://www.unesco.org/en/artificial-intelligence/recommendation-ethics",
+    "context": "Международные рамки и регулирование"
+  },
+  {
+    "title": "G7 Hiroshima AI Process: International Guiding Principles",
+    "url": "https://www.moff.go.jp/files/100573473.pdf",
+    "context": "Международные рамки и регулирование"
+  },
+  {
+    "title": "UK AI Safety Institute: Systemic Safety Framework (2025)",
+    "url": "https://www.gov.uk/government/organisations/ai-safety-institute",
+    "context": "Международные рамки и регулирование"
+  },
+  {
+    "title": "McKinsey: Rewiring the Enterprise for GenAI (2025)",
+    "url": "https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/rewiring-for-the-era-of-gen-ai",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "McKinsey: The GenAI Operating Model Leader's Guide (2025)",
+    "url": "https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/a-data-leaders-operating-guide-to-scaling-gen-ai",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "McKinsey: Seizing the Agentic AI Advantage (June 2025 Report)",
+    "url": "https://www.mckinsey.com/~/media/mckinsey/business%20functions/quantumblack/our%20insights/seizing%20the%20agentic%20ai%20advantage/seizing-the-agentic-ai-advantage-june-2025.pdf",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "BCG: From Potential to Profit with GenAI (2025 Framework)",
+    "url": "https://www.bcg.com/publications/2024/from-potential-to-profit-with-genai",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "Bain: State of the Art Agentic AI Transformation (2025)",
+    "url": "https://www.bain.com/insights/state-of-the-art-of-agentic-ai-transformation-technology-report-2025/",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "Bain: From Pilots to Payoff in Software Development (2025)",
+    "url": "https://www.bain.com/insights/from-pilots-to-payoff-generative-ai-in-software-development-technology-report-2025/",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "Accenture: Making Reinvention Real with GenAI (2025 Blueprint)",
+    "url": "https://www.accenture.com/content/dam/accenture/final/industry/cross-industry/document/Making-Reinvention-Real-With-GenAI-TL.pdf",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "KPMG: AI Governance for the Agentic Era (TACO Framework 2025)",
+    "url": "https://kpmg.com/us/en/articles/2025/ai-governance-for-the-agentic-ai-era.html",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "PwC: Global AI Study 2025 - The Path to Value",
+    "url": "https://www.pwc.com/gx/en/issues/data-and-ai/publications/global-ai-study.html",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "Gartner: Top Strategic Technology Trends for 2025 - AI focus",
+    "url": "https://www.gartner.com/en/articles/gartner-top-10-strategic-technology-trends-for-2025",
+    "context": "Управленческие методологии внедрения"
+  },
+  {
+    "title": "DoorDash: How We Built an Internal AI Platform That Works (2025)",
+    "url": "https://www.getdot.ai/blog/doordash-ai-platform-agents",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "Uber Engineering: Genie - GenAI On-Call Copilot Architecture (2025)",
+    "url": "https://www.uber.com/en-CO/blog/genie-ubers-gen-ai-on-call-copilot/",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "Uber Engineering: Raising the Bar on ML Model Deployment Safety (2025)",
+    "url": "https://www.uber.com/en-CA/blog/raising-the-bar-on-ml-model-deployment-safety/",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "vLLM: Performance Optimization and Tuning Guide (2025)",
+    "url": "https://docs.vllm.ai/en/latest/performance/optimization.html",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "vLLM: Practical strategies for performance tuning (Red Hat 2026)",
+    "url": "https://developers.redhat.com/articles/2026/03/03/practical-strategies-vllm-performance-tuning",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "LangGraph: Enterprise Multi-Agent Orchestration Patterns (2025)",
+    "url": "https://sumanta9090.medium.com/langgraph-patterns-best-practices-guide-2025-38cc2abb8763",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "Anthropic: Contextual Retrieval - Improving RAG Accuracy (2025)",
+    "url": "https://www.anthropic.com/news/contextual-retrieval",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "OpenAI: Production RAG Best Practices & Evaluation (Cookbook)",
+    "url": "https://github.com/openai/openai-cookbook/blob/main/examples/RAG_with_Evaluation.ipynb",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "Microsoft: RAG Architecture on Azure AI Search (2025 Update)",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/guide/multimodal-rag/multimodal-rag-architecture",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "Giskard: Open-Source Evaluation for LLM Agents (2026 Docs)",
+    "url": "https://github.com/Giskard-AI/giskard-oss",
+    "context": "Технические паттерны production AI и RAG"
+  },
+  {
+    "title": "FinOps Foundation: Cost Estimation of AI Workloads (2026 Resource)",
+    "url": "https://www.finops.org/wg/cost-estimation-of-ai-workloads",
+    "context": "Экономика ИИ и FinOps"
+  },
+  {
+    "title": "FinOps in the AI Era: 2026 Survey Report (CloudZero)",
+    "url": "https://www.cloudzero.com/guide/finops-in-the-ai-era-2026-survey-report/",
+    "context": "Экономика ИИ и FinOps"
+  },
+  {
+    "title": "CloudZero: FinOps for AI - Why AI Alters Cloud Cost Management (2026)",
+    "url": "https://www.cloudzero.com/blog/finops-for-ai/",
+    "context": "Экономика ИИ и FinOps"
+  },
+  {
+    "title": "CloudZero: Cloud Unit Economics In 2026 Guide",
+    "url": "https://www.cloudzero.com/guide/cloud-unit-economics-2026/",
+    "context": "Экономика ИИ и FinOps"
+  },
+  {
+    "title": "OpenAI: Real-time Cost and Token Monitoring (2025)",
+    "url": "https://developers.openai.com/api/docs/guides/realtime-costs",
+    "context": "Экономика ИИ и FinOps"
+  },
+  {
+    "title": "Mavik Labs: оптимизация стоимости LLM (маршрутизация, кэш, пакетная обработка, 2026)",
+    "url": "https://www.maviklabs.com/blog/llm-cost-optimization-2026",
+    "context": "Экономика ИИ и FinOps"
+  },
+  {
+    "title": "Enrico Piovano: LLM Cost Engineering & Token Budgeting (2026)",
+    "url": "https://enricopiovano.com/blog/llm-cost-optimization-caching-strategies",
+    "context": "Экономика ИИ и FinOps"
+  },
+  {
+    "title": "AI Agent Cost Optimization: Token Economics in Production (Zylos 2026)",
+    "url": "https://zylos.ai/research/2026-02-19-ai-agent-cost-optimization-token-economics",
+    "context": "Экономика ИИ и FinOps"
+  },
+  {
+    "title": "OptyxStack Case Study: Reducing Inference Cost by 60% (2026)",
+    "url": "https://optyxstack.com/case-studies/llm-inference-cost-reduction",
+    "context": "Экономика ИИ и FinOps"
+  },
+  {
+    "title": "Dentons: Регулирование ИИ в России — обзор 2025–2026",
+    "url": "https://www.dentons.com/ru/insights/alerts/",
+    "context": "Российский правовой и исследовательский контур"
+  },
+  {
+    "title": "ALRUD: ИИ и персональные данные — новые вызовы 2026",
+    "url": "https://alrud.ru/news/legal-alerts/",
+    "context": "Российский правовой и исследовательский контур"
+  },
+  {
+    "title": "BGP Litigation: Законопроект об ИИ — что нужно знать бизнесу (2026)",
+    "url": "https://bgplaw.com/news/",
+    "context": "Российский правовой и исследовательский контур"
+  },
+  {
+    "title": "Melling Voitishkin: Legal Alert — Маркировка ИИ контента в РФ",
+    "url": "https://melling.com/ru/insights/",
+    "context": "Российский правовой и исследовательский контур"
+  },
+  {
+    "title": "НИУ ВШЭ: Исследование точности RAG-систем на русском языке (2025)",
+    "url": "https://www.hse.ru/edu/vkr/1053304649",
+    "context": "Российский правовой и исследовательский контур"
+  },
+  {
+    "title": "ИТМО: Мультиагентная система ProAGI для разработки ПО (2026)",
+    "url": "https://iai.itmo.ru/news/v-itmo-sozdali-multiagentnuyu-ii-sistemu-proagi,-kotoraya-uskoryaet-sozdanie-promyishlennного-po-ot-2-do-10-raz",
+    "context": "Российский правовой и исследовательский контур"
+  },
+  {
+    "title": "Сколково: Потенциал GenAI для инженерных задач (Июль 2025)",
+    "url": "https://sk.ru/news/skolkovo-i-ano-ce-predstavili-obzor-potencial-primeneniya-generativnogo-ii-dlya-resheniya-inzhenernyh-zadach/",
+    "context": "Российский правовой и исследовательский контур"
+  },
+  {
+    "title": "Yandex Research: Оптимизация инференса LLM для русского языка (2025)",
+    "url": "https://yandex.ru/company/research/",
+    "context": "Российский правовой и исследовательский контур"
+  },
+  {
+    "title": "Software Handover Checklist 2026: Documentation & IP Guide",
+    "url": "https://www.tech4lyf.com/blog/software-handover-documentation-checklist-2026/",
+    "context": "Модели передачи и внешние кейсы внедрения"
+  },
+  {
+    "title": "InCommon: Why BOT Wins for AI Infrastructure",
+    "url": "https://www.incommon.ai/blog/build-operate-transfer/",
+    "context": "Модели передачи и внешние кейсы внедрения"
+  },
+  {
+    "title": "Devico: Checklist for a seamless BOT transition (2025)",
+    "url": "https://devico.io/blog/checklist-for-a-seamless-bot-transition",
+    "context": "Модели передачи и внешние кейсы внедрения"
+  },
+  {
+    "title": "Knowledge Transfer Framework for Enterprise Software Handover",
+    "url": "https://www.knowledge-management-tools.net/knowledge-transfer-framework.html",
+    "context": "Модели передачи и внешние кейсы внедрения"
+  },
+  {
+    "title": "СИБУР: Экономический эффект от ИИ на «Сибур-Нефтехиме» (200 млн руб)",
+    "url": "https://www.sibur.ru/SiburNeftekhim/press-center/ekonomicheskiy-effekt-ot-vnedreniya-tsifrovykh-instrumentov-na-sibur-neftekhime-prevysil-200-mln-rub/",
+    "context": "Модели передачи и внешние кейсы внедрения"
+  },
+  {
+    "title": "Ozon: ИИ как инструмент для 60% малых предпринимателей (2025)",
+    "url": "https://www.retail.ru/news/ozon-ii-stal-rabochim-instrumentom-dlya-bolee-60-malykh-predprinimateley-v-rossi-15-dekabrya-2025-272572/",
+    "context": "Модели передачи и внешние кейсы внедрения"
+  },
+  {
+    "title": "InnovaNews — три кейса банковского ИИ: Альфа-Банк, Т-Банк и другие примеры (2026)",
+    "url": "https://innovanews.ru/info/news/economics/ii-na-troikh-vedushhie-banki-razlozhili-tekhnologicheskijj-pasjans/",
+    "context": "Модели передачи и внешние кейсы внедрения"
+  },
+  {
+    "title": "Яндекс: Корпоративный DeepResearch по кодовой базе (Кейс 2025)",
+    "url": "https://habr.com/ru/companies/yandex/articles/987388/",
+    "context": "Модели передачи и внешние кейсы внедрения"
+  },
+  {
+    "title": "Самолет: Кейс «Цифровой рабочий» и ИИ в управлении стройкой (2025)",
+    "url": "https://samolet.ru/news/",
+    "context": "Модели передачи и внешние кейсы внедрения"
+  },
+  {
+    "title": "GitHub: Awesome AI Agents 2026 (300+ resources)",
+    "url": "https://github.com/caramaschiHG/awesome-ai-agents-2026",
+    "context": "Кураторские подборки и постоянный мониторинг"
+  },
+  {
+    "title": "GitHub: Awesome Production GenAI (Updated March 2026)",
+    "url": "https://ethicalml.github.io/awesome-production-genai/",
+    "context": "Кураторские подборки и постоянный мониторинг"
+  },
+  {
+    "title": "GitHub: Awesome RAG Production Tools (Curated Feb 2026)",
+    "url": "https://github.com/Yigtwxx/Awesome-RAG-Production",
+    "context": "Кураторские подборки и постоянный мониторинг"
+  },
+  {
+    "title": "Arxiv: Agentic RAG Taxonomy, Architecture and Research (March 2026)",
+    "url": "https://arxiv.org/abs/2603.07379v1",
+    "context": "Кураторские подборки и постоянный мониторинг"
+  },
+  {
+    "title": "Arxiv: OrchMAS - Orchestrated Reasoning with Multi-Agents (March 2026)",
+    "url": "https://arxiv.org/abs/2603.03005v1",
+    "context": "Кураторские подборки и постоянный мониторинг"
+  },
+  {
+    "title": "Arxiv: TreePS-RAG - Tree-based Process Supervision (Jan 2026)",
+    "url": "https://arxiv.org/abs/2601.06922",
+    "context": "Кураторские подборки и постоянный мониторинг"
+  }
+]
