@@ -1,7 +1,7 @@
 ---
-title: 'Ведомость документов, реестр источников, политики KPI и курса валют'
-date: '2026-03-28'
-status: 'Черновой комплект материалов для руководства (v1, март 2026)'
+title: 'Ведомость документов, глоссарий, реестр источников и курс валют'
+date: '2026-04-05'
+status: 'Комплект материалов для руководства (v2, апрель 2026)'
 tags:
   - AI
   - CapEx
@@ -20,7 +20,7 @@ hide:
   - tags
 ---
 
-# Ведомость документов, реестр источников, политики KPI и курса валют {: #app_a_pack_overview .pageBreakBefore }
+# Ведомость документов, глоссарий, реестр источников и курс валют {: #app_a_pack_overview .pageBreakBefore }
 
 ## Обзор {: #app_a_overview_section }
 
@@ -34,7 +34,7 @@ hide:
 
 **Состав комплекта:** единое резюме для руководства, два основных отчёта (методология; сайзинг и экономика), приложения A–F.
 
-**В приложении:** один навигатор `вопрос → документ`, единые политики KPI/FX и канонический реестр источников.
+**В приложении:** один навигатор `вопрос → документ`, глоссарий, единая политика курса валют и реестр источников.
 
 **База материалов:** публичные прайсы, отраслевые публикации и инженерная практика **Comindware** (открытые репозитории экосистемы). Используйте как основу для собственных презентаций, смет и управленческих решений — с адаптацией под профиль заказчика и финальной сверкой договорных условий перед оффером.
 
@@ -90,7 +90,6 @@ hide:
 | FinOps | Подход к управлению облачными и ИИ-затратами через прозрачные метрики потребления и аллокацию затрат. |
 | GenAI | Генеративный ИИ: модели, которые создают текст, код и иные артефакты. |
 | IP | Intellectual Property — интеллектуальная собственность: код, артефакты, модели, документация, права использования и условия передачи. |
-| KPI | Ключевой показатель результата. |
 | KT | Knowledge Transfer — передача знаний, эксплуатационных регламентов и обучения команде заказчика. |
 | KV-кэш | Кэш пар «ключ–значение» для промежуточных состояний внимания при автогрессивной генерации (англ. **KV cache**); вместе с весами модели и **батчем** задаёт основную нагрузку на VRAM при длинном контексте. |
 | LLM | Большая языковая модель. |
@@ -118,14 +117,6 @@ hide:
 | TTS | Text-to-Speech — синтез речи: преобразование текста в речь (голосовой ответ ассистента, озвучивание, IVR). |
 | vLLM | В контексте пакета: upstream-движок **vLLM** и обвязка **Comindware** вокруг него для промышленного инференса больших языковых моделей через OpenAI-совместимый API, с конфигурацией, проверками доступности и эксплуатационным регламентом. |
 
-## Единые KPI и их интерпретация {: #app_a_kpi_semantics }
-
-Используйте следующие KPI как **операционные ориентиры**, они не заменяют юридические критерии соответствия и комплаенса:
-
-- `>60%` — доля регулярного использования ИИ в целевой группе пользователей.
-- `30–40%` — целевой диапазон сокращения времени выполнения типового сценария.
-- `>95%` — доля ответов, прошедших внутреннюю рубрику качества.
-
 ## Курс USD для смет {: #app_a_fx_policy }
 
 **1 USD = 85 RUB** — единый ориентир для сопоставления USD-прайсов и рублёвых оценок в материалах на март 2026.
@@ -134,44 +125,63 @@ hide:
 
 Закладывайте отклонение курса **±10%** — ориентир чувствительности для **зависимых от USD** статей (импортное железо, зарубежные каталоги); но это не прогноз.
 
-## Связанные документы {: #app_a_related_documents .pageBreakBefore }
-
-- [Резюме для руководства: коммерческое обоснование, методология и экономика внедрения ИИ](./20260331-research-executive-unified-ru.md)
-- [Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
-- [Сайзинг и экономика (CapEx / OpEx / TCO)](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)
-- [Приложение B. Отчуждение ИС и кода: KT, IP, лицензии, критерии приёмки передачи](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)
-- [Приложение C. Корпоративный ИИ Comindware: состав стека, границы, артефакты](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)
-- [Приложение D. Безопасность, комплаенс, наблюдаемость](./20260325-research-appendix-d-security-observability-ru.md)
-- [Приложение E. Рыночные и технические сигналы](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_root)
-- [Приложение F. Дополнительное чтение](./20260325-research-appendix-f-extended-reading-ru.md#app_f_root)
-
 ## Навигация «вопрос → документ» {: #app_a_question_document_navigation }
 
-- Нужен коммерческий C-level обзор: что именно предлагаем (типовые проектные пакеты по этапам PoC → Пилот → Масштабирование → BOT), что остаётся у заказчика после передачи и как использовать матрицу аргументов по ролям ЛПР? → [Резюме для руководства: коммерческое обоснование, методология и экономика внедрения ИИ](./20260331-research-executive-unified-ru.md)
-- Как внедрять и разрабатывать в пром контуре (роли, фазы, контрольные точки качества)? → [Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)
-- Где в корпоративном ИИ формируется преимущество (данные, семантика, агенты)? → _[Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)_
-- Где глобальные бенчмарки корпоративного внедрения по публичному отчёту OpenAI (2025) и оговорки по выборке (не норма для КП в РФ)? → См. _«[Эмпирика корпоративного внедрения](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report)_ в Методологии разработки и внедрения ИИ
-- Стратегия внедрения, организационная зрелость, барьеры, пилот vs scale, обучение руководителей (СКОЛКОВО)? → См. _«[Стратегия внедрения ИИ и организационная зрелость](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity)_ в Методологии разработки и внедрения ИИ; поведенческие риски — см. _«[Организационные и поведенческие факторы риска](./20260325-research-appendix-d-security-observability-ru.md#app_d_org_behavioral_risk_factors)_ в Приложении D; риск бюджета, организационная зрелость и пилот — см. _«[Риски бюджета и организационной зрелости](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)_ в «Сайзинг и экономика (CapEx / OpEx / TCO)»
-- Какие цифры/диапазоны CapEx/OpEx/TCO заложить клиенту и как обосновать? → _[Сайзинг и экономика (CapEx / OpEx / TCO)](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)_
-- Где примерные расчёты расхода токенов по данным портала поддержки и допущениям? → См. _«[Примерные расчёты расхода токенов по данным корпуса заявок (портал поддержки)](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)_ в «Сайзинг и экономика (CapEx / OpEx / TCO)»
-- Как устроен комплект отчуждения ИС/кода и что именно передаём клиенту (KT/IP)? → см. _Приложение B «[Отчуждение ИС и кода: KT, IP, лицензии, критерии приёмки передачи](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_
-- Как оформлять бизнес-процессы для KT (BPMN 2.0, генерация LLM, проверка)? → См. _«[Формализация бизнес-процессов (BPMN 2.0) и генерация LLM](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm)_ в Методологии разработки и внедрения ИИ и _«[Минимальный комплект отчуждения](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)_ в Приложении B
-- Что есть в Comindware сегодня (состав стека, границы «что есть» vs «методология»)? → см. _Приложение C «[Корпоративный ИИ Comindware: состав стека, границы, артефакты](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)»_
-- Как обеспечить безопасность, комплаенс и промышленную наблюдаемость (контур контроля, минимизация данных)? → см. _Приложение D «[Безопасность, комплаенс, наблюдаемость](./20260325-research-appendix-d-security-observability-ru.md)»_
-- Как для резидентного контура РФ согласовать наблюдаемость GenAI (локализация, self-hosted телеметрия) с референс-стеком Comindware и отделить её от инфраструктурного мониторинга (Prometheus/Grafana/Tempo)? → См. _«[Рынок РФ, наблюдаемость LLM и референс-стек Comindware](./20260325-research-appendix-d-security-observability-ru.md#app_d_russia_llm_observability_phoenix_reference)_ в Приложении D
-- Как проектировать изоляцию и сеть для агентского исполнения (граница доверия, egress, краткоживущие учётные данные)? → См. _«[Граница доверия и среда исполнения агентов](./20260325-research-appendix-d-security-observability-ru.md#app_d_trust_boundary_agent_environment)_ в Приложении D
-- Какие паттерны среды для агента в PR и долгоживущей dev, модель риска по сценарию и минимальный состав платформы задач? → См. _«[Модель риска и паттерны платформы](./20260325-research-appendix-d-security-observability-ru.md#app_d_risk_model_platform_patterns)_ в Приложении D; для KT/IP и PR — см. _«[Артефакты PR-веток для агентного контура](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)_ в Приложении B
-- Как сравнивать E2B / Modal / Daytona и бенчмаркать песочницы (сеть, сессии, метрики прода)? → См. _«[Бенчмарки управляемых песочниц](./20260325-research-appendix-d-security-observability-ru.md#app_d_managed_sandboxes_benchmarks)_ в Приложении D и _«[Оценка и бенчмарки песочниц](./20260325-research-report-methodology-main-ru.md#method_sandbox_evaluation_benchmarks)_ в Методологии разработки и внедрения ИИ
-- Как за ~30 дней вывести безопасный MVP контура исполнения агента, какие враждебные сценарии и критерии готовности? → См. _«[Безопасный MVP контура исполнения агента](./20260325-research-appendix-d-security-observability-ru.md#app_d_secure_mvp_execution_environment)_ в Приложении D и _«[MVP контура исполнения агента](./20260325-research-report-methodology-main-ru.md#method_agent_execution_mvp)_ в Методологии разработки и внедрения ИИ
-- Где цифры и барьеры зрелости GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot × CMO Club, 2025)? → См. _«[Рынок РФ: GenAI в маркетинге крупных брендов](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)_ в «Сайзинг и экономика (CapEx / OpEx / TCO)»; _«[GenAI в маркетинговых командах](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams)_ в Методологии разработки и внедрения ИИ; _«[Барьеры и риски: опрос 2025](./20260325-research-appendix-d-security-observability-ru.md#app_d_org_barriers_risk_survey_2025)_ в Приложении D; для концентрации SaaS, каталога моделей и ИС в договоре — см. _«[Shadow GenAI и маршрутизация моделей в маркетинге](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)_ в Приложении B
-- Где ландшафт российского рынка GenAI (онтология сегментов, сценарный контур до 2030, публичные материалы red_mad_robot 2025) и согласование с цифрами IMARC/сегментами? → См. _«[Карта российского рынка GenAI](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map)_ в Методологии разработки и внедрения ИИ; _«[Рынок ИИ в России: статистика и прогнозы](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_ai_market_stats_forecasts)_ в «Сайзинг и экономика (CapEx / OpEx / TCO)»; _«[AI TRiSM: управление доверием и рисками ИИ](./20260325-research-appendix-d-security-observability-ru.md#app_d_ai_trism_trust_management)_ в Приложении D
-- Нужен единый реестр источников и расширенные списки по темам? → [Сводный реестр источников](#app_a_sources_registry) (этот документ)
-- Нужен сжатый C-level обзор по методологии, TCO, CapEx/OpEx, валюте, передаче и аргументации по ролям ЛПР? → [Резюме для руководства: коммерческое обоснование, методология и экономика внедрения ИИ](./20260331-research-executive-unified-ru.md)
-- Где описан полный агентный контур Comindware Platform (6 компонентов экосистемы)? → см. _Приложение C «[Корпоративный ИИ Comindware: состав стека, границы, артефакты](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)»_
-- Какие возможности агентов уже реализованы в Comindware (RAG, MCP, SGR, индексация)? → См. _«[Арсенал компонентов](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_component_arsenal)_ в Приложении C
-- Как устроен ассистент аналитика для Comindware Platform (49 инструментов, 6 провайдеров, 4 сценария развёртывания)? → См. _«[Ассистент аналитика](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_analyst_assistant)_ в Приложении C
-- Где описаны фреймворки обвязки серверов инференса (MOSEC, vLLM, Infinity)? → См. _«[Фреймворки инференса](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_inference_frameworks)_ в Приложении C
-- Как Comindware реализует структурированное рассуждение по схеме (SGR) и план разрешения инцидента? → См. _«[SGR в практике Comindware](./20260325-research-report-methodology-main-ru.md#method_sgr_practice_cmw)_ в Методологии разработки и внедрения ИИ
+### Коммерция и экономика
+
+| Вопрос | Документ |
+| --- | --- |
+| Коммерческий C-level-обзор: типовые пакеты, что остаётся у заказчика, матрица аргументов по ЛПР | _[Резюме: коммерческое обоснование](./20260331-research-executive-unified-ru.md)_ |
+| KPI, числовые пороги go/no-go, политика интерпретации | _[Резюме: числовые пороги](./20260331-research-executive-unified-ru.md#exec_unified_guardrails)_; _[Методология: процессы и KPI](./20260325-research-report-methodology-main-ru.md#method_processes_kpis)_ |
+| CapEx/OpEx/TCO — цифры и диапазоны для клиента | _[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)_ |
+| Расчёт расхода токенов (портал поддержки) | _[Сайзинг: токены](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)_ |
+
+### Методология внедрения
+
+| Вопрос | Документ |
+| --- | --- |
+| Внедрение в пром контуре: роли, фазы, контрольные точки качества | _[Методология](./20260325-research-report-methodology-main-ru.md#method_pack_overview)_ |
+| Где формируется преимущество в корпоративном ИИ (данные, семантика, агенты) | _[Методология](./20260325-research-report-methodology-main-ru.md#method_pack_overview)_ |
+| Глобальные бенчмарки OpenAI 2025 и оговорки по выборке | _[Методология: эмпирика](./20260325-research-report-methodology-main-ru.md#method_openai_implementation_report)_ |
+| Стратегия внедрения, организационная зрелость, пилот vs scale, обучение (СКОЛКОВО) | _[Методология: стратегия](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity)_ |
+| Бизнес-процессы для KT (BPMN 2.0, LLM-генерация) | _[Методология: BPMN](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm)_ |
+| SGR в практике Comindware | _[Методология: SGR](./20260325-research-report-methodology-main-ru.md#method_sgr_practice_cmw)_ |
+| GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot, 2025) | _[Сайзинг: рынок](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)_; _[Методология: GenAI в маркетинге](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams)_ |
+| Российский рынок GenAI: сегменты, прогноз до 2030 | _[Методология: карта рынка](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map)_; _[Сайзинг: статистика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_ai_market_stats_forecasts)_ |
+
+### Передача и текущий стек
+
+| Вопрос | Документ |
+| --- | --- |
+| Комплект отчуждения ИС/кода (KT/IP) | _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)_ |
+| Бизнес-процессы для KT (минимальный комплект) | _[Приложение B: отчуждение](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)_ |
+| Состав стека Comindware («что есть» vs «методология») | _[Приложение C](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)_ |
+| Возможности агентов (RAG, MCP, SGR, индексация) | _[Приложение C: арсенал](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_component_arsenal)_ |
+| Ассистент аналитика (49 инструментов, 6 провайдеров) | _[Приложение C: аналитик](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_analyst_assistant)_ |
+| Фреймворки инференса (MOSEC, vLLM, Infinity) | _[Приложение C: инференс](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_inference_frameworks)_ |
+
+### Безопасность и наблюдаемость
+
+| Вопрос | Документ |
+| --- | --- |
+| Безопасность, комплаенс, наблюдаемость | _[Приложение D](./20260325-research-appendix-d-security-observability-ru.md)_ |
+| Наблюдаемость GenAI в РФ: локализация, self-hosted телеметрия, отличие от инфраструктурного мониторинга | _[Приложение D: LLM-observability](./20260325-research-appendix-d-security-observability-ru.md#app_d_russia_llm_observability_phoenix_reference)_ |
+| Изоляция и сеть для агентского исполнения (граница доверия, egress) | _[Приложение D: граница доверия](./20260325-research-appendix-d-security-observability-ru.md#app_d_trust_boundary_agent_environment)_ |
+| Паттерны среды для агента, модель риска, минимальный состав платформы | _[Приложение D: модель риска](./20260325-research-appendix-d-security-observability-ru.md#app_d_risk_model_platform_patterns)_ |
+| Сравнение песочниц E2B / Modal / Daytona | _[Приложение D: песочницы](./20260325-research-appendix-d-security-observability-ru.md#app_d_managed_sandboxes_benchmarks)_; _[Методология: бенчмарки](./20260325-research-report-methodology-main-ru.md#method_sandbox_evaluation_benchmarks)_ |
+| Безопасный MVP контура агента за ~30 дней | _[Приложение D: MVP](./20260325-research-appendix-d-security-observability-ru.md#app_d_secure_mvp_execution_environment)_; _[Методология: MVP](./20260325-research-report-methodology-main-ru.md#method_agent_execution_mvp)_ |
+| Поведенческие риски | _[Приложение D: риски](./20260325-research-appendix-d-security-observability-ru.md#app_d_org_behavioral_risk_factors)_ |
+| AI TRiSM: управление доверием и рисками | _[Приложение D: AI TRiSM](./20260325-research-appendix-d-security-observability-ru.md#app_d_ai_trism_trust_management)_ |
+
+### Справочные документы
+
+| Вопрос | Документ |
+| --- | --- |
+| Единый реестр источников | [Сводный реестр](#app_a_sources_registry) (этот документ) |
+| Сжатый C-level обзор | [Резюме](./20260331-research-executive-unified-ru.md) |
+| Бюджетный риск и организационная зрелость | _[Сайзинг: риски](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)_ |
+| Shadow GenAI и маршрутизация моделей в маркетинге | _[Приложение B: Shadow GenAI](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)_ |
+| Артефакты PR-веток для агентного контура | _[Приложение B: PR-артефакты](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)_ |
 
 ## Сводный реестр источников {: #app_a_sources_registry }
 
