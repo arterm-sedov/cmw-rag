@@ -14,8 +14,7 @@ theme:
   custom_dir: !ENV [MKDOCS_OVERRIDES, ../../../../cbap-mkdocs-ru/overrides]
 
 extra:
-  productName: "Коммерческое обоснование внедрения корпоративного ИИ"
-  productVersion: "2026-03"
+  productVersion: "Comindware"
   publicationDate: "Апрель 2026"
   pdfOutput: true
 
