@@ -1,4 +1,4 @@
-INHERIT: !ENV [MKDOCS_COMMON, ../../../../cbap-mkdocs-ru/mkdocs_common.yml]
+INHERIT: !ENV [MKDOCS_COMMON, ../../../.reference-repos/cbap-mkdocs-ru/mkdocs_common.yml]
 
 use_directory_urls: false
 
@@ -11,10 +11,11 @@ site_url: ''
 theme:
   name: material
   language: ru
-  custom_dir: !ENV [MKDOCS_OVERRIDES, ../../../../cbap-mkdocs-ru/overrides]
+  custom_dir: !ENV [MKDOCS_OVERRIDES, ../../../.reference-repos/cbap-mkdocs-ru/overrides]
 
 extra:
   productName: "Коммерческое обоснование внедрения корпоративного ИИ"
+  productVersion: "Comindware"
   publicationDate: "Апрель 2026"
   pdfOutput: true
 
@@ -37,7 +38,7 @@ markdown_extensions:
     title: На этой странице
     permalink_title: Скопируйте адрес этой ссылки, чтобы поделиться параграфом
   pymdownx.snippets: 
-    base_path: !ENV [MKDOCS_SNIPPETS, ../../../../cbap-mkdocs-ru/docs/ru/.snippets/]
+    base_path: !ENV [MKDOCS_SNIPPETS, ../../../.reference-repos/cbap-mkdocs-ru/docs/ru/.snippets/]
 plugins:
   minify:
     minify_html: false
@@ -53,6 +54,6 @@ plugins:
     toc_title: Оглавление
     toc_level: 3
     copyright: "© Comindware, 2009–2026"
-    custom_template_path: !ENV [MKDOCS_PDF_TEMPLATES, ../../../../cbap-mkdocs-ru/pdf_templates]
+    custom_template_path: !ENV [MKDOCS_PDF_TEMPLATES, ../../../.reference-repos/cbap-mkdocs-ru/pdf_templates]
     output_path: Comindware. Коммерческое обоснование внедрения ИИ. 2026-04.pdf
     enabled_if_env: ''

@@ -6,14 +6,14 @@
 
 $scriptDir = Get-Item (Split-Path -Parent $MyInvocation.MyCommand.Definition)
 
-# Navigate from script folder up to 4 levels up
+# Navigate from script folder up to 3 levels up
 # executive-research-technology-transfer -> research -> docs -> cmw-rag -> Repos
 $reposRoot = $scriptDir
-for ($i = 0; $i -lt 4; $i++) {
+for ($i = 0; $i -lt 3; $i++) {
     $reposRoot = $reposRoot.Parent
 }
 
-$cbapRoot = Join-Path $reposRoot.FullName "cbap-mkdocs-ru"
+$cbapRoot = Join-Path $reposRoot.FullName ".reference-repos/cbap-mkdocs-ru"
 
 # Set env vars for YAML !ENV tags (fallback to relative paths if not set)
 $env:MKDOCS_COMMON = Join-Path $cbapRoot "mkdocs_common.yml"
