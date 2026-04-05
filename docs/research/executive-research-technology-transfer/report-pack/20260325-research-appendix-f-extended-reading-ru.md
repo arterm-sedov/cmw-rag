@@ -76,7 +76,7 @@ tags:
 
 ## Российский правовой и исследовательский контур {: #app_f_russian_legal_research_context }
 
-- [Dentons: Регулирование ИИ в России - обзор 2025-2026](https://www.dentons.com/ru/insights/alerts/)
+- [Dentons: Регулирование ИИ в России — обзор 2025–2026](https://www.dentons.com/ru/insights/alerts/)
 - [ALRUD: ИИ и персональные данные - новые вызовы 2026](https://alrud.ru/news/legal-alerts/)
 - [BGP Litigation: Законопроект об ИИ - что нужно знать бизнесу (2026)](https://bgplaw.com/news/)
 - [Melling Voitishkin: Legal Alert - Маркировка ИИ контента в РФ](https://melling.com/ru/insights/)
@@ -84,7 +84,7 @@ tags:
 - [ИТМО: Мультиагентная система ProAGI для разработки ПО (2026)](https://iai.itmo.ru/news/v-itmo-sozdali-multiagentnuyu-ii-sistemu-proagi,-kotoraya-uskoryaet-sozdanie-promyishlennного-po-ot-2-do-10-raz)
 - [Сколково: Потенциал GenAI для инженерных задач (Июль 2025)](https://sk.ru/news/skolkovo-i-ano-ce-predstavili-obzor-potencial-primeneniya-generativnogo-ii-dlya-resheniya-inzhenernyh-zadach/)
 - [Yandex Research: Оптимизация инференса LLM для русского языка (2025)](https://yandex.ru/company/research/)
-- [TAdviser: Рынок ИИ в России - цифры и тренды 2025-2026](https://www.tadviser.ru/index.php/Статья:Искусственный_интеллект_(рынок_России))
+- [TAdviser: Рынок ИИ в России — цифры и тренды 2025–2026](https://www.tadviser.ru/index.php/Статья:Искусственный_интеллект_(рынок_России))
 
 ## Модели передачи и внешние кейсы внедрения {: #app_f_transfer_models_cases }
 
