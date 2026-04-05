@@ -361,7 +361,7 @@ hide:
 ### Посты NeuralDeep {: #app_a_neuraldeep_posts }
 
 - [Agentic RAG / SGR](https://t.me/neuraldeep/1605)
-- [ETL, эмбеддинги, реранкеры, фреймворки RAG, eval, безопасность](https://t.me/neuraldeep/1758)
+- [ETL, эмбеддеры, ранжировщики, фреймворки RAG, eval, безопасность](https://t.me/neuraldeep/1758)
 
 ### Посты @ai_archnadzor {: #app_a_ai_archnadzor_posts }
 
@@ -403,7 +403,7 @@ hide:
 - [OpenAI — контроль рассуждения со скрытыми шагами, 2603.05706](https://arxiv.org/pdf/2603.05706)
 - [Princeton — непрерывное обучение из взаимодействия с агентом, 2603.10165](https://arxiv.org/pdf/2603.10165)
 
-### Продукты и блоги (эмбеддинги, M365; справочно) {: #app_a_products_blogs_embeddings_m365_reference }
+### Продукты и блоги (эмбеддеры, M365; справочно) {: #app_a_products_blogs_embeddings_m365_reference }
 
 - [Google — Gemini Embedding 2 (блог)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-embedding-2/)
 - [Microsoft — Copilot Cowork (блог Microsoft 365)](https://www.microsoft.com/en-us/microsoft-365/blog/2026/03/09/copilot-cowork-a-new-way-of-getting-work-done/)
