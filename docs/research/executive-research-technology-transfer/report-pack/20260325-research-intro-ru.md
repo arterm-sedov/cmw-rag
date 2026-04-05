@@ -116,7 +116,7 @@ hide: tags
 
 | Вопрос | Документ |
 | --- | --- |
-| Коммерческий C-level-обзор: типовые пакеты, что остаётся у заказчика, матрица аргументов по ЛПР | _[Резюме для руководства](./20260331-research-executive-unified-ru.md)_ |
+| Коммерческий обзор для C-Suite: типовые пакеты, что остаётся у заказчика, матрица аргументов по ЛПР | _[Резюме для руководства](./20260331-research-executive-unified-ru.md)_ |
 | KPI, числовые пороги go/no-go, политика интерпретации | _[Резюме: числовые пороги](./20260331-research-executive-unified-ru.md#exec_unified_guardrails)_; _[Методология: процессы и KPI](./20260325-research-report-methodology-main-ru.md#method_processes_kpis)_ |
 | CapEx/OpEx/TCO — цифры и диапазоны для клиента | _[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)_ |
 | Расчёт расхода токенов (портал поддержки) | _[Сайзинг: токены](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)_ |
@@ -162,7 +162,7 @@ hide: tags
 
 | Вопрос | Документ |
 | --- | --- |
-| Сжатый C-level-обзор | [Резюме для руководства](./20260331-research-executive-unified-ru.md) |
+| Сжатый обзор для C-Suite | [Резюме для руководства](./20260331-research-executive-unified-ru.md) |
 | Бюджетный риск и организационная зрелость | _[Сайзинг: риски](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)_ |
 | Shadow GenAI и маршрутизация моделей в маркетинге | _[Приложение B: Shadow GenAI](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)_ |
 | Артефакты PR-веток для агентного контура | _[Приложение B: PR-артефакты](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)_ |
