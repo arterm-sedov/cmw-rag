@@ -152,8 +152,10 @@ These rules apply to Russian research articles in `docs/research/`.
 
 ### Numbers and Values
 
-- Use a non-breaking space as the thousands separator (e.g., `1 000 000`, `10 000`, but `5000`).
+- Use a non-breaking space as the thousands separator (e.g., `1 000 000`, `10 000`, but `5000`).
 - Use a comma as the decimal separator (e.g., `2,5%`).
+- **No space before `%`**: `99,9%`, `>60%`, `3,6%` (not `99,9 %`).
+- **NBSP (`&nbsp;`)** before: `руб.` (`1000 руб.`), `ФЗ` (`152‑ФЗ` with U+2011 narrow NB hyphen), abbreviations (`т. д.`, `и т. д.`), initials (`А. С. Пушкин`), `г.` before year (`в 2026 г.`), `см.` before reference (`см. Приложение`).
 
 ### Currency
 
@@ -163,10 +165,11 @@ These rules apply to Russian research articles in `docs/research/`.
 
 ### Typography and punctuation (Russian)
 
-- **Quotation marks:** use `«` and `»` for Russian quotations. Reserve straight `"` for code and APIs.
+- **Quotation marks for proper names:** English/Latin acronyms (`API`, `LLM`, `CapEx`) and English proper names (`GigaChat`, `Yandex Cloud`) do NOT need quotes. Well-known Russian company names used informally (`Сбер`, `Яндекс`, `Мегафон`) also do NOT need quotes. Legal entity forms require guillemets: `АО «Яндекс»`, `ПАО «Сбер»`.
 - **Bold inside quotes:** when formatting a quoted term in bold, place the asterisks **inside** the guillemets: `«**Термин**»`, not `**«Термин»**`.
 - **Em dash (`—`):** appositions, breaks in sense, dialogue-style breaks; do not use hyphen-minus `-` where a long dash is intended.
-- **En dash (`–`):** ranges (pages, years), e.g. `2019–2025`, no extra spaces inside the range unless your style guide requires thin spaces.
+- **En dash (`–`):** ranges (pages, years), e.g. `2019–2025`, no extra spaces inside the range.
+- **Arrow (`→`):** stage transitions and process flows, e.g. `PoC → Пилот → Масштабирование`. Do NOT use `->` in prose. Mermaid `-->` inside code blocks is exempt.
 - **Colon:** if text continues on the same line after `:`, start with lowercase (not English sentence case), except proper names, acronyms, or a clearly new sentence.
 - **Hyphen:** compounds and hyphenated words; keep minus and code literals as needed in technical snippets.
 
@@ -295,6 +298,18 @@ Use for multi-file research sets under `docs/research/` when you want stable dee
 **Cross-references vs C-level summaries:** All documents in the pack **should** include cross-references (`.md#anchor` links) to sibling documents for navigation and coherence. C-level executive summaries may link to other documents within the same pack using human-readable names with hyperlinks (e.g., `_«[Методология внедрения](./20260325-research-report-methodology-main-ru.md)»_`). However, C-level summaries must **not** contain paths to **external repositories** or internal code paths (e.g., `../cmw-mosec/README.md`, `rag_engine/`)—these are authoring inputs only.
 
 **Split-pack heading anchors (methodology + sizing + appendices):** In `docs/research/`, explicit heading IDs use prefixes `method_`, `sizing_`, `app_a_`, `app_b_`, `app_d__`. Do **not** use legacy patterns `research_pkg_*` or long `research_methodology_20260325_*` in pack body files; if they appear in older `.cursor/plans/`, treat as historical and reconcile with the live document (ledger: [Research pack task](./20260324-research-task.md), §1б).
+
+**Canonical cross-reference patterns** — use consistently across multi-file packs:
+
+| Scope | Pattern |
+|-------|---------|
+| Whole appendix (H1) | `см. _Приложение X «[H1 title](link)»_` |
+| Single paragraph (H2/H3) | `см. _«[H2/H3 title](link)»_ в Приложении X` |
+| Multiple paragraphs | `см. _«[A](link)»_, _«[Б](link)»_ и _«[В](link)»_ в Приложении X` |
+| Main report (inline) | `_«[H1 title](link)»_` or conjugated: `_[Методологию...](link)_` |
+| Main report (plain list) | `- [H1 title](link)` |
+
+Disambiguation by word order: `Приложение X` prefix → whole appendix; `в Приложении X` suffix → paragraph(s); no appendix mention → main report. Not acceptable: `[текст в Приложении A](link)`, `см. ниже`, `того же приложения`, `Отчёт «...»`.
 
 **Optional** — `{: #id .pageBreakBefore }` on a heading where the export toolchain should force a page break.
 
