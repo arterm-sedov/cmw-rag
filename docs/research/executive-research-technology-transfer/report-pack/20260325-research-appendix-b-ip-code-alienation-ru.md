@@ -233,8 +233,6 @@ hide:
 
 ## Источники {: #app_b_sources .pageBreakBefore }
 
-- Полный консолидированный реестр — см. [Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_sources_registry).
-
 ### BPMN 2.0 и шаблоны промптов (справочно) {: #app_b_bpmn_prompt_templates }
 
 - [GitHub — yksi12/prompts: generate-bpmn-prompt.md](https://github.com/yksi12/prompts/blob/main/generate-bpmn-prompt.md)

@@ -14,15 +14,15 @@ theme:
   custom_dir: !ENV [MKDOCS_OVERRIDES, ../../../../cbap-mkdocs-ru/overrides]
 
 extra:
-  productVersion: "Comindware"
+  productName: "Коммерческое обоснование внедрения корпоративного ИИ"
   publicationDate: "Апрель 2026"
   pdfOutput: true
 
 copyright: '<a href="https://www.comindware.ru/" target="_blank">© 2009–2026 Comindware<sup>®</sup></a>'
 
 nav:
+  - Введение: 20260325-research-intro-ru.md
   - Резюме для руководства: 20260331-research-executive-unified-ru.md
-  - Обзор и ведомость документов: 20260325-research-appendix-a-index-ru.md
   - Методология разработки и внедрения ИИ: 20260325-research-report-methodology-main-ru.md
   - Сайзинг и экономика (CapEx / OpEx / TCO): 20260325-research-report-sizing-economics-main-ru.md
   - Приложение B. Отчуждение ИС и кода: 20260325-research-appendix-b-ip-code-alienation-ru.md
@@ -30,6 +30,7 @@ nav:
   - Приложение D. Безопасность, комплаенс, наблюдаемость: 20260325-research-appendix-d-security-observability-ru.md
   - Приложение E. Рыночные сигналы: 20260325-research-appendix-e-market-technical-signals-ru.md
   - Приложение F. Дополнительное чтение: 20260325-research-appendix-f-extended-reading-ru.md
+  - Реестр источников: 20260325-research-appendix-a-index-ru.md
 
 markdown_extensions:
   toc:
@@ -52,5 +53,5 @@ plugins:
     toc_level: 3
     copyright: "© Comindware, 2009–2026"
     custom_template_path: !ENV [MKDOCS_PDF_TEMPLATES, ../../../../cbap-mkdocs-ru/pdf_templates]
-    output_path: Comindware. Коммерческое обоснование внедрения ИИ.pdf
+    output_path: Comindware. Коммерческое обоснование внедрения ИИ. 2026-04.pdf
     enabled_if_env: ''
