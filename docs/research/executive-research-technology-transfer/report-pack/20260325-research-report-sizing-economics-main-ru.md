@@ -1233,7 +1233,6 @@ vLLM имеет более высокий перерасход памяти по
 - [PerUnit AI — GPT-5.4 API Pricing Analysis](https://perunit.ai/blog/openai-gpt-5-4-api-pricing) — практический разбор стоимости reasoning в production
 - [LeanLM AI — LLM Cost Optimization](https://leanlm.ai/blog/llm-cost-optimization) — исследование перерасхода 50–90% на LLM и стратегии оптимизации
 - [Hugging Face — State over Tokens](https://huggingface.co/papers/2512.12777) — технический анализ роли reasoning tokens
-- [Deep Research Report: Reasoning Tokens](./20260328-reasoning-tokens-pricing-deep-research.md) — подробный research с 20+ источниками (внутренняя валидация)
 
 ### Формат TOON и оптимизация токенов {: #sizing_toon_format_token_optimization }
 
