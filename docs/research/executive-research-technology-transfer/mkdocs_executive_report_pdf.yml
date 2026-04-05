@@ -36,7 +36,8 @@ markdown_extensions:
   toc:
     title: На этой странице
     permalink_title: Скопируйте адрес этой ссылки, чтобы поделиться параграфом
-
+  pymdownx.snippets: 
+    base_path: !ENV [MKDOCS_SNIPPETS, ../../../../cbap-mkdocs-ru/docs/ru/.snippets/]
 plugins:
   minify:
     minify_html: false

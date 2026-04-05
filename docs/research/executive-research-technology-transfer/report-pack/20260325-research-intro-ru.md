@@ -42,8 +42,9 @@ hide:
 
 Подробные формулировки для договоров и переговоров:
 
-- _Приложение B «[Отчуждение ИС и кода: KT, IP, лицензии, критерии приёмки передачи](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)_ 
+- _Приложение B «[Отчуждение ИС и кода: KT, IP, лицензии, критерии приёмки передачи](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)_
 - _Приложение C «[Корпоративный ИИ Comindware: состав стека, границы, артефакты](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)»_.
+{% include-markdown "../../../../../cbap-mkdocs-ru/docs/ru/.snippets/pdfPageBreakHard.md" %}
 
 | Термин | Определение в контексте комплекта |
 | --- | --- |
