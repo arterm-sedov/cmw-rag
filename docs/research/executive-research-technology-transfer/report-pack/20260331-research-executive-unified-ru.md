@@ -3,19 +3,18 @@ title: "Резюме для руководства"
 date: "2026-03-31"
 status: "Резюме для руководства (v1, март 2026)"
 tags:
-  - BOT
-  - CapEx
-  - GenAI
-  - KT
-  - OpEx
-  - RAG
-  - TOM
-  - TCO
-  - коммерциализация
-  - корпоративный ИИ
-  - продажи
-hide:
-  - tags
+    - BOT
+    - CapEx
+    - GenAI
+    - KT
+    - OpEx
+    - RAG
+    - TOM
+    - TCO
+    - коммерциализация
+    - корпоративный ИИ
+    - продажи
+hide: tags
 ---
 
 # Резюме для руководства {: #exec_unified_pack_overview }
