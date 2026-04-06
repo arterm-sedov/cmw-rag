@@ -511,7 +511,7 @@ hide: tags
 
 - LLM: локальная.
 - Оркестратор: LangGraph.
-- Векторная БД: Qdrant, Chroma DB, или PostgeSQL с pgvector.
+- Векторная БД: Qdrant, Chroma DB, PostgeSQL+pgvector.
 - Оценка качества: DeepEval.
 - Мониторинг: Arize Phoenix (self-hosted).
 
