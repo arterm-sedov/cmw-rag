@@ -469,6 +469,10 @@ Use `git diff` patch format when planning edits to existing documents. This is t
 
 **How to produce a plan as a patch:**
 
+Save prepared patch files to your plans/patches folder.
+
+Make sure the patches are perfectly valid for git application.
+
 ```diff
 --- a/docs/research/executive-research-technology-transfer/report-pack/FILENAME.md
 +++ b/docs/research/executive-research-technology-transfer/report-pack/FILENAME.md
