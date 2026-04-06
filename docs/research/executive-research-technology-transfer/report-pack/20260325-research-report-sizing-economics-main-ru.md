@@ -240,13 +240,13 @@ hide: tags
 
 | Провайдер | Модель | Вход (₽/млн) | Выход (₽/млн) | Примечания |
 | :--- | :--- | ---: | ---: | :--- |
+| **Cloud.ru** | GigaChat3-10B-A1.8B | 12,2 | 12,2 | Evolution FM |
 | **Сбер** | GigaChat Lite | 65 | 65 | Sync; async: 32,5 |
 | **Сбер** | GigaChat Pro | 500 | 500 | Sync; async: 250 |
 | **Сбер** | GigaChat Max | 650 | 650 | Sync; async: 325 |
 | **Яндекс** | YandexGPT Lite | 200 | 200 | |
 | **Яндекс** | YandexGPT Pro 5.1 | 800 | 800 | Sync; async: 410 |
 | **Яндекс** | Alice AI LLM | 500 | 1200 | |
-| **Cloud.ru** | GigaChat3-10B-A1.8B | 12,2 | 12,2 | Evolution FM |
 
 !!! note "Сбер и Cloud.ru: не путать"
 
