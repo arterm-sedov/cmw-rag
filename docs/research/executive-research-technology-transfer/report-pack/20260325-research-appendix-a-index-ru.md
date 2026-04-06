@@ -1,7 +1,7 @@
 ---
 title: 'Перечень'
-date: '2026-04-05'
-status: 'Комплект материалов для руководства (v2, апрель 2026)'
+date: '2026-04-06'
+status: 'v2'
 tags:
     - AI
     - CapEx
@@ -360,7 +360,7 @@ hide: tags
 - [OpenWork — AGENTS.md (сырой текст репозитория)](https://raw.githubusercontent.com/different-ai/openwork/71957be9/AGENTS.md)
 - [OpenWork — ARCHITECTURE.md (сырой текст репозитория)](https://raw.githubusercontent.com/different-ai/openwork/71957be9/ARCHITECTURE.md)
 
-## НИОКР, индексы зрелости ИИ и практики учёта токенов {: #app_a_observability_telemetry__evaluation }
+## НИОГР, зрелость ИИ, индексы рынка и практики учёта токенов {: #app_a_observability_telemetry__evaluation }
 
 - [@rmr_rnd — R&D red_mad_robot](https://t.me/rmr_rnd)
 - [GitHub — ozontech/file.d](https://github.com/ozontech/file.d)

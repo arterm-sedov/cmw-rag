@@ -1,7 +1,7 @@
 ---
-title: 'Введение: обзор комплекта, глоссарий, навигация'
+title: 'Введение: структура документа, глоссарий, навигация'
 date: '2026-04-05'
-status: 'Комплект материалов для руководства (v2, апрель 2026)'
+status: 'v2'
 tags:
     - AI
     - CapEx
@@ -45,11 +45,11 @@ hide: tags
 - _Приложение C «[Корпоративный ИИ Comindware: состав стека, границы, артефакты](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)»_.
 {% include-markdown "../../../../.reference-repos/cbap-mkdocs-ru/docs/ru/.snippets/pdfPageBreakHard.md" %}
 
-| Термин | Определение в контексте комплекта |
+| Термин | Определение |
 | --- | --- |
-| ADR (Architecture Decision Record) | Зафиксированное архитектурное решение с его основаниями и ограничениями. |
-| AgentOps | Дисциплина управления, мониторинга и улучшения ИИ-агентов в промышленной эксплуатации. Эволюция: DevOps → MLOps → AgentOps. |
-| AI TRiSM (AI Trust, Risk and Security Management) | Рамка доверия, рисков и безопасности ИИ. |
+| ADR (Architecture Decision Record) | Документально закрепленное архитектурное решение с обоснованием компромиссов и ограничений. |
+| AgentOps (Agent Operations) | Методология промышленной эксплуатации ИИ-агентов, обеспечивающая замкнутый цикл мониторинга, оценки и непрерывного совершенствования. |
+| AI TRiSM (AI Trust, Risk and Security Management) | Комплексная модель управления доверием, рисками и безопасностью ИИ-систем. |
 | Arize Phoenix | Открытый продукт Arize AI для наблюдаемости и экспериментов в контурах LLM/RAG: трассы, дашборды, связка с оценкой качества при self-hosted размещении. В референс-стеке Comindware — слой рядом с OpenTelemetry/OpenInference и инференсом; не заменяет инфраструктурный мониторинг (Prometheus/Grafana/Tempo). Подробно — см. _«[Рынок РФ, наблюдаемость LLM и референс-стек Comindware](./20260325-research-appendix-d-security-observability-ru.md#app_d_russia_llm_observability_phoenix_reference)_ в Приложении D. |
 | ASR (Automatic Speech Recognition) | Распознавание речи: преобразование речевого сигнала в текст (голосовой ввод, колл-центры, мультимодальные сценарии). |
 | BOT (Build–Operate–Transfer) | Модель «создать, эксплуатировать, передать». |
@@ -82,6 +82,7 @@ hide: tags
 | SLA (Service Level Agreement) | Обещанный уровень сервиса для заказчика. |
 | SLM (Small Language Model) | Компактная языковая модель для более дешёвых или быстрых сценариев, аналогична LLM. |
 | SLO (Service Level Objective) | Внутренняя целевая метрика качества сервиса. |
+| SCQA (Situation-Complication-Question-Answer) | Метод структурирования управленческих решений: ситуация → проблема → вопрос → ответ. |
 | TCO (Total Cost of Ownership) | Совокупная стоимость владения решением на горизонте нескольких лет. |
 | TOM (Target Operating Model) | Целевая операционная модель: роли, процессы, метрики и контуры ответственности. |
 | TOON | Компактный формат структурированных данных, применяемый для снижения токеновых затрат относительно JSON. |
@@ -124,8 +125,8 @@ hide: tags
 
 | Вопрос | Документ |
 | --- | --- |
-| Коммерческий обзор для C-Suite: типовые пакеты, что остаётся у заказчика, матрица аргументов по ЛПР | _[Резюме для руководства](./20260331-research-executive-unified-ru.md)_ |
-| KPI, числовые пороги go/no-go, политика интерпретации | _[Резюме: числовые пороги](./20260331-research-executive-unified-ru.md#exec_unified_guardrails)_; _[Методология: процессы и KPI](./20260325-research-report-methodology-main-ru.md#method_processes_kpis)_ |
+| Коммерческий обзор для руководителей: типовые пакеты, что остаётся у заказчика, матрица аргументов по ЛПР | _[Стратегическое резюме](./20260331-research-executive-unified-ru.md)_ |
+| KPI, числовые пороги go/no-go, политика интерпретации | _[Стратегическое резюме: числовые пороги](./20260331-research-executive-unified-ru.md#exec_unified_guardrails)_; _[Методология: процессы и KPI](./20260325-research-report-methodology-main-ru.md#method_processes_kpis)_ |
 | CapEx/OpEx/TCO — цифры и диапазоны для клиента | _[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)_ |
 | Расчёт расхода токенов (портал поддержки) | _[Сайзинг: токены](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)_ |
 
@@ -170,7 +171,7 @@ hide: tags
 
 | Вопрос | Документ |
 | --- | --- |
-| Сжатый обзор для C-Suite | [Резюме для руководства](./20260331-research-executive-unified-ru.md) |
+| Сжатый обзор для руководителей | [Стратегическое резюме](./20260331-research-executive-unified-ru.md) |
 | Бюджетный риск и организационная зрелость | _[Сайзинг: риски](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)_ |
 | Shadow GenAI и маршрутизация моделей в маркетинге | _[Приложение B: Shadow GenAI](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)_ |
 | Артефакты PR-веток для агентного контура | _[Приложение B: PR-артефакты](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)_ |
