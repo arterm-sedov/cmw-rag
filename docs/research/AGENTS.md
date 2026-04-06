@@ -39,7 +39,7 @@ This file defines research workflow, document standards, and formatting requirem
 The consolidated **20260325-** research pack is **not** internal authoring documentation. Write for **commercial and technical decision-makers** who will **sell and scope** AI delivery: budget, architecture, compliance, KT/IP, and risk—grounded in **Comindware’s documented practice** (open repos where relevant) and **attributed** public sources (pricing, benchmarks, regulation).
 
 - **Tone:** **business + technology**; concise; no patronizing “how to read this file,” no references to source-file mechanics (YAML, front matter, template filenames), and no pack-maintenance asides (split history, “canonical row” editorial rules).
-- **Cross-cutting rules** (e.g. **FX**): **one canonical block** — [Appendix A, «Валюта: пересчёт USD…»](./20260325-research-appendix-a-index-ru.md#app_a_fx_policy) (`#app_a_fx_policy`); other documents **short stub + link**; sizing/methodology use `#sizing_fx_policy` / `#method_fx_policy` and point in-report conversions to those anchors.
+- **Cross-cutting rules** (e.g. **FX**): **one canonical block** — [_Валюта и правила для коммерческих предложений_](./20260331-research-executive-unified-ru.md#exec_unified_fx_policy) (`#exec_unified_fx_policy`); all other documents use a **single stub line + link** pointing to `#exec_unified_fx_policy` — no separate FX section or anchor in sizing, methodology, or appendices.
 - **Hardware facts:** do **not** describe **RTX 4090 48 GB** as a “Comindware custom” GPU. It is a **commercially offered** dedicated-GPU server configuration (e.g. providers such as [1dedic — GPU servers](https://1dedic.ru/gpu-servers)); Comindware or Clients may buy or rent such SKUs like any customer-facing integrator.
 
 - [Research pack task (authoritative)](./20260324-research-task.md) — **authoritative** scope, acceptance, workflow, evidence and FX: **Russian** body (§§1–8). It points agents here for English workflow rules and non-duplication.
@@ -127,7 +127,8 @@ channel_snapshot.yml
   - **Вопрос для решения:** Core business question.
   - **Рекомендуемый ответ:** Concrete recommendation and implications.
 - Ensure recommendations are MECE.
-- Focus on “So what?” (business meaning and impact).
+- Focus on "So what?" (business meaning and impact).
+- **SCQA acronym expansion:** define it **once** in the pack glossary (`intro-ru.md`, entry `| SCQA (Situation–Complication–Question–Answer) | ситуация → проблема → вопрос → ответ … |`).
 
 ### Required Analytical Content
 
