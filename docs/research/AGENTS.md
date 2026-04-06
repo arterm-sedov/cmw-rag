@@ -457,6 +457,61 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Subagents for parallel work → `deep-researches/`
 - Iterate plan based on results
 
+### Git diff patches for planning and execution
+
+Use `git diff` patch format when planning edits to existing documents. This is the most token-efficient and deterministic way to communicate, review, and apply changes.
+
+**When to use:**
+
+- Planning structural or prose changes to any file in `report-pack/`
+- Reviewing agent-proposed edits before applying them
+- Communicating multi-file changes in a single reviewable block
+
+**How to produce a plan as a patch:**
+
+```diff
+--- a/docs/research/executive-research-technology-transfer/report-pack/FILENAME.md
++++ b/docs/research/executive-research-technology-transfer/report-pack/FILENAME.md
+@@ -LINE,COUNT +LINE,COUNT @@
+ context line (unchanged)
+-old line to remove
++new line to add
+ context line (unchanged)
+```
+
+**Rules:**
+
+- Always include 3 lines of unchanged context above and below each hunk — this uniquely locates the change and prevents misapplication.
+- One hunk per logical change; split unrelated changes into separate hunks.
+- Propose the patch first; apply only after explicit user approval.
+- After applying, run `git diff --stat` to verify insertions/deletions match the plan exactly.
+
+**Application:**
+
+If possible and feasible, use git to apply the planned patch instead of manual changes.
+
+Prefer `git apply` over manual edits when feasible — it is atomic, auditable, and eliminates transcription errors:
+
+```bash
+# Write the patch to a temp file and apply
+git apply patch.diff
+
+# Dry-run first to catch mismatches without touching files
+git apply --check patch.diff
+
+# If context lines don't match exactly (e.g. line endings), use fuzzy matching
+git apply --whitespace=fix patch.diff
+```
+
+If `git apply` fails (context mismatch, encoding, or Windows line endings), fall back to the Edit tool with `oldString`/`newString` — the patch still serves as the reviewable plan.
+
+**Why this works:**
+
+- **Token-efficient:** reviewer sees only what changes, not the full file.
+- **Deterministic:** `oldString` is pinned by context; no ambiguity about location.
+- **Loss-proof:** deleted lines are explicit (`-`); nothing disappears silently.
+- **Auditable:** the patch itself is the record of intent — copy it to the plan file for traceability.
+
 ### Validation
 
 - Web search mandatory for pricing, versions, any figures
