@@ -30,7 +30,7 @@ This file defines research workflow, document standards, and formatting requirem
 
 ## Business goals and task authority
 
-**Read this before any edits** to the **consolidated research pack** in `docs/research/` (full methodology and sizing reports, appendices A–D, and the two short executive summaries). The corpus serves **Comindware’s commercial work**: evidence and narrative to **win and deliver** customer AI programs—**budget, architecture, compliance, handover (KT/IP), and roadmap**—not a standalone SKU for “selling research” or “curating publications.”
+**Read this before any edits** to the **consolidated research pack** under `docs/research/executive-research-technology-transfer/report-pack/` (full methodology and sizing reports, akappendices, and the executive summaries). The corpus serves **Comindware’s commercial work**: evidence and narrative to **win and deliver** customer AI programs—**budget, architecture, compliance, handover (KT/IP), and roadmap**—not a standalone SKU for “selling research” or “curating publications.”
 
 **When you edit, optimize for:** decision-ready prose, **RF-resident defaults** (152-FZ, local clouds, data residency), and **honest limits** on global/vendor telemetry (sample scope; not an automatic baseline for RF production). Readers **reuse** claims in **their own** board packs and proposals; avoid meta-text about “how we wrote this for executives.”
 
@@ -152,8 +152,10 @@ These rules apply to Russian research articles in `docs/research/`.
 
 ### Numbers and Values
 
-- Use a non-breaking space as the thousands separator (e.g., `1 000 000`, `10 000`, but `5000`).
+- Use a non-breaking space as the thousands separator (e.g., `1 000 000`, `10 000`, but `5000`).
 - Use a comma as the decimal separator (e.g., `2,5%`).
+- **No space before `%`**: `99,9%`, `>60%`, `3,6%` (not `99,9 %`).
+- **NBSP (`&nbsp;`)** before: `руб.` (`1000 руб.`), `ФЗ` (`152‑ФЗ` with U+2011 narrow NB hyphen), abbreviations (`т. д.`, `и т. д.`), initials (`А. С. Пушкин`), `г.` before year (`в 2026 г.`), `см.` before reference (`см. Приложение`).
 
 ### Currency
 
@@ -163,10 +165,11 @@ These rules apply to Russian research articles in `docs/research/`.
 
 ### Typography and punctuation (Russian)
 
-- **Quotation marks:** use `«` and `»` for Russian quotations. Reserve straight `"` for code and APIs.
+- **Quotation marks for proper names:** English/Latin acronyms (`API`, `LLM`, `CapEx`) and English proper names (`GigaChat`, `Yandex Cloud`) do NOT need quotes. Well-known Russian company names used informally (`Сбер`, `Яндекс`, `Мегафон`) also do NOT need quotes. Legal entity forms require guillemets: `АО «Яндекс»`, `ПАО «Сбер»`.
 - **Bold inside quotes:** when formatting a quoted term in bold, place the asterisks **inside** the guillemets: `«**Термин**»`, not `**«Термин»**`.
 - **Em dash (`—`):** appositions, breaks in sense, dialogue-style breaks; do not use hyphen-minus `-` where a long dash is intended.
-- **En dash (`–`):** ranges (pages, years), e.g. `2019–2025`, no extra spaces inside the range unless your style guide requires thin spaces.
+- **En dash (`–`):** ranges (pages, years), e.g. `2019–2025`, no extra spaces inside the range.
+- **Arrow (`→`):** stage transitions and process flows, e.g. `PoC → Пилот → Масштабирование`. Do NOT use `->` in prose. Mermaid `-->` inside code blocks is exempt.
 - **Colon:** if text continues on the same line after `:`, start with lowercase (not English sentence case), except proper names, acronyms, or a clearly new sentence.
 - **Hyphen:** compounds and hyphenated words; keep minus and code literals as needed in technical snippets.
 
@@ -218,7 +221,7 @@ Every Russian deliverable must read as if written by a native-speaking executive
 - **One idea per paragraph.** Each paragraph opens with its topic sentence; supporting detail follows. If a paragraph covers two ideas, split it.
 - **Action-oriented language.** Every recommendation or next-step section uses imperative voice addressed to the reader: «утвердите план», «зафиксируйте KPI», «проведите аудит».
 - **Quantify or qualify.** No vague claims. Attach a number, a range, or an explicit qualifier: «по данным X», «в диапазоне Y–Z», «по оценке Yakov Partners (2025)». If a number is approximate, say so explicitly: «порядка», «~», or «ориентировочно».
-- **No self-referential text.** Do not describe the document, its structure, or how it was written. Let content speak. Examples of prohibited phrases: «в данном разделе мы рассмотрим…», «этот документ предназначен для…», «ниже приводится обзор…». This includes **positional navigation words**: avoid «ниже», «выше», «в разделе … ниже/выше», «как в дайджестах», «детализация тезисов». Use a **named `.md#anchor` link** instead: `_«[Section title](#anchor)»_`.
+- **No self-referential text.** Do not describe the document, its structure, or how it was written. Let content speak. Avoid meta openers («в данном разделе…», «этот документ предназначен для…», «ниже приводится обзор…»). **Positional navigation** («ниже/выше», «см. ниже», «перечень/таблица ниже по документу», «Ниже — …» meaning scroll order only): replace with a **named anchor**—`_«[Заголовок](#anchor)»_` in-file or `./sibling.md#anchor` (see **Consolidated packs**). **OK:** semantic «ниже/выше» («риск ниже», «порог выше»).
 - **Coherence across the pack.** When the same concept (KPI threshold, cost range, compliance requirement) appears in multiple documents, use identical wording and values. Contradictions undermine executive trust.
 
 ## Markdown and document formatting
@@ -290,11 +293,23 @@ Use for multi-file research sets under `docs/research/` when you want stable dee
 
 **YAML front matter** — When the pack uses it, at the very top: `title` (same as H1 without the `{: #… }` suffix), `date` (ISO), `status`, `tags` (about 5–12; English alphabetically, then Russian alphabetically), `` if tags are for filtering/search only. Optional: `description` (one line). If `date` / `status` are in YAML, drop redundant **Дата пакета** / **Статус** lines under H1.
 
-**Cross-links** — `./sibling.md#anchor` from the current file’s directory. Body mentions of titled internals: **Citations and references**. Under `## Источники`: plain `[title](url)` only. No path for a document that is not a real file—title in guillemets only.
+**Cross-links** — `./sibling.md#anchor` from the current file’s directory. Body mentions of titled internals: **Citations and references**. Under `## Источники`: plain `[title](url)` only. No path for a document that is not a real file—title in guillemets only. Long tables/lists: link the **section heading** (or a subheading with its own `#anchor`), not “the list below”—see **Executive communication discipline** (positional navigation).
 
 **Cross-references vs C-level summaries:** All documents in the pack **should** include cross-references (`.md#anchor` links) to sibling documents for navigation and coherence. C-level executive summaries may link to other documents within the same pack using human-readable names with hyperlinks (e.g., `_«[Методология внедрения](./20260325-research-report-methodology-main-ru.md)»_`). However, C-level summaries must **not** contain paths to **external repositories** or internal code paths (e.g., `../cmw-mosec/README.md`, `rag_engine/`)—these are authoring inputs only.
 
 **Split-pack heading anchors (methodology + sizing + appendices):** In `docs/research/`, explicit heading IDs use prefixes `method_`, `sizing_`, `app_a_`, `app_b_`, `app_d__`. Do **not** use legacy patterns `research_pkg_*` or long `research_methodology_20260325_*` in pack body files; if they appear in older `.cursor/plans/`, treat as historical and reconcile with the live document (ledger: [Research pack task](./20260324-research-task.md), §1б).
+
+**Canonical cross-reference patterns** — use consistently across multi-file packs:
+
+| Scope | Pattern |
+|-------|---------|
+| Whole appendix (H1) | `см. _Приложение X «[H1 title](link)»_` |
+| Single paragraph (H2/H3) | `см. _«[H2/H3 title](link)»_ в Приложении X` |
+| Multiple paragraphs | `см. _«[A](link)»_, _«[Б](link)»_ и _«[В](link)»_ в Приложении X` |
+| Main report (inline) | `_«[H1 title](link)»_` or conjugated: `_[Методологию...](link)_` |
+| Main report (plain list) | `- [H1 title](link)` |
+
+Disambiguation by word order: `Приложение X` prefix → whole appendix; `в Приложении X` suffix → paragraph(s); no appendix mention → main report. Not acceptable: `[текст в Приложении A](link)`, `см. ниже`, `того же приложения`, `Отчёт «...»`.
 
 **Optional** — `{: #id .pageBreakBefore }` on a heading where the export toolchain should force a page break.
 
@@ -441,6 +456,61 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Plan under `.opencode/plans/`
 - Subagents for parallel work → `deep-researches/`
 - Iterate plan based on results
+
+### Git diff patches for planning and execution
+
+Use `git diff` patch format when planning edits to existing documents. This is the most token-efficient and deterministic way to communicate, review, and apply changes.
+
+**When to use:**
+
+- Planning structural or prose changes to any file in `report-pack/`
+- Reviewing agent-proposed edits before applying them
+- Communicating multi-file changes in a single reviewable block
+
+**How to produce a plan as a patch:**
+
+```diff
+--- a/docs/research/executive-research-technology-transfer/report-pack/FILENAME.md
++++ b/docs/research/executive-research-technology-transfer/report-pack/FILENAME.md
+@@ -LINE,COUNT +LINE,COUNT @@
+ context line (unchanged)
+-old line to remove
++new line to add
+ context line (unchanged)
+```
+
+**Rules:**
+
+- Always include 3 lines of unchanged context above and below each hunk — this uniquely locates the change and prevents misapplication.
+- One hunk per logical change; split unrelated changes into separate hunks.
+- Propose the patch first; apply only after explicit user approval.
+- After applying, run `git diff --stat` to verify insertions/deletions match the plan exactly.
+
+**Application:**
+
+If possible and feasible, use git to apply the planned patch instead of manual changes.
+
+Prefer `git apply` over manual edits when feasible — it is atomic, auditable, and eliminates transcription errors:
+
+```bash
+# Write the patch to a temp file and apply
+git apply patch.diff
+
+# Dry-run first to catch mismatches without touching files
+git apply --check patch.diff
+
+# If context lines don't match exactly (e.g. line endings), use fuzzy matching
+git apply --whitespace=fix patch.diff
+```
+
+If `git apply` fails (context mismatch, encoding, or Windows line endings), fall back to the Edit tool with `oldString`/`newString` — the patch still serves as the reviewable plan.
+
+**Why this works:**
+
+- **Token-efficient:** reviewer sees only what changes, not the full file.
+- **Deterministic:** `oldString` is pinned by context; no ambiguity about location.
+- **Loss-proof:** deleted lines are explicit (`-`); nothing disappears silently.
+- **Auditable:** the patch itself is the record of intent — copy it to the plan file for traceability.
 
 ### Validation
 

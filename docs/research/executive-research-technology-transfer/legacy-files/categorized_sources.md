@@ -1,31 +1,4 @@
----
-title: 'Перечень'
-date: '2026-04-05'
-status: 'Комплект материалов для руководства (v2, апрель 2026)'
-tags:
-    - AI
-    - CapEx
-    - комплаенс
-    - корпоративный
-    - методология
-    - наблюдаемость
-    - OpEx
-    - RAG
-    - коммерциализация
-    - TCO
-    - комплект
-    - сайзинг
-    - экономика
-hide: tags
----
-
-# Перечень источников {: #app_a_pack_overview }
-
-Полный перечень источников, использованных при подготовке отчёта, сгруппированных по темам.
-
-Для расширенного круга чтения, изучения бенчмарков и актуализации повестки обращайтесь к _Приложению F «[Дополнительное чтение](./20260325-research-appendix-f-extended-reading-ru.md)»_.
-
-## Инженерия агентов и мультиагентные системы {: #app_a_engineering__multiagent_systems }
+### Engineering & Multi-agent Systems {: #app_a_engineering__multiagent_systems }
 
 - [Хабр — Инженер будущего строит обвязку для агентов](https://habr.com/ru/articles/1005032/)
 - [Martin Fowler — Harness Engineering (Thoughtworks)](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
@@ -50,7 +23,7 @@ hide: tags
 - [SGR Agent Core on GitHub](https://github.com/vamplabAI/sgr-agent-core/)
 - [Yandex Agent Atelier](https://aistudio.yandex.ru/ru/agent-atelier)
 
-## Безопасность GenAI: OWASP, стандарты и практики тестирования {: #app_a_security__risk_management_owasp__standards }
+### Security & Risk Management: OWASP & Standards {: #app_a_security__risk_management_owasp__standards }
 
 - [BCG — AI Transformation Is a Workforce Transformation](https://www.bcg.com/publications/2026/ai-transformation-is-a-workforce-transformation)
 - [OWASP Gen AI Security Project — Introduction](https://genai.owasp.org/introduction-genai-security-project/)
@@ -75,7 +48,7 @@ hide: tags
 - [Kaspersky Resource Center — What Is Prompt Injection?](https://www.kaspersky.com/resource-center/threats/prompt-injection)
 - [HiddenLayer — AI Threat Landscape 2026](https://hiddenlayer.com/report-and-guide/threatreport2026)
 
-## Регуляторика ИИ, управление рисками и изолированные среды (песочницы) {: #app_a_security__risk_management_threat_intelligence }
+### Security & Risk Management: Threat Intelligence {: #app_a_security__risk_management_threat_intelligence }
 
 - [GitHub — llm-attacks/llm-attacks](https://github.com/llm-attacks/llm-attacks)
 - [Официальное опубликование — Приказ Роскомнадзора от 19.06.2025 № 140 (обезличивание ПДн)](http://publication.pravo.gov.ru/document/0001202508010002)
@@ -91,7 +64,6 @@ hide: tags
 - [Национальная стратегия развития ИИ до 2030 года (Указ Президента РФ №124, февраль 2024)](http://kremlin.ru/acts/bank/49930)
 - [NIST AI Risk Management Framework 1.0](https://nist.gov/itl/ai-risk-management-framework)
 - [EUR-Lex — Regulation (EU) 2024/1689 — Artificial Intelligence Act](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689)
-- [EU AI Act Service Desk — статья 99](https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-99)
 - [E2B — Sandbox lifecycle](https://e2b.dev/docs/sandbox)
 - [E2B Blog — Up to 5x faster sandboxes](https://e2b.dev/blog/up-to-5x-faster-sandboxes)
 - [Modal — Sandboxes](https://modal.com/docs/guide/sandbox)
@@ -101,7 +73,7 @@ hide: tags
 - [gVisor — Performance](https://gvisor.dev/docs/architecture_guide/performance/)
 - [IEEE Xplore — Security-Performance Trade-offs of Kubernetes Container Runtimes (Viktorsson, Klein, Tordsson)](https://ieeexplore.ieee.org/document/9285946/)
 
-## Данные, доверие (AI TRiSM) и обзоры рынка enterprise AI {: #app_a_regulation_ethics__compliance }
+### Regulation, Ethics & Compliance {: #app_a_regulation_ethics__compliance }
 
 - [NIST — SP 800-190, Application Container Security Guide](https://csrc.nist.gov/publications/detail/sp/800-190/final)
 - [Контур — агрегатор норматекста (документ по обезличиванию ПДн)](https://normativ.kontur.ru/document?documentId=500957&moduleId=1)
@@ -126,7 +98,7 @@ hide: tags
 - [OpenAI — The state of enterprise AI (обзор, декабрь 2025)](https://openai.com/index/the-state-of-enterprise-ai-2025-report)
 - [Правила тарификации Anthropic Claude](https://platform.claude.com/docs/en/about-claude/models/overview)
 
-## Экономика ИИ: рынок РФ, FinOps, облачные тарифы и on-prem {: #app_a_market_economics_finops_cloud_onprem_rf }
+### Market Trends & ROI Analysis - Part 1 {: #app_a_market_trends__roi_analysis__part_1 }
 
 - [Claude Docs — What's new in Claude 4.6](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6)
 - [Anthropic — Introducing Claude Opus 4.6](https://www.anthropic.com/news/claude-opus-4-6)
@@ -150,6 +122,9 @@ hide: tags
 - [PitchGrade — AI Infrastructure Primer](https://pitchgrade.com/research/ai-infrastructure-primer)
 - [OpenAI — Prompt caching (снижение стоимости повторяющегося контекста)](https://platform.openai.com/docs/guides/prompt-caching)
 - [Slyd — калькулятор TCO (on-prem и облако)](https://slyd.com/resources/tco-calculator)
+
+### Market Trends & ROI Analysis - Part 2 {: #app_a_market_trends__roi_analysis__part_2 }
+
 - [Runpod — LLM inference optimization playbook (throughput)](https://www.runpod.io/articles/guides/llm-inference-optimization-playbook)
 - [SWFTE — экономика частного AI / on-prem](https://www.swfte.com/blog/private-ai-enterprises-onprem-economics)
 - [Redmadnews — AI + Economy: китайская модель масштабирования (пост канала, рыночный фон)](https://t.me/Redmadnews/5159)
@@ -172,12 +147,8 @@ hide: tags
 - [MWS — MWS GPT (продукт)](https://mws.ru/mws-gpt/)
 - [MWS — GPU On‑premises](https://mws.ru/services/mws-gpu-on-prem/)
 - [AKM.ru — доступ к крупнейшей языковой модели на рынке РФ (Yandex B2B)](https://www.akm.ru/eng/press/yandex-b2b-tech-has-opened-access-to-the-largest-language-model-on-the-russian-market/)
-- [OECD — макроэкономический эффект ИИ в экономиках G7 (публикация, 2025)](https://www.oecd.org/en/publications/macroeconomic-productivity-gains-from-artificial-intelligence-in-g7-economies_a5319ab5-en.html)
-- [РБК — объём рынка ИИ (декабрь 2024)](https://www.rbc.ru/technology_and_media/24/12/2024)
-- [Коммерсантъ — рынок GenAI](https://www.kommersant.ru/doc/8270384)
-- [McKinsey — The State of AI: как организации перестраиваются для извлечения ценности](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai-how-organizations-are-rewiring-to-capture-value)
 
-## Облачные платформы РФ: модели, API, 152-ФЗ и публичные кейсы {: #app_a_russian_cloud_platforms_models_compliance }
+### Cloud Infrastructure (Russia): Hyperscalers - Part 1 {: #app_a_cloud_infrastructure_russia_hyperscalers__part_1 }
 
 - [CNews — кейс: MTS AI и экономия инвестиций за счёт облака MWS (обзор)](https://www.cnews.ru/reviews/provajdery_gpu_cloud_2025/cases/kak_mts_ai_sekonomila_bolee_milliarda)
 - [Hugging Face — карточка модели YandexGPT-5-Lite-8B-instruct](https://huggingface.co/yandex/YandexGPT-5-Lite-8B-instruct)
@@ -201,6 +172,9 @@ hide: tags
 - [Хабр — MTS AI: граф в RAG](https://habr.com/ru/companies/mts_ai/articles/915276/)
 - [Хабр — МТС: MWS Octapi и AI-агенты](https://habr.com/ru/companies/ru_mts/articles/932382/)
 - [Хабр — МТС: архитектура LLM-платформы MWS GPT](https://habr.com/ru/companies/ru_mts/articles/967478/)
+
+### Cloud Infrastructure (Russia): Hyperscalers - Part 2 {: #app_a_cloud_infrastructure_russia_hyperscalers__part_2 }
+
 - [Хабр — МТС: RAG-помощник для саппорта (смежная публикация)](https://habr.com/ru/companies/ru_mts/articles/970392/)
 - [Хабр — МТС: RAG для поддержки (Confluence, Jira, гибридный поиск)](https://habr.com/ru/companies/ru_mts/articles/970476/)
 - [MERA — бенчмарк русскоязычных моделей](https://mera.a-ai.ru/)
@@ -212,9 +186,6 @@ hide: tags
 - [InCommon — BOT Transfer Readiness & Handover Mechanics](https://www.incommon.ai/blog/transfer-readiness/)
 - [GigaChat API — продукт для бизнеса (Сбер)](https://developers.sber.ru/products/gigachat-api)
 - [GigaChat API — обзор документации](https://developers.sber.ru/docs/ru/gigachat/api/overview)
-- [Сбер — GigaChat API: модели и тарифы](https://developers.sber.ru/docs/ru/gigachat/api/tariffs)
-- [Сбер — SaluteSpeech: тарифы для юрлиц](https://developers.sber.ru/docs/ru/salutespeech/tariffs/legal-tariffs)
-- [Yandex AI Studio — тарифы SpeechKit](https://aistudio.yandex.ru/docs/ru/speechkit/pricing.html)
 - [МК Астрахань — GigaChat Enterprise / «ГигаЧат Бизнес» (СМИ, март 2026)](https://ast.mk.ru/economics/2026/03/04/sber-predstavil-gigachat-enterprise-gigachat-biznes-korporativnuyu-platformu-dlya-sozdaniya-iiagentov.html)
 - [MWS GPT Model Hub](https://cloud.mts.ru/cloud-platform/model-hub/)
 - [Yandex AI Studio — агент с File Search](https://aistudio.yandex.ru/docs/ru/ai-studio/operations/agents/create-filesearch-text-agent)
@@ -227,7 +198,7 @@ hide: tags
 - [HOSTKEY — выделенные серверы с GPU](https://hostkey.ru/gpu-dedicated-servers/)
 - [Hugging Face — MiniMaxAI/MiniMax-M2](https://huggingface.co/MiniMaxAI/MiniMax-M2)
 
-## GPU, каталоги моделей и нишевые облачные провайдеры {: #app_a_cloud_infrastructure_russia_gpu__specialized_providers }
+### Cloud Infrastructure (Russia): GPU & Specialized Providers {: #app_a_cloud_infrastructure_russia_gpu__specialized_providers }
 
 - [Hugging Face — организация Qwen](https://huggingface.co/Qwen)
 - [Hugging Face — deepseek-ai/DeepSeek-R1-Distill-Llama-70B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B)
@@ -252,7 +223,7 @@ hide: tags
 - [Hugging Face — организация nvidia](https://huggingface.co/nvidia)
 - [Hugging Face — openai/gpt-oss-safeguard-20b](https://huggingface.co/openai/gpt-oss-safeguard-20b)
 
-## Глобальные модели, цены API и оптимизация инференса {: #app_a_global_models_api_inference_optimization }
+### Global Model Benchmarks & Ecosystems - Part 1 {: #app_a_global_model_benchmarks__ecosystems__part_1 }
 
 - [Hugging Face — openai/gpt-oss-safeguard-120b](https://huggingface.co/openai/gpt-oss-safeguard-120b)
 - [Hugging Face — Qwen/Qwen3-235B-A22B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507)
@@ -276,6 +247,9 @@ hide: tags
 - [microsoft/markitdown](https://github.com/microsoft/markitdown)
 - [run-llama/llama_index](https://github.com/run-llama/llama_index)
 - [OpenAI — Pricing](https://platform.openai.com/docs/pricing)
+
+### Global Model Benchmarks & Ecosystems - Part 2 {: #app_a_global_model_benchmarks__ecosystems__part_2 }
+
 - [OpenAI — Reasoning Models](https://developers.openai.com/api/docs/guides/reasoning)
 - [Anthropic — Pricing](https://docs.anthropic.com/en/about-claude/pricing)
 - [Google AI — Gemini API Pricing](https://ai.google.dev/gemini-api/docs/pricing)
@@ -299,7 +273,7 @@ hide: tags
 - [Hugging Face — State over Tokens](https://huggingface.co/papers/2512.12777)
 - [Hugging Face — allenai/wildjailbreak](https://huggingface.co/datasets/allenai/wildjailbreak)
 
-## Открытые модели, серверы инференса и маршрутизация API {: #app_a_open_source__community_models }
+### Open Source & Community Models {: #app_a_open_source__community_models }
 
 - [Hugging Face — lmsys/toxic-chat](https://huggingface.co/datasets/lmsys/toxic-chat)
 - [Phemex News — Z.ai: планы открыть GLM-5.1](https://phemex.com/news/article/zai-to-open-source-glm51-details-pending-67971)
@@ -315,7 +289,6 @@ hide: tags
 - [OpenRouter — агрегатор API](https://openrouter.ai/)
 - [OpenRouter — журналирование и политики провайдеров](https://openrouter.ai/docs/guides/privacy/logging)
 - [vLLM — документация](https://docs.vllm.ai/)
-- [vLLM — репозиторий проекта (GitHub)](https://github.com/vllm-project/vllm)
 - [GitHub — redmadrobot-rnd/mcp-registry (MCP Tool Registry)](https://github.com/redmadrobot-rnd/mcp-registry)
 - [Хабр — red_mad_robot: MCP Tool Registry (реестр MCP для RAG/агентов, открытый код)](https://habr.com/ru/companies/redmadrobot/articles/982004/)
 - [Redmadnews — MCP Tool Registry / RAG](https://t.me/Redmadnews/5132)
@@ -325,7 +298,7 @@ hide: tags
 - [langchain-ai/langchain — text-splitters](https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters)
 - [сервер инференса MOSEC — README проекта (пример публичного зеркала)](https://github.com/arterm-sedov/cmw-mosec)
 
-## Инструменты разработки, телеметрия качества и публичные кейсы внедрений {: #app_a_development_tools__ai_agent_frameworks }
+### Development Tools & AI Agent Frameworks {: #app_a_development_tools__ai_agent_frameworks }
 
 - [LangSmith — Online evaluations (how-to)](https://docs.smith.langchain.com/observability/how_to_guides/online_evaluations)
 - [OpenInference — инструментирование ИИ для OpenTelemetry](https://arize-ai.github.io/openinference/)
@@ -349,18 +322,8 @@ hide: tags
 - [Just AI — корпоративный GenAI (упоминается как практикующий вендор)](https://just-ai.com/ru/)
 - [Ведомости — CTO AI red_mad_robot (Влад Шевченко)](https://www.vedomosti.ru/technologies/trendsrub/articles/2026/03/11/1181757-ii-uskoril-kod)
 - [@Redmadnews (red_mad_robot) — канал публикаций лаборатории и исследований](https://t.me/Redmadnews)
-- [aider — интеграция с Git](https://aider.chat/docs/git.html)
-- [Anthropic — субагенты в Claude Code SDK](https://docs.anthropic.com/en/docs/claude-code/sdk/subagents)
-- [Cline — Auto Approve и YOLO Mode](https://docs.cline.bot/features/yolo-mode)
-- [Continue — настройка режима агента](https://docs.continue.dev/ide-extensions/agent/how-to-customize)
-- [OpenHands — обзор SDK](https://docs.openhands.dev/sdk/arch/overview)
-- [Roo Code — режимы использования](https://docs.roocode.com/basic-usage/using-modes/)
-- [OpenCode (open-code.ai) — агенты](https://open-code.ai/docs/en/agents)
-- [OpenCode (open-code.ai) — SDK](https://open-code.ai/en/docs/sdk)
-- [OpenWork — AGENTS.md (сырой текст репозитория)](https://raw.githubusercontent.com/different-ai/openwork/71957be9/AGENTS.md)
-- [OpenWork — ARCHITECTURE.md (сырой текст репозитория)](https://raw.githubusercontent.com/different-ai/openwork/71957be9/ARCHITECTURE.md)
 
-## НИОКР, индексы зрелости ИИ и практики учёта токенов {: #app_a_observability_telemetry__evaluation }
+### Observability, Telemetry & Evaluation {: #app_a_observability_telemetry__evaluation }
 
 - [@rmr_rnd — R&D red_mad_robot](https://t.me/rmr_rnd)
 - [GitHub — ozontech/file.d](https://github.com/ozontech/file.d)
@@ -385,7 +348,7 @@ hide: tags
 - [Портал поддержки Comindware](https://support.comindware.com/)
 - [Спецификация TOON](https://toonformat.dev/)
 
-## Отраслевые кейсы, экономика токенов и регуляторные сроки {: #app_a_ecommerce__industry_case_studies }
+### E-commerce & Industry Case Studies {: #app_a_ecommerce__industry_case_studies }
 
 - [Tensorlake: бенчмарки](https://www.tensorlake.ai/blog/toon-vs-json)
 - [Systenics: экономия токенов](https://systenics.ai/blog/2026-01-24-toon-vs-json-how-token-oriented-object-notation-reduces-llm-token-costs)
@@ -397,7 +360,6 @@ hide: tags
 - [Хабр — классификация текстов диалогов на большом числе классов](https://habr.com/ru/companies/alfa/articles/900538/)
 - [Хабр — обновление LLM: instruction following и tool calling](https://habr.com/ru/companies/tbank/articles/979650/)
 - [Ведомости — ИИ-рывок 2026: что изменится для российских компаний](https://www.vedomosti.ru/technologies/trendsrub/articles/2026/03/04/1180756-ii-rivok-2026-chto)
-- [Ведомости — ИИ-рывок 2026: что изменится для российских компаний (альтернативная публикация)](https://www.vedomosti.ru/technology/articles/2026/03/04/1021857-ii-rivok-2026-izmenitsya-dlya-rossiiskih-kompanii)
 - [EU AI Act Service Desk — Implementation Timeline](https://ai-act-service-desk.ec.europa.eu/en/ai-act/eu-ai-act-implementation-timeline)
 - [AGORA — Industrial AI](https://t.me/AGORA)
 - [Redmadnews — СП с «ВымпелКом», фабрика ИИ-агентов](https://t.me/Redmadnews/5145)
@@ -411,7 +373,7 @@ hide: tags
 - [Telegram-канал @neuraldeep](https://t.me/neuraldeep)
 - [NeuralDeep — экономика LLM-решений](https://t.me/neuraldeep/1366)
 
-## RAG, архитектуры и инженерные паттерны (обзорные материалы) {: #app_a_academic_research__advanced_ai_architectures }
+### Academic Research & Advanced AI Architectures {: #app_a_academic_research__advanced_ai_architectures }
 
 - [NeuralDeep — рекомендации по кластерам](https://t.me/neuraldeep/1627)
 - [«ITипичные аспекты Артёма» (Артём Лысенко)](https://t.me/virrius_tech_chat)
@@ -435,15 +397,9 @@ hide: tags
 - [HippoRAG 2](https://t.me/ai_archnadzor/180)
 - [Topo-RAG](https://t.me/ai_archnadzor/182)
 - [Disco-RAG](https://t.me/ai_archnadzor/183)
-- [Medium — Agentic GraphOS: 16-слойная архитектура графов знаний для продакшена](https://medium.com/@aiwithakashgoyal/building-agentic-graphos-the-16-layer-architecture-behind-production-ready-knowledge-graphs-9ca632bc74c5)
-- [GitHub — yichuan-w/LEANN](https://github.com/yichuan-w/leann)
-- [NeuralDeep — репозиторий (GitHub, vakovalskii/neuraldeep)](https://github.com/vakovalskii/neuraldeep)
-- [Semantic Scholar — LEANN: индекс векторов с низким объёмом хранения](https://www.semanticscholar.org/paper/LEANN%3A-A-Low-Storage-Vector-Index-Wang-Liu/a7f376d23f5e12132e5ebddd9558a6d99f48a49f)
 
-## Фреймворки внедрения, оценка качества и нормативный контур {: #app_a_enterprise_ai_strategy__efficiency }
+### Enterprise AI Strategy & Efficiency {: #app_a_enterprise_ai_strategy__efficiency }
 
-- [bpmn.io — нотация BPMN и инструменты моделирования](https://bpmn.io/)
-- [GitHub — yksi12/prompts: generate-bpmn-prompt.md](https://github.com/yksi12/prompts/blob/main/generate-bpmn-prompt.md)
 - [DSPy 3 и GEPA](https://t.me/ai_archnadzor/184)
 - [OCR: NEMOTRON-PARSE, Chandra, DOTS.OCR](https://t.me/ai_archnadzor/185)
 - [BitNet](https://t.me/ai_archnadzor/189)
@@ -467,10 +423,11 @@ hide: tags
 - [BCG — Closing the AI Impact Gap (2025)](https://www.bcg.com/publications/2025/closing-the-ai-impact-gap)
 - [Stanford HAI — AI Index Report 2025](https://hai.stanford.edu/ai-index/2025-ai-index-report)
 
-## Сообщество, рынок труда и вспомогательные вендоры {: #app_a_telegram_community__market_signals }
+### Telegram, Community & Market Signals {: #app_a_telegram_community__market_signals }
 
 - [Банк России — официальные курсы валют](https://www.cbr.ru/currency_base/daily/)
 - [RB.RU — вакансии с ИИ-навыками: +170% YoY в I кв. 2026 (~2,7× к I кв. 2025; hh.ru × PR DEV, март 2026)](https://rb.ru/news/kolichestvo-vakansij-s-trebovaniem-k-vladeniyu-ii-vyroslo-vtroe-chashe-vsego-u-menedzherov-po-rabote-s-klientami/)
+- [GitHub — yksi12/prompts: generate-bpmn-prompt.md](https://github.com/yksi12/prompts/blob/main/generate-bpmn-prompt.md)
 - [Clawctl — 42 665 exposed OpenClaw instances (оценка уязвимых экземпляров)](https://www.clawctl.com/blog/42665-exposed-openclaw-instances)
 - [GitHub — Libr-AI/do-not-answer](https://github.com/Libr-AI/do-not-answer)
 - [GitHub — elder-plinius/L1B3RT4S](https://github.com/elder-plinius/L1B3RT4S)
@@ -490,3 +447,4 @@ hide: tags
 - [Koda](https://koda.ai/)
 - [Tabnine](https://tabnine.com/)
 - [Sourcegraph Cody](https://sourcegraph.com/cody)
+

@@ -1,31 +1,27 @@
 ---
-title: 'Приложение F. Дополнительное чтение и расширенные ориентиры'
-date: 2026-03-28
-status: 'Черновой комплект материалов для руководства (v1, март 2026)'
+title: 'Дополнительное чтение'
+date: '2026-03-28'
+status: 'Комплект материалов для руководства (v2, апрель 2026)'
 tags:
-  - AI
-  - комплаенс
-  - методология
-  - ориентиры
-  - рынок
-  - сайзинг
-  - стратегия
-  - экономика
+    - AI
+    - комплаенс
+    - методология
+    - ориентиры
+    - рынок
+    - сайзинг
+    - стратегия
+    - экономика
+hide: tags
 ---
 
-# Приложение F. Дополнительное чтение и расширенные ориентиры {: #app_f_root }
+# Дополнительное чтение {: #app_f_root }
 
 ## Обзор {: #app_f_overview }
 
-Настоящее приложение содержит **расширенный круг чтения** для руководства и команды подготовки офферов: международные рамки, дополнительные управленческие методологии, инженерные обзоры, внешние кейсы и материалы для обновления рыночной повестки.
+Приложение формирует **расширенный круг чтения** для руководства и команды подготовки офферов: международные рамки, управленческие методологии, инженерные обзоры, внешние кейсы и материалы для актуализации рыночной повестки.
 
-Эти источники полезны для **внешнего бенчмаркинга**, углубления отдельных тем и периодического обновления аргументации, но **не заменяют** канонический реестр источников в _«[Приложении A. Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_sources_registry)»_.
+Используйте приложение для изучения **внешних бенчмарков** и обновления аргументации.
 
-## Как пользоваться приложением {: #app_f_reading_guide }
-
-- Если нужен **канонический** источник для ссылки внутри комплекта, сначала используйте _«[Приложение A. Обзор и ведомость документов](./20260325-research-appendix-a-index-ru.md#app_a_sources_registry)»_.
-- Если нужен **внешний бенчмарк**, дополнительный кейс, сравнительный международный ориентир или материал для обновления повестки, используйте это приложение.
-- Для прикладного перехода к основным выводам комплекта возвращайтесь к _«[Отчёту. Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)»_ и _«[Отчёту. Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)»_.
 
 ## Международные рамки и регулирование {: #app_f_international_frameworks_regulation }
 
@@ -73,22 +69,22 @@ tags:
 - [CloudZero: FinOps for AI - Why AI Alters Cloud Cost Management (2026)](https://www.cloudzero.com/blog/finops-for-ai/)
 - [CloudZero: Cloud Unit Economics In 2026 Guide](https://www.cloudzero.com/guide/cloud-unit-economics-2026/)
 - [OpenAI: Real-time Cost and Token Monitoring (2025)](https://developers.openai.com/api/docs/guides/realtime-costs)
-- [Mavik Labs: LLM Cost Optimization (Routing/Caching/Batching 2026)](https://www.maviklabs.com/blog/llm-cost-optimization-2026)
+- [Mavik Labs: оптимизация стоимости LLM (маршрутизация, кэш, пакетная обработка, 2026)](https://www.maviklabs.com/blog/llm-cost-optimization-2026)
 - [Enrico Piovano: LLM Cost Engineering & Token Budgeting (2026)](https://enricopiovano.com/blog/llm-cost-optimization-caching-strategies)
 - [AI Agent Cost Optimization: Token Economics in Production (Zylos 2026)](https://zylos.ai/research/2026-02-19-ai-agent-cost-optimization-token-economics)
 - [OptyxStack Case Study: Reducing Inference Cost by 60% (2026)](https://optyxstack.com/case-studies/llm-inference-cost-reduction)
 
 ## Российский правовой и исследовательский контур {: #app_f_russian_legal_research_context }
 
-- [Dentons: Регулирование ИИ в России - обзор 2025-2026](https://www.dentons.com/ru/insights/alerts/)
-- [ALRUD: ИИ и персональные данные - новые вызовы 2026](https://alrud.ru/news/legal-alerts/)
-- [BGP Litigation: Законопроект об ИИ - что нужно знать бизнесу (2026)](https://bgplaw.com/news/)
-- [Melling Voitishkin: Legal Alert - Маркировка ИИ контента в РФ](https://melling.com/ru/insights/)
+- [Dentons: Регулирование ИИ в России — обзор 2025–2026](https://www.dentons.com/ru/insights/alerts/)
+- [ALRUD: ИИ и персональные данные — новые вызовы 2026](https://alrud.ru/news/legal-alerts/)
+- [BGP Litigation: Законопроект об ИИ — что нужно знать бизнесу (2026)](https://bgplaw.com/news/)
+- [Melling Voitishkin: Legal Alert — Маркировка ИИ контента в РФ](https://melling.com/ru/insights/)
 - [НИУ ВШЭ: Исследование точности RAG-систем на русском языке (2025)](https://www.hse.ru/edu/vkr/1053304649)
 - [ИТМО: Мультиагентная система ProAGI для разработки ПО (2026)](https://iai.itmo.ru/news/v-itmo-sozdali-multiagentnuyu-ii-sistemu-proagi,-kotoraya-uskoryaet-sozdanie-promyishlennного-po-ot-2-do-10-raz)
 - [Сколково: Потенциал GenAI для инженерных задач (Июль 2025)](https://sk.ru/news/skolkovo-i-ano-ce-predstavili-obzor-potencial-primeneniya-generativnogo-ii-dlya-resheniya-inzhenernyh-zadach/)
 - [Yandex Research: Оптимизация инференса LLM для русского языка (2025)](https://yandex.ru/company/research/)
-- [TAdviser: Рынок ИИ в России - цифры и тренды 2025-2026](https://www.tadviser.ru/index.php/Статья:Искусственный_интеллект_(рынок_России))
+- [TAdviser: Рынок ИИ в России — цифры и тренды 2025–2026](https://www.tadviser.ru/index.php/Статья:Искусственный_интеллект_(рынок_России))
 
 ## Модели передачи и внешние кейсы внедрения {: #app_f_transfer_models_cases }
 

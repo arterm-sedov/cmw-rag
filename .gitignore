@@ -47,3 +47,7 @@ rag_engine/data/synthetic_cmw_support_tickets_v1_with_pii.json
 .playwright-cli/
 channel_snapshot.yml
 .worktrees/
+
+# MkDocs build output
+_site/
+.site/
