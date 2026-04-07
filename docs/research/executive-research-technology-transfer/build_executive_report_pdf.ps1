@@ -24,8 +24,8 @@ $venvPath = Join-Path $cbapRoot ".venv\Scripts\python.exe"
 $dateStr = Get-Date -Format "yyyy-MM-dd"
 $env:MKDOCS_PDF_OUTPUT_FILENAME = "Comindware. Коммерческое обоснование внедрения ИИ. $dateStr.pdf"
 $configPath = Join-Path $scriptDir.FullName "mkdocs_executive_report_pdf.yml"
-$outputPath = Join-Path $scriptDir.FullName ".site\Comindware. Коммерческое обоснование внедрения ИИ.pdf"
+$outputPath = Join-Path $scriptDir.FullName ".site\$env:MKDOCS_PDF_OUTPUT_FILENAME"
 
 Write-Host "Building executive report PDF..." -ForegroundColor Cyan
 & $venvPath -m mkdocs build -f $configPath
-Write-Host "PDF output: $outputPath" -ForegroundColor Green
+Write-Host "PDF output: $env:MKDOCS_PDF_OUTPUT_FILENAME" -ForegroundColor Green
