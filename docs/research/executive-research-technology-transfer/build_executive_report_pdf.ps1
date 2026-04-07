@@ -21,6 +21,8 @@ $env:MKDOCS_OVERRIDES = Join-Path $cbapRoot "overrides"
 $env:MKDOCS_PDF_TEMPLATES = Join-Path $cbapRoot "pdf_templates"
 $env:MKDOCS_SNIPPETS = Join-Path $cbapRoot "docs\ru\.snippets/"
 $venvPath = Join-Path $cbapRoot ".venv\Scripts\python.exe"
+$dateStr = Get-Date -Format "yyyy-MM-dd"
+$env:MKDOCS_PDF_OUTPUT_FILENAME = "Comindware. Коммерческое обоснование внедрения ИИ. $dateStr.pdf"
 $configPath = Join-Path $scriptDir.FullName "mkdocs_executive_report_pdf.yml"
 $outputPath = Join-Path $scriptDir.FullName ".site\Comindware. Коммерческое обоснование внедрения ИИ.pdf"
 

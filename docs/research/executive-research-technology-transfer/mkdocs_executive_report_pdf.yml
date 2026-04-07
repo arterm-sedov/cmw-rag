@@ -55,5 +55,5 @@ plugins:
     toc_level: 3
     copyright: "© Comindware, 2009–2026"
     custom_template_path: !ENV [MKDOCS_PDF_TEMPLATES, ../../../.reference-repos/cbap-mkdocs-ru/pdf_templates]
-    output_path: Comindware. Коммерческое обоснование внедрения ИИ. 2026-04.pdf
+    output_path: !ENV ['MKDOCS_PDF_OUTPUT_FILENAME', 'Comindware. Коммерческое обоснование внедрения ИИ. 2026-04.pdf']
     enabled_if_env: ''
