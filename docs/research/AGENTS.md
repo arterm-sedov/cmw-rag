@@ -274,15 +274,15 @@ Use MkDocs admonitions (`!!! type "Title"`) instead of bold text for recommendat
 
 - **Traceability modes** (pick what fits the document; sources remain mandatory):
   - **Inline** — prefer when you name a specific publication or report **by title**, cite **law or regulator** text, or introduce **pricing or quantitative norms** as a baseline (per task file: first occurrence of a figure). External web sources may use `_«[Source title](https://...)»_` in body text when the sentence hinges on that source.
-  - **Grouped** — for **multi-item signal digests** (e.g. Appendix E-style market/technical bullets), body text may stay scannable without a link on every line; add **plain** URLs under `## Источники`, optionally under a **thematic subheading** (e.g. «Инфраструктура и модели»), so the cluster remains verifiable. Do not use grouped mode to hide uncited high-impact numbers in **short** C-level summaries (those still need explicit support per **Permission Boundaries**).
+  - **Grouped** — for **multi-item signal digests** (e.g. Appendix E-style market/technical bullets), body text may stay scannable without a link on every line; collect **plain** URLs in the **centralized appendix** (`20260325-research-appendix-a-index-ru.md`), optionally under a **thematic subheading** (e.g. «Инфраструктура и модели»), so the cluster remains verifiable. Do not use grouped mode to hide uncited high-impact numbers in **short** C-level summaries (those still need explicit support per **Permission Boundaries**).
 - **Inline mentions** (body text and ordinary lists; not inside the references section): when you name an internal document or external source by title, use a **quoted italic** Markdown link—guillemets `«»` around an italic link built with underscores `_..._`:
   - **Internal** `.md` in this repo (typically under `docs/research/`): `_«[Document title](relative-path/file-name.md)»_`. Path **relative to the current file** (for example `./20260323-topic-ru.md` or `../other/file.md`).
   - **External** web sources: `_«[Source title](https://...)»_` with the real URL as the link target.
 - **Examples (inline, Russian prose):**
   - See _«[Методология внедрения ИИ](./20260323-ai-implementation-methodology-ru.md)»_ for context.
   - See also _«[Research Agents Guidelines](./AGENTS.md)»_.
-- At the end of each final Russian article, add a section with the **exact** heading `## Источники`.
-- Under `## Источники` (or any bullet list that is links only), use **plain** Markdown links—**no** guillemets, **no** italic underscores around the link:
+- **No per-document `## Источники` sections.** Cite sources **inline** where they matter (see **Traceability modes** above), and collect them in the **centralized appendix** (`20260325-research-appendix-a-index-ru.md`). This avoids duplication and keeps executive documents lean.
+- Under the centralized appendix sources list (or any bullet list that is links only), use **plain** Markdown links—**no** guillemets, **no** italic underscores around the link:
   - `- [Source title](https://...)`
   - Do not format reference-list entries as `_«[...](...)»_`.
 
@@ -294,7 +294,7 @@ Use for multi-file research sets under `docs/research/` when you want stable dee
 
 **YAML front matter** — When the pack uses it, at the very top: `title` (same as H1 without the `{: #… }` suffix), `date` (ISO), `status`, `tags` (about 5–12; English alphabetically, then Russian alphabetically), `` if tags are for filtering/search only. Optional: `description` (one line). If `date` / `status` are in YAML, drop redundant **Дата пакета** / **Статус** lines under H1.
 
-**Cross-links** — `./sibling.md#anchor` from the current file’s directory. Body mentions of titled internals: **Citations and references**. Under `## Источники`: plain `[title](url)` only. No path for a document that is not a real file—title in guillemets only. Long tables/lists: link the **section heading** (or a subheading with its own `#anchor`), not “the list below”—see **Executive communication discipline** (positional navigation).
+**Cross-links** — `./sibling.md#anchor` from the current file’s directory. Body mentions of titled internals: **Citations and references**. In the centralized appendix (`20260325-research-appendix-a-index-ru.md`): plain `[title](url)` only. No path for a document that is not a real file—title in guillemets only. Long tables/lists: link the **section heading** (or a subheading with its own `#anchor`), not “the list below”—see **Executive communication discipline** (positional navigation).
 
 **Cross-references vs C-level summaries:** All documents in the pack **should** include cross-references (`.md#anchor` links) to sibling documents for navigation and coherence. C-level executive summaries may link to other documents within the same pack using human-readable names with hyperlinks (e.g., `_«[Методология внедрения](./20260325-research-report-methodology-main-ru.md)»_`). However, C-level summaries must **not** contain paths to **external repositories** or internal code paths (e.g., `../cmw-mosec/README.md`, `rag_engine/`)—these are authoring inputs only.
 
@@ -336,11 +336,9 @@ Use this compact structure for consistency. **Headings below are Russian** becau
 ## Риски и ограничения
 
 - ...
-
-## Источники
-
-- [Source title](https://...)
 ```
+
+Note: sources are cited inline in the body text and collected in the centralized appendix (`20260325-research-appendix-a-index-ru.md`). No per-document `## Источники` section is needed.
 
 ## Research workflow
 
@@ -361,8 +359,8 @@ These principles apply regardless of specific topic, industry, or organization:
 
 **Traceability and Verifiability**
 
-- Significant external claims must be **traceable**: **inline citations and/or** plain links under `## Источники` with enough grouping or labels that a reader can map section/table → URLs. Inline is preferred for law, regulator, first-use pricing, and named publications.
-- Maintain a complete references section with all sources used (including those supporting grouped digest blocks).
+- Significant external claims must be **traceable**: **inline citations** and/or entries in the centralized appendix (`20260325-research-appendix-a-index-ru.md`) with enough grouping or labels that a reader can map section/table → URLs. Inline is preferred for law, regulator, first-use pricing, and named publications.
+- Maintain a complete references section in the centralized appendix with all sources used (including those supporting grouped digest blocks).
 - Document validation processes for time-sensitive data (versions, pricing, etc.)
 
 **Progressive Refinement with Checkpoints**
@@ -434,8 +432,8 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Russian numeric and currency standards are applied consistently (for Russian files).
 - Terminology rules are applied (Russian-first, translated first use for English terms).
 - Markdown formatting rules are followed (headings, lists, links placement).
-- All significant claims are traceable (inline **and/or** plain links under `## Источники` per **Traceability modes**); inline document/source titles follow **Citations and references** (quoted italic links in body text) when cited by name.
-- Final `## Источники` section is present with all used references as plain bullet links (no guillemets or italic wrapper on list entries).
+- All significant claims are traceable via **inline citations** (per **Traceability modes**); sources are also collected in the **centralized appendix** (`20260325-research-appendix-a-index-ru.md`). Inline document/source titles follow **Citations and references** (quoted italic links in body text) when cited by name.
+- No per-document `## Источники` sections — sources stay inline and in the centralized appendix only.
 - No critical statement remains without a source.
 - Related research in `docs/research/` has been cross-validated per **Cross-validation of related research** when semantic overlap, business line, or the active task scope applies.
 - If the output is a **consolidated pack** (several linked articles under `docs/research/`), satisfy **Consolidated packs (optional)** in full; ordinary single articles ignore that subsection.
@@ -446,7 +444,7 @@ Before finalizing or materially revising an article in `docs/research/`, **cross
 - Keep the repository lean (raw data stays outside).
 - Process once, document once.
 - Maintain **Russian market** focus and sovereign-default framing per the task file.
-- Keep full source traceability via inline citations **where appropriate** and a complete `## Источники` list (grouped thematic subsections allowed for digest-style appendices).
+- Keep full source traceability via inline citations **where appropriate** and the centralized appendix (`20260325-research-appendix-a-index-ru.md`).
 - Reuse abstract patterns and avoid unnecessary duplication.
 - Cross-validate sibling research so the corpus stays internally consistent where topics intersect.
 
@@ -560,7 +558,7 @@ When adding case studies to frameworks:
 
 - **Inline, not standalone** — integrate into relevant doc
 - **Ground with numbers** — specific metrics over vague statements
-- **Cite sources** — traceable via inline links **where appropriate** and/or plain links under `## Источники` (see **Traceability modes**)
+- **Cite sources** — traceable via inline links **where appropriate** and/or in the centralized appendix (see **Traceability modes**)
 
 ### Russian Technical Terms
 
