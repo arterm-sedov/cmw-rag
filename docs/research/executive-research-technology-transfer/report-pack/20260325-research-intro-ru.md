@@ -123,6 +123,7 @@ hide: tags
 
 | Вопрос | Документ |
 | --- | --- |
+| Быстрый старт: создание ассистента с доступом к знаниям и интеграцией с Comindware Platform | _[Быстрый старт](./20260409-research-quick-start-rag-agent-ru.md)_ |
 | Коммерческий обзор для руководителей: типовые пакеты, что остаётся у заказчика, матрица аргументов по ЛПР | _[Стратегическое резюме](./20260331-research-executive-unified-ru.md)_ |
 | KPI, числовые пороги go/no-go, политика интерпретации | _[Стратегическое резюме: числовые пороги](./20260331-research-executive-unified-ru.md#exec_unified_guardrails)_; _[Методология: процессы и KPI](./20260325-research-report-methodology-main-ru.md#method_processes_kpis)_ |
 | CapEx/OpEx/TCO — цифры и диапазоны для клиента | _[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)_ |
