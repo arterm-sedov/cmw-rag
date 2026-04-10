@@ -127,7 +127,7 @@ hide: tags
 | Быстрый старт: создание ассистента с доступом к знаниям и интеграцией с Comindware Platform | _[Быстрый старт](./20260409-research-quick-start-rag-agent-ru.md)_ |
 | Коммерческий обзор для руководителей: типовые пакеты, что остаётся у заказчика, матрица аргументов по ЛПР | _[Стратегическое резюме](./20260331-research-executive-unified-ru.md)_ |
 | KPI, числовые пороги go/no-go, политика интерпретации | _[Стратегическое резюме: числовые пороги](./20260331-research-executive-unified-ru.md#exec_unified_guardrails)_; _[Методология: процессы и KPI](./20260325-research-report-methodology-main-ru.md#method_processes_kpis)_ |
-| CapEx/OpEx/TCO — цифры и диапазоны для клиента | _[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)_ |
+| CapEx/OpEx/TCO — цифры и диапазоны для клиента | _[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_overview)_ |
 | Расчёт расхода токенов (портал поддержки) | _[Сайзинг: токены](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)_ |
 | Китайские GPU-альтернативы для AI-инференса (Ascend, Moore Threads, Cambricon, MetaX) | _[Приложение G](./20260410-research-appendix-g-chinese-gpu-alternatives-ru.md#app_g_pack_overview)_ |
 
@@ -141,8 +141,8 @@ hide: tags
 | Стратегия внедрения, организационная зрелость, пилот vs scale, обучение (СКОЛКОВО) | _[Методология: стратегия](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity)_ |
 | Бизнес-процессы для KT (BPMN 2.0, LLM-генерация) | _[Методология: BPMN](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm)_ |
 | SGR в практике Comindware | _[Методология: SGR](./20260325-research-report-methodology-main-ru.md#method_sgr_practice_cmw)_ |
-| GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot, 2025) | _[Сайзинг: рынок](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market)_; _[Методология: GenAI в маркетинге](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams)_ |
-| Российский рынок GenAI: сегменты, прогноз до 2030 | _[Методология: карта рынка](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map)_; _[Сайзинг: статистика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_ai_market_stats_forecasts)_ |
+| GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot, 2025) | _[Сайзинг: зрелость рынка](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market_maturity)_; _[Методология: GenAI в маркетинге](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams)_ |
+| Российский рынок GenAI: сегменты, прогноз до 2030 | _[Методология: карта рынка](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map)_; _[Сайзинг: статистика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_ai_market_imarc)_ |
 
 ### Передача и текущий стек
 
@@ -173,6 +173,6 @@ hide: tags
 | Вопрос | Документ |
 | --- | --- |
 | Сжатый обзор для руководителей | [Стратегическое резюме](./20260331-research-executive-unified-ru.md) |
-| Бюджетный риск и организационная зрелость | _[Сайзинг: риски](./20260325-research-report-sizing-economics-main-ru.md#sizing_budget_risks_mitigation)_ |
+| Бюджетный риск и организационная зрелость | _[Сайзинг: риски](./20260325-research-report-sizing-economics-main-ru.md#sizing_ai_implementation_risks)_ |
 | Shadow GenAI и маршрутизация моделей в маркетинге | _[Приложение B: Shadow GenAI](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)_ |
 | Артефакты PR-веток для агентного контура | _[Приложение B: PR-артефакты](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)_ |

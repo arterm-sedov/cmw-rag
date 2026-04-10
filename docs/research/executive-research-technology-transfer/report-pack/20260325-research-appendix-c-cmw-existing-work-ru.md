@@ -55,7 +55,7 @@ hide: tags
 
 См. также  _«[Сайзинг и экономика (CapEx / OpEx / TCO)](./20260325-research-report-sizing-economics-main-ru.md)»_ и _«[Профиль on-prem-GPU в проектах Comindware](./20260325-research-report-sizing-economics-main-ru.md#sizing_onprem_gpu_profile_cmw)»_.
 
-Для корректного сравнения вариантов интерпретируйте эти данные через _[Топологию ёмкости GPU и типы источников цифр](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_capacity_topology_bench_classes)_.
+Для корректного сравнения вариантов интерпретируйте эти данные через _[Инфраструктуру GPU и ориентиры для сайзинга](./20260325-research-report-sizing-economics-main-ru.md#sizing_gpu_infrastructure)_.
 
 Технические детали развёртывания конкретных модулей — в публичной документации соответствующих программных компонентов экосистемы.
 
