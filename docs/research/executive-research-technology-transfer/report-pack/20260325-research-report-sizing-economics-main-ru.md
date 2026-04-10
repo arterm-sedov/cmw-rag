@@ -114,7 +114,7 @@ hide: tags
 
 **Тренд:** Gemini, Grok, Claude набирают долю у платных подписчиков.
 
-### География AI-использования {: #sizing_ai_usage_geography }
+### География использования AI {: #sizing_ai_usage_geography }
 
 | Страна | Ранг |
 |--------|------|
