@@ -489,3 +489,18 @@ hide: tags
 - [state-spaces/mamba (GitHub)](https://github.com/state-spaces/mamba)
 - [Банк России — официальные курсы валют](https://www.cbr.ru/currency_base/daily/)
 - [Приложение D — управляемые песочницы, сравнение моделей и бенчмарки](./20260325-research-appendix-d-security-observability-ru.md#app_d_managed_sandboxes_benchmarks)
+
+## Китайские GPU-альтернативы для AI-инференса {: #app_a_chinese_gpu_alternatives }
+
+- [AEI — Semiconductor Sanctions on Russia](https://www.aei.org/wp-content/uploads/2024/04/The-Impact-of-Semiconductor-Sanctions-on-Russia.pdf)
+- [DeepSeek R1 on Huawei Ascend](https://thinkcomputers.org/deepseek-r1-leverages-huawei-ascend-910c-ai-chips-for-enhanced-inference-performance/)
+- [Tom's Hardware — DeepSeek CANN Support](https://www.tomshardware.com/tech-industry/deepseek-new-model-supports-huawei-cann)
+- [Tom's Hardware — Huawei Ascend Roadmap](https://www.tomshardware.com/tech-industry/artificial-intelligence/huawei-ascend-npu-roadmap-examined)
+- [TrendForce — Cambricon Production](https://www.trendforce.com/news/2025/12/15/insights-cambricon-remains-chinas-top-ai-chip-startup-rumored-2026-triple-output-faces-smic-limits/)
+- [TrendForce — Iluvatar CoreX Roadmap](https://www.trendforce.com/news/2026/01/12/news-chinas-iluvatar-corex-reportedly-to-unveil-2026-28-gpu-roadmap-targeting-nvidia-h200-b200/)
+- [TrendForce — Moore Threads Huashan](https://www.trendforce.com/news/2025/12/22/news-chinas-moore-threads-unveils-huashan-ai-chip-reportedly-takes-aim-at-nvidias-hopper/)
+- [USCC — China's Facilitation of Sanctions Evasion](https://www.uscc.gov/research/chinas-facilitation-sanctions-and-export-control-evasion)
+- [vLLM-Ascend Documentation](https://docs.vllm.ai/projects/ascend/en/latest/installation.html)
+- [Wikipedia — MetaX](https://en.wikipedia.org/wiki/MetaX)
+- [Huawei Ascend 910C Specifications](https://blog.heim.xyz/huawei-ascend-910c/)
+- [Huawei Central — Ascend 910C Specs](https://www.huaweicentral.com/huawei-ascend-910c-alleged-specs-suggest-it-a-tough-rival-to-nvidia-h100/)

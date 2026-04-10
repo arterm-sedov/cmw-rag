@@ -129,6 +129,7 @@ hide: tags
 | KPI, числовые пороги go/no-go, политика интерпретации | _[Стратегическое резюме: числовые пороги](./20260331-research-executive-unified-ru.md#exec_unified_guardrails)_; _[Методология: процессы и KPI](./20260325-research-report-methodology-main-ru.md#method_processes_kpis)_ |
 | CapEx/OpEx/TCO — цифры и диапазоны для клиента | _[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_pack_overview)_ |
 | Расчёт расхода токенов (портал поддержки) | _[Сайзинг: токены](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)_ |
+| Китайские GPU-альтернативы для AI-инференса (Ascend, Moore Threads, Cambricon, MetaX) | _[Приложение G](./20260410-research-appendix-g-chinese-gpu-alternatives-ru.md#app_g_pack_overview)_ |
 
 ### Методология внедрения
 
