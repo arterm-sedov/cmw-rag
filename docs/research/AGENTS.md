@@ -123,9 +123,9 @@ channel_snapshot.yml
 
 - Use SCQA logic:
   - **Ситуация:** Market context and current state.
-  - **Проблема:** Key challenge or opportunity.
-  - **Вопрос для решения:** Core business question.
-  - **Рекомендуемый ответ:** Concrete recommendation and implications.
+  - **Вызов:** Key challenge or opportunity.
+  - **Задача:** Core business question.
+  - **Решение:** Concrete recommendation and implications.
 - Ensure recommendations are MECE.
 - Focus on "So what?" (business meaning and impact).
 - **SCQA acronym expansion:** define it **once** in the pack glossary (`intro-ru.md`, entry `| SCQA (Situation–Complication–Question–Answer) | ситуация → проблема → вопрос → ответ … |`).
