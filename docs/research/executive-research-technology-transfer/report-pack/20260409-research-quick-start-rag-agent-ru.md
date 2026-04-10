@@ -185,7 +185,9 @@ hide: tags
 
 ### Обзорное сравнение моделей {: #quick_start_cost_comparison }
 
-Ниже — усреднённые ориентиры для сценария «среднее предприятие» при устойчивой нагрузке. Детальные расчёты — в _«[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru_restructured.md#sizing_tco_3_year_comparison)»_.
+Ниже — усреднённые ориентиры для сценария «среднее предприятие» при устойчивой нагрузке.
+
+Детальные расчёты — в _«[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_tco_3_year_comparison)»_.
 
 | Модель | CapEx | OpEx/год | TCO 1 год | TCO 3 года | Когда выгодно |
 | :--- | :--- | :--- | :--- | :--- | :--- |
