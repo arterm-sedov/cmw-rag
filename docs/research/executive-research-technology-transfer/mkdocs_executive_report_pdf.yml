@@ -50,7 +50,7 @@ plugins:
     output_dir: mermaid
   with-pdf:
     cover: true
-    cover_logo:
+    cover_logo: assets/images/comindware_logo.svg
     cover_subtitle: "Методология, экономика и комплаенс внедрения корпоративного GenAI"
     author: comindware.ru
     toc_title: Оглавление
