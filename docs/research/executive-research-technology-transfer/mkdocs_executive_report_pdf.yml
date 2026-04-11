@@ -27,13 +27,13 @@ nav:
   - 'Стратегическое резюме': 20260331-research-executive-unified-ru.md
   - 'Методология разработки и внедрения ИИ': 20260325-research-report-methodology-main-ru.md
   - 'Сайзинг и экономика (CapEx / OpEx / TCO)': 20260325-research-report-sizing-economics-main-ru.md
-  - 'Приложение B. Отчуждение ИС и кода': 20260325-research-appendix-b-ip-code-alienation-ru.md
-  - 'Приложение C. Наработки Comindware': 20260325-research-appendix-c-cmw-existing-work-ru.md
-  - 'Приложение D. Безопасность, комплаенс, наблюдаемость': 20260325-research-appendix-d-security-observability-ru.md
-  - 'Приложение E. Рыночные сигналы': 20260325-research-appendix-e-market-technical-signals-ru.md
-  - 'Приложение F. Дополнительное чтение': 20260325-research-appendix-f-extended-reading-ru.md
-  - 'Приложение G. Китайские GPU-альтернативы': 20260410-research-appendix-g-chinese-gpu-alternatives-ru.md
-  - 'Перечень источников': 20260325-research-appendix-a-index-ru.md
+  - 'Приложение A. Отчуждение ИС и кода': 20260325-research-appendix-b-ip-code-alienation-ru.md
+  - 'Приложение B. Наработки Comindware': 20260325-research-appendix-c-cmw-existing-work-ru.md
+  - 'Приложение C. Безопасность, комплаенс, наблюдаемость': 20260325-research-appendix-d-security-observability-ru.md
+  - 'Приложение D. Рыночные сигналы': 20260325-research-appendix-e-market-technical-signals-ru.md
+  - 'Приложение E. Китайские альтернативные GPU': 20260410-research-appendix-g-chinese-gpu-alternatives-ru.md
+  - 'Приложение F. Дополнительные материалы': 20260325-research-appendix-f-extended-reading-ru.md
+  - 'Приложение G. Перечень источников': 20260325-research-appendix-a-index-ru.md
 
 markdown_extensions:
   toc:

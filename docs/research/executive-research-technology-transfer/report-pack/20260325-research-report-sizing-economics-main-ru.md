@@ -177,7 +177,7 @@ hide: tags
 - **Барьеры (дополнительно к глобальным):** **53%** отмечают необходимость доработки контента; **49%** — шаблонность результатов.
 - **Перспективы:** **85%** респондентов считают GenAI ключевым фактором трансформации на горизонте **трёх лет**.
 
-Полный разбор — в _Приложении E «[Рыночные и технические сигналы](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_russian_market)»_.
+Полный разбор — в _Приложении D «[Рыночные и технические сигналы](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_russian_market)»_.
 
 ### Объём и динамика рынка GenAI и ИИ в России {: #sizing_genai_market_volume_russia }
 
@@ -597,7 +597,7 @@ VRAM ≈ (Параметры × Байт/Вес) / TP + KV-кэш + Перера
 
 **Ориентиры для глубокого аппаратного сайзинга:** опирайтесь на **официальные** и воспроизводимые источники — отраслевые бенчмарки **MLCommons**, документацию и release notes **vLLM**, а не только маркетинговые цифры. Это помогает отделить оценку **железа**, **KV-кэша**, **батча** и **перерасхода памяти фреймворка**.
 
-Юридические и лицензионные нюансы по поставке GPU — см. _[Приложение B: аренда GPU и лицензирование NVIDIA](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_gpu_rental_nvidia_licensing)_.
+Юридические и лицензионные нюансы по поставке GPU — см. _[Приложение A: аренда GPU и лицензирование NVIDIA](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_gpu_rental_nvidia_licensing)_.
 
 #### Сайзинг моделей по VRAM {: #sizing_vram_by_model }
 
@@ -847,7 +847,7 @@ vLLM имеет более высокий перерасход памяти по
 - **Конфиденциальность данных:** данные не покидают периметр — критично для разработки под госконтракты и работы с персональными данными
 - **Экономика:** при умеренной нагрузке CapEx на Mac-кластер окупается за 12–18 месяцев относительно облачных GPU РФ.
 
-Юридические и лицензионные нюансы по поставке GPU — см. _«[Приложение B: аренда GPU и лицензирование NVIDIA](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_gpu_rental_nvidia_licensing)»_.
+Юридические и лицензионные нюансы по поставке GPU — см. _«[Приложение A: аренда GPU и лицензирование NVIDIA](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_gpu_rental_nvidia_licensing)»_.
 
 ### Edge-агенты на минимальном железе {: #sizing_edge_agents_minimal_hardware }
 
@@ -1050,7 +1050,7 @@ vLLM имеет более высокий перерасход памяти по
 
 ### Актуальные тренды AI/ML {: #sizing_ai_ml_trends_channel }
 
-Актуальные тренды AI/ML для стратегического планирования — см. _[Приложение E](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_trends_2026_summary)_.
+Актуальные тренды AI/ML для стратегического планирования — см. _[Приложение D](./20260325-research-appendix-e-market-technical-signals-ru.md#app_e_trends_2026_summary)_.
 
 ## Заключение {: #sizing_conclusion .pageBreakBefore }
 

@@ -1,5 +1,5 @@
 ---
-title: 'Приложение C. Имеющиеся наработки Comindware'
+title: 'Приложение B. Имеющиеся наработки Comindware'
 date: '2026-04-06'
 status: 'v2'
 tags:
@@ -13,13 +13,13 @@ tags:
 hide: tags
 ---
 
-# Приложение C. Имеющиеся наработки Comindware {: #app_c_pack_overview }
+# Приложение B. Имеющиеся наработки Comindware {: #app_c_pack_overview }
 
 ## Обзор {: #app_c_overview }
 
 В приложении представлен **состав референс-стека Comindware**: границы модулей, роли в архитектуре и разграничение между **поставляемыми артефактами** и **методологическими рекомендациями**.
 
-Критерии приёмки при передаче — _Приложение B «[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
+Критерии приёмки при передаче — _Приложение A «[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
 
 Модель внедрения и экономика — _«[Методология разработки и внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_pack_overview)»_ и _«[Сайзинг и экономика (CapEx / OpEx / TCO)](./20260325-research-report-sizing-economics-main-ru.md#sizing)»_.
 
@@ -28,7 +28,7 @@ hide: tags
 **Для обоснования инвестиций:**
 
 - Даёт ответ на вопрос «что у **Comindware** реально есть» и где проходит граница между референс-стеком и методологией.
-- **Comindware** поставляет **передаваемые артефакты** (код, конфигурации, регламент, контур оценки качества, обучение) — см. _Приложение B «[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
+- **Comindware** поставляет **передаваемые артефакты** (код, конфигурации, регламент, контур оценки качества, обучение) — см. _Приложение A «[Отчуждение ИС и кода](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)»_.
 
 **Для переговоров:**
 
@@ -66,8 +66,8 @@ hide: tags
 - **Агентная архитектура:** агенты LangChain для динамического вызова инструментов и структурированного рассуждения.
 - **Гибкость инфраструктуры:** поддержка MOSEC (единая HTTP-точка для вспомогательных моделей) и vLLM (выделенные инстансы LLM и pooling-сценариев).
 - **Российский суверенитет:** приоритет российских облачных провайдеров и локального инференса под требования 152-ФЗ.
-- **Наблюдаемость:** **Arize Phoenix** + **OpenInference** для трассировки, онлайн- и офлайн-оценок GenAI — _Приложение D «[Безопасность, комплаенс, наблюдаемость](./20260325-research-appendix-d-security-observability-ru.md#app_d_russia_llm_observability_phoenix_reference)»_.
-- **Недоверенное исполнение:** для сценариев с кодом проектируйте **изоляцию среды** отдельно; рекомендации — _Приложение D «[Граница доверия](./20260325-research-appendix-d-security-observability-ru.md#app_d_trust_boundary_agent_environment)»_.
+- **Наблюдаемость:** **Arize Phoenix** + **OpenInference** для трассировки, онлайн- и офлайн-оценок GenAI — _Приложение C «[Безопасность, комплаенс, наблюдаемость](./20260325-research-appendix-d-security-observability-ru.md#app_d_russia_llm_observability_phoenix_reference)»_.
+- **Недоверенное исполнение:** для сценариев с кодом проектируйте **изоляцию среды** отдельно; рекомендации — _Приложение C «[Граница доверия](./20260325-research-appendix-d-security-observability-ru.md#app_d_trust_boundary_agent_environment)»_.
 - **Организационная зрелость:** наличие модулей **не заменяет** оргпроцессы, операционную модель и обучение — _«[Стратегия внедрения ИИ](./20260325-research-report-methodology-main-ru.md#method_ai_strategy_org_maturity)»_.
 
 ### Компоненты экосистемы

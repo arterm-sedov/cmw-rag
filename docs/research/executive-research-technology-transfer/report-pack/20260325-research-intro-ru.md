@@ -40,8 +40,8 @@ hide: tags
 
 Договорные формулировки и точные границы — в приложениях:
 
-- _Приложение B «[Отчуждение ИС и кода: KT, IP, лицензии, критерии приёмки передачи](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)_
-- _Приложение C «[Корпоративный ИИ Comindware: состав стека, границы, артефакты](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)»_.
+- _Приложение A «[Отчуждение ИС и кода: KT, IP, лицензии, критерии приёмки передачи](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)_
+- _Приложение B «[Корпоративный ИИ Comindware: состав стека, границы, артефакты](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)»_.
 {% include-markdown "../../../../.reference-repos/cbap-mkdocs-ru/docs/ru/.snippets/pdfPageBreakHard.md" %}
 
 | Термин | Определение |
@@ -129,7 +129,7 @@ hide: tags
 | KPI, числовые пороги go/no-go, политика интерпретации | _[Стратегическое резюме: числовые пороги](./20260331-research-executive-unified-ru.md#exec_unified_guardrails)_; _[Методология: процессы и KPI](./20260325-research-report-methodology-main-ru.md#method_processes_kpis)_ |
 | CapEx/OpEx/TCO — цифры и диапазоны для клиента | _[Сайзинг и экономика](./20260325-research-report-sizing-economics-main-ru.md#sizing_overview)_ |
 | Расчёт расхода токенов (портал поддержки) | _[Сайзинг: токены](./20260325-research-report-sizing-economics-main-ru.md#sizing_token_consumption_estimates)_ |
-| Китайские GPU-альтернативы для AI-инференса (Ascend, Moore Threads, Cambricon, MetaX) | _[Приложение G](./20260410-research-appendix-g-chinese-gpu-alternatives-ru.md#app_g_pack_overview)_ |
+| Китайские альтернативные GPU для  инференса (Ascend, Moore Threads, Cambricon, MetaX) | _[Приложение E](./20260410-research-appendix-g-chinese-gpu-alternatives-ru.md#app_g_pack_overview)_ |
 
 ### Методология внедрения
 
@@ -148,25 +148,25 @@ hide: tags
 
 | Вопрос | Документ |
 | --- | --- |
-| Комплект отчуждения ИС/кода (KT/IP) | _[Приложение B](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)_ |
-| Бизнес-процессы для KT (минимальный комплект) | _[Приложение B: отчуждение](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)_ |
-| Состав стека Comindware («что есть» vs «методология») | _[Приложение C](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)_ |
-| Возможности агентов (RAG, MCP, SGR, индексация) | _[Приложение C: арсенал](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_component_arsenal)_ |
-| Ассистент аналитика (49 инструментов, 6 провайдеров) | _[Приложение C: аналитик](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_analyst_assistant)_ |
-| Фреймворки инференса (MOSEC, vLLM, Infinity) | _[Приложение C: инференс](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_inference_frameworks)_ |
+| Комплект отчуждения ИС/кода (KT/IP) | _[Приложение A](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_pack_overview)_ |
+| Бизнес-процессы для KT (минимальный комплект) | _[Приложение A: отчуждение](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_alienation_package_minimal)_ |
+| Состав стека Comindware («что есть» vs «методология») | _[Приложение B](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_pack_overview)_ |
+| Возможности агентов (RAG, MCP, SGR, индексация) | _[Приложение B: арсенал](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_component_arsenal)_ |
+| Ассистент аналитика (49 инструментов, 6 провайдеров) | _[Приложение B: аналитик](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_analyst_assistant)_ |
+| Фреймворки инференса (MOSEC, vLLM, Infinity) | _[Приложение B: инференс](./20260325-research-appendix-c-cmw-existing-work-ru.md#app_c_inference_frameworks)_ |
 
 ### Безопасность и наблюдаемость
 
 | Вопрос | Документ |
 | --- | --- |
-| Безопасность, комплаенс, наблюдаемость | _[Приложение D](./20260325-research-appendix-d-security-observability-ru.md)_ |
-| Наблюдаемость GenAI в РФ: локализация, self-hosted телеметрия | _[Приложение D: LLM-observability](./20260325-research-appendix-d-security-observability-ru.md#app_d_russia_llm_observability_phoenix_reference)_ |
-| Изоляция и сеть для агентского исполнения (граница доверия, egress) | _[Приложение D: граница доверия](./20260325-research-appendix-d-security-observability-ru.md#app_d_trust_boundary_agent_environment)_ |
-| Паттерны среды для агента, модель риска, минимальный состав платформы | _[Приложение D: модель риска](./20260325-research-appendix-d-security-observability-ru.md#app_d_risk_model_platform_patterns)_ |
-| Сравнение песочниц E2B / Modal / Daytona | _[Приложение D: песочницы](./20260325-research-appendix-d-security-observability-ru.md#app_d_managed_sandboxes_benchmarks)_; _[Методология: бенчмарки](./20260325-research-report-methodology-main-ru.md#method_sandbox_evaluation_benchmarks)_ |
-| Безопасный MVP контура агента за ~30 дней | _[Приложение D: MVP](./20260325-research-appendix-d-security-observability-ru.md#app_d_secure_mvp_execution_environment)_; _[Методология: MVP](./20260325-research-report-methodology-main-ru.md#method_agent_execution_mvp)_ |
-| Поведенческие риски | _[Приложение D: риски](./20260325-research-appendix-d-security-observability-ru.md#app_d_org_behavioral_risk_factors)_ |
-| AI TRiSM: управление доверием и рисками | _[Приложение D: AI TRiSM](./20260325-research-appendix-d-security-observability-ru.md#app_d_ai_trism_trust_management)_ |
+| Безопасность, комплаенс, наблюдаемость | _[Приложение C](./20260325-research-appendix-d-security-observability-ru.md)_ |
+| Наблюдаемость GenAI в РФ: локализация, self-hosted телеметрия | _[Приложение C: наблюдаемость LLM](./20260325-research-appendix-d-security-observability-ru.md#app_d_russia_llm_observability_phoenix_reference)_ |
+| Изоляция и сеть для агентского исполнения (граница доверия, egress) | _[Приложение C: граница доверия](./20260325-research-appendix-d-security-observability-ru.md#app_d_trust_boundary_agent_environment)_ |
+| Паттерны среды для агента, модель риска, минимальный состав платформы | _[Приложение C: модель риска](./20260325-research-appendix-d-security-observability-ru.md#app_d_risk_model_platform_patterns)_ |
+| Сравнение песочниц E2B / Modal / Daytona | _[Приложение C: песочницы](./20260325-research-appendix-d-security-observability-ru.md#app_d_managed_sandboxes_benchmarks)_; _[Методология: бенчмарки](./20260325-research-report-methodology-main-ru.md#method_sandbox_evaluation_benchmarks)_ |
+| Безопасный MVP контура агента за ~30 дней | _[Приложение C: MVP](./20260325-research-appendix-d-security-observability-ru.md#app_d_secure_mvp_execution_environment)_; _[Методология: MVP](./20260325-research-report-methodology-main-ru.md#method_agent_execution_mvp)_ |
+| Поведенческие риски | _[Приложение C: риски](./20260325-research-appendix-d-security-observability-ru.md#app_d_org_behavioral_risk_factors)_ |
+| AI TRiSM: управление доверием и рисками | _[Приложение C: AI TRiSM](./20260325-research-appendix-d-security-observability-ru.md#app_d_ai_trism_trust_management)_ |
 
 ### Справочные документы
 
@@ -174,5 +174,5 @@ hide: tags
 | --- | --- |
 | Сжатый обзор для руководителей | [Стратегическое резюме](./20260331-research-executive-unified-ru.md) |
 | Бюджетный риск и организационная зрелость | _[Сайзинг: риски](./20260325-research-report-sizing-economics-main-ru.md#sizing_ai_implementation_risks)_ |
-| Shadow GenAI и маршрутизация моделей в маркетинге | _[Приложение B: Shadow GenAI](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)_ |
-| Артефакты PR-веток для агентного контура | _[Приложение B: PR-артефакты](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)_ |
+| Shadow GenAI и маршрутизация моделей в маркетинге | _[Приложение A: Shadow GenAI](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_shadow_genai_marketing_model_routing)_ |
+| Артефакты PR-веток для агентного контура | _[Приложение A: PR-артефакты](./20260325-research-appendix-b-ip-code-alienation-ru.md#app_b_reference_agent_pr_artifacts)_ |

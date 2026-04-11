@@ -18,7 +18,7 @@ tags:
 hide: tags
 ---
 
-# Перечень источников {: #app_a_pack_overview }
+# Приложение G. Перечень источников {: #app_a_pack_overview }
 
 Источники, использованные при подготовке отчёта, сгруппированные по темам.
 
@@ -488,9 +488,9 @@ hide: tags
 - [Tom's Hardware — Huawei Atlas 350 / Ascend 950PR](https://www.tomshardware.com/pc-components/gpus/huawei-unveils-new-atlas-350-ai-accelerator-with-1-56-pflops-of-fp4-compute-and-up-to-112gb-of-hbm-claims-2-8x-more-performance-than-nvidias-h20)
 - [state-spaces/mamba (GitHub)](https://github.com/state-spaces/mamba)
 - [Банк России — официальные курсы валют](https://www.cbr.ru/currency_base/daily/)
-- [Приложение D — управляемые песочницы, сравнение моделей и бенчмарки](./20260325-research-appendix-d-security-observability-ru.md#app_d_managed_sandboxes_benchmarks)
+- [Приложение C — управляемые песочницы, сравнение моделей и бенчмарки](./20260325-research-appendix-d-security-observability-ru.md#app_d_managed_sandboxes_benchmarks)
 
-## Китайские GPU-альтернативы для AI-инференса {: #app_a_chinese_gpu_alternatives }
+## Китайские альтернативные GPU для  инференса {: #app_a_chinese_gpu_alternatives }
 
 - [AEI — Semiconductor Sanctions on Russia](https://www.aei.org/wp-content/uploads/2024/04/The-Impact-of-Semiconductor-Sanctions-on-Russia.pdf)
 - [DeepSeek R1 on Huawei Ascend](https://thinkcomputers.org/deepseek-r1-leverages-huawei-ascend-910c-ai-chips-for-enhanced-inference-performance/)
