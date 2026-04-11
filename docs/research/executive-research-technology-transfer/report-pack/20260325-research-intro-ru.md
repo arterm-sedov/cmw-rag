@@ -142,7 +142,7 @@ hide: tags
 | Бизнес-процессы для KT (BPMN 2.0, LLM-генерация) | _[Методология: BPMN](./20260325-research-report-methodology-main-ru.md#method_bpmn_process_formalization_llm)_ |
 | SGR в практике Comindware | _[Методология: SGR](./20260325-research-report-methodology-main-ru.md#method_sgr_practice_cmw)_ |
 | GenAI в маркетинге крупных брендов РФ (опрос CMO, red_mad_robot, 2025) | _[Сайзинг: зрелость рынка](./20260325-research-report-sizing-economics-main-ru.md#sizing_russian_market_maturity)_; _[Методология: GenAI в маркетинге](./20260325-research-report-methodology-main-ru.md#method_genai_marketing_teams)_ |
-| Российский рынок GenAI: сегменты, прогноз до 2030 | _[Методология: карта рынка](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map)_; _[Сайзинг: статистика](./20260325-research-report-sizing-economics-main-ru.md#sizing_russia_ai_market_imarc)_ |
+| Российский рынок GenAI: сегменты, прогноз до 2030 | _[Методология: карта рынка](./20260325-research-report-methodology-main-ru.md#method_russian_genai_market_map)_; _[Сайзинг: статистика](./20260325-research-report-sizing-economics-main-ru.md#sizing_genai_market_volume_russia)_ |
 
 ### Передача и текущий стек
 
