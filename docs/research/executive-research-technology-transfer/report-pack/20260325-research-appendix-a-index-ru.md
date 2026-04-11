@@ -359,7 +359,7 @@ hide: tags
 - [Хабр — Ozon Tech: анонс ML&DS Meetup (MLOps, программа докладов)](https://habr.com/ru/companies/ozontech/articles/768734/)
 - [Хабр — Ozon Tech: пересборка конструктора чат-ботов (Bots Factory, no-code, масштаб)](https://habr.com/ru/companies/ozontech/articles/834812/)
 
-## НИОГР, зрелость ИИ, индексы рынка и практики учёта токенов {: #app_a_observability_telemetry__evaluation }
+## НИОКР, зрелость ИИ, индексы рынка и практики учёта токенов {: #app_a_observability_telemetry__evaluation }
 
 - [@rmr_rnd — R&D red_mad_robot](https://t.me/rmr_rnd)
 - [Accenture Memex(RL): Indexing Memory with Reinforcement Learning](https://arxiv.org/pdf/2603.04257)
