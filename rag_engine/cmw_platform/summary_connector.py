@@ -186,10 +186,11 @@ class DocumentSummaryConnector:
         return ""
 
     def _summarize(self, text: str, user_prompt: str) -> str:
-        """Call LLM to summarize text."""
+        """Call LLM to summarize text - no system prompt, just direct summarization."""
         from rag_engine.llm.llm_manager import LLMManager
 
         llm = LLMManager(provider="openrouter", model="qwen/qwen3.5-27b")
+        model = llm._chat_model()
 
         prompt = f"""{user_prompt}
 
@@ -198,4 +199,5 @@ Document to summarize:
 
 Provide a concise summary following the user's instructions."""
 
-        return llm.generate(prompt, context_docs=[])
+        resp = model.invoke([("user", prompt)])
+        return getattr(resp, "content", "")
