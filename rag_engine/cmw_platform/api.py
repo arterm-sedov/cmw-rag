@@ -70,7 +70,8 @@ def _basic_headers(platform: str | None = None) -> dict[str, str]:
 def _get_request(endpoint: str, platform: str | None = None) -> dict[str, Any]:
     """Make GET request with Basic Auth header."""
     config = _load_server_config(platform)
-    url = f"{config.base_url}{endpoint}"
+    base = config.base_url.rstrip("/")
+    url = f"{base}{endpoint}"
     headers = _basic_headers(platform)
 
     try:

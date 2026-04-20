@@ -67,8 +67,9 @@ class DocumentSummaryConnector:
                 )
 
             record_data = record.get("data", {}).get(record_id, {})
-            document_ref = record_data.get("Commerpredloshenie")
-            user_prompt = record_data.get("prompt", "")
+            # API returns lowercase attribute names
+            document_ref = record_data.get("commerpredloshenie") or record_data.get("Commerpredloshenie")
+            user_prompt = record_data.get("prompt", "") or ""
 
             # Extract document ID from reference
             document_id = None
@@ -161,5 +162,5 @@ Document to summarize:
 
 Provide a concise summary following the user's instructions."""
 
-        result = llm.invoke(prompt)
-        return result.content
+        result = llm.generate(prompt, context_docs=[])
+        return result
