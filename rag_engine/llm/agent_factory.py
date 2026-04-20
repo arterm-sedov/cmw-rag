@@ -205,3 +205,89 @@ def create_rag_agent(
             context_window,
         )
     return agent
+
+
+def create_summary_agent(
+    system_prompt: str,
+    force_tool_choice: bool = False,
+    tools: list | None = None,
+) -> any:
+    """Create a document summarization agent with web search capability.
+
+    Reuses create_rag_agent pattern but with custom prompt and tools.
+    Designed for business document summarization where LLM may need
+    to search for external information (prices, weather, etc.).
+
+    Args:
+        system_prompt: System prompt for the agent
+        force_tool_choice: If True, forces tool execution on first call
+        tools: Optional custom tools list. If None, uses default tools
+               including web_search for external data lookup
+
+    Returns:
+        LangChain agent configured for document summarization
+
+    Example:
+        >>> from rag_engine.llm.agent_factory import create_summary_agent
+        >>> agent = create_summary_agent(system_prompt="Summarize this document.")
+        >>> from langchain_core.messages import HumanMessage
+        >>> result = agent.invoke({"messages": [HumanMessage(content="Document text...")]})
+    """
+    from rag_engine.tools import add, divide, modulus, multiply, power, square_root, subtract
+    from rag_engine.tools.get_datetime import get_current_datetime
+    from rag_engine.tools.web_search import web_search
+
+    default_tools = [
+        web_search,
+        get_current_datetime,
+        add,
+        subtract,
+        multiply,
+        divide,
+        power,
+        square_root,
+        modulus,
+    ]
+
+    all_tools = tools or default_tools
+
+    selected_model = settings.default_model
+
+    temp_llm_manager = LLMManager(
+        provider=settings.default_llm_provider,
+        model=selected_model,
+        temperature=settings.llm_temperature,
+    )
+    base_model = temp_llm_manager._chat_model()
+
+    from rag_engine.llm.model_configs import MODEL_CONFIGS
+
+    cfg = MODEL_CONFIGS.get(selected_model, {})
+    supports_forced_tool_choice = cfg.get("supports_forced_tool_choice", True)
+
+    effective_force = bool(force_tool_choice and supports_forced_tool_choice)
+
+    if effective_force:
+        tool_choice_value: Any | None = {
+            "type": "function",
+            "function": {"name": "web_search"},
+        }
+    elif not supports_forced_tool_choice:
+        tool_choice_value = "auto"
+    else:
+        tool_choice_value = None
+
+    model_with_tools = base_model.bind_tools(all_tools, tool_choice=tool_choice_value)
+
+    agent = create_agent(
+        model=model_with_tools,
+        tools=all_tools,
+        system_prompt=system_prompt,
+    )
+
+    logger.info(
+        "Summary agent created with %d tools, force=%s",
+        len(all_tools),
+        tool_choice_value,
+    )
+    return agent

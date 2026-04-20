@@ -88,7 +88,7 @@ class PlatformConnector:
                 "Successfully fetched record %s with %d fields", request_id, len(record_data)
             )
 
-            md_request = build_request(record_data)
+            md_request = build_request(record_data, platform=self.platform)
             logger.debug("Built markdown request for record %s", request_id)
 
             thread = threading.Thread(

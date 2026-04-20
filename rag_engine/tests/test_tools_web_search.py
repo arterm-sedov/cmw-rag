@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from rag_engine.tools.web_search import (
     WebSearchResult,
     WebSearchTool,
@@ -76,9 +74,43 @@ class TestWebSearchFunctions:
 
     def test_web_search_no_api_key(self, monkeypatch):
         """Test web_search function without API key returns error."""
+
         monkeypatch.delenv("TAVILY_API_KEY", raising=False)
-        result = web_search("test query")
+        result = web_search.invoke("test query")
         data = json.loads(result)
         assert data["type"] == "tool_response"
         assert data["tool_name"] == "web_search"
+        assert "error" in data
+
+
+class TestWebSearchToolDecorator:
+    """Tests for LangChain @tool decorator."""
+
+    def test_web_search_is_langchain_tool(self):
+        """Test that web_search is a LangChain tool."""
+
+        # Check it's a LangChain tool (has name attribute)
+        assert hasattr(web_search, "name")
+        assert web_search.name == "web_search"
+
+    def test_web_search_has_description(self):
+        """Test tool has description."""
+
+        assert hasattr(web_search, "description")
+        assert isinstance(web_search.description, str)
+        assert len(web_search.description) > 0
+
+    def test_web_search_args_schema(self):
+        """Test tool has correct input schema."""
+        from rag_engine.tools.web_search import WebSearchInput
+
+        # Check schema has query field
+        assert "query" in WebSearchInput.model_fields
+
+    def test_web_search_no_api_key_returns_error(self, monkeypatch):
+        """Test tool returns error when no API key."""
+
+        monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+        result = web_search.invoke("test query")
+        data = json.loads(result)
         assert "error" in data

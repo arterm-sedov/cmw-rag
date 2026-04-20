@@ -1,11 +1,18 @@
 """Web search tool using Tavily.
 
 Provides reusable web search functionality for any endpoint or agent.
+Follows LangChain 1.0 tool pattern with @tool decorator.
 """
+
+from __future__ import annotations
 
 import json
 import logging
 import os
+from typing import Any
+
+from langchain.tools import ToolRuntime, tool
+from pydantic import BaseModel, Field
 
 try:
     from langchain_tavily import TavilySearch
@@ -15,6 +22,17 @@ except ImportError:
     TAVILY_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+
+class WebSearchInput(BaseModel):
+    """Input schema for web_search tool."""
+
+    query: str = Field(
+        ...,
+        description="Web search query. Use specific, focused queries "
+        "to find current information (prices, weather, news, etc.).",
+        min_length=1,
+    )
 
 
 class WebSearchResult:
@@ -105,17 +123,23 @@ def get_web_search_tool() -> WebSearchTool:
     return _web_search_tool
 
 
-def web_search(query: str) -> str:
-    """LangChain-compatible web search tool function.
+@tool("web_search", args_schema=WebSearchInput)
+def web_search(
+    query: str,
+    runtime: ToolRuntime[Any, Any] | None = None,
+) -> str:
+    """Web search tool using Tavily API.
 
-    Args:
-        query: Search query string
+    Use this tool when:
+    - User asks for current information not in the document (prices, weather, news)
+    - User requests comparison with competitor data
+    - User asks for statistics or current events
+    - Any question requiring up-to-date external information
 
-    Returns:
-        JSON string with search results or error
+    Returns JSON with search results containing title, url, and content.
     """
-    tool = get_web_search_tool()
-    results = tool.search(query)
+    tool_instance = get_web_search_tool()
+    results = tool_instance.search(query)
 
     if not results:
         return json.dumps(
@@ -126,4 +150,4 @@ def web_search(query: str) -> str:
             }
         )
 
-    return tool.to_json(results)
+    return tool_instance.to_json(results)

@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 
+from rag_engine.llm.agent_factory import create_summary_agent
 from rag_engine.llm.model_configs import MODEL_CONFIGS
 
 
@@ -68,4 +69,73 @@ def test_create_rag_agent_respects_model_tool_choice_capabilities(
 
     assert dummy_model.bound_tools is not None and len(dummy_model.bound_tools) > 0
     assert dummy_model.bound_tool_choice == tool_choice_expected
+
+
+class TestCreateSummaryAgent:
+    """Tests for create_summary_agent function."""
+
+    def test_create_summary_agent_with_default_tools(self, monkeypatch):
+        """Test summary agent includes web_search tool by default."""
+
+        dummy_model = DummyChatModel()
+
+        def _patch_summary_agent(monkeypatch, dummy_model: DummyChatModel) -> None:
+            from rag_engine.llm import agent_factory as af_mod
+
+            class FakeLLMManager:
+                def __init__(self, provider: str, model: str, temperature: float) -> None:
+                    self.provider = provider
+                    self.model = model
+                    self.temperature = temperature
+
+                def _chat_model(self, provider: str | None = None) -> DummyChatModel:  # noqa: ARG002
+                    return dummy_model
+
+            def fake_create_agent(*args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: ANN401
+                return {"args": args, "kwargs": kwargs}
+
+            monkeypatch.setattr(af_mod, "LLMManager", FakeLLMManager)
+            monkeypatch.setattr(af_mod, "create_agent", fake_create_agent)
+
+        _patch_summary_agent(monkeypatch, dummy_model)
+
+        agent = create_summary_agent(system_prompt="Summarize this document.")
+        assert agent
+
+        assert dummy_model.bound_tools is not None
+        tool_names = [t.name for t in dummy_model.bound_tools]
+        assert "web_search" in tool_names
+
+    def test_create_summary_agent_with_custom_tools(self, monkeypatch):
+        """Test summary agent accepts custom tools list."""
+        from rag_engine.tools.get_datetime import get_current_datetime
+        from rag_engine.tools.web_search import web_search
+
+        dummy_model = DummyChatModel()
+
+        def _patch_summary_agent(monkeypatch, dummy_model: DummyChatModel) -> None:
+            from rag_engine.llm import agent_factory as af_mod
+
+            class FakeLLMManager:
+                def __init__(self, provider: str, model: str, temperature: float) -> None:
+                    self.provider = provider
+                    self.model = model
+                    self.temperature = temperature
+
+                def _chat_model(self, provider: str | None = None) -> DummyChatModel:
+                    return dummy_model
+
+            def fake_create_agent(*args: Any, **kwargs: Any) -> dict:
+                return {"args": args, "kwargs": kwargs}
+
+            monkeypatch.setattr(af_mod, "LLMManager", FakeLLMManager)
+            monkeypatch.setattr(af_mod, "create_agent", fake_create_agent)
+
+        _patch_summary_agent(monkeypatch, dummy_model)
+
+        custom_tools = [web_search, get_current_datetime]
+        agent = create_summary_agent(system_prompt="Test", tools=custom_tools)
+        assert agent
+
+        assert dummy_model.bound_tools == custom_tools
 

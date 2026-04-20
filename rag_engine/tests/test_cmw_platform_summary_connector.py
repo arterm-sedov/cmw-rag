@@ -6,8 +6,6 @@ TDD: Write tests BEFORE implementation.
 import inspect
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 
 def test_document_summary_connector_exists():
     """DocumentSummaryConnector class should exist."""
@@ -64,7 +62,7 @@ def test_document_summary_connector_returns_process_result():
 
 def test_document_summary_connector_no_document_returns_error():
     """process should return error if no document attached."""
-    from rag_engine.cmw_platform.summary_connector import DocumentSummaryConnector, ProcessResult
+    from rag_engine.cmw_platform.summary_connector import DocumentSummaryConnector
 
     with patch("rag_engine.cmw_platform.summary_connector.records.read_record") as mock_read:
         mock_read.return_value = {
@@ -92,3 +90,29 @@ def test_process_result_has_required_fields():
     assert result.success is True
     assert result.message == "OK"
     assert result.error is None
+
+
+class TestAgenticSummarization:
+    """Tests for agentic document summarization using LangChain agent."""
+
+    def test_no_hardcoded_keyword_matching(self):
+        """Connector should NOT have hardcoded trigger keywords for web search."""
+        from rag_engine.cmw_platform.summary_connector import DocumentSummaryConnector
+
+        conn = DocumentSummaryConnector()
+
+        assert not hasattr(conn, "_fetch_search_context"), \
+            "Hardcoded _fetch_search_context should be removed"
+        assert not hasattr(conn, "_build_search_queries"), \
+            "Hardcoded _build_search_queries should be removed"
+
+    def test_summarize_removes_hardcoded_methods(self):
+        """After refactor, _fetch_search_context and _build_search_queries should be removed."""
+        from rag_engine.cmw_platform.summary_connector import DocumentSummaryConnector
+
+        conn = DocumentSummaryConnector()
+
+        assert not hasattr(conn, "_fetch_search_context"), \
+            "Hardcoded _fetch_search_context should be removed"
+        assert not hasattr(conn, "_build_search_queries"), \
+            "Hardcoded _build_search_queries should be removed"

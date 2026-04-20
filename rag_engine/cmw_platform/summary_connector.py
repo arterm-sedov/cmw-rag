@@ -1,12 +1,14 @@
 """CMW Platform Document Summary Connector.
 
-Orchestrates document fetch → process → summarize → write back workflow.
+Orchestrates document fetch → extract → summarize → write back workflow.
+Uses create_summary_agent for agentic LLM calls with web_search capability.
 """
 
 import logging
 from dataclasses import dataclass
 
 from rag_engine.cmw_platform import config, records
+from rag_engine.cmw_platform.attribute_types import to_api_alias
 from rag_engine.cmw_platform.document_api import get_document_content
 
 logger = logging.getLogger(__name__)
@@ -24,148 +26,81 @@ class ProcessResult:
     summary: str | None = None
 
 
+def _extract_document_id(ref: dict | str | None) -> str | None:
+    """Extract document ID from a record attribute value."""
+    if isinstance(ref, dict):
+        return ref.get("id")
+    if isinstance(ref, str):
+        return ref
+    return None
+
+
 class DocumentSummaryConnector:
-    """Process document through LLM for summarization.
+    """Process document through LLM agent for summarization.
 
     Workflow:
-        1. Read record → get document_id from "Commerpredloshenie"
-        2. GET /webapi/Document/{documentId}/Content → base64 content
-        3. Save to temp file → process using tools
-        4. LLM: summarize with {prompt}
-        5. Write summary → "summary" attribute
+        1. Read record → get document_id from config-specified attribute
+        2. Fetch document content → extract text
+        3. Summarize with agent (web_search available for external data)
+        4. Write summary back to record
 
     Args:
-        platform: Platform name (e.g., "secondary").
-                 Defaults to "secondary".
+        platform: Platform name (e.g., "secondary"). Defaults to "secondary".
     """
 
     def __init__(self, platform: str = DEFAULT_PLATFORM):
         self.platform = platform or DEFAULT_PLATFORM
 
-    def _get_model(self) -> str:
-        """Get LLM model from global settings."""
-        from rag_engine.config import settings
-
-        return settings.default_model
-
-    def _get_system_prompt(self) -> str:
-        """Get system prompt from platform config."""
-        cfg = config.load_cmw_config(self.platform)
-        return cfg.get("pipeline", {}).get("system_prompt", "")
-
-    def _get_output_config(self) -> dict:
-        """Get output config for summary attribute and formatting."""
-        cfg = config.load_cmw_config(self.platform)
-        return cfg.get("pipeline", {}).get("output", {})
-
-    def _fetch_search_context(self, user_prompt: str, document_text: str) -> str:
-        """Fetch web search results if prompt asks for external data."""
-        from rag_engine.tools.web_search import get_web_search_tool
-
-        trigger_keywords = {"конкурент", "сравни", "цена", "weather", "погода", "москва"}
-        if not any(kw in user_prompt.lower() for kw in trigger_keywords):
-            return ""
-
-        queries = self._build_search_queries(user_prompt, document_text)
-        if not queries:
-            return ""
-
-        tool = get_web_search_tool()
-        results = tool.search_multiple(queries)
-
-        if not results:
-            return ""
-
-        context_parts = [f"[{r.title}]: {r.content}" for r in results]
-        return "\n".join(context_parts) + "\n\n"
-
-    def _build_search_queries(self, prompt: str, text: str) -> list[str]:
-        """Build search queries from prompt and document."""
-        queries = []
-        competitor_keywords = {"конкурент", "сравни", "цена", "competitor", "compare", "price"}
-        weather_keywords = {"погода", "weather", "москва", "moscow"}
-
-        if any(kw in prompt.lower() for kw in competitor_keywords):
-            lines = text.split("\n")[:20]
-            product_hint = " ".join(lines[:3])[:100]
-            queries.append(f"competitor price {product_hint}")
-
-        if any(kw in prompt.lower() for kw in weather_keywords):
-            queries.append("Moscow Russia current temperature weather")
-
-        return queries
-
     def process(self, record_id: str) -> ProcessResult:
         """Process document: fetch → extract → summarize → write back."""
         try:
-            # 1. Read record to get document_id and prompt
-            output_config = self._get_output_config()
-            input_config = config.load_cmw_config(self.platform).get("pipeline", {}).get("input", {})
-            document_attr = input_config.get("attributes", {}).get("document_file", "Commerpredloshenie")
-            prompt_attr = input_config.get("attributes", {}).get("user_prompt", "promt")
+            pipeline = config.load_pipeline_config(self.platform)
+            input_cfg = pipeline.get("input", {})
+            output_cfg = pipeline.get("output", {})
+            attr_map = input_cfg.get("attributes", {})
+
+            document_attr = attr_map.get("document_file", "")
+            prompt_attr = attr_map.get("user_prompt", "")
+
+            if not document_attr:
+                return ProcessResult(success=False, error="No document attribute configured")
 
             record = records.read_record(
-                record_id,
-                fields=[document_attr, prompt_attr],
-                platform=self.platform,
+                record_id, fields=[document_attr, prompt_attr], platform=self.platform,
             )
 
             if not record.get("success"):
                 return ProcessResult(
-                    success=False,
-                    error=f"Failed to read record: {record.get('error')}",
+                    success=False, error=f"Failed to read record: {record.get('error')}",
                 )
 
             record_data = record.get("data", {}).get(record_id, {})
 
-            # Get document ref (case-insensitive)
-            document_ref = None
-            for key in record_data:
-                if key.lower() == document_attr.lower():
-                    document_ref = record_data[key]
-                    break
-
-            user_prompt = record_data.get(prompt_attr.lower()) or record_data.get(prompt_attr) or ""
-
-            # Extract document ID from reference
-            document_id = None
-            if isinstance(document_ref, dict):
-                document_id = document_ref.get("id")
-            elif isinstance(document_ref, str):
-                document_id = document_ref
+            document_id = _extract_document_id(record_data.get(to_api_alias(document_attr)))
+            user_prompt = record_data.get(to_api_alias(prompt_attr), "") or ""
 
             if not document_id:
                 return ProcessResult(success=False, error="No document attached to record")
 
-            # 2. Fetch document content
             doc_result = get_document_content(document_id, platform=self.platform)
             if not doc_result.get("success"):
-                return ProcessResult(success=False, error=f"Failed to fetch document: {doc_result.get('error')}")
+                return ProcessResult(
+                    success=False, error=f"Failed to fetch document: {doc_result.get('error')}",
+                )
 
-            # 3. Save to temp file and process using tools
-            document_text = self._process_with_tools(doc_result)
-
+            document_text = self._extract_text(doc_result)
             if not document_text:
                 return ProcessResult(success=False, error="Failed to extract text from document")
 
-            # 4. Summarize with LLM
-            summary = self._summarize(document_text, user_prompt)
+            summary = self._summarize(document_text, user_prompt, pipeline)
 
-            # 5. Write summary back to record (as HTML if configured)
-            output_config = self._get_output_config()
-            summary_attribute = output_config.get("summary_attribute", "summary")
-            summary_as_html = output_config.get("summary_as_html", False)
-
-            if summary_as_html:
-                from rag_engine.cmw_platform.mapping import convert_markdown_to_html
-
-                summary_value = convert_markdown_to_html(summary)
-            else:
-                summary_value = summary
+            summary_attribute = output_cfg.get("summary_attribute", "summary")
+            summary_value = (
+                self._to_html(summary) if output_cfg.get("summary_as_html") else summary
+            )
 
             write_result = records.update_record(
-                record_id=record_id,
-                values={summary_attribute: summary_value},
+                record_id=record_id, values={summary_attribute: summary_value},
                 platform=self.platform,
             )
 
@@ -186,40 +121,40 @@ class DocumentSummaryConnector:
             logger.exception("Document summarization failed")
             return ProcessResult(success=False, error=str(e))
 
-    def _process_with_tools(self, doc_result: dict) -> str:
-        """Process document using document_processor."""
+    @staticmethod
+    def _extract_text(doc_result: dict) -> str:
+        """Extract text from document content."""
         from rag_engine.cmw_platform.document_processor import process_document
 
-        content = doc_result.get("content", "")
-        mime_type = doc_result.get("mime_type", "")
-
-        result = process_document(content, mime_type=mime_type)
+        result = process_document(
+            doc_result.get("content", ""), mime_type=doc_result.get("mime_type", ""),
+        )
         if result.get("success"):
             return result.get("text", "")
-        logger.error(f"Document processing failed: {result.get('error')}")
+        logger.error("Document processing failed: %s", result.get("error"))
         return ""
 
-    def _summarize(self, text: str, user_prompt: str) -> str:
-        """Call LLM to summarize text with platform-specific system prompt."""
-        from rag_engine.llm.llm_manager import LLMManager
+    @staticmethod
+    def _to_html(markdown: str) -> str:
+        """Convert markdown summary to HTML."""
+        from rag_engine.cmw_platform.mapping import convert_markdown_to_html
 
-        model_name = self._get_model()
-        system_prompt = self._get_system_prompt()
-        llm = LLMManager(provider="openrouter", model=model_name)
-        model = llm._chat_model()
+        return convert_markdown_to_html(markdown)
 
-        # Add web search context if prompt asks for it
-        search_context = self._fetch_search_context(user_prompt, text)
+    @staticmethod
+    def _summarize(text: str, user_prompt: str, pipeline: dict) -> str:
+        """Summarize document using agentic approach with create_summary_agent."""
+        from langchain_core.messages import HumanMessage
 
-        messages = []
-        if system_prompt:
-            messages.append(("system", system_prompt))
-        messages.append(("user", f"""{user_prompt}
+        from rag_engine.llm.agent_factory import create_summary_agent
 
-{search_context}Document to summarize:
-{text[:50000]}
+        system_prompt = pipeline.get("system_prompt", "")
+        agent = create_summary_agent(system_prompt=system_prompt)
 
-Provide a concise summary following the user's instructions."""))
+        user_content = f"Документ:\n{text[:50000]}\n\nЗапрос пользователя: {user_prompt}"
 
-        resp = model.invoke(messages)
-        return getattr(resp, "content", "")
+        result = agent.invoke({"messages": [HumanMessage(content=user_content)]})
+
+        if isinstance(result, dict) and result.get("messages"):
+            return result["messages"][-1].content
+        return str(result)
