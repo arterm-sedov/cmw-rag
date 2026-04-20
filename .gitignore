@@ -49,3 +49,7 @@ channel_snapshot.yml
 .worktrees/
 data/chromadb_data/**
 ~/
+
+# MkDocs build output
+_site/
+.site/

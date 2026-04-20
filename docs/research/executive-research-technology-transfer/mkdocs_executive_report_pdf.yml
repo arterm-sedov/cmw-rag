@@ -1,0 +1,61 @@
+INHERIT: !ENV [MKDOCS_COMMON, ../../../.reference-repos/cbap-mkdocs-ru/mkdocs_common.yml]
+
+use_directory_urls: false
+
+site_name: "Comindware. Коммерческое обоснование внедрения корпоративного ИИ"
+site_description: "Комплект отчётов по методологии, экономике и комплаенсу внедрения корпоративного GenAI в резидентном контуре РФ"
+docs_dir: report-pack
+site_dir: .site
+site_url: ''
+
+theme:
+  name: material
+  language: ru
+  custom_dir: !ENV [MKDOCS_OVERRIDES, ../../../.reference-repos/cbap-mkdocs-ru/overrides]
+
+extra:
+  productName: "Коммерческое обоснование внедрения корпоративного ИИ"
+  productVersion: "Comindware"
+  publicationDate: "Апрель 2026"
+  pdfOutput: true
+
+copyright: '<a href="https://www.comindware.ru/" target="_blank">© 2009–2026 Comindware<sup>®</sup></a>'
+
+nav:
+  - 'Введение': 20260325-research-intro-ru.md
+  - 'Быстрый старт: создание ИИ-ассистента': 20260409-research-quick-start-rag-agent-ru.md
+  - 'Стратегическое резюме': 20260331-research-executive-unified-ru.md
+  - 'Методология разработки и внедрения ИИ': 20260325-research-report-methodology-main-ru.md
+  - 'Сайзинг и экономика (CapEx / OpEx / TCO)': 20260325-research-report-sizing-economics-main-ru.md
+  - 'Приложение A. Отчуждение ИС и кода': 20260325-research-appendix-b-ip-code-alienation-ru.md
+  - 'Приложение B. Наработки Comindware': 20260325-research-appendix-c-cmw-existing-work-ru.md
+  - 'Приложение C. Безопасность, комплаенс, наблюдаемость': 20260325-research-appendix-d-security-observability-ru.md
+  - 'Приложение D. Рыночные сигналы': 20260325-research-appendix-e-market-technical-signals-ru.md
+  - 'Приложение E. Китайские альтернативные GPU': 20260410-research-appendix-g-chinese-gpu-alternatives-ru.md
+  - 'Приложение F. Дополнительные материалы': 20260325-research-appendix-f-extended-reading-ru.md
+  - 'Приложение G. Перечень источников': 20260325-research-appendix-a-index-ru.md
+
+markdown_extensions:
+  toc:
+    title: На этой странице
+    permalink_title: Скопируйте адрес этой ссылки, чтобы поделиться параграфом
+  pymdownx.snippets: 
+    base_path: !ENV [MKDOCS_SNIPPETS, ../../../.reference-repos/cbap-mkdocs-ru/docs/ru/.snippets/]
+plugins:
+  minify:
+    minify_html: false
+  glightbox:
+    manual: true
+  mermaid-to-svg:
+    output_dir: mermaid
+  with-pdf:
+    cover: true
+    cover_logo: assets/images/comindware_logo.svg
+    cover_subtitle: "Методология, экономика и комплаенс внедрения корпоративного GenAI"
+    author: comindware.ru
+    toc_title: Оглавление
+    toc_level: 3
+    copyright: "© Comindware, 2009–2026"
+    custom_template_path: !ENV [MKDOCS_PDF_TEMPLATES, ../../../.reference-repos/cbap-mkdocs-ru/pdf_templates]
+    output_path: !ENV ['MKDOCS_PDF_OUTPUT_FILENAME', 'Comindware. Коммерческое обоснование внедрения ИИ. 2026-04.pdf']
+    enabled_if_env: ''

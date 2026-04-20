@@ -12,6 +12,7 @@ from rag_engine.tools.math_tools import (
     square_root,
     subtract,
 )
+from rag_engine.tools.read_file import read_file
 from rag_engine.tools.retrieve_context import retrieve_context
 from rag_engine.tools.utils import (
     accumulate_articles_from_tool_results,
@@ -24,6 +25,7 @@ __all__ = [
     "analyse_user_request",
     "generate_resolution_plan",
     "get_current_datetime",
+    "read_file",
     "add",
     "subtract",
     "multiply",

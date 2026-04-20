@@ -1,0 +1,28 @@
+--- a/docs/research/executive-research-technology-transfer/report-pack/20260325-research-intro-ru.md
++++ b/docs/research/executive-research-technology-transfer/report-pack/20260325-research-intro-ru.md
+@@ -1,7 +1,7 @@
+ ---
+-title: 'Введение: обзор комплекта, глоссарий, навигация'
++title: 'Введение: структура обоснования, глоссарий, навигация'
+ date: '2026-04-05'
+-status: 'Комплект материалов для руководства (v2, апрель 2026)'
++status: 'Коммерческое обоснование внедрения корпоративного ИИ (v2, апрель 2026)'
+ tags:
+     - AI
+ 
+@@ -48,9 +48,9 @@
+-| Термин | Определение в контексте комплекта |
++| Термин | Определение в контексте обоснования |
+ | --- | --- |
+-| ADR (Architecture Decision Record) | Зафиксированное архитектурное решение с его основаниями и ограничениями. |
+-| AgentOps | Дисциплина управления, мониторинга и улучшения ИИ-агентов в промышленной эксплуатации. Эволюция: DevOps → MLOps → AgentOps. |
+-| AI TRiSM (AI Trust, Risk and Security Management) | Рамка доверия, рисков и безопасности ИИ. |
++| ADR (Architecture Decision Record) | Документально закрепленный архитектурный выбор с обоснованием компромиссов и ограничений. |
++| AgentOps (Agent Operations) | Методология промышленной эксплуатации ИИ-агентов, обеспечивающая замкнутый цикл мониторинга, оценки и непрерывного совершенствования. |
++| AI TRiSM (AI Trust, Risk and Security Management) | Комплексная модель управления доверием, рисками и безопасностью ИИ-систем. |
+ | Arize Phoenix | Открытый продукт Arize AI для наблюдаемости и экспериментов в контурах LLM/RAG: трассы, дашборды, связка с оценкой качества при self-hosted размещении. В референс-стеке Comindware — слой рядом с OpenTelemetry/OpenInference и инференсом; не заменяет инфраструктурный мониторинг (Prometheus/Grafana/Tempo). Подробно — см. _«[Рынок РФ, наблюдаемость LLM и референс-стек Comindware](./20260325-research-appendix-d-security-observability-ru.md#app_d_russia_llm_observability_phoenix_reference)_ в Приложении D. |
+@@ -84,6 +84,7 @@
+ | SLO (Service Level Objective) | Внутренняя целевая метрика качества сервиса. |
++| SCQA | Логика структурирования управленческих материалов: Situation (ситуация) → Complication (проблема) → Question (вопрос для решения) → Answer (рекомендуемый ответ). |
+ | TCO (Total Cost of Ownership) | Совокупная стоимость владения решением на горизонте нескольких лет. |
+ | TOM (Target Operating Model) | Целевая операционная модель: роли, процессы, метрики и контуры ответственности. |

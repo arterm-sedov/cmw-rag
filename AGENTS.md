@@ -2,19 +2,23 @@
 
 This document provides essential commands, code style guidelines, and development rules for agents working in this repository.
 
-Plan: lean, dry, minimal, abstract, non-breaking, brilliant, genious code. Deduplicated resuable code following best practices in TDD, SDD, Python, 12-factor agents, 12-factor software, Gradio, and LangChain.
+**Plan:** lean, dry, minimal, abstract, non-breaking, brilliant, genious code. Deduplicated resuable code following best practices in TDD, SDD, Python, 12-factor agents, 12-factor software, Gradio, and LangChain.
 
 ## 🛠️ Build, Lint & Test Commands
 
 ### 1. Environment Setup
+
 Always ensure the virtual environment is activated before running commands.
+
 - **Linux (native):** `source .venv/bin/activate`
 - **Windows (WSL):** `source .venv-wsl/bin/activate`
 - **Windows (PowerShell):** `.venv\Scripts\Activate.ps1`
 - **Install Dependencies:** `pip install -r rag_engine/requirements.txt`
 
 ### 2. Testing
+
 Use `pytest` for testing. Configuration is in `pyproject.toml`.
+
 - **Run all tests:**
   ```bash
   pytest
@@ -46,6 +50,7 @@ Following industry best practices from Google Test Primer and IBM Unit Testing G
 **❌ BAD - Testing implementation details:**
 ```python
 # Over-specifying internal calls and wire format
+
 def test_infinity_embeddings_implementation_details(mocker):
     mock_post = mocker.patch("rag_engine.embedding_client.post")
     client = InfinityEmbeddingClient(config=load_embedding_config("infinity_qwen3_8b"))
@@ -61,6 +66,7 @@ def test_infinity_embeddings_implementation_details(mocker):
 **✅ GOOD - Testing behavior:**
 ```python
 # Verifying observable behavior and public contract
+
 def test_infinity_embeddings_returns_vector_of_expected_size(infinity_client):
     vector = infinity_client.embed("hello world")
 
@@ -142,6 +148,7 @@ Before considering work complete:
 5. README updated if applicable
 
 ### 6. Running the Application
+
 - **Start App (Bash):** `bash rag_engine/scripts/start_app.sh`
 - **Start App (Python):** `python rag_engine/api/app.py`
 - **Build Index:** `python rag_engine/scripts/build_index.py --source "path/to/docs" --mode folder`
@@ -151,6 +158,7 @@ Before considering work complete:
 ## 📐 Code Style & Conventions
 
 ### General Philosophy
+
 - **Style:** dry, lean, minimal, abstract, brillian, modular, pythonic, clean, testable, beautiful.
 - **Architecture:** Separation of concerns. Isolate code by function. Group code by function in different files to avoid clutter.
 - **Extensibility:** Ensure testability and extensibility.
@@ -158,27 +166,32 @@ Before considering work complete:
 - **Libraries:** Use `sentence_transformers` when needed and practical.
 
 ### Formatting & Imports
+
 - **Imports:** Always place imports at the top of the file.
 - **Sorting:** `ruff` handles import sorting (isort compatible).
 - **Line Length:** 100 characters (as per `pyproject.toml`).
 - **Whitespace:** Do not add orphan spaces on empty lines.
 
 ### Naming Conventions
+
 - **Variables/Functions:** `snake_case` (e.g., `process_document`, `user_id`)
 - **Classes:** `PascalCase` (e.g., `RAGIndexer`, `Settings`)
 - **Constants:** `UPPER_CASE` (e.g., `DEFAULT_TIMEOUT`)
 - **Private Members:** Prefix with `_` (e.g., `_internal_helper`)
 
 ### Typing
+
 - **Type Hints:** Use standard Python type hints (`str`, `int`, `list[str]`, `dict[str, Any]`).
 - **Pydantic:** Use Pydantic models for data validation and settings (e.g., `class Settings(BaseSettings)`).
 
 ### Error Handling
+
 - **Philosophy:** Avoid unnecessary try-catches. Prefer robust, explicit logic.
 - **Catching:** Catch exceptions only when necessary and meaningful.
 - **Fallbacks:** Avoid hardcoded fallbacks. Code should fail gracefully or handle expected edge cases explicitly.
 
 ### Logging & Comments
+
 - **Logging:** Do not delete logging; update it if necessary.
 - **Comments:** Add comments for *why*, not *what*. Update existing comments; do not delete them.
 - **Docs Strings:** Follow PEP 257 docstring conventions (Google style is preferred).
@@ -194,6 +207,7 @@ Structure content well per best documentation and executive research practices:
 - **Actionable sections:** Each section should answer "So what?" and lead to a decision or next step.
 - **Consistent formatting:** Same patterns for similar content types (e.g., all pricing tables look the same).
 - **Source traceability:** Every claim needs inline citation. No unsubstantiated assertions.
+- **Markdown spacing:** Always add a blank line after any heading (H1–H4) and before any list (bullet, numbered, or definition). This applies to all markdown files including AGENTS.md itself. No heading should be immediately followed by content without a blank line, and no list should start on the line right after a heading without a blank line in between.
 
 ---
 
@@ -202,11 +216,22 @@ Structure content well per best documentation and executive research practices:
 **Commit Discipline:** Do NOT create or push commits unless explicitly asked by the user.
 
 ### Commit Messages
+
 - **Format:** Concise, structured, and strictly relevant to the changes.
 - **Content:** Keep length to the necessary minimum. Avoid fluff.
 - **Tool:** Use the commit message generation tool but verify content.
 
+### Work Tracking
+
+Always write down as files to maintain context and avoid losing track:
+
+- **Plans:** Actionable step-by-step plans with checkpoints → `.opencode/plans/YYYYMMDD_<topic>/plan.md`
+- **Research:** Research results and findings → `.opencode/research/YYYYMMDD_<topic>/research.md`
+- **Progress:** Progress reports for ongoing work → `.opencode/progress_reports/YYYYMMDD_<topic>/progress_YYYYMMDD.md`
+- Use GitHub Markdown format. Parent folder dated with inception timestamp.
+
 ### Agent Behavior
+
 - **Information Gathering:**
     - Search docs/internet before coding. Digest best practices from official sources.
     - Do not read just one page; scan the docs, links, and hierarchy to ground actions in truth.
@@ -219,10 +244,11 @@ Structure content well per best documentation and executive research practices:
 - **.env Files:** NEVER commit `.env` files to version control. Use `.env-example` as a template with placeholder values only. The `.env` file contains sensitive credentials and deployment-specific settings.
 - **No Breakage:** Never break existing code.
 - **Documentation:** After changes, update `.opencode/README.md` and related docs if affected.
+- **Memory:** Compact memory proactively once in a while during conversation rather than waiting for overflow — prevent "dementia" by summarizing and pruning before resources exhaust.
 
 ### 12-Factor App Principles
 
-Follow the twelve-factor methodology:
+Based on [12-factor app](https://12factor.net/) + [12-factor AI agents](https://github.com/humanlayer/12-factor-agents) methodology:
 
 - **Codebase:** One codebase tracked in revision control, many deploys.
 - **Dependencies:** Declare all dependencies explicitly in `requirements.txt` (and `pyproject.toml` for build metadata). See Environment Setup section for isolation commands.
@@ -238,6 +264,7 @@ Follow the twelve-factor methodology:
 - **Admin Processes:** Run admin/management tasks as one-off processes using the same codebase and config as the main app.
 
 ### Project Specifics
+
 - **Docs:** Put reports in `docs/progress_reports/`.
 - **Tests:** Put tests in `rag_engine/tests`.
 - **Updates:** Always update `README.md` if changes affect it.
