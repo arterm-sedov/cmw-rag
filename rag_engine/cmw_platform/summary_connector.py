@@ -4,11 +4,12 @@ Orchestrates document fetch → process → summarize → write back workflow.
 """
 
 import logging
+import os
+import tempfile
 from dataclasses import dataclass
 
 from rag_engine.cmw_platform import records
 from rag_engine.cmw_platform.document_api import get_document_content
-from rag_engine.cmw_platform.document_processor import process_document
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class DocumentSummaryConnector:
     Workflow:
         1. Read record → get document_id from "Commerpredloshenie"
         2. GET /webapi/Document/{documentId}/Content → base64 content
-        3. Decode base64 → detect file type → process
+        3. Save to temp file → process using tools
         4. LLM: summarize with {prompt}
         5. Write summary → "summary" attribute
 
@@ -44,14 +45,7 @@ class DocumentSummaryConnector:
         self.platform = platform or DEFAULT_PLATFORM
 
     def process(self, record_id: str) -> ProcessResult:
-        """Process document: fetch → extract → summarize → write back.
-
-        Args:
-            record_id: Record ID in ArchitectureManagement.Zaprosinarazrabotky
-
-        Returns:
-            ProcessResult with success status, summary text, and any error
-        """
+        """Process document: fetch → extract → summarize → write back."""
         try:
             # 1. Read record to get document_id and prompt
             record = records.read_record(
@@ -67,7 +61,6 @@ class DocumentSummaryConnector:
                 )
 
             record_data = record.get("data", {}).get(record_id, {})
-            # API returns lowercase attribute names
             document_ref = record_data.get("commerpredloshenie") or record_data.get("Commerpredloshenie")
             user_prompt = record_data.get("prompt", "") or ""
 
@@ -79,39 +72,18 @@ class DocumentSummaryConnector:
                 document_id = document_ref
 
             if not document_id:
-                return ProcessResult(
-                    success=False,
-                    error="No document attached to record",
-                )
+                return ProcessResult(success=False, error="No document attached to record")
 
             # 2. Fetch document content
             doc_result = get_document_content(document_id, platform=self.platform)
             if not doc_result.get("success"):
-                return ProcessResult(
-                    success=False,
-                    error=f"Failed to fetch document: {doc_result.get('error')}",
-                )
+                return ProcessResult(success=False, error=f"Failed to fetch document: {doc_result.get('error')}")
 
-            # 3. Extract text from document
-            text_result = process_document(
-                doc_result["content"],
-                mime_type=doc_result.get("mime_type"),
-                filename=doc_result.get("filename"),
-            )
-
-            if not text_result.get("success"):
-                return ProcessResult(
-                    success=False,
-                    error=f"Failed to process document: {text_result.get('error')}",
-                )
-
-            document_text = text_result.get("text", "")
+            # 3. Save to temp file and process using tools
+            document_text = self._process_with_tools(doc_result)
 
             if not document_text:
-                return ProcessResult(
-                    success=False,
-                    error="Document contains no extractable text",
-                )
+                return ProcessResult(success=False, error="Failed to extract text from document")
 
             # 4. Summarize with LLM
             summary = self._summarize(document_text, user_prompt)
@@ -140,21 +112,85 @@ class DocumentSummaryConnector:
             logger.exception("Document summarization failed")
             return ProcessResult(success=False, error=str(e))
 
+    def _process_with_tools(self, doc_result: dict) -> str:
+        """Process document using tools (read_file, pdf_utils)."""
+        import base64
+
+        from rag_engine.tools.pdf_utils import PDFUtils
+
+        content = doc_result.get("content", "")
+        mime_type = doc_result.get("mime_type", "")
+        filename = doc_result.get("filename", "document")
+
+        # Decode base64 to bytes
+        try:
+            data = base64.b64decode(content)
+        except Exception as e:
+            logger.error(f"Failed to decode base64: {e}")
+            return ""
+
+        # Determine file extension
+        ext = ""
+        if mime_type == "application/pdf" or filename.endswith(".pdf"):
+            ext = ".pdf"
+        elif "wordprocessingml" in mime_type or filename.endswith(".docx"):
+            ext = ".docx"
+        elif "spreadsheetml" in mime_type or filename.endswith(".xlsx"):
+            ext = ".xlsx"
+        elif "zip" in mime_type or filename.endswith(".zip"):
+            ext = ".zip"
+        elif "image" in mime_type:
+            ext = os.path.splitext(filename)[1] or ".img"
+
+        # Save to temp file
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as f:
+                f.write(data)
+                temp_path = f.name
+
+            # Process based on file type
+            if ext == ".pdf":
+                if not PDFUtils.is_available():
+                    logger.error("PyMuPDF4LLM not available for PDF processing")
+                    return ""
+                pdf_result = PDFUtils.extract_text_from_pdf(temp_path)
+                if pdf_result.success:
+                    return pdf_result.text_content
+                logger.error(f"PDF extraction failed: {pdf_result.error_message}")
+                return ""
+            else:
+                # Use read_file tool for text extraction
+                from rag_engine.tools.read_file import read_file
+
+                result = read_file(temp_path)
+                # read_file returns JSON string, parse it
+                import json
+
+                try:
+                    parsed = json.loads(result)
+                    if parsed.get("result"):
+                        return parsed["result"]
+                    elif parsed.get("error"):
+                        logger.error(f"File processing error: {parsed.get('error')}")
+                        return ""
+                except json.JSONDecodeError:
+                    # If not JSON, treat as raw text
+                    return result
+
+                return ""
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+        return ""
+
     def _summarize(self, text: str, user_prompt: str) -> str:
-        """Call LLM to summarize text.
-
-        Args:
-            text: Extracted document text
-            user_prompt: User instructions for summarization
-
-        Returns:
-            Generated summary string
-        """
+        """Call LLM to summarize text."""
         from rag_engine.llm.llm_manager import LLMManager
 
         llm = LLMManager(provider="openrouter", model="qwen/qwen3.5-27b")
 
-        # Build prompt
         prompt = f"""{user_prompt}
 
 Document to summarize:
@@ -162,5 +198,4 @@ Document to summarize:
 
 Provide a concise summary following the user's instructions."""
 
-        result = llm.generate(prompt, context_docs=[])
-        return result
+        return llm.generate(prompt, context_docs=[])

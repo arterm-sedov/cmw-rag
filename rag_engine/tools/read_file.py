@@ -1,4 +1,4 @@
-"""Unified file reading tool - handles both text files and PDFs.
+"""Unified file reading tool - handles text files, PDFs, and DOCX.
 
 This tool automatically detects file type and processes accordingly.
 Supports local files and URLs.
@@ -20,12 +20,13 @@ class ReadFileSchema(BaseModel):
 
 @tool(args_schema=ReadFileSchema)
 def read_file(file_reference: str) -> str:
-    """Read text-based files and PDFs, auto-detecting file type.
+    """Read text files, PDFs, and DOCX, auto-detecting file type.
 
     Supported file types:
     - Text files: .txt, .md, .log, .json, .xml, .yaml, .yml, .html, .htm, .css, .js,
       .py, .sql, .ini, .cfg, .conf, .env, .csv, .tsv, .rst, .tex
     - PDF files: .pdf (extracts text as Markdown)
+    - DOCX files: .docx (extracts text via direct XML parsing)
 
     The tool automatically:
     - Detects file type by extension
@@ -53,6 +54,9 @@ def read_file(file_reference: str) -> str:
 
     if file_info.extension == ".pdf":
         return _read_pdf(file_path, file_info, file_reference)
+
+    if file_info.extension == ".docx":
+        return _read_docx(file_path, file_info, file_reference)
 
     return _read_text_file(file_path, file_info, file_reference)
 
@@ -86,6 +90,59 @@ def _read_pdf(file_path: str, file_info, file_reference: str) -> str:
     except Exception as e:
         return FileUtils.create_tool_response(
             "read_file", error=f"Error processing PDF: {str(e)}", file_info=file_info
+        )
+
+
+def _read_docx(file_path: str, file_info, file_reference: str) -> str:
+    """Read DOCX file and extract text via direct XML parsing."""
+    try:
+        import xml.etree.ElementTree as ET
+        import zipfile
+
+        with zipfile.ZipFile(file_path) as zf:
+            with zf.open("word/document.xml") as xml_file:
+                xml_content = xml_file.read()
+
+        ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+        root = ET.fromstring(xml_content)
+
+        paragraphs = []
+        for para in root.iter(f"{{{ns}}}p"):
+            texts = []
+            for t in para.iter(f"{{{ns}}}t"):
+                if t.text:
+                    texts.append(t.text)
+            para_text = "".join(texts).strip()
+            if para_text:
+                paragraphs.append(para_text)
+
+        text_content = "\n".join(paragraphs)
+
+        size_str = FileUtils.format_file_size(file_info.size)
+        display_name = (
+            file_reference
+            if file_reference.startswith(("http://", "https://", "ftp://"))
+            else file_reference
+        )
+        result_text = f"File: {display_name} ({size_str})\n\nContent:\n{text_content}"
+        return FileUtils.create_tool_response(
+            "read_file", result=result_text, file_info=file_info
+        )
+    except zipfile.BadZipFile:
+        return FileUtils.create_tool_response(
+            "read_file", error="Invalid DOCX file (not a valid ZIP)", file_info=file_info
+        )
+    except KeyError:
+        return FileUtils.create_tool_response(
+            "read_file", error="Invalid DOCX file (missing word/document.xml)", file_info=file_info
+        )
+    except ET.ParseError as e:
+        return FileUtils.create_tool_response(
+            "read_file", error=f"Failed to parse DOCX XML: {str(e)}", file_info=file_info
+        )
+    except Exception as e:
+        return FileUtils.create_tool_response(
+            "read_file", error=f"Error processing DOCX: {str(e)}", file_info=file_info
         )
 
 

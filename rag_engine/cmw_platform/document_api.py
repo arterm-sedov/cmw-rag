@@ -87,10 +87,32 @@ def get_document_content(document_id: str, platform: str | None = None) -> dict[
             "error": raw_response.get("error", "Failed to fetch document"),
         }
 
-    content = base64.b64encode(raw_response["content"]).decode("utf-8")
+    content_bytes = raw_response["content"]
+
+    # Detect MIME from magic bytes
+    if content_bytes[:4] == b"%PDF":
+        mime_type = "application/pdf"
+        ext = ".pdf"
+    elif content_bytes[:4] == b"PK\x03\x04":
+        # Could be DOCX, XLSX, or ZIP - check for OOXML signatures
+        header_sample = content_bytes[:2000]
+        if b"word/document.xml" in header_sample:
+            mime_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ext = ".docx"
+        elif b"xl/worksheets" in header_sample or b"xl/sharedStrings" in header_sample:
+            mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ext = ".xlsx"
+        else:
+            mime_type = "application/zip"
+            ext = ".zip"
+    else:
+        mime_type = "application/octet-stream"
+        ext = ""
+
+    content = base64.b64encode(content_bytes).decode("utf-8")
     return {
         "success": True,
         "content": content,
-        "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "filename": f"{document_id}.docx",
+        "mime_type": mime_type,
+        "filename": f"{document_id}{ext}",
     }
