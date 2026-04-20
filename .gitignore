@@ -47,3 +47,5 @@ rag_engine/data/synthetic_cmw_support_tickets_v1_with_pii.json
 .playwright-cli/
 channel_snapshot.yml
 .worktrees/
+data/chromadb_data/**
+~/
