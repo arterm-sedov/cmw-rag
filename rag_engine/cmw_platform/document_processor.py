@@ -41,16 +41,20 @@ def detect_mime_type(data: bytes) -> str:
     Returns:
         MIME type string
     """
-    magic_signatures = {
-        b"%PDF": "application/pdf",
-        b"PK\x03\x04": "application/vnd.openxmlformats-officedocument",  # DOCX/XLSX/ZIP
-        b"\xd0\xcf\x11\xe0": "application/msword",  # DOC/XLS old format
-    }
-
-    for sig, mime in magic_signatures.items():
-        if data.startswith(sig):
-            return mime
-
+    if data.startswith(b"%PDF"):
+        return "application/pdf"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\xd0\xcf\x11\xe0"):
+        return "application/vnd.ms-office"  # Old DOC/XLS
+    if data.startswith(b"PK\x03\x04"):
+        # OOXML - determine subtype from content
+        header = data[:2000] if len(data) > 2000 else data
+        if b"word/document.xml" in header:
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        if b"xl/worksheets" in header or b"xl/sharedStrings" in header:
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        return "application/zip"
     return "application/octet-stream"
 
 
@@ -151,7 +155,6 @@ def _process_docx(data: bytes) -> dict[str, Any]:
     try:
         import xml.etree.ElementTree as ET
 
-        ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
         root = ET.fromstring(xml_content)
 
         paragraphs = []
