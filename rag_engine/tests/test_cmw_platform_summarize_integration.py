@@ -30,35 +30,27 @@ class TestDocumentSummaryFlow:
             "success": True,
             "data": {
                 "record-123": {
-                    "Commerpredloshenie": None,
-                    "promt": "Составь резюме",
+                    "document_file": None,
+                    "user_prompt": "Составь резюме",
                 }
             },
         }
 
         with patch("rag_engine.cmw_platform.summary_connector.records.read_record", return_value=mock_record):
-            conn = DocumentSummaryConnector()
-            result = conn.process("record-123")
+            with patch("rag_engine.cmw_platform.summary_connector.config.load_pipeline_config") as mock_cfg:
+                mock_cfg.return_value = {
+                    "input": {"attributes": {"document_file": "Commerpredloshenie", "user_prompt": "promt"}},
+                    "output": {"summary_attribute": "summary"},
+                }
+                conn = DocumentSummaryConnector()
+                result = conn.process("record-123")
 
         assert result.success is False
         assert "No document" in result.error
 
-    def test_get_system_prompt_returns_config_value(self):
-        """Test _get_system_prompt reads from config."""
+    def test_extract_text_handles_base64_content(self):
+        """Test _extract_text accepts base64 content."""
         from rag_engine.cmw_platform.summary_connector import DocumentSummaryConnector
-
-        conn = DocumentSummaryConnector(platform="secondary")
-        prompt = conn._get_system_prompt()
-
-        assert prompt
-        assert len(prompt) > 0
-        assert "бизнес" in prompt.lower() or "русскому" in prompt.lower()
-
-    def test_process_with_tools_handles_base64_content(self):
-        """Test _process_with_tools accepts base64 content."""
-        from rag_engine.cmw_platform.summary_connector import DocumentSummaryConnector
-
-        conn = DocumentSummaryConnector()
 
         content = base64.b64encode(b"Test content").decode()
         doc_result = {
@@ -67,9 +59,18 @@ class TestDocumentSummaryFlow:
             "mime_type": "text/plain",
         }
 
-        text = conn._process_with_tools(doc_result)
+        text = DocumentSummaryConnector._extract_text(doc_result)
 
         assert text == ""
+
+    def test_case_insensitive_lookup(self):
+        """Test to_api_alias handles CMW API key normalization."""
+        from rag_engine.cmw_platform.attribute_types import to_api_alias
+
+        assert to_api_alias("Commerpredloshenie") == "commerpredloshenie"
+        assert to_api_alias("promt") == "promt"
+        assert to_api_alias("Name") == "name"
+        assert to_api_alias("currentBuild") == "currentBuild"
 
 
 class TestProcessResult:
