@@ -19,6 +19,32 @@ def load_pipeline_config() -> dict[str, Any]:
     return config.get("pipeline", {})
 
 
+def get_input_attributes() -> dict[str, str]:
+    """Get Python -> Platform attribute mapping from input config.
+
+    Returns:
+        Dict mapping Python names to platform attribute names.
+        E.g., {"title": "name", "question": "Description"}
+    """
+    input_config = get_input_config()
+    return input_config.get("attributes", {})
+
+
+def get_platform_attribute(python_name: str) -> str | None:
+    """Map Python name to platform attribute name."""
+    attrs = get_input_attributes()
+    return attrs.get(python_name)
+
+
+def get_python_attribute(platform_name: str) -> str | None:
+    """Map platform attribute name to Python name."""
+    attrs = get_input_attributes()
+    for python_name, platform_name_val in attrs.items():
+        if platform_name_val == platform_name:
+            return python_name
+    return None
+
+
 def get_input_config() -> dict[str, Any]:
     """Get input configuration (template to fetch from)."""
     pipeline = load_pipeline_config()
@@ -58,10 +84,8 @@ def get_attribute_metadata(app: str, template: str) -> dict[str, AttributeMetada
         # Handle both formats: 'title: string' or 'title: {type: string, from_agent: ...}'
         if isinstance(cfg, str):
             attr_type = cfg
-            from_agent = None
         else:
             attr_type = cfg.get("type", "string") if cfg else "string"
-            from_agent = cfg.get("from_agent")
 
         result[alias] = AttributeMetadata(
             alias=alias,
@@ -79,9 +103,7 @@ def get_attribute_type(app: str, template: str, attribute: str) -> str:
     return attr.type if attr else "string"
 
 
-def coerce_attribute_value(
-    app: str, template: str, attribute: str, value: Any
-) -> Any:
+def coerce_attribute_value(app: str, template: str, attribute: str, value: Any) -> Any:
     """Coerce a value based on attribute metadata from config.
 
     Args:

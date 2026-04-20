@@ -286,7 +286,9 @@ class TestPlatformConnector:
     @patch("rag_engine.cmw_platform.connector.records.read_record")
     @patch("rag_engine.cmw_platform.connector.build_request")
     @patch("rag_engine.cmw_platform.connector.threading.Thread")
-    def test_start_request_success(self, mock_thread, mock_build_request, mock_read_record, monkeypatch):
+    def test_start_request_success(
+        self, mock_thread, mock_build_request, mock_read_record, monkeypatch
+    ):
         """Test successful request processing starts background agent."""
         monkeypatch.setenv("CMW_BASE_URL", "https://test.comindware.com")
         monkeypatch.setenv("CMW_LOGIN", "test_user")
@@ -294,7 +296,7 @@ class TestPlatformConnector:
 
         mock_read_record.return_value = {
             "success": True,
-            "data": {"record-123": {"user_question": "Test question?"}}
+            "data": {"record-123": {"user_question": "Test question?"}},
         }
         mock_build_request.return_value = "## Request\n\nTest question?"
 
@@ -316,10 +318,7 @@ class TestPlatformConnector:
         monkeypatch.setenv("CMW_LOGIN", "test_user")
         monkeypatch.setenv("CMW_PASSWORD", "test_pass")
 
-        mock_read_record.return_value = {
-            "success": False,
-            "error": "Record not found"
-        }
+        mock_read_record.return_value = {"success": False, "error": "Record not found"}
 
         from rag_engine.cmw_platform.connector import PlatformConnector
 
@@ -367,6 +366,77 @@ class TestProcessResult:
         assert result.success is False
         assert result.message is None
         assert result.error == "Failed"
+
+
+class TestConfigAttributeMapping:
+    """Test attribute mapping from config."""
+
+    def test_get_input_attributes_returns_mapping(self):
+        """Test returns Python -> Platform attribute mapping."""
+        from rag_engine.cmw_platform.config import get_input_attributes
+
+        attrs = get_input_attributes()
+
+        assert attrs.get("support_case_title") == "name"
+        assert attrs.get("support_case_question") == "Description"
+        assert attrs.get("product_version") == "currentBuild"
+        assert attrs.get("user_browser") == "browserDetails"
+
+    def test_get_platform_attribute(self):
+        """Test Python to platform mapping."""
+        from rag_engine.cmw_platform.config import get_platform_attribute
+
+        assert get_platform_attribute("support_case_title") == "name"
+        assert get_platform_attribute("support_case_question") == "Description"
+        assert get_platform_attribute("product_version") == "currentBuild"
+        assert get_platform_attribute("user_browser") == "browserDetails"
+
+    def test_get_python_attribute(self):
+        """Test platform to Python mapping."""
+        from rag_engine.cmw_platform.config import get_python_attribute
+
+        assert get_python_attribute("name") == "support_case_title"
+        assert get_python_attribute("Description") == "support_case_question"
+        assert get_python_attribute("currentBuild") == "product_version"
+        assert get_python_attribute("browserDetails") == "user_browser"
+
+
+class TestRequestBuilderMapping:
+    """Test request builder uses config mapping."""
+
+    def test_build_request_uses_platform_names(self):
+        """Test build_request fetches data using platform attribute names."""
+        from rag_engine.cmw_platform.request_builder import build_request
+
+        record_data = {
+            "name": "Test Title",
+            "Description": "Test question?",
+            "currentBuild": "5.0.123",
+            "browserDetails": "Chrome",
+        }
+
+        result = build_request(record_data)
+
+        assert "Test Title" in result
+        assert "Test question?" in result
+        assert "5.0.123" in result
+        assert "Chrome" in result
+
+    def test_build_request_converts_html_for_text_type(self):
+        """Test HTML is converted to markdown for text type attributes."""
+        from rag_engine.cmw_platform.request_builder import build_request
+
+        record_data = {
+            "name": "Test Title",
+            "Description": "<p>Test <strong>question</strong>?</p>",
+            "currentBuild": "5.0.123",
+            "browserDetails": "Chrome",
+        }
+
+        result = build_request(record_data)
+
+        assert "<p>" not in result
+        assert "**question**" in result
 
 
 class TestAPIEndpoint:

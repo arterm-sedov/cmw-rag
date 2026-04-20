@@ -2,6 +2,7 @@
 
 Provides a single entry point for processing platform requests through the RAG pipeline.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -59,27 +60,35 @@ class PlatformConnector:
         """
         try:
             input_config = config.get_input_config()
-            fields = [f["name"] for f in input_config.get("fields", [])]
+            attr_mapping = config.get_input_attributes()
+            platform_fields = list(attr_mapping.values())
 
-            logger.info("Fetching request record %s from %s.%s",
-                       request_id, input_config.get("application"), input_config.get("template"))
+            logger.info(
+                "Fetching request record %s from %s.%s",
+                request_id,
+                input_config.get("application"),
+                input_config.get("template"),
+            )
 
-            record = records.read_record(request_id, fields=fields)
+            record = records.read_record(request_id, fields=platform_fields)
 
             if not record["success"]:
                 logger.error("Failed to fetch record %s: %s", request_id, record.get("error"))
                 return ProcessResult(
-                    success=False,
-                    error=f"Failed to fetch record: {record.get('error')}"
+                    success=False, error=f"Failed to fetch record: {record.get('error')}"
                 )
 
             record_data = record["data"].get(request_id, {})
-            logger.info("Successfully fetched record %s with %d fields", request_id, len(record_data))
+            logger.info(
+                "Successfully fetched record %s with %d fields", request_id, len(record_data)
+            )
 
             md_request = build_request(record_data)
             logger.debug("Built markdown request for record %s", request_id)
 
-            thread = threading.Thread(target=_run_agent_background, args=(request_id, md_request), daemon=True)
+            thread = threading.Thread(
+                target=_run_agent_background, args=(request_id, md_request), daemon=True
+            )
             thread.start()
 
             logger.info("Started background agent for request %s", request_id)
@@ -114,8 +123,7 @@ def _run_agent_background(request_id: str, md_request: str) -> None:
 
         output_config = config.get_output_config()
         template_config = config.get_template_config(
-            output_config["application"],
-            output_config["template"]
+            output_config["application"], output_config["template"]
         )
 
         mapped_values = map_agent_response(
@@ -132,11 +140,13 @@ def _run_agent_background(request_id: str, md_request: str) -> None:
         )
 
         if response["success"]:
-            logger.info("Created response record %s for request %s",
-                       response.get("record_id"), request_id)
+            logger.info(
+                "Created response record %s for request %s", response.get("record_id"), request_id
+            )
         else:
-            logger.error("Failed to create response record for %s: %s",
-                        request_id, response.get("error"))
+            logger.error(
+                "Failed to create response record for %s: %s", request_id, response.get("error")
+            )
 
     except Exception:
         logger.exception("Background agent failed for request %s", request_id)
@@ -154,4 +164,5 @@ async def _call_agent(md_request: str):
         StructuredAgentResult from the agent
     """
     from rag_engine.api.app import ask_comindware_structured
+
     return await ask_comindware_structured(md_request)
