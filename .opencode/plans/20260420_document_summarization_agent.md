@@ -1,4 +1,4 @@
-# Plan: Agentic Web Search for Lukoil Endpoint
+# Plan: Agentic Web Search for Document Summarization
 
 ## Problem
 
@@ -11,7 +11,7 @@ This is **not agentic** — LLM just receives search results as context text.
 
 ## Goal
 
-Convert Lukoil document summarization endpoint to be a **proper LangChain agent** that:
+Convert document summarization endpoint to be a **proper LangChain agent** that:
 1. Reuses `create_rag_agent` pattern from `rag_engine/llm/agent_factory.py`
 2. Includes `web_search` tool alongside other tools
 3. LLM **decides** when to call web search (based on reasoning, not keywords)
