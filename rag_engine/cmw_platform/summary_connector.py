@@ -8,7 +8,7 @@ import os
 import tempfile
 from dataclasses import dataclass
 
-from rag_engine.cmw_platform import records
+from rag_engine.cmw_platform import config, records
 from rag_engine.cmw_platform.document_api import get_document_content
 
 logger = logging.getLogger(__name__)
@@ -49,6 +49,16 @@ class DocumentSummaryConnector:
         from rag_engine.config import settings
 
         return settings.default_model
+
+    def _get_system_prompt(self) -> str:
+        """Get system prompt from platform config."""
+        cfg = config.load_cmw_config(self.platform)
+        return cfg.get("pipeline", {}).get("system_prompt", "")
+
+    def _get_output_config(self) -> dict:
+        """Get output config for summary attribute and formatting."""
+        cfg = config.load_cmw_config(self.platform)
+        return cfg.get("pipeline", {}).get("output", {})
 
     def process(self, record_id: str) -> ProcessResult:
         """Process document: fetch → extract → summarize → write back."""
@@ -94,10 +104,21 @@ class DocumentSummaryConnector:
             # 4. Summarize with LLM
             summary = self._summarize(document_text, user_prompt)
 
-            # 5. Write summary back to record
+            # 5. Write summary back to record (as HTML if configured)
+            output_config = self._get_output_config()
+            summary_attribute = output_config.get("summary_attribute", "summary")
+            summary_as_html = output_config.get("summary_as_html", False)
+
+            if summary_as_html:
+                from rag_engine.cmw_platform.mapping import convert_markdown_to_html
+
+                summary_value = convert_markdown_to_html(summary)
+            else:
+                summary_value = summary
+
             write_result = records.update_record(
                 record_id=record_id,
-                values={"summary": summary},
+                values={summary_attribute: summary_value},
                 platform=self.platform,
             )
 
@@ -192,19 +213,23 @@ class DocumentSummaryConnector:
         return ""
 
     def _summarize(self, text: str, user_prompt: str) -> str:
-        """Call LLM to summarize text - no system prompt, just direct summarization."""
+        """Call LLM to summarize text with platform-specific system prompt."""
         from rag_engine.llm.llm_manager import LLMManager
 
         model_name = self._get_model()
+        system_prompt = self._get_system_prompt()
         llm = LLMManager(provider="openrouter", model=model_name)
         model = llm._chat_model()
 
-        prompt = f"""{user_prompt}
+        messages = []
+        if system_prompt:
+            messages.append(("system", system_prompt))
+        messages.append(("user", f"""{user_prompt}
 
 Document to summarize:
 {text[:50000]}
 
-Provide a concise summary following the user's instructions."""
+Provide a concise summary following the user's instructions."""))
 
-        resp = model.invoke([("user", prompt)])
+        resp = model.invoke(messages)
         return getattr(resp, "content", "")
