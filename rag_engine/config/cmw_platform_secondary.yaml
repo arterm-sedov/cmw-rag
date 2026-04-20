@@ -15,9 +15,6 @@ pipeline:
     template: Zaprosinarazrabotky
     summary_attribute: summary
 
-  # LLM model for document summarization (defaults to DEFAULT_MODEL env if not set)
-  model: qwen/qwen3.5-27b
-
 templates:
   ArchitectureManagement:
     Zaprosinarazrabotky:
