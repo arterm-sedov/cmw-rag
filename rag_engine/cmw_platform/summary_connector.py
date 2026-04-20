@@ -58,6 +58,59 @@ class DocumentSummaryConnector:
         cfg = config.load_cmw_config(self.platform)
         return cfg.get("pipeline", {}).get("output", {})
 
+    def _fetch_search_context(self, user_prompt: str, document_text: str) -> str:
+        """Fetch web search results if prompt asks for external data."""
+        import os
+
+        if not any(kw in user_prompt.lower() for kw in ["конкурент", "сравни", "цена", "weather", "погода", "москва"]):
+            return ""
+
+        try:
+            from langchain_tavily import TavilySearch
+        except ImportError:
+            return ""
+
+        tavily_key = os.getenv("TAVILY_API_KEY")
+        if not tavily_key:
+            return ""
+
+        try:
+            search = TavilySearch(max_results=3)
+            # Extract product name from document for competitor search
+            lines = document_text.split("\n")[:20]
+            product_hint = " ".join(lines[:3])[:100]
+
+            queries = []
+            if any(kw in user_prompt.lower() for kw in ["конкурент", "сравни", "цена"]):
+                queries.append(f"competitor price {product_hint}")
+            if any(kw in user_prompt.lower() for kw in ["погода", "weather", "москва"]):
+                queries.append("Moscow Russia current temperature weather")
+
+            context_parts = []
+            for query in queries:
+                try:
+                    search_result = search.invoke(query)
+                    if isinstance(search_result, dict):
+                        results = search_result.get("results", [])
+                    elif isinstance(search_result, list):
+                        results = search_result
+                    else:
+                        results = []
+
+                    for item in results[:3]:
+                        if isinstance(item, dict):
+                            content = item.get("content", "")[:500]
+                            if content:
+                                context_parts.append(f"[{item.get('title', 'Web')}]: {content}")
+                except Exception:
+                    pass
+
+            if context_parts:
+                return "\n".join(context_parts) + "\n\n"
+            return ""
+        except Exception:
+            return ""
+
     def process(self, record_id: str) -> ProcessResult:
         """Process document: fetch → extract → summarize → write back."""
         try:
@@ -171,12 +224,15 @@ class DocumentSummaryConnector:
         llm = LLMManager(provider="openrouter", model=model_name)
         model = llm._chat_model()
 
+        # Add web search context if prompt asks for it
+        search_context = self._fetch_search_context(user_prompt, text)
+
         messages = []
         if system_prompt:
             messages.append(("system", system_prompt))
         messages.append(("user", f"""{user_prompt}
 
-Document to summarize:
+{search_context}Document to summarize:
 {text[:50000]}
 
 Provide a concise summary following the user's instructions."""))
