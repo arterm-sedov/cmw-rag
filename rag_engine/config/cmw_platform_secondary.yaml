@@ -8,7 +8,7 @@ pipeline:
     template: Zaprosinarazrabotky
     attributes:
       document_file: Commerpredloshenie
-      user_prompt: prompt
+      user_prompt: promt
 
   output:
     application: ArchitectureManagement
@@ -36,7 +36,7 @@ templates:
           from_input: Commerpredloshenie
         user_prompt:
           type: text
-          from_input: prompt
+          from_input: promt
         summary:
           type: text
           from_agent: summary_result

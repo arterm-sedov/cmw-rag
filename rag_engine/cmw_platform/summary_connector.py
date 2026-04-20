@@ -62,9 +62,14 @@ class DocumentSummaryConnector:
         """Process document: fetch → extract → summarize → write back."""
         try:
             # 1. Read record to get document_id and prompt
+            output_config = self._get_output_config()
+            input_config = config.load_cmw_config(self.platform).get("pipeline", {}).get("input", {})
+            document_attr = input_config.get("attributes", {}).get("document_file", "Commerpredloshenie")
+            prompt_attr = input_config.get("attributes", {}).get("user_prompt", "promt")
+
             record = records.read_record(
                 record_id,
-                fields=["Commerpredloshenie", "prompt"],
+                fields=[document_attr, prompt_attr],
                 platform=self.platform,
             )
 
@@ -75,8 +80,15 @@ class DocumentSummaryConnector:
                 )
 
             record_data = record.get("data", {}).get(record_id, {})
-            document_ref = record_data.get("commerpredloshenie") or record_data.get("Commerpredloshenie")
-            user_prompt = record_data.get("prompt", "") or ""
+
+            # Get document ref (case-insensitive)
+            document_ref = None
+            for key in record_data:
+                if key.lower() == document_attr.lower():
+                    document_ref = record_data[key]
+                    break
+
+            user_prompt = record_data.get(prompt_attr.lower()) or record_data.get(prompt_attr) or ""
 
             # Extract document ID from reference
             document_id = None
