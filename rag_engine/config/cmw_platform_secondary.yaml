@@ -10,17 +10,13 @@ pipeline:
       document_file: Commerpredloshenie
       user_prompt: prompt
 
-  request_template: |
-    # Document Summary Request
-
-    User prompt: {user_prompt}
-
-    Please summarize the attached document according to the user's request.
-
   output:
     application: ArchitectureManagement
     template: Zaprosinarazrabotky
     summary_attribute: summary
+
+  # LLM model for document summarization (defaults to DEFAULT_MODEL env if not set)
+  model: qwen/qwen3.5-27b
 
 templates:
   ArchitectureManagement:

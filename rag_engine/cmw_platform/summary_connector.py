@@ -8,7 +8,7 @@ import os
 import tempfile
 from dataclasses import dataclass
 
-from rag_engine.cmw_platform import records
+from rag_engine.cmw_platform import config, records
 from rag_engine.cmw_platform.document_api import get_document_content
 
 logger = logging.getLogger(__name__)
@@ -43,6 +43,11 @@ class DocumentSummaryConnector:
 
     def __init__(self, platform: str = DEFAULT_PLATFORM):
         self.platform = platform or DEFAULT_PLATFORM
+
+    def _get_model(self) -> str:
+        """Get LLM model from platform config or environment."""
+        cfg = config.load_cmw_config(self.platform)
+        return cfg.get("pipeline", {}).get("model") or os.getenv("DEFAULT_MODEL", "qwen/qwen3.5-27b")
 
     def process(self, record_id: str) -> ProcessResult:
         """Process document: fetch → extract → summarize → write back."""
@@ -189,7 +194,8 @@ class DocumentSummaryConnector:
         """Call LLM to summarize text - no system prompt, just direct summarization."""
         from rag_engine.llm.llm_manager import LLMManager
 
-        llm = LLMManager(provider="openrouter", model="qwen/qwen3.5-27b")
+        model_name = self._get_model()
+        llm = LLMManager(provider="openrouter", model=model_name)
         model = llm._chat_model()
 
         prompt = f"""{user_prompt}
