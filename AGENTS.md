@@ -9,6 +9,7 @@ This document provides essential commands, code style guidelines, and developmen
 ### 1. Environment Setup
 
 Always ensure the virtual environment is activated before running commands.
+
 - **Linux (native):** `source .venv/bin/activate`
 - **Windows (WSL):** `source .venv-wsl/bin/activate`
 - **Windows (PowerShell):** `.venv\Scripts\Activate.ps1`
@@ -17,6 +18,7 @@ Always ensure the virtual environment is activated before running commands.
 ### 2. Testing
 
 Use `pytest` for testing. Configuration is in `pyproject.toml`.
+
 - **Run all tests:**
   ```bash
   pytest
@@ -205,6 +207,7 @@ Structure content well per best documentation and executive research practices:
 - **Actionable sections:** Each section should answer "So what?" and lead to a decision or next step.
 - **Consistent formatting:** Same patterns for similar content types (e.g., all pricing tables look the same).
 - **Source traceability:** Every claim needs inline citation. No unsubstantiated assertions.
+- **Markdown spacing:** Always add a blank line after any heading (H1–H4) and before any list (bullet, numbered, or definition). This applies to all markdown files including AGENTS.md itself. No heading should be immediately followed by content without a blank line, and no list should start on the line right after a heading without a blank line in between.
 
 ---
 
