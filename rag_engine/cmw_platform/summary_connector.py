@@ -60,56 +60,40 @@ class DocumentSummaryConnector:
 
     def _fetch_search_context(self, user_prompt: str, document_text: str) -> str:
         """Fetch web search results if prompt asks for external data."""
-        import os
+        from rag_engine.tools.web_search import get_web_search_tool
 
-        if not any(kw in user_prompt.lower() for kw in ["конкурент", "сравни", "цена", "weather", "погода", "москва"]):
+        trigger_keywords = {"конкурент", "сравни", "цена", "weather", "погода", "москва"}
+        if not any(kw in user_prompt.lower() for kw in trigger_keywords):
             return ""
 
-        try:
-            from langchain_tavily import TavilySearch
-        except ImportError:
+        queries = self._build_search_queries(user_prompt, document_text)
+        if not queries:
             return ""
 
-        tavily_key = os.getenv("TAVILY_API_KEY")
-        if not tavily_key:
+        tool = get_web_search_tool()
+        results = tool.search_multiple(queries)
+
+        if not results:
             return ""
 
-        try:
-            search = TavilySearch(max_results=3)
-            # Extract product name from document for competitor search
-            lines = document_text.split("\n")[:20]
+        context_parts = [f"[{r.title}]: {r.content}" for r in results]
+        return "\n".join(context_parts) + "\n\n"
+
+    def _build_search_queries(self, prompt: str, text: str) -> list[str]:
+        """Build search queries from prompt and document."""
+        queries = []
+        competitor_keywords = {"конкурент", "сравни", "цена", "competitor", "compare", "price"}
+        weather_keywords = {"погода", "weather", "москва", "moscow"}
+
+        if any(kw in prompt.lower() for kw in competitor_keywords):
+            lines = text.split("\n")[:20]
             product_hint = " ".join(lines[:3])[:100]
+            queries.append(f"competitor price {product_hint}")
 
-            queries = []
-            if any(kw in user_prompt.lower() for kw in ["конкурент", "сравни", "цена"]):
-                queries.append(f"competitor price {product_hint}")
-            if any(kw in user_prompt.lower() for kw in ["погода", "weather", "москва"]):
-                queries.append("Moscow Russia current temperature weather")
+        if any(kw in prompt.lower() for kw in weather_keywords):
+            queries.append("Moscow Russia current temperature weather")
 
-            context_parts = []
-            for query in queries:
-                try:
-                    search_result = search.invoke(query)
-                    if isinstance(search_result, dict):
-                        results = search_result.get("results", [])
-                    elif isinstance(search_result, list):
-                        results = search_result
-                    else:
-                        results = []
-
-                    for item in results[:3]:
-                        if isinstance(item, dict):
-                            content = item.get("content", "")[:500]
-                            if content:
-                                context_parts.append(f"[{item.get('title', 'Web')}]: {content}")
-                except Exception:
-                    pass
-
-            if context_parts:
-                return "\n".join(context_parts) + "\n\n"
-            return ""
-        except Exception:
-            return ""
+        return queries
 
     def process(self, record_id: str) -> ProcessResult:
         """Process document: fetch → extract → summarize → write back."""

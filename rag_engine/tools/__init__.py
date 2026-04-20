@@ -19,12 +19,15 @@ from rag_engine.tools.utils import (
     extract_metadata_from_tool_result,
     parse_tool_result_to_articles,
 )
+from rag_engine.tools.web_search import get_web_search_tool, web_search
 
 __all__ = [
     "retrieve_context",
     "analyse_user_request",
     "generate_resolution_plan",
     "get_current_datetime",
+    "get_web_search_tool",
+    "web_search",
     "read_file",
     "add",
     "subtract",
