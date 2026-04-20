@@ -4,11 +4,14 @@ from rag_engine.cmw_platform import api
 from rag_engine.cmw_platform.attribute_types import to_api_alias
 from rag_engine.cmw_platform.config import coerce_attribute_value, get_attribute_metadata
 
+DEFAULT_PLATFORM = "primary"
+
 
 def create_record(
     application_alias: str,
     template_alias: str,
     values: dict[str, Any],
+    platform: str | None = None,
 ) -> dict[str, Any]:
     """Create a new record in the CMW Platform.
 
@@ -16,12 +19,14 @@ def create_record(
         application_alias: The application system name (e.g., "dima")
         template_alias: The template system name (e.g., "TPAIModel", "response")
         values: Dictionary of field names to values
+        platform: Platform name (e.g., "primary", "secondary")
 
     Returns:
         Dictionary with keys: success (bool), status_code (int),
         record_id (str|None), data (dict|list|None), error (str|None)
     """
-    attr_metadata = get_attribute_metadata(application_alias, template_alias)
+    platform = platform or DEFAULT_PLATFORM
+    attr_metadata = get_attribute_metadata(application_alias, template_alias, platform)
 
     coerced_values: dict[str, Any] = {}
     for key, val in values.items():
@@ -30,21 +35,19 @@ def create_record(
         attr = attr_metadata.get(key)
         if attr and attr.is_system and key != "_color":
             continue
-        coerced = coerce_attribute_value(application_alias, template_alias, key, val)
+        coerced = coerce_attribute_value(application_alias, template_alias, key, val, platform)
         if coerced is not None and coerced != "":
-            # Convert key to API alias format (e.g. PascalCase -> camelCase)
             api_key = to_api_alias(key)
             coerced_values[api_key] = coerced
 
-    # Build template global alias - handle both raw template name and full alias
     if template_alias.startswith("Template@"):
         template_global_alias = template_alias
     else:
         template_global_alias = f"Template@{application_alias}.{template_alias}"
-    
+
     endpoint = f"/webapi/Record/{template_global_alias}"
 
-    result = api._post_request(coerced_values, endpoint)
+    result = api._post_request(coerced_values, endpoint, platform=platform)
 
     record_id = None
     if result.get("success") and result.get("data"):
@@ -68,6 +71,7 @@ def update_record(
     values: dict[str, Any],
     application_alias: str = "",
     template_alias: str = "",
+    platform: str | None = None,
 ) -> dict[str, Any]:
     """Update an existing record in the CMW Platform using PUT.
 
@@ -76,29 +80,29 @@ def update_record(
         values: Dictionary of field names to values
         application_alias: Optional application system name for type coercion
         template_alias: Optional template system name for type coercion
+        platform: Platform name (e.g., "primary", "secondary")
 
     Returns:
         Dictionary with keys: success (bool), status_code (int), data, error
     """
+    platform = platform or DEFAULT_PLATFORM
     processed_values: dict[str, Any] = {}
-    
+
     for key, val in values.items():
         if val is None:
             continue
-            
-        # Use coercion if metadata is available
+
         if application_alias and template_alias:
-            coerced = coerce_attribute_value(application_alias, template_alias, key, val)
+            coerced = coerce_attribute_value(application_alias, template_alias, key, val, platform)
         else:
             coerced = val
-            
+
         if coerced is not None:
-            # Convert key to API alias format (e.g. PascalCase -> camelCase)
             api_key = to_api_alias(key)
             processed_values[api_key] = coerced
 
     endpoint = f"/webapi/Record/{record_id}"
-    result = api._put_request(processed_values, endpoint)
+    result = api._put_request(processed_values, endpoint, platform=platform)
 
     return result
 
@@ -106,6 +110,7 @@ def update_record(
 def read_record(
     record_id: str,
     fields: list[str] | None = None,
+    platform: str | None = None,
 ) -> dict[str, Any]:
     """Read a record from the CMW Platform with server-side field filtering.
 
@@ -114,11 +119,13 @@ def read_record(
     Args:
         record_id: The record UUID
         fields: List of field aliases to retrieve. If None, returns all fields.
+        platform: Platform name (e.g., "primary", "secondary")
 
     Returns:
         Dictionary with keys: success (bool), status_code (int),
         data (dict|list|None), error (str|None)
     """
+    platform = platform or DEFAULT_PLATFORM
     if fields is None:
         fields = []
 
@@ -128,7 +135,7 @@ def read_record(
         "propertiesByAlias": fields,
     }
 
-    result = api._post_request(body, endpoint)
+    result = api._post_request(body, endpoint, platform=platform)
 
     if result.get("success") and result.get("data"):
         data = result["data"]

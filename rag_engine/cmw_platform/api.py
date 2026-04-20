@@ -11,38 +11,70 @@ from rag_engine.cmw_platform.models import HTTPResponse, RequestConfig
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_PLATFORM = os.getenv("CMW_PLATFORM_NAME", "primary")
 
-def _load_server_config() -> RequestConfig:
-    """Load server configuration from .env file."""
+
+def _load_env_file(platform: str | None = None) -> None:
+    """Load .env file, optionally platform-specific.
+
+    Args:
+        platform: Platform name (e.g., "primary", "secondary").
+                 If "secondary" and .env.secondary exists, loads it.
+                 Otherwise loads default .env.
+    """
     env_path = Path(__file__).parent.parent.parent / ".env"
+    if platform and platform != "primary":
+        platform_env_path = Path(__file__).parent.parent.parent / f".env.{platform}"
+        if platform_env_path.exists():
+            load_dotenv(platform_env_path)
+            return
     load_dotenv(env_path)
 
+
+def _load_server_config(platform: str | None = None) -> RequestConfig:
+    """Load server configuration from .env file.
+
+    Args:
+        platform: Platform name (e.g., "primary", "secondary").
+                 Defaults to "primary".
+
+    Returns:
+        RequestConfig with URL, login, password, timeout.
+    """
+    _load_env_file(platform)
+    platform = platform or DEFAULT_PLATFORM
+
+    # Build env var suffix: "" for primary, "2" for secondary
+    suffix = "" if platform == "primary" else "2"
+    base = f"CMW{suffix}_BASE_URL"
+    login = f"CMW{suffix}_LOGIN"
+    pw = f"CMW{suffix}_PASSWORD"
+    timeout_var = f"CMW{suffix}_TIMEOUT"
+
     return RequestConfig(
-        base_url=os.getenv("CMW_BASE_URL", ""),
-        login=os.getenv("CMW_LOGIN", ""),
-        password=os.getenv("CMW_PASSWORD", ""),
-        timeout=int(os.getenv("CMW_TIMEOUT", "30")),
+        base_url=os.getenv(base, ""),
+        login=os.getenv(login, ""),
+        password=os.getenv(pw, ""),
+        timeout=int(os.getenv(timeout_var, "30")),
     )
 
 
-def _basic_headers() -> dict[str, str]:
+def _basic_headers(platform: str | None = None) -> dict[str, str]:
     """Create Basic Auth header with base64-encoded credentials."""
-    config = _load_server_config()
+    config = _load_server_config(platform)
     credentials = f"{config.login}:{config.password}"
     encoded = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
     return {"Authorization": f"Basic {encoded}"}
 
 
-def _get_request(endpoint: str) -> dict[str, Any]:
+def _get_request(endpoint: str, platform: str | None = None) -> dict[str, Any]:
     """Make GET request with Basic Auth header."""
-    config = _load_server_config()
+    config = _load_server_config(platform)
     url = f"{config.base_url}{endpoint}"
-    headers = _basic_headers()
+    headers = _basic_headers(platform)
 
     try:
-        response = requests.get(
-            url, headers=headers, timeout=config.timeout
-        )
+        response = requests.get(url, headers=headers, timeout=config.timeout)
         http_response = HTTPResponse(
             success=response.status_code == 200,
             status_code=response.status_code,
@@ -67,16 +99,14 @@ def _get_request(endpoint: str) -> dict[str, Any]:
         return {"success": False, "status_code": 500, "error": str(e), "data": None}
 
 
-def _post_request(body: dict[str, Any], endpoint: str) -> dict[str, Any]:
+def _post_request(body: dict[str, Any], endpoint: str, platform: str | None = None) -> dict[str, Any]:
     """Make POST request with Basic Auth header."""
-    config = _load_server_config()
+    config = _load_server_config(platform)
     url = f"{config.base_url}{endpoint}"
-    headers = _basic_headers()
+    headers = _basic_headers(platform)
 
     try:
-        response = requests.post(
-            url, json=body, headers=headers, timeout=config.timeout
-        )
+        response = requests.post(url, json=body, headers=headers, timeout=config.timeout)
         http_response = HTTPResponse(
             success=response.status_code == 200,
             status_code=response.status_code,
@@ -114,16 +144,14 @@ def _post_request(body: dict[str, Any], endpoint: str) -> dict[str, Any]:
         return {"success": False, "status_code": 500, "error": str(e), "data": None}
 
 
-def _put_request(body: dict[str, Any], endpoint: str) -> dict[str, Any]:
+def _put_request(body: dict[str, Any], endpoint: str, platform: str | None = None) -> dict[str, Any]:
     """Make PUT request with Basic Auth header."""
-    config = _load_server_config()
+    config = _load_server_config(platform)
     url = f"{config.base_url}{endpoint}"
-    headers = _basic_headers()
+    headers = _basic_headers(platform)
 
     try:
-        response = requests.put(
-            url, json=body, headers=headers, timeout=config.timeout
-        )
+        response = requests.put(url, json=body, headers=headers, timeout=config.timeout)
         http_response = HTTPResponse(
             success=response.status_code == 200,
             status_code=response.status_code,

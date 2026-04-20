@@ -4259,8 +4259,47 @@ if __name__ == "__main__":
 
     @fastapi_app.post("/api/v1/cmw/process-support-request")
     async def cmw_endpoint(req: ProcessSupportRequest, http_req: Request) -> dict:
-        """Process CMW Platform support request via REST API."""
+        """Process CMW Platform (primary) support request via REST API."""
         return cmw_process_support_request(req.request_id, http_req)
+
+    class SummarizeDocumentRequest(BaseModel):
+        request_id: str
+
+    @fastapi_app.post("/api/v1/cmw/summarize-document")
+    async def summarize_document_endpoint(req: SummarizeDocumentRequest, http_req: Request) -> dict:
+        """Summarize document attached to a CMW Platform record (Lukoil instance).
+
+        Gets document from Document attribute, extracts text,
+        and generates summary using LLM.
+
+        Args:
+            request_id: Record ID in ArchitectureManagement.Zaprosinarazrabotky
+
+        Returns:
+            {"success": bool, "summary": str, "message": str, "error": str}
+        """
+        # API key authentication
+        if settings.cmw2_api_key:
+            provided_key = http_req.headers.get("X-API-Key")
+            if provided_key != settings.cmw2_api_key:
+                logger.warning("Invalid API key attempt to summarize-document endpoint")
+                return {"success": False, "message": None, "error": "Invalid API key"}
+
+        from rag_engine.cmw_platform.summary_connector import DocumentSummaryConnector
+
+        try:
+            connector = DocumentSummaryConnector(platform="secondary")
+            result = connector.process(req.request_id)
+
+            return {
+                "success": result.success,
+                "summary": result.summary if hasattr(result, "summary") else None,
+                "message": result.message,
+                "error": result.error,
+            }
+        except Exception:
+            logger.exception("Document summarization failed")
+            return {"success": False, "error": "Internal error"}
 
     # Mount Gradio with all options including MCP
     # Configure static file access for Gradio (see https://www.gradio.app/guides/file-access)

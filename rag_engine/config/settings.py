@@ -229,6 +229,8 @@ class Settings(BaseSettings):
     # API key for CMW Platform webhook endpoints
     # MANDATORY in .env - must be present (empty = skip auth, present = require it)
     cmw_api_key: str
+    # API key for CMW2/Lukoil Platform webhook endpoint
+    cmw2_api_key: str = ""
 
     # Pydantic v2 configuration: accept extra env vars and set env file
     model_config = SettingsConfigDict(

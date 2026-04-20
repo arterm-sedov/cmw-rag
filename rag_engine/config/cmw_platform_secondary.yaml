@@ -1,0 +1,38 @@
+# CMW Platform Secondary Instance - Document Summarization
+# Application: ArchitectureManagement
+# Template: Zaprosinarazrabotky (Запрос в разработку / Development Request)
+
+pipeline:
+  input:
+    application: ArchitectureManagement
+    template: Zaprosinarazrabotky
+    attributes:
+      document_file: Commerpredloshenie
+      user_prompt: prompt
+
+  request_template: |
+    # Document Summary Request
+
+    User prompt: {user_prompt}
+
+    Please summarize the attached document according to the user's request.
+
+  output:
+    application: ArchitectureManagement
+    template: Zaprosinarazrabotky
+    summary_attribute: summary
+
+templates:
+  ArchitectureManagement:
+    Zaprosinarazrabotky:
+      attributes:
+        document_file:
+          type: document
+          from_input: Commerpredloshenie
+        user_prompt:
+          type: text
+          from_input: prompt
+        summary:
+          type: text
+          from_agent: summary_result
+          is_output: true

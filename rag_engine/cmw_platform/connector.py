@@ -17,6 +17,8 @@ from rag_engine.cmw_platform.request_builder import build_request
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_PLATFORM = "primary"
+
 
 @dataclass
 class ProcessResult:
@@ -28,11 +30,7 @@ class ProcessResult:
 
 
 def _build_success_message() -> str:
-    """Build a concise success message with UTC timestamp.
-
-    Returns:
-        Human-readable status message for the platform.
-    """
+    """Build a concise success message with UTC timestamp."""
     timestamp = datetime.now(UTC).isoformat(timespec="seconds")
     return f"Request fetched, agent started at {timestamp}"
 
@@ -44,23 +42,30 @@ class PlatformConnector:
     1. The platform sends a request ID via API
     2. We fetch the record and immediately return success
     3. The agent runs in the background and creates the linked response record
+
+    Args:
+        platform: Platform name (e.g., "primary", "secondary").
+                 Defaults to "primary".
     """
 
+    def __init__(self, platform: str = DEFAULT_PLATFORM):
+        self.platform = platform or DEFAULT_PLATFORM
+
     def start_request(self, request_id: str) -> ProcessResult:
-        """Start processing a TPAIModel record through the RAG pipeline.
+        """Start processing a record through the RAG pipeline.
 
         This method is ASYNC - it fetches the record, starts the agent, and returns.
         The agent runs in the background and creates the linked response record.
 
         Args:
-            request_id: The TPAIModel request ID to process
+            request_id: The request ID to process
 
         Returns:
             ProcessResult with success status (fetch succeeded, agent started)
         """
         try:
-            input_config = config.get_input_config()
-            attr_mapping = config.get_input_attributes()
+            input_config = config.get_input_config(platform=self.platform)
+            attr_mapping = config.get_input_attributes(platform=self.platform)
             platform_fields = list(attr_mapping.values())
 
             logger.info(
@@ -70,7 +75,7 @@ class PlatformConnector:
                 input_config.get("template"),
             )
 
-            record = records.read_record(request_id, fields=platform_fields)
+            record = records.read_record(request_id, fields=platform_fields, platform=self.platform)
 
             if not record["success"]:
                 logger.error("Failed to fetch record %s: %s", request_id, record.get("error"))
@@ -87,7 +92,9 @@ class PlatformConnector:
             logger.debug("Built markdown request for record %s", request_id)
 
             thread = threading.Thread(
-                target=_run_agent_background, args=(request_id, md_request), daemon=True
+                target=_run_agent_background,
+                args=(request_id, md_request, self.platform),
+                daemon=True,
             )
             thread.start()
 
@@ -103,17 +110,13 @@ class PlatformConnector:
             return ProcessResult(success=False, error=str(e))
 
 
-def _run_agent_background(request_id: str, md_request: str) -> None:
+def _run_agent_background(request_id: str, md_request: str, platform: str = DEFAULT_PLATFORM) -> None:
     """Run the RAG agent in a background thread.
 
-    This function executes the full pipeline:
-    1. Call the RAG agent with the markdown request
-    2. Map the agent result to the output template
-    3. Create the response record in CMW Platform
-
     Args:
-        request_id: The original TPAIModel request ID
+        request_id: The original request ID
         md_request: The markdown request built from the input record
+        platform: Platform name
     """
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -121,9 +124,9 @@ def _run_agent_background(request_id: str, md_request: str) -> None:
     try:
         agent_result = loop.run_until_complete(_call_agent(md_request))
 
-        output_config = config.get_output_config()
+        output_config = config.get_output_config(platform=platform)
         template_config = config.get_template_config(
-            output_config["application"], output_config["template"]
+            output_config["application"], output_config["template"], platform=platform
         )
 
         mapped_values = map_agent_response(
@@ -137,6 +140,7 @@ def _run_agent_background(request_id: str, md_request: str) -> None:
             application_alias=output_config["application"],
             template_alias=output_config["template"],
             values=mapped_values,
+            platform=platform,
         )
 
         if response["success"]:
@@ -155,14 +159,7 @@ def _run_agent_background(request_id: str, md_request: str) -> None:
 
 
 async def _call_agent(md_request: str):
-    """Call the RAG agent with the given request.
-
-    Args:
-        md_request: The markdown request string
-
-    Returns:
-        StructuredAgentResult from the agent
-    """
+    """Call the RAG agent with the given request."""
     from rag_engine.api.app import ask_comindware_structured
 
     return await ask_comindware_structured(md_request)

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any
 
@@ -5,83 +6,109 @@ import yaml
 
 from rag_engine.cmw_platform.attribute_types import AttributeMetadata, coerce_value
 
+DEFAULT_PLATFORM = os.getenv("CMW_PLATFORM_NAME", "primary")
 
-def load_cmw_config() -> dict[str, Any]:
-    """Load CMW Platform configuration from YAML."""
-    config_path = Path(__file__).parent.parent / "config" / "cmw_platform.yaml"
-    with open(config_path, encoding="utf-8") as f:
-        return yaml.safe_load(f)
+_config_cache: dict[str, dict[str, Any]] = {}
 
 
-def load_pipeline_config() -> dict[str, Any]:
-    """Load pipeline configuration section from YAML."""
-    config = load_cmw_config()
-    return config.get("pipeline", {})
+def _get_config_path(platform: str | None = None) -> Path:
+    """Get path to platform config YAML."""
+    platform = platform or DEFAULT_PLATFORM
+    config_dir = Path(__file__).parent.parent / "config"
+
+    if platform == "primary":
+        return config_dir / "cmw_platform.yaml"
+
+    return config_dir / f"cmw_platform_{platform}.yaml"
 
 
-def get_input_attributes() -> dict[str, str]:
-    """Get Python -> Platform attribute mapping from input config.
+def load_cmw_config(platform: str | None = None) -> dict[str, Any]:
+    """Load CMW Platform configuration from YAML.
+
+    Args:
+        platform: Platform name (e.g., "primary", "secondary").
+                 Defaults to CMW_PLATFORM_NAME env var or "primary".
 
     Returns:
-        Dict mapping Python names to platform attribute names.
-        E.g., {"title": "name", "question": "Description"}
+        Full config dict.
     """
-    input_config = get_input_config()
-    return input_config.get("attributes", {})
+    platform = platform or DEFAULT_PLATFORM
+
+    if platform not in _config_cache:
+        config_path = _get_config_path(platform)
+
+        if not config_path.exists():
+            raise FileNotFoundError(f"Config not found: {config_path}")
+
+        with open(config_path, encoding="utf-8") as f:
+            _config_cache[platform] = yaml.safe_load(f)
+
+    return _config_cache[platform]
 
 
-def get_platform_attribute(python_name: str) -> str | None:
+def load_pipeline_config(platform: str | None = None) -> dict[str, Any]:
+    """Load pipeline configuration section from YAML."""
+    cfg = load_cmw_config(platform)
+    return cfg.get("pipeline", {})
+
+
+def get_input_config(platform: str | None = None) -> dict[str, Any]:
+    """Get input configuration (template to fetch from)."""
+    pipeline = load_pipeline_config(platform)
+    return pipeline.get("input", {})
+
+
+def get_output_config(platform: str | None = None) -> dict[str, Any]:
+    """Get output configuration (template to create in)."""
+    pipeline = load_pipeline_config(platform)
+    return pipeline.get("output", {})
+
+
+def get_input_attributes(platform: str | None = None) -> dict[str, str]:
+    """Get Python -> Platform attribute mapping from input config."""
+    return get_input_config(platform).get("attributes", {})
+
+
+def get_platform_attribute(python_name: str, platform: str | None = None) -> str | None:
     """Map Python name to platform attribute name."""
-    attrs = get_input_attributes()
+    attrs = get_input_attributes(platform)
     return attrs.get(python_name)
 
 
-def get_python_attribute(platform_name: str) -> str | None:
+def get_python_attribute(platform_name: str, platform: str | None = None) -> str | None:
     """Map platform attribute name to Python name."""
-    attrs = get_input_attributes()
+    attrs = get_input_attributes(platform)
     for python_name, platform_name_val in attrs.items():
         if platform_name_val == platform_name:
             return python_name
     return None
 
 
-def get_input_config() -> dict[str, Any]:
-    """Get input configuration (template to fetch from)."""
-    pipeline = load_pipeline_config()
-    return pipeline.get("input", {})
-
-
-def get_output_config() -> dict[str, Any]:
-    """Get output configuration (template to create in)."""
-    pipeline = load_pipeline_config()
-    return pipeline.get("output", {})
-
-
-def get_request_template() -> str:
+def get_request_template(platform: str | None = None) -> str:
     """Get the markdown request template."""
-    pipeline = load_pipeline_config()
+    pipeline = load_pipeline_config(platform)
     return pipeline.get("request_template", "")
 
 
-def get_template_config(app: str, template: str) -> dict[str, Any] | None:
+def get_template_config(
+    app: str, template: str, platform: str | None = None
+) -> dict[str, Any] | None:
     """Get configuration for a specific template."""
-    config = load_cmw_config()
-    return config.get("templates", {}).get(app, {}).get(template)
+    cfg = load_cmw_config(platform)
+    return cfg.get("templates", {}).get(app, {}).get(template)
 
 
-def get_attribute_metadata(app: str, template: str) -> dict[str, AttributeMetadata]:
-    """Get full attribute metadata for a template.
-
-    Returns a dictionary mapping attribute aliases to AttributeMetadata.
-    """
-    template_config = get_template_config(app, template)
+def get_attribute_metadata(
+    app: str, template: str, platform: str | None = None
+) -> dict[str, AttributeMetadata]:
+    """Get full attribute metadata for a template."""
+    template_config = get_template_config(app, template, platform)
     if not template_config:
         return {}
 
     attrs = template_config.get("attributes", {})
     result = {}
     for alias, cfg in attrs.items():
-        # Handle both formats: 'title: string' or 'title: {type: string, from_agent: ...}'
         if isinstance(cfg, str):
             attr_type = cfg
         else:
@@ -96,26 +123,18 @@ def get_attribute_metadata(app: str, template: str) -> dict[str, AttributeMetada
     return result
 
 
-def get_attribute_type(app: str, template: str, attribute: str) -> str:
+def get_attribute_type(app: str, template: str, attribute: str, platform: str | None = None) -> str:
     """Get the type of an attribute."""
-    metadata = get_attribute_metadata(app, template)
+    metadata = get_attribute_metadata(app, template, platform)
     attr = metadata.get(attribute)
     return attr.type if attr else "string"
 
 
-def coerce_attribute_value(app: str, template: str, attribute: str, value: Any) -> Any:
-    """Coerce a value based on attribute metadata from config.
-
-    Args:
-        app: Application system name
-        template: Template system name
-        attribute: Attribute alias
-        value: Value to coerce
-
-    Returns:
-        Coerced value
-    """
-    metadata = get_attribute_metadata(app, template)
+def coerce_attribute_value(
+    app: str, template: str, attribute: str, value: Any, platform: str | None = None
+) -> Any:
+    """Coerce a value based on attribute metadata from config."""
+    metadata = get_attribute_metadata(app, template, platform)
     attr = metadata.get(attribute)
 
     if not attr:
