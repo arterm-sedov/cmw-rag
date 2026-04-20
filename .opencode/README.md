@@ -190,6 +190,9 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 | <../rag_engine/tools/generate_resolution_plan.py> | Support Resolution Plan tool (SRP) |
 | <../rag_engine/tools/get_datetime.py> | Current date/time tool |
 | <../rag_engine/tools/math_tools.py> | Math tools for arithmetic operations |
+| <../rag_engine/tools/read_file.py> | Unified file reading tool (text + PDF) |
+| <../rag_engine/tools/pdf_utils.py> | PDF text extraction utilities |
+| <../rag_engine/tools/file_utils.py> | File utilities (text reading, URL download) |
 | <../rag_engine/tools/utils.py> | Tool result parsing utilities |
 
 ### storage/
