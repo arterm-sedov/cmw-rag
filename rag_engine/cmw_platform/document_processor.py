@@ -135,23 +135,41 @@ def _process_pdf(data: bytes) -> dict[str, Any]:
 
 
 def _process_docx(data: bytes) -> dict[str, Any]:
-    """Process Word document."""
-    from docx import Document
-
-    with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as f:
-        f.write(data)
-        temp_path = f.name
+    """Process Word document using direct XML parsing (no external dependencies)."""
+    import io
+    import zipfile
 
     try:
-        doc = Document(temp_path)
-        text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            with zf.open("word/document.xml") as xml_file:
+                xml_content = xml_file.read()
+    except zipfile.BadZipFile:
+        return {"success": False, "error": "Invalid DOCX file (not a valid ZIP)"}
+    except KeyError:
+        return {"success": False, "error": "Invalid DOCX file (missing word/document.xml)"}
+
+    try:
+        import xml.etree.ElementTree as ET
+
+        ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        root = ET.fromstring(xml_content)
+
+        paragraphs = []
+        for para in root.iter("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}p"):
+            texts = []
+            for t in para.iter("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"):
+                if t.text:
+                    texts.append(t.text)
+            para_text = "".join(texts).strip()
+            if para_text:
+                paragraphs.append(para_text)
+
+        text = "\n".join(paragraphs)
         return {"success": True, "text": text, "page_count": 1, "file_type": "docx"}
-    except ImportError:
-        return {"success": False, "error": "python-docx not installed"}
+    except ET.ParseError as e:
+        return {"success": False, "error": f"Failed to parse DOCX XML: {e}"}
     except Exception as e:
         return {"success": False, "error": f"DOCX processing failed: {e}"}
-    finally:
-        os.unlink(temp_path)
 
 
 def _process_xlsx(data: bytes) -> dict[str, Any]:
