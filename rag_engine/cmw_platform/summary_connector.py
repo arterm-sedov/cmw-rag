@@ -5,6 +5,7 @@ Uses create_summary_agent for agentic LLM calls with web_search capability.
 """
 
 import logging
+import threading
 from dataclasses import dataclass
 
 from rag_engine.cmw_platform import config, records
@@ -50,6 +51,50 @@ class DocumentSummaryConnector:
 
     def __init__(self, platform: str = DEFAULT_PLATFORM):
         self.platform = platform or DEFAULT_PLATFORM
+
+    def start(self, record_id: str) -> ProcessResult:
+        """Verify record is readable, spawn background processing, return ACK.
+
+        Fire-and-forget: returns immediately; process() runs in background thread.
+        Mirrors PlatformConnector.start_request() pattern.
+
+        Args:
+            record_id: Record ID to process
+
+        Returns:
+            ProcessResult with success status (read succeeded, agent started)
+        """
+        try:
+            pipeline = config.load_pipeline_config(self.platform)
+            attr_map = pipeline.get("input", {}).get("attributes", {})
+            document_attr = attr_map.get("document_file", "")
+            prompt_attr = attr_map.get("user_prompt", "")
+
+            if not document_attr:
+                return ProcessResult(success=False, error="No document attribute configured")
+
+            record = records.read_record(
+                record_id, fields=[document_attr, prompt_attr], platform=self.platform,
+            )
+
+            if not record.get("success"):
+                return ProcessResult(
+                    success=False, error=f"Failed to read record: {record.get('error')}",
+                )
+
+            thread = threading.Thread(
+                target=self.process,
+                args=(record_id,),
+                daemon=True,
+            )
+            thread.start()
+
+            logger.info("Started background document processing for %s", record_id)
+            return ProcessResult(success=True, message="Начата обработка данных")
+
+        except Exception as e:
+            logger.exception("Failed to start document processing for %s", record_id)
+            return ProcessResult(success=False, error=str(e))
 
     def process(self, record_id: str) -> ProcessResult:
         """Process document: fetch → extract → summarize → write back."""

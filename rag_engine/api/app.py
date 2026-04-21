@@ -4269,14 +4269,14 @@ if __name__ == "__main__":
     async def summarize_document_endpoint(req: SummarizeDocumentRequest, http_req: Request) -> dict:
         """Summarize document attached to a CMW Platform record (Lukoil instance).
 
-        Gets document from Document attribute, extracts text,
-        and generates summary using LLM.
+        Fire-and-forget: verifies record is readable, returns ACK immediately,
+        processes document in background thread, writes result to record via API.
 
         Args:
             request_id: Record ID in ArchitectureManagement.Zaprosinarazrabotky
 
         Returns:
-            {"success": bool, "summary": str, "message": str, "error": str}
+            {"success": bool, "message": str, "error": str | None}
         """
         # API key authentication
         if settings.cmw2_api_key:
@@ -4289,16 +4289,15 @@ if __name__ == "__main__":
 
         try:
             connector = DocumentSummaryConnector(platform="secondary")
-            result = connector.process(req.request_id)
+            result = connector.start(req.request_id)
 
             return {
                 "success": result.success,
-                "summary": result.summary if hasattr(result, "summary") else None,
                 "message": result.message,
                 "error": result.error,
             }
         except Exception:
-            logger.exception("Document summarization failed")
+            logger.exception("Document summarization failed to start")
             return {"success": False, "error": "Internal error"}
 
     # Mount Gradio with all options including MCP
