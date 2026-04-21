@@ -48,3 +48,7 @@ plugins:
     custom_template_path: !ENV [MKDOCS_PDF_TEMPLATES, ../../../.reference-repos/cbap-mkdocs-ru/pdf_templates]
     output_path: !ENV ['MKDOCS_PDF_OUTPUT_FILENAME', 'Comindware. Архитектура агента обработки документов. 2026-04.pdf']
     enabled_if_env: ''
+
+exclude_docs: |
+  *.md
+  !20260420-document-agent-architecture-ru.md

@@ -53,3 +53,5 @@ data/chromadb_data/**
 # MkDocs build output
 _site/
 .site/
+docs/research/executive-research-technology-transfer/.site-doc-agent/**
+!docs/research/executive-research-technology-transfer/.site-doc-agent/Comindware. Архитектура агента обработки документов. 2026.04.21.pdf
