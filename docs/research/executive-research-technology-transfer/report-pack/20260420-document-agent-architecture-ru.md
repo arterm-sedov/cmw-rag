@@ -76,7 +76,7 @@ LLM формулирует запросы к внешним источникам
 flowchart TD
     classDef cmw fill:#e8f4e8,stroke:#388e3c,stroke-width:2px
     classDef core fill:#d4e5f7,stroke:#1565c0,stroke-width:2px
-    classDef proc fill:#f5f5f5,stroke:#666,stroke-width:1.5px
+    classDef proc fill:#f7e8d4,stroke:#8d6e63,stroke-width:1.5px
     classDef ext stroke-dasharray:3 3
 
     subgraph CMW [Comindware Platform]
