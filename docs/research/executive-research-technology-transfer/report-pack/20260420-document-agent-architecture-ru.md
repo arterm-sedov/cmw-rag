@@ -71,28 +71,35 @@ LLM формулирует запросы к внешним источникам
 ### Взаимодействие компонентов {: #doc_agent_component_interaction }
 
 ```mermaid
-graph TD
+flowchart TD
     subgraph Comindware [Comindware Platform]
         A[Записи с документами]
     end
 
-    subgraph Agent_Service [Сервис агента]
-        B[Шлюз REST API]
-        C[Оркестратор]
-        D[Парсер документов]
-        E[Языковая модель]
-        F[Инструменты: поиск, вычисления, дата/время]
+    subgraph Agent [Сервис агента]
+        subgraph Coord [Координация]
+            B[Шлюз REST API]
+            C[Оркестратор]
+        end
+        subgraph Proc [Обработка]
+            D[Парсер документов]
+            E[Языковая модель]
+            F[Инструменты]
+        end
     end
 
-    subgraph External [Внешние сервисы]
+    subgraph Ext [Внешние сервисы]
         G[ФНС / 1С / Консультант+]
         H[Веб-поиск]
     end
 
-    E ~~~ G
+    B ~~~ C
+    D ~~~ E
+    E ~~~ F
+    F ~~~ G
 
     A -->|POST: ID записи| B
-    B -->|ACK: обработка начата| A
+    B -->|ACK| A
     B -->|Делегирование| C
     C <-->|Извлечение текста| D
     C -->|Контекст, инструкции| E
@@ -112,8 +119,10 @@ graph TD
     style G stroke-dasharray:3 3
     style H stroke-dasharray:3 3
     style Comindware fill:#f9f,stroke:#333,stroke-width:2
-    style Agent_Service fill:#efe,stroke:#333,stroke-width:2
-    style External fill:#ffe,stroke:#333,stroke-width:2
+    style Agent fill:#efe,stroke:#333,stroke-width:2
+    style Ext fill:#ffe,stroke:#333,stroke-width:2
+    style Coord fill:#fafafa,stroke:#aaa
+    style Proc fill:#f5f5f5,stroke:#aaa
 ```
 
 ### Конвейер обработки {: #doc_agent_processing_pipeline }
