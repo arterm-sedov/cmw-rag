@@ -70,10 +70,17 @@ LLM формулирует запросы к внешним источникам
 
 ### Взаимодействие компонентов {: #doc_agent_component_interaction }
 
+{% raw %}
+
 ```mermaid
 flowchart TD
-    subgraph Comindware [Comindware Platform]
-        A[Записи с документами]
+    classDef cmw fill:#e8f4e8,stroke:#388e3c,stroke-width:2px
+    classDef core fill:#d4e5f7,stroke:#1565c0,stroke-width:2px
+    classDef proc fill:#f5f5f5,stroke:#666,stroke-width:1.5px
+    classDef ext stroke-dasharray:3 3
+
+    subgraph CMW [Comindware Platform]
+        A[(Записи с документами)]
     end
 
     subgraph Agent [Сервис агента]
@@ -83,13 +90,13 @@ flowchart TD
         end
         subgraph Proc [Обработка]
             D[Парсер документов]
-            E[Языковая модель]
+            E{{Языковая модель}}
             F[Инструменты]
         end
     end
 
     subgraph Ext [Внешние сервисы]
-        G[ФНС / 1С / Консультант+]
+        G[ФНС · 1С · Консультант+]
         H[Веб-поиск]
     end
 
@@ -98,32 +105,30 @@ flowchart TD
     E ~~~ F
     F ~~~ G
 
-    A -->|POST: ID записи| B
+    A ==>|ID записи| B
     B -->|ACK| A
     B -->|Делегирование| C
-    C <-->|Извлечение текста| D
-    C -->|Контекст, инструкции| E
-    E -.->|ToolCall| C
-    C -->|Исполнение| F
-    F -->|Вызов API| G
-    F -->|Вызов API| H
-    G -->|Данные контрагента| C
-    H -->|Семантический контекст| C
-    C -->|Результаты инструментов| E
-    E -->|Структурированный вывод| C
-    C <-->|Извлечение и запись данных| A
+    C <-->|Чтение / запись| A
+    C <-->|Извлечение| D
+    C -->|Контекст| E
+    E -.->|ToolCall / Вывод| C
+    C <-->|Исполнение| F
+    F <--> G
+    F <--> H
 
-    style A fill:#e8f4e8,stroke:#333
-    style C fill:#d4e5f7,stroke:#333
-    style B fill:#f7e8d4,stroke:#333
-    style G stroke-dasharray:3 3
-    style H stroke-dasharray:3 3
-    style Comindware fill:#f9f,stroke:#333,stroke-width:2
-    style Agent fill:#efe,stroke:#333,stroke-width:2
+    class A cmw
+    class C core
+    class B,D,E,F proc
+    class G,H ext
+
+    style CMW fill:#fce4ec,stroke:#c62828,stroke-width:3px
+    style Agent fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
     style Ext fill:#ffe,stroke:#333,stroke-width:2
-    style Coord fill:#fafafa,stroke:#aaa
-    style Proc fill:#f5f5f5,stroke:#aaa
+    style Coord fill:#fafafa,stroke:#9e9e9e,stroke-width:1.5px
+    style Proc fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1.5px
 ```
+
+{% endraw %}
 
 ### Конвейер обработки {: #doc_agent_processing_pipeline }
 
