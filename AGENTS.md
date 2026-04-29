@@ -2,7 +2,7 @@
 
 This document provides essential commands, code style guidelines, and development rules for agents working in this repository.
 
-**Plan:** lean, dry, minimal, abstract, non-breaking, brilliant, genious code. Deduplicated resuable code following best practices in TDD, SDD, Python, 12-factor agents, 12-factor software, Gradio, and LangChain.
+**Plan:** Before doing any job, write a file with your plan: step by step, actionable, detailed, TDD, check-pointed, follows best practices in TDD, SDD, Python, 12-factor and software. Code: lean, dry, minimal, abstract, non-breaking, brilliant, genius, follows best practices Python, Gradio, and LangChain.
 
 ## 🛠️ Build, Lint & Test Commands
 
