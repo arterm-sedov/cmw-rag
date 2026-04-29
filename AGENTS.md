@@ -169,11 +169,11 @@ When multiple endpoints compute the same thing, verify they produce identical re
 
 Before considering work complete:
 
-1. Tests pass
-2. Lint passes
-3. Shared logic (DRY)
-4. All endpoints unchanged (no breakage)
-5. README updated if applicable
+1. Run `ruff check` on modified files
+2. Run relevant tests (unit/integration as applicable)
+3. Confirm no user-facing regressions (non-breaking behavior)
+4. Ensure shared logic remains DRY (extract helpers for repeated blocks)
+5. Update docs/README when behavior, workflows, or commands changed
 
 ### 6. Running the Application
 
@@ -237,6 +237,12 @@ Structure content well per best documentation and executive research practices:
 - **Source traceability:** Every claim needs inline citation. No unsubstantiated assertions.
 - **Markdown spacing:** Always add a blank line after any heading (H1–H4) and before any list (bullet, numbered, or definition). This applies to all markdown files including AGENTS.md itself. No heading should be immediately followed by content without a blank line, and no list should start on the line right after a heading without a blank line in between.
 
+### Documentation Hygiene
+
+- Use clear heading hierarchy (single H1 per file).
+- Add a blank line after headings and before lists in Markdown.
+- Keep sections action-oriented: each section should clearly imply a decision or next step.
+
 ---
 
 ## 🤖 Agent Instructions (OpenCode, Cursor, Copilot)
@@ -269,7 +275,8 @@ Always write down as files to maintain context and avoid losing track:
     - Run relevant tests after changes.
     - Reanalyze changes twice for introduced issues.
 - **Secrets:** NEVER hardcode secrets. Use environment variables.
-- **.env Files:** NEVER commit `.env` files to version control. Use `.env-example` as a template with placeholder values only. The `.env` file contains sensitive credentials and deployment-specific settings.
+- **.env Files:** NEVER commit `.env` files to version control. Use `.env.example` as a template with placeholder values only. The `.env` file contains sensitive credentials and deployment-specific settings.
+- **Sensitive Data in Examples/Docs:** Never include real passwords, keys, tokens, personal names, or business/entity names in code, tests, or docs. Use synthetic neutral placeholders.
 - **No Breakage:** Never break existing code.
 - **Documentation:** After changes, update `.opencode/README.md` and related docs if affected.
 - **Memory:** Compact memory proactively once in a while during conversation rather than waiting for overflow — prevent "dementia" by summarizing and pruning before resources exhaust.
