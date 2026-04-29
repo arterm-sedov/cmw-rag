@@ -2,12 +2,14 @@
 
 This document provides essential commands, code style guidelines, and development rules for agents working in this repository.
 
-## Planning
+## Research & Planning
 
 Before any coding, changes or implementation:
 
 - Do a deep codebase research.
-- Do a deep web research.
+- Do a deep web research in the internet for reference documentation on frameworks, libraries, and best practices.
+- Gather all information before planning course of action.
+- Plan after gathering reference information, not before.
 - Write a concise plan **file**:
     - actionable
     - detailed
@@ -17,294 +19,240 @@ Before any coding, changes or implementation:
     - expected verification commands
     - follows best practices in TDD, SDD, Python, 12-factor agents and software
 
-## Common Engineering Baseline
-
-Use these rules:
+## Common Engineering Baseline and Design Principles
 
 - Follow SDD for scope/contract clarity and TDD for behavior-first implementation.
 - Keep code: lean, DRY, modular, and non-breaking, brilliant, abstract, minimal, genius.
-- Follow best practices in TDD, SDD, Gradio, and LangChain implementations.
-- Prefer Pythonic solutions: clarity over cleverness, explicit data contracts, strong typing.
+- Follow best practices:
+    - **TDD:** Write tests first, define behavior contracts. Test behavior, not implementation details.
+    - **SDD:** Plan with specs, understand requirements before coding.
+    - **Non-breaking:** Never break existing functionality.
+    - **Lean:** Minimal code, no overengineering.
+    - **Pythonic:** Follow Python idioms, prefer clarity over cleverness, explicit data contracts, strong typing.
+    - **Modular:** Single responsibility, group related functionality.
+    - **Open/Closed:** Design for extension without modification.
+    - **DRY:** 2+ uses -> extract to helper, super dry, super lean.
 - For LangChain see LangChain docs, repo and source code for reference, prefer LCEL/runnables, typed tool schemas, and streaming-safe patterns.
 - For Gradio see Gradio's docs, repo and source code for reference, follow best practices, keep state/event flow explicit and UI logic separated from domain logic.
-- Test behavior, not implementation details.
 - Validate external data and avoid silent exception handling (`except: pass` is forbidden).
 - Run lint and relevant tests for modified areas before completion.
 - Never hardcode secrets; use environment variables and `.env.example` placeholders only.
 
-## 🛠️ Build, Lint & Test Commands
+## Dev Commands
 
-### 1. Environment Setup
-
-Always ensure the virtual environment is activated before running commands.
-
-- **Linux (native):** `source .venv/bin/activate`
-- **Windows (WSL):** `source .venv-wsl/bin/activate`
-- **Windows (PowerShell):** `.venv\Scripts\Activate.ps1`
-- **Install Dependencies:** `pip install -r rag_engine/requirements.txt`
-
-### 2. Testing
-
-Use `pytest` for testing. Configuration is in `pyproject.toml`.
-
-- **Run all tests:**
-  ```bash
-  pytest
-  ```
-- **Run a specific test file:**
-  ```bash
-  pytest rag_engine/tests/test_tools_utils.py
-  ```
-- **Run a specific test function:**
-  ```bash
-  pytest rag_engine/tests/test_tools_utils.py::test_accumulate_articles
-  ```
-- **Run with coverage:**
-  ```bash
-  pytest --cov=rag_engine --cov-report=term-missing
-  ```
-
-### 3. Test Practices
-
-Following industry best practices from Google Test Primer and IBM Unit Testing Guidelines:
-
-#### Test Behavior, Not Implementation
-
-**Core Principles:**
-
-- Start with test suite before doing the feature itself.
-- Tests should validate what code **does**, not **how** it does it.
-
-**❌ BAD - Testing implementation details:**
-```python
-# Over-specifying internal calls and wire format
-
-def test_infinity_embeddings_implementation_details(mocker):
-    mock_post = mocker.patch("rag_engine.embedding_client.post")
-    client = InfinityEmbeddingClient(config=load_embedding_config("infinity_qwen3_8b"))
-
-    client.embed("hello world")
-
-    mock_post.assert_called_once_with(
-        "http://localhost:8000/v1/embeddings",  # Hardcoded internal URL
-        json={"input": "hello world"},          # Internal wire format
-    )
-```
-
-**✅ GOOD - Testing behavior:**
-```python
-# Verifying observable behavior and public contract
-
-def test_infinity_embeddings_returns_vector_of_expected_size(infinity_client):
-    vector = infinity_client.embed("hello world")
-
-    assert isinstance(vector, list)
-    assert len(vector) == infinity_client.dim  # Publicly-documented contract
-    assert all(isinstance(x, float) for x in vector)
-```
-
-**Key Guidelines:**
-
-1. **Test Outcomes, Not Mechanisms**
-   - Test that a feature works correctly
-   - Don't test internal function calls or implementation paths
-   - Example: Test that config returns a valid server endpoint, not which port is used
-
-2. **Avoid Hardcoded Values**
-   - Don't assert on specific ports, paths, or internal states
-   - Assert on functional requirements and valid patterns
-   - Example: Assert endpoint is a valid URL, not "http://localhost:8000"
-
-3. **Test Behavior Contracts**
-   - Define what the function should do (inputs → outputs)
-   - Test the contract, not the implementation
-   - Example: "Given a query, return relevant articles" not "call vector_search()"
-
-4. **Use Mocks Judiciously**
-   - Mock external dependencies (databases, APIs)
-   - Don't mock internal implementation details
-   - Example: Mock ChromaDB client, not internal collection.get()
-
-5. **Test Real Scenarios**
-   - Test user-facing behavior
-   - Test edge cases and error handling
-   - Example: Test "no results found" scenario, not "empty list returned"
-
-**Benefits of Testing Behavior:**
-- ✅ Tests remain valid when implementation changes
-- ✅ Tests document intended functionality
-- ✅ Easier to refactor code without breaking tests
-- ✅ Tests serve as specifications
-
-**References:**
-- [Google Test Primer](https://google.github.io/googletest/primer.html)
-- [IBM Unit Testing Best Practices](https://www.ibm.com/think/insights/unit-testing-best-practices)
-
-#### Integration Tests
-
-For endpoints, test actual HTTP requests. Use pytest markers for slow/integration tests:
 ```bash
-pytest -m "not slow"         # Run fast unit tests only
-pytest -m integration        # Run integration tests only
+# Activate venv first (required)
+# Use the active/default Cursor terminal session first
+source .venv/bin/activate        # Linux (native)
+source .venv-wsl/bin/activate    # Windows (WSL)
+.venv\Scripts\Activate.ps1       # Windows (PowerShell)
+
+# Install dependencies
+pip install -r rag_engine/requirements.txt
+
+# Start app
+bash rag_engine/scripts/start_app.sh
+python rag_engine/api/app.py
+
+# Build index
+python rag_engine/scripts/build_index.py --source "path/to/docs" --mode folder
+
+# Test
+pytest
+pytest rag_engine/tests/test_tools_utils.py
+pytest rag_engine/tests/test_tools_utils.py::test_accumulate_articles
+pytest --cov=rag_engine --cov-report=term-missing
+pytest -m "not slow"
+pytest -m integration
 ```
 
-#### Cross-Model Testing
+## Project Structure
 
-Test multiple models/configurations with same logic. Don't duplicate test code. Use parametrized tests for different configs or inputs.
+- **App Entry:** `rag_engine/api/app.py`
+- **Scripts:** `rag_engine/scripts/`
+- **Tests:** `rag_engine/tests/`
+- **Dependencies:** `rag_engine/requirements.txt`
 
-#### Shared Logic Verification
-
-When multiple endpoints compute the same thing, verify they produce identical results.
-
-### 4. Design Principles
-
-- **TDD:** Write tests first, define behavior contracts before implementation
-- **SDD:** Plan with specs, understand requirements before coding
-- **Non-breaking:** Never break existing functionality - verify all endpoints still work
-- **Lean:** Minimal code, no overengineering, delete unnecessary complexity
-- **Pythonic:** Follow Python idioms, use standard library, prefer clarity over cleverness
-- **Brilliant:** Simple solutions that work, not complex ones that impress
-
-### 5. Verification Checklist
-
-Before considering work complete:
-
-1. Run `ruff check` on modified files
-2. Run relevant tests (unit/integration as applicable)
-3. Confirm no user-facing regressions (non-breaking behavior)
-4. Ensure shared logic remains DRY (extract helpers for repeated blocks)
-5. Update docs/README when behavior, workflows, or commands changed
-
-### 6. Running the Application
-
-- **Start App (Bash):** `bash rag_engine/scripts/start_app.sh`
-- **Start App (Python):** `python rag_engine/api/app.py`
-- **Build Index:** `python rag_engine/scripts/build_index.py --source "path/to/docs" --mode folder`
-
----
-
-## 📐 Code Style & Conventions
+## Code Style & Conventions
 
 ### General Philosophy
 
-- **Style:** dry, lean, minimal, abstract, brillian, modular, pythonic, clean, testable, beautiful.
-- **Architecture:** Separation of concerns. Isolate code by function. Group code by function in different files to avoid clutter.
-- **Extensibility:** Ensure testability and extensibility.
-- **Purity:** Prefer LangChain purity for LangChain code and Gradio purity for Gradio code.
-- **Libraries:** Use `sentence_transformers` when needed and practical.
+- Style: dry, lean, minimal, abstract, modular, pythonic, clean, testable.
+- Prefer LangChain purity for LangChain code and Gradio purity for Gradio code.
+- Use `sentence_transformers` when needed and practical.
 
-### Formatting & Imports
+### Formatting, Naming, and Typing
 
-- **Imports:** Always place imports at the top of the file.
-- **Sorting:** `ruff` handles import sorting (isort compatible).
-- **Line Length:** 100 characters (as per `pyproject.toml`).
-- **Whitespace:** Do not add orphan spaces on empty lines.
+- Imports at the top of file; `ruff` handles import sorting.
+- Line length: 100 (per `pyproject.toml`).
+- Do not add orphan spaces on empty lines.
+- Variables/functions: `snake_case`.
+- Classes: `PascalCase`.
+- Constants: `UPPER_CASE`.
+- Private members: `_prefixed`.
+- Use Python type hints.
+- Use Pydantic models for data validation and settings.
+- Docstrings: PEP 257 (Google style preferred).
+- Comments explain *why*, not *what*.
 
-### Naming Conventions
+## Framework Conventions
 
-- **Variables/Functions:** `snake_case` (e.g., `process_document`, `user_id`)
-- **Classes:** `PascalCase` (e.g., `RAGIndexer`, `Settings`)
-- **Constants:** `UPPER_CASE` (e.g., `DEFAULT_TIMEOUT`)
-- **Private Members:** Prefix with `_` (e.g., `_internal_helper`)
+- **LangChain:** Prefer LCEL/runnables, typed tool schemas, and streaming-safe patterns.
+- **Gradio:** Keep state/event flow explicit and UI logic separated from domain logic.
 
-### Typing
+## Error Handling
 
-- **Type Hints:** Use standard Python type hints (`str`, `int`, `list[str]`, `dict[str, Any]`).
-- **Pydantic:** Use Pydantic models for data validation and settings (e.g., `class Settings(BaseSettings)`).
+- Avoid unnecessary try-catches; use robust explicit logic.
+- Catch exceptions only when meaningful.
+- Avoid hardcoded fallbacks.
+- Do not delete logging; update it when needed.
+- No silent exception handling (`except: pass` is forbidden).
 
-### Error Handling
+## Testing Guidelines
 
-- **Philosophy:** Avoid unnecessary try-catches. Prefer robust, explicit logic.
-- **Catching:** Catch exceptions only when necessary and meaningful.
-- **Fallbacks:** Avoid hardcoded fallbacks. Code should fail gracefully or handle expected edge cases explicitly.
+- Test behavior, not implementation details.
+- Start with test suite before implementing features.
+- Avoid hardcoding internal details in tests.
+- Mock external dependencies judiciously; avoid mocking internal implementation details.
+- Test real scenarios, edge cases, and user-facing outcomes.
+- Use parametrization for cross-model/config testing.
+- Verify shared-logic equivalence when multiple endpoints compute the same outcome.
+- Prefer integration tests for endpoint-level behavior; use pytest markers:
+  - `pytest -m "not slow"` for fast unit checks.
+  - `pytest -m integration` for integration checks.
 
-### Logging & Comments
+### Example: Behavior Over Implementation
 
-- **Logging:** Do not delete logging; update it if necessary.
-- **Comments:** Add comments for *why*, not *what*. Update existing comments; do not delete them.
-- **Docs Strings:** Follow PEP 257 docstring conventions (Google style is preferred).
+Bad:
 
-### Documentation Structure
+```python
+def test_infinity_embeddings_implementation_details(mocker):
+    mock_post = mocker.patch("rag_engine.embedding_client.post")
+    client = InfinityEmbeddingClient(config=load_embedding_config("infinity_qwen3_8b"))
+    client.embed("hello world")
+    mock_post.assert_called_once_with(
+        "http://localhost:8000/v1/embeddings",
+        json={"input": "hello world"},
+    )
+```
 
-Structure content well per best documentation and executive research practices:
+Good:
 
-- **Clear hierarchy:** Use consistent heading levels (H1 → H2 → H3). One H1 per file.
-- **Front-load value:** Put key conclusions and recommendations first. Executives scan for decisions.
-- **SCQA framework:** Situation (Ситуация) → Complication (Проблема) → Question (Вопрос для решения) → Answer (Рекомендуемый ответ) for executive summaries or report intros.
-- **Chunked content:** Use bulleted lists, short paragraphs, and visual breaks. Avoid walls of text.
-- **Actionable sections:** Each section should answer "So what?" and lead to a decision or next step.
-- **Consistent formatting:** Same patterns for similar content types (e.g., all pricing tables look the same).
-- **Source traceability:** Every claim needs inline citation. No unsubstantiated assertions.
-- **Markdown spacing:** Always add a blank line after any heading (H1–H4) and before any list (bullet, numbered, or definition). This applies to all markdown files including AGENTS.md itself. No heading should be immediately followed by content without a blank line, and no list should start on the line right after a heading without a blank line in between.
+```python
+def test_infinity_embeddings_returns_vector_of_expected_size(infinity_client):
+    vector = infinity_client.embed("hello world")
+    assert isinstance(vector, list)
+    assert len(vector) == infinity_client.dim
+    assert all(isinstance(x, float) for x in vector)
+```
 
-### Documentation Hygiene
+References:
+
+- https://google.github.io/googletest/primer.html
+- https://www.ibm.com/think/insights/unit-testing-best-practices
+
+## Verification Checklist
+
+Before considering work complete:
+
+1. Run `ruff check` on modified files.
+2. Run relevant tests (unit/integration as applicable).
+3. Confirm no user-facing regressions (non-breaking behavior).
+4. Ensure shared logic remains DRY (extract helpers for repeated blocks).
+5. Update docs/README when behavior, workflows, or commands changed.
+
+## Documentation Guidelines
 
 - Use clear heading hierarchy (single H1 per file).
+- Front-load conclusions and recommendations.
+- Use actionable, chunked sections (avoid walls of text).
+- Keep source traceability for claims (inline citation where relevant).
 - Add a blank line after headings and before lists in Markdown.
 - Keep sections action-oriented: each section should clearly imply a decision or next step.
+- Documentation files should be placed under `docs/` where applicable.
+- Progress reports should use `docs/**/progress_reports/` with `YYYYMMDD_` prefix.
+- Generate `YYYYMMDD` timestamps with native commands:
+  - PowerShell: `Get-Date -Format "yyyyMMdd"`
+  - Bash/WSL: `date +%Y%m%d`
+  - Python (with active venv): `python -c "from datetime import datetime; print(datetime.now().strftime('%Y%m%d'))"`
 
----
+## Security & Secrets
 
-## 🤖 Agent Instructions (OpenCode, Cursor, Copilot)
+- NEVER hardcode secrets.
+- Use `.env` files for local config, never commit secrets.
+- NEVER commit `.env`; use `.env.example` placeholders only.
+- Never include real passwords, keys, tokens, personal names, or business/entity names in code/tests/docs.
+- Use synthetic neutral placeholders.
+- Load secrets via dotenv in tests and code. Never hardcode sensitive information.
 
-**Commit Discipline:** Do NOT create or push commits unless explicitly asked by the user.
+## Commit Guidelines
 
-### Commit Messages
+- Do NOT create or push commits unless explicitly asked by the user.
+- If asked to only draft commit text, generate the message but do not add files, stage, push, or commit.
+- Generate commit message text, but do NOT add files, stage, or push unless requested.
+- Keep commit messages concise and strictly relevant.
+- Keep commit message length to the necessary minimum.
+- Verify generated commit text before use.
+- Avoid blabber.
 
-- **Format:** Concise, structured, and strictly relevant to the changes.
-- **Content:** Keep length to the necessary minimum. Avoid fluff.
-- **Tool:** Use the commit message generation tool but verify content.
+## Work Tracking & Reports
 
-### Work Tracking
+- Plans: `.opencode/plans/YYYYMMDD_<topic>/plan.md`
+- Research: `.opencode/research/YYYYMMDD_<topic>/research.md`
+- Progress: `.opencode/progress_reports/YYYYMMDD_<topic>/progress_YYYYMMDD.md`
+- Use GitHub Markdown format; keep dated parent folders.
+- Update `.opencode/README.md` and related docs when affected.
 
-Always write down as files to maintain context and avoid losing track:
+## UI/UX Principles
 
-- **Plans:** Actionable step-by-step plans with checkpoints → `.opencode/plans/YYYYMMDD_<topic>/plan.md`
-- **Research:** Research results and findings → `.opencode/research/YYYYMMDD_<topic>/research.md`
-- **Progress:** Progress reports for ongoing work → `.opencode/progress_reports/YYYYMMDD_<topic>/progress_YYYYMMDD.md`
-- Use GitHub Markdown format. Parent folder dated with inception timestamp.
+- **Clarity over clutter:** Remove redundant elements.
+- **Maximize data-ink ratio:** Every element adds value.
+- **Visual hierarchy:** Group related information consistently.
+- **Progressive disclosure:** Essential info prominent, details on demand.
+- **Data integrity:** Display zero values when meaningful, not just absence.
+
+## 12-Factor App Principles
+
+Based on https://12factor.net/ and https://github.com/humanlayer/12-factor-agents:
+
+- One codebase, many deploys.
+- Declare dependencies explicitly.
+- Keep config in env vars.
+- Treat backing services as attached resources.
+- Separate build, release, and run stages.
+- Prefer stateless processes with session state in backing services.
+- Export services via port binding.
+- Scale via process model.
+- Optimize disposability (fast startup, graceful shutdown).
+- Keep dev/prod parity.
+- Treat logs as event streams.
+- Run admin tasks as one-off processes.
+
+## Repo-Specific Details
 
 ### Agent Behavior
 
-- **Information Gathering:**
-    - Search docs/internet before coding. Digest best practices from official sources.
-    - Do not read just one page; scan the docs, links, and hierarchy to ground actions in truth.
-- **Planning:** PLAN your course of action before implementing. Write a plan to `.opencode/plans/` (or `.cursor/plans/` for Cursor agent) that is lean, dry, actionable, step-by-step, verifiable, brilliant, and follows best SWE practices — TDD-first, SDD/DDD, clean architecture.
-- **Verification:**
-    - Run `ruff check <modified_file>` after making changes.
-    - Run relevant tests after changes.
-    - Reanalyze changes twice for introduced issues.
-- **Secrets:** NEVER hardcode secrets. Use environment variables.
-- **.env Files:** NEVER commit `.env` files to version control. Use `.env.example` as a template with placeholder values only. The `.env` file contains sensitive credentials and deployment-specific settings.
-- **Sensitive Data in Examples/Docs:** Never include real passwords, keys, tokens, personal names, or business/entity names in code, tests, or docs. Use synthetic neutral placeholders.
-- **No Breakage:** Never break existing code.
-- **Documentation:** After changes, update `.opencode/README.md` and related docs if affected.
-- **Memory:** Compact memory proactively once in a while during conversation rather than waiting for overflow — prevent "dementia" by summarizing and pruning before resources exhaust.
+- Reanalyze changes twice for introduced issues.
+- Compact memory proactively to avoid context overflow.
 
-### 12-Factor App Principles
+### Key Dependencies
 
-Based on [12-factor app](https://12factor.net/) + [12-factor AI agents](https://github.com/humanlayer/12-factor-agents) methodology:
-
-- **Codebase:** One codebase tracked in revision control, many deploys.
-- **Dependencies:** Declare all dependencies explicitly in `requirements.txt` (and `pyproject.toml` for build metadata). See Environment Setup section for isolation commands.
-- **Config:** Store all environment-specific config in env vars (never in code). Use `.env` files for local development, ensure the codebase could be open-sourced without compromising credentials.
-- **Backing Services:** Treat vector stores, databases, caches as attached resources accessed via URLs/credentials in config. No distinction between local and third-party services in code.
-- **Build, Release, Run:** Strictly separate build and run stages. See scripts in `rag_engine/scripts/` for build/release automation.
-- **Processes:** Execute the app as one or more stateless processes. Session data in backing services. Note: Local Chroma SQLite is acceptable for dev; production should use external vector store.
-- **Port Binding:** Export services via port binding. App should be self-contained and bind to a port specified via env var.
-- **Concurrency:** Scale out via the process model. Use Gradio's concurrency limits (`gradio_default_concurrency_limit`) and thread pools for non-blocking operation under multi-user load.
-- **Disposability:** Maximize robustness with fast startup and graceful shutdown. Processes should start quickly and shut down gracefully on SIGTERM, finishing current requests before exiting.
-- **Dev/Prod Parity:** Keep development, staging, and production as similar as possible. Use the same backing services (types and versions) across all environments.
-- **Logs:** Treat logs as event streams. Prefer stdout for containerized deployments; file logging optional via `LOG_FILE_ENABLED` env var. Default to both for local dev.
-- **Admin Processes:** Run admin/management tasks as one-off processes using the same codebase and config as the main app.
+- Source of truth: `rag_engine/requirements.txt` (versions may change over time).
+- Key packages to be aware of: `langchain`, `gradio`, `pydantic`, `ruff`, `pytest`.
 
 ### Project Specifics
 
-- **Docs:** Put reports in `docs/progress_reports/`.
-- **Tests:** Put tests in `rag_engine/tests`.
-- **Updates:** Always update `README.md` if changes affect it.
-- **Refactoring:** When refactoring, change only the relevant parts.
+- Docs: put reports in `docs/progress_reports/`.
+- Tests: put tests in `rag_engine/tests`.
+- Updates: always update `README.md` if changes affect it.
+- Refactoring: change only relevant parts.
 
-## IMPORTANT
+## Related Instruction Files
 
-**Make sure: code is:** clean, lean, brilliant, dry, minimalistic, abstract, non-duplicating, non-breaking, perfect, genius, and pythonic.
+- `.cursor/rules/cmw-rag-agent.mdc`
+- `.cursor/rules/terminal.mdc`
+- `.cursor/rules/cmw_rag_commit.mdc`
+
+---
+
+**Remember:** Make sure code is clean, lean, brilliant, dry, minimalistic, abstract, non-duplicating, non-breaking, perfect, genius, and pythonic.
