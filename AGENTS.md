@@ -4,7 +4,33 @@ This document provides essential commands, code style guidelines, and developmen
 
 ## Planning
 
-Before doing any job, write a file with your plan: step by step, actionable, detailed, TDD, check-pointed, follows best practices in TDD, SDD, Python, 12-factor and software. Code: lean, dry, minimal, abstract, non-breaking, brilliant, genius, follows best practices Python, Gradio, and LangChain.
+Before any coding, changes or implementation:
+
+- Do a deep codebase research.
+- Do a deep web research.
+- Write a concise plan **file**:
+    - actionable
+    - detailed
+    - TDD
+    - step-by-step tasks
+    - checkpoints
+    - expected verification commands
+    - follows best practices in TDD, SDD, Python, 12-factor agents and software
+
+## Common Engineering Baseline
+
+Use these rules:
+
+- Follow SDD for scope/contract clarity and TDD for behavior-first implementation.
+- Keep code: lean, DRY, modular, and non-breaking, brilliant, abstract, minimal, genius.
+- Follow best practices in TDD, SDD, Gradio, and LangChain implementations.
+- Prefer Pythonic solutions: clarity over cleverness, explicit data contracts, strong typing.
+- For LangChain see LangChain docs, repo and source code for reference, prefer LCEL/runnables, typed tool schemas, and streaming-safe patterns.
+- For Gradio see Gradio's docs, repo and source code for reference, follow best practices, keep state/event flow explicit and UI logic separated from domain logic.
+- Test behavior, not implementation details.
+- Validate external data and avoid silent exception handling (`except: pass` is forbidden).
+- Run lint and relevant tests for modified areas before completion.
+- Never hardcode secrets; use environment variables and `.env.example` placeholders only.
 
 ## 🛠️ Build, Lint & Test Commands
 
