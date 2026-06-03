@@ -55,6 +55,18 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 4_096,
         "temperature": 0,
     },
+    "deepseek/deepseek-v4-pro": {
+        "token_limit": 1_048_576,  # 1M context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+        "supports_forced_tool_choice": False,  # tool_choice not supported in thinking mode
+    },
+    "deepseek/deepseek-v4-flash": {
+        "token_limit": 1_048_576,  # 1M context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+        "supports_forced_tool_choice": False,  # tool_choice not supported in thinking mode
+    },
     # Grok (xAI) Models
     "x-ai/grok-4-fast:free": {
         "token_limit": 2_000_000,
@@ -274,6 +286,12 @@ MODEL_CONFIGS: dict[str, dict] = {
         "token_limit": 196_000,  # OpenRouter model card
         "max_tokens": 65_536,
         "temperature": 0,
+    },
+    "minimax/minimax-m3": {
+        "token_limit": 524_288,  # 524.3K total context as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+        "supports_forced_tool_choice": False,  # OpenRouter endpoints don't support tool_choice for this model
     },
     # OpenAI specialized models
     "openai/gpt-5-codex": {
