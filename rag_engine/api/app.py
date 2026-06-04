@@ -3917,6 +3917,7 @@ with gr.Blocks(
             interactive=True,
             scale=0,
             min_width=160,
+            show_label=False,
         )
 
         def _on_version_change(v: str) -> str:
