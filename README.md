@@ -212,6 +212,11 @@ python rag_engine/scripts/sync_mkdocs_corpus.py --index --corpus v6
 The sync script keeps the managed MkDocs clone under `.reference-repos/cbap-mkdocs-ru`,
 sparse-checks out `phpkb_content_rag`, and then delegates indexing to `build_index.py`.
 
+Each corpus version indexes into a **separate ChromaDB collection** (e.g. `mkdocs_kb_v5`
+and `mkdocs_kb_v6`). The collection names are derived from `CHROMADB_COLLECTION` and can
+be overridden via `CHROMADB_COLLECTION_V5` / `CHROMADB_COLLECTION_V6` env vars. The Gradio
+UI exposes a session-scoped dropdown to select the active version for retrieval.
+
 **Mode: Folder (Recommended)**
 ```bash
 python rag_engine/scripts/build_index.py \

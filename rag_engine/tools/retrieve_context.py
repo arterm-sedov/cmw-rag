@@ -14,6 +14,7 @@ import logging
 import re
 import subprocess
 import threading
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Literal
 
@@ -31,6 +32,15 @@ logger = logging.getLogger(__name__)
 
 ProductVersion = Literal["v5", "v6"]
 DEFAULT_PRODUCT_VERSION: ProductVersion = "v6"
+_ui_product_version: ContextVar[ProductVersion] = ContextVar("ui_product_version", default="v6")
+
+
+def set_ui_product_version(version: ProductVersion) -> None:
+    _ui_product_version.set(version)
+
+
+def get_effective_product_version(explicit: ProductVersion | None = None) -> ProductVersion:
+    return explicit or _ui_product_version.get()
 
 # Module-level retriever instance (lazy singleton)
 _retriever: RAGRetriever | None = None
@@ -349,6 +359,7 @@ def _read_article(source_file: str) -> str:
 
 async def _fetch_articles_by_kb_ids_core(kb_ids: list[str], version: str) -> str:
     """Fetch articles by kbId from ChromaDB metadata, read full files, format as JSON."""
+    version = get_effective_product_version(version)
     collection = get_collection_name(version)
     store = ChromaStore(collection_name=collection)
     articles: list[Article] = []
@@ -379,8 +390,8 @@ async def _retrieve_context_core(
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     try:
-        # Get retriever (initialization is fast, but wrap in thread pool for safety)
-        retriever = await run_in_thread_pool(_get_or_create_retriever, product_version)
+        version = get_effective_product_version(product_version)
+        retriever = await run_in_thread_pool(_get_or_create_retriever, version)
 
         # Use async retrieval directly
         docs = await retriever.retrieve_async(query, top_k=top_k)
@@ -532,7 +543,8 @@ def _grep_kb_articles_core(
     except re.error as exc:
         raise ValueError(f"Invalid regex pattern: {exc}") from exc
 
-    corpus_dir = get_corpus_dir(product_version)
+    version = get_effective_product_version(product_version)
+    corpus_dir = get_corpus_dir(version)
     result = subprocess.run(  # noqa: S603
         ["rg", "--files-with-matches", "--no-messages", pattern, corpus_dir],
         capture_output=True,

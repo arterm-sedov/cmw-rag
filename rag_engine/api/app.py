@@ -3896,9 +3896,33 @@ logger.info("Using agent-based (LangChain) handler for chat interface")
 with gr.Blocks(
     title=chat_title or "Comindware Platform Documentation Assistant",
 ) as demo:
+    # Product version selector — user session default, overridable per-tool-call by agent
+    product_version_state = gr.State(value="v6")
+
     # Header (like reference agent)
     if chat_title:
         gr.Markdown(f"# {chat_title}", elem_classes=["hero-title"])
+
+    # Product version selector (session-scoped default for all retrieval tools)
+    with gr.Row(visible=True, elem_classes=["version-selector-row"]):
+        version_selector = gr.Dropdown(
+            choices=["v6", "v5"],
+            value="v6",
+            label="Версия базы знаний",
+            interactive=True,
+            scale=0,
+            min_width=120,
+        )
+
+        def _on_version_change(v: str) -> str:
+            from rag_engine.tools.retrieve_context import set_ui_product_version
+
+            set_ui_product_version(v)
+            return v
+
+        version_selector.change(
+            fn=_on_version_change, inputs=[version_selector], outputs=[product_version_state]
+        )
 
     # Chatbot component (like reference agent - NOT ChatInterface)
     # In Gradio 6, Chatbot uses messages format by default (no type parameter needed)

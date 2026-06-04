@@ -143,6 +143,26 @@ Use this only when the user explicitly asks to push the refreshed corpus changes
 - Indexed corpora:
   - V5: `phpkb_content_rag/798. Версия 5.0. Текущая рекомендованная`
   - V6: `phpkb_content_rag/896-platform_v6`
+- ChromaDB collections (auto-derived from CHROMADB_COLLECTION):
+  - V5: `{CHROMADB_COLLECTION}_v5` (e.g. `mkdocs_kb_v5`)
+  - V6: `{CHROMADB_COLLECTION}_v6` (e.g. `mkdocs_kb_v6`)
+  - Override via `CHROMADB_COLLECTION_V5` / `CHROMADB_COLLECTION_V6` env vars
+- Corpus root: `CORPUS_ROOT` env var or `.reference-repos/cbap-mkdocs-ru` default
+
+## Retrieval Tools
+
+Three LangChain tools are available for agent knowledge base access:
+
+| Tool | Purpose | Key params |
+|------|---------|------------|
+| `retrieve_context` | Semantic vector search | `query`, `top_k`, `product_version` (default v6) |
+| `fetch_kb_articles` | Direct article fetch by kbId | `kb_ids`, `product_version` |
+| `grep_kb_articles` | Regex full-text corpus search (ripgrep) | `pattern`, `product_version`, `max_matches` |
+
+All tools return the same JSON article format. `product_version` selects the Chroma
+collection (semantic + fetch) or corpus folder (grep). The Gradio UI provides a
+session-scoped version selector dropdown that acts as the default when no explicit
+version is passed by the agent tool call.
 
 ## Safety Notes
 
