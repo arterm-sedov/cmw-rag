@@ -197,6 +197,21 @@ Minimum required: `GOOGLE_API_KEY` (for Gemini) or `OPENROUTER_API_KEY`
 
 Choose one of three ingestion modes:
 
+**Sync MkDocs RAG Corpora (Recommended for CMW KB)**
+```bash
+# Fetch/update both V5 and V6 PHPKB RAG corpora via sparse Git checkout
+python rag_engine/scripts/sync_mkdocs_corpus.py
+
+# Fetch/update and index both corpora
+python rag_engine/scripts/sync_mkdocs_corpus.py --index
+
+# Index only one corpus if needed
+python rag_engine/scripts/sync_mkdocs_corpus.py --index --corpus v6
+```
+
+The sync script keeps the managed MkDocs clone under `.reference-repos/cbap-mkdocs-ru`,
+sparse-checks out `phpkb_content_rag`, and then delegates indexing to `build_index.py`.
+
 **Mode: Folder (Recommended)**
 ```bash
 python rag_engine/scripts/build_index.py \
