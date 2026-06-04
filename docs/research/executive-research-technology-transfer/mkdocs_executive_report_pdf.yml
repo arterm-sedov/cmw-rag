@@ -14,10 +14,20 @@ theme:
   custom_dir: !ENV [MKDOCS_OVERRIDES, ../../../.reference-repos/cbap-mkdocs-ru/overrides]
 
 extra:
-  productName: "Коммерческое обоснование внедрения корпоративного ИИ"
-  productVersion: "Comindware"
-  publicationDate: "Апрель 2026"
   pdfOutput: true
+  pdf:
+    # Plain-text default for PDF right-side footers.
+    copyright: © Comindware, 2009–2026
+    frontpage:
+      logo: assets/images/comindware_logo.svg
+      headerRight: comindware.ru
+      title: Коммерческое обоснование внедрения корпоративного ИИ
+      subtitle: Методология, экономика и комплаенс внедрения корпоративного GenAI
+      footerLeft: Апрель 2026
+      # footerRight defaults to pdf.copyright; set literal text to override.
+    pageFooter:
+      left: ''
+      # right defaults to pdf.copyright; set literal text to override.
 
 copyright: '<a href="https://www.comindware.ru/" target="_blank">© 2009–2026 Comindware<sup>®</sup></a>'
 
@@ -50,12 +60,8 @@ plugins:
     output_dir: mermaid
   with-pdf:
     cover: true
-    cover_logo: assets/images/comindware_logo.svg
-    cover_subtitle: "Методология, экономика и комплаенс внедрения корпоративного GenAI"
-    author: comindware.ru
     toc_title: Оглавление
     toc_level: 3
-    copyright: "© Comindware, 2009–2026"
     custom_template_path: !ENV [MKDOCS_PDF_TEMPLATES, ../../../.reference-repos/cbap-mkdocs-ru/pdf_templates]
     output_path: !ENV ['MKDOCS_PDF_OUTPUT_FILENAME', 'Comindware. Коммерческое обоснование внедрения ИИ. 2026-04.pdf']
     enabled_if_env: ''

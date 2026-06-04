@@ -14,10 +14,20 @@ theme:
   custom_dir: !ENV [MKDOCS_OVERRIDES, ../../../.reference-repos/cbap-mkdocs-ru/overrides]
 
 extra:
-  productName: "Архитектура агента обработки документов"
-  productVersion: "Comindware Platform"
-  publicationDate: "Апрель 2026"
   pdfOutput: true
+  pdf:
+    # Plain-text default for PDF right-side footers.
+    copyright: © Comindware, 2009–2026
+    frontpage:
+      logo: assets/images/comindware_logo.svg
+      headerRight: comindware.ru
+      title: Архитектура агента обработки документов
+      subtitle: Автономный агент с глубоким поиском для Comindware Platform
+      footerLeft: Апрель 2026
+      # footerRight defaults to pdf.copyright; set literal text to override.
+    pageFooter:
+      left: ''
+      # right defaults to pdf.copyright; set literal text to override.
 
 copyright: '<a href="https://www.comindware.ru/" target="_blank">© 2009–2026 Comindware<sup>®</sup></a>'
 
@@ -39,12 +49,8 @@ plugins:
     output_dir: mermaid
   with-pdf:
     cover: true
-    cover_logo: assets/images/comindware_logo.svg
-    cover_subtitle: "Автономный агент с глубоким поиском для Comindware Platform"
-    author: comindware.ru
     toc_title: Оглавление
     toc_level: 3
-    copyright: "© Comindware, 2009–2026"
     custom_template_path: !ENV [MKDOCS_PDF_TEMPLATES, ../../../.reference-repos/cbap-mkdocs-ru/pdf_templates]
     output_path: !ENV ['MKDOCS_PDF_OUTPUT_FILENAME', 'Comindware. Архитектура агента обработки документов. 2026-04.pdf']
     enabled_if_env: ''
