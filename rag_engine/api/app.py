@@ -3944,17 +3944,15 @@ with gr.Blocks(
         resizable=not settings.gradio_embedded_widget,  # Resizable only in standalone mode, not embedded
     )
 
-    # Message input (regular single-line Textbox, NOT MultimodalTextbox)
+    # Message input (regular Textbox, NOT MultimodalTextbox)
     # Small built-in submit and stop buttons (icons) in the Textbox
     # Pattern from test script: dynamic stop button visibility
     msg = gr.Textbox(
         label="Сообщение",
         placeholder="Введите ваш вопрос...",
-        # Single-line input so Enter submits the message instead of inserting newlines
-        # See: https://www.gradio.app/docs/textbox and
-        # https://www.gradio.app/guides/blocks-and-event-listeners#running-events-consecutively
+        # Enter submits, Shift+Enter inserts newline, textbox grows up to 4 lines
         lines=1,
-        max_lines=1,
+        max_lines=4,
         show_label=False,  # Hide label for cleaner UI
         elem_id="message-input",
         elem_classes=["message-card"],
