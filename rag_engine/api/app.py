@@ -3905,15 +3905,14 @@ with gr.Blocks(
             gr.Markdown(
                 f"# {chat_title}",
                 elem_classes=["hero-title"],
-                scale=1,
             )
 
         version_selector = gr.Dropdown(
             choices=["v6", "v5"],
             value="v6",
-            label="Версия",
+            label=i18n_resolve("product_version_label"),
             show_label=False,
-            info="Версия базы знаний: v6 (по умолчанию) или v5",
+            info=i18n_resolve("product_version_info"),
             interactive=True,
             scale=0,
             min_width=110,

@@ -116,6 +116,9 @@ i18n = gr.I18n(
         "srp_no_steps": "No steps recorded.",
         "srp_no_next_steps": "No next steps required.",
         "srp_no_additional_notes": "No additional notes.",
+        # Product version selector
+        "product_version_label": "Product Version",
+        "product_version_info": "Product version: v6 / v5",
     },
     ru={
         "language": "ru",
@@ -220,6 +223,9 @@ i18n = gr.I18n(
         "srp_no_steps": "Шаги не записаны.",
         "srp_no_next_steps": "Следующие шаги не требуются.",
         "srp_no_additional_notes": "Дополнительных примечаний нет.",
+        # Product version selector
+        "product_version_label": "Версия ПО",
+        "product_version_info": "Версия ПО: v6 / v5",
     },
 )
 
