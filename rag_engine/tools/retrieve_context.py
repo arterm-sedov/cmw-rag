@@ -277,8 +277,10 @@ class RetrieveContextSchema(BaseModel):
     )
     product_version: ProductVersion | None = Field(
         default=None,
-        description="Product version to search: v5 or v6. "
-        "Defaults to the version selected in the UI, or v6 if no version is selected.",
+        description="Product version to filter search results. "
+        "Always specify explicitly for accurate, version-specific results. "
+        "Use 'v5' for version 5.0 (released 2025), 'v6' for version 6.0 (current, released 2026). "
+        "Defaults to 'v6' when not specified.",
     )
 
     @field_validator("query", mode="before")
@@ -480,8 +482,10 @@ class FetchArticleSchema(BaseModel):
     )
     product_version: ProductVersion | None = Field(
         default=None,
-        description="Product version: v5 or v6. "
-        "Defaults to the version selected in the UI, or v6 if no version is selected.",
+        description="Product version to filter fetch results. "
+        "Always specify explicitly for accurate, version-specific results. "
+        "Use 'v5' for version 5.0 (released 2025), 'v6' for version 6.0 (current, released 2026). "
+        "Defaults to 'v6' when not specified.",
     )
 
 
@@ -512,8 +516,10 @@ class GrepKbArticlesSchema(BaseModel):
     )
     product_version: ProductVersion | None = Field(
         default=None,
-        description="Product version corpus to search: v5 or v6. "
-        "Defaults to the version selected in the UI, or v6 if no version is selected.",
+        description="Product version corpus to grep. "
+        "Always specify explicitly for accurate, version-specific results. "
+        "Use 'v5' for version 5.0 (released 2025), 'v6' for version 6.0 (current, released 2026). "
+        "Defaults to 'v6' when not specified.",
     )
     max_matches: int = Field(
         default=20,
@@ -606,8 +612,18 @@ async def grep_kb_articles(
     product_version: ProductVersion | None = None,
     max_matches: int = 20,
     exclude_kb_ids: list[str] | None = None,
+    runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     import asyncio
+
+    if exclude_kb_ids is None and runtime is not None:
+        try:
+            ctx = runtime.context
+            fetched = getattr(ctx, "fetched_kb_ids", None) if ctx else None
+            if fetched:
+                exclude_kb_ids = list(fetched)
+        except TypeError:
+            pass
 
     version = get_effective_product_version(product_version)
     return await asyncio.to_thread(

@@ -3301,7 +3301,9 @@ def get_knowledge_base_articles(
         query: Search query or question to find relevant documentation articles.
         top_k: Optional limit on number of articles to return.
         exclude_kb_ids: Optional list of kb_ids to exclude from results.
-        product_version: Product version to search: "v5" or "v6". Defaults to "v6".
+        product_version: Product version to search. Use 'v5' for version 5.0 (released 2025),
+            'v6' for version 6.0 (current, released 2026). Always specify for accurate,
+            version-specific results. Defaults to 'v6' when not provided.
         kb_ids: Optional list of article kb_ids to fetch directly (bypasses semantic search).
 
     Returns:
