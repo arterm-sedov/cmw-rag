@@ -3899,19 +3899,24 @@ with gr.Blocks(
     # Product version selector — user session default, overridable per-tool-call by agent
     product_version_state = gr.State(value="v6")
 
-    # Header (like reference agent)
-    if chat_title:
-        gr.Markdown(f"# {chat_title}", elem_classes=["hero-title"])
+    # Header row: title on the left, version selector on the right
+    with gr.Row(visible=True, equal_height=False, elem_classes=["header-row"]):
+        if chat_title:
+            gr.Markdown(
+                f"# {chat_title}",
+                elem_classes=["hero-title"],
+                scale=1,
+            )
 
-    # Product version selector (session-scoped default for all retrieval tools)
-    with gr.Row(visible=True, elem_classes=["version-selector-row"]):
         version_selector = gr.Dropdown(
             choices=["v6", "v5"],
             value="v6",
-            label="Версия базы знаний",
+            label="Версия",
+            show_label=False,
+            info="Версия базы знаний: v6 (по умолчанию) или v5",
             interactive=True,
             scale=0,
-            min_width=120,
+            min_width=110,
         )
 
         def _on_version_change(v: str) -> str:
