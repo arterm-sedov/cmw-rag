@@ -58,7 +58,9 @@ def create_rag_agent(
         from rag_engine.tools import (
             add,
             divide,
+            fetch_kb_articles,
             get_current_datetime,
+            grep_kb_articles,
             modulus,
             multiply,
             power,
@@ -106,6 +108,8 @@ def create_rag_agent(
         # SGR planning tool is called via with_structured_output before agent runs
         # Not needed in agent tool list
         retrieve_context_tool,
+        fetch_kb_articles,
+        grep_kb_articles,
         get_current_datetime,
         add,
         subtract,
