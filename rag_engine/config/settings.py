@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     # ChromaDB (HTTP-only: separate server via chroma run or Docker; no embedded PersistentClient)
     chromadb_persist_dir: str
     chromadb_collection: str
+    # Versioned collection overrides (v5/v6); empty = fall back to {chromadb_collection}_v{N}
+    chromadb_collection_v5: str = ""
+    chromadb_collection_v6: str = ""
+    # Filesystem corpus root for grep and fallback file reads
+    corpora_root: str = ""
     # ChromaDB HTTP client configuration
     # chroma_client_host: RAG agent connects to this address
     # chroma_server_bind: ChromaDB server binds to this address (0.0.0.0 = all interfaces)
@@ -248,3 +253,18 @@ settings = Settings()
 def get_allowed_fallback_models() -> list[str]:
     raw = settings.llm_allowed_fallback_models or ""
     return [m.strip() for m in raw.split(",") if m and m.strip()]
+
+
+def get_collection_name(version: str) -> str:
+    """Resolve Chroma collection name for a product version.
+
+    Returns the env override for that version if non-empty, otherwise falls back
+    to '{chromadb_collection}_v{version}'. Unknown versions return the base
+    collection name unchanged.
+    """
+    base = settings.chromadb_collection
+    if version == "v5":
+        return settings.chromadb_collection_v5 or f"{base}_v5"
+    if version == "v6":
+        return settings.chromadb_collection_v6 or f"{base}_v6"
+    return base

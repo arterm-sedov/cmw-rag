@@ -3282,31 +3282,46 @@ except Exception as e:
 # Wrapper function to expose retrieve_context tool as API endpoint
 # The tool is a StructuredTool, so we need to extract the underlying function
 def get_knowledge_base_articles(
-    query: str, top_k: int | str | None = None, exclude_kb_ids: list[str] | None = None
+    query: str | None = None,
+    top_k: int | str | None = None,
+    exclude_kb_ids: list[str] | None = None,
+    product_version: str = "v6",
+    kb_ids: list[str] | None = None,
 ) -> str:
     """Search and retrieve documentation articles from the Comindware Platform knowledge base.
 
     Use this tool when you need raw search results with article metadata. For intelligent
     answers with automatic context retrieval, use agent_chat_handler instead.
 
+    Two modes:
+    1. Semantic search: provide `query`, optionally `top_k`, `exclude_kb_ids`.
+    2. Direct fetch: provide `kb_ids` to fetch full articles by their IDs.
+
     Args:
         query: Search query or question to find relevant documentation articles.
-               Examples: "authentication", "API integration", "user management"
-        top_k: Optional limit on number of articles to return. If not specified,
-               returns the default number of most relevant articles (typically 10-20).
-               Can be provided as int or string (will be converted).
-        exclude_kb_ids: Optional list of article kb_ids to exclude from results (for deduplication).
-                       Use this to prevent retrieving articles you've already fetched in previous calls.
-                       Example: exclude_kb_ids=['12345', '67890'].
+        top_k: Optional limit on number of articles to return.
+        exclude_kb_ids: Optional list of kb_ids to exclude from results.
+        product_version: Product version to search: "v5" or "v6". Defaults to "v6".
+        kb_ids: Optional list of article kb_ids to fetch directly (bypasses semantic search).
 
     Returns:
-        JSON string containing an array of articles, each with:
-        - kb_id: Article identifier
-        - title: Article title
-        - url: Link to the article
-        - content: Full article content (markdown format)
-        - metadata: Additional metadata including rerank scores and source information
+        JSON string containing structured article data.
     """
+    import asyncio
+
+    from rag_engine.tools.retrieve_context import (
+        _fetch_articles_by_kb_ids_core,
+    )
+
+    # Direct kbId fetch path
+    if kb_ids:
+        if product_version not in ("v5", "v6"):
+            raise ValueError(f"product_version must be 'v5' or 'v6', got: {product_version!r}")
+        return asyncio.run(_fetch_articles_by_kb_ids_core(kb_ids, product_version))
+
+    if not query or not query.strip():
+        raise ValueError("query is required when kb_ids is not provided")
+
     # Convert top_k from string to int if needed (Gradio/MCP may pass strings)
     converted_top_k: int | None = None
     if top_k is not None:
@@ -3324,14 +3339,16 @@ def get_knowledge_base_articles(
         if converted_top_k <= 0:
             raise ValueError(f"top_k must be a positive integer, got: {converted_top_k}")
 
-    # Delegate to the shared async core used by the LangChain tool
-    import asyncio
+    if product_version not in ("v5", "v6"):
+        raise ValueError(f"product_version must be 'v5' or 'v6', got: {product_version!r}")
 
+    # Delegate to the shared async core used by the LangChain tool
     return asyncio.run(
         _retrieve_context_core(
             query=query,
             top_k=converted_top_k,
             exclude_kb_ids=exclude_kb_ids,
+            product_version=product_version,
             runtime=None,
         )
     )

@@ -11,17 +11,26 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+import subprocess
 import threading
+from pathlib import Path
+from typing import Literal
 
 from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, Field, field_validator
 
-from rag_engine.config.settings import settings
+from rag_engine.config.settings import get_collection_name, settings
 from rag_engine.retrieval.retriever import Article, RAGRetriever
+from rag_engine.storage.vector_store import ChromaStore
 from rag_engine.utils.context_tracker import AgentContext
+from rag_engine.utils.path_utils import normalize_path
 from rag_engine.utils.thread_pool import run_in_thread_pool
 
 logger = logging.getLogger(__name__)
+
+ProductVersion = Literal["v5", "v6"]
+DEFAULT_PRODUCT_VERSION: ProductVersion = "v6"
 
 # Module-level retriever instance (lazy singleton)
 _retriever: RAGRetriever | None = None
@@ -29,6 +38,18 @@ _retriever: RAGRetriever | None = None
 # so FRIDA/direct embedder is never loaded in a worker thread (avoids crash on Windows).
 _app_retriever: RAGRetriever | None = None
 _retriever_init_lock = threading.Lock()
+# Versioned retriever registry: one per product_version (v5, v6)
+_retrievers: dict[str, RAGRetriever] = {}
+
+DEFAULT_CORPORA_ROOT = ".reference-repos/cbap-mkdocs-ru"
+V5_CORPUS_SUBDIR = "phpkb_content_rag/798. Версия 5.0. Текущая рекомендованная"
+V6_CORPUS_SUBDIR = "phpkb_content_rag/896-platform_v6"
+
+
+def get_corpus_dir(version: str) -> str:
+    root = settings.corpora_root or DEFAULT_CORPORA_ROOT
+    subdir = V5_CORPUS_SUBDIR if version == "v5" else V6_CORPUS_SUBDIR
+    return str(Path(root) / subdir)
 
 
 def set_app_retriever(retriever: RAGRetriever | None) -> None:
@@ -43,19 +64,23 @@ def set_app_retriever(retriever: RAGRetriever | None) -> None:
     _app_retriever = retriever
 
 
-def _get_or_create_retriever() -> RAGRetriever:
-    """Get or create the retriever instance (lazy singleton).
+def _get_or_create_retriever(version: str | None = None) -> RAGRetriever:
+    """Get or create the retriever instance (lazy singleton, optionally per-version).
 
     Uses app-injected retriever if set (Gradio app); otherwise creates on first use.
-    The retriever is stateless, so it's safe to share across sessions.
-
-    Returns:
-        RAGRetriever instance
+    When a version is provided, creates/returns a version-specific retriever with
+    its own ChromaStore pointed at the versioned collection.
     """
     global _retriever
     if _app_retriever is not None:
         return _app_retriever
-    if _retriever is None:
+
+    if version:
+        cached = _retrievers.get(version)
+        if cached is not None:
+            return cached
+
+    if _retriever is None and version is None:
         # Serialize first-time initialization across threads
         with _retriever_init_lock:
             if _retriever is not None:
@@ -66,7 +91,6 @@ def _get_or_create_retriever() -> RAGRetriever:
 
         logger.info("Initializing retriever for retrieve_context tool (first use)")
 
-        # Initialize infrastructure
         embedder = FRIDAEmbedder(
             model_name=settings.embedding_model,
             device=settings.embedding_device,
@@ -80,7 +104,6 @@ def _get_or_create_retriever() -> RAGRetriever:
             temperature=settings.llm_temperature,
         )
 
-        # Create retriever
         _retriever = RAGRetriever(
             embedder=embedder,
             vector_store=vector_store,
@@ -90,6 +113,40 @@ def _get_or_create_retriever() -> RAGRetriever:
             rerank_enabled=settings.rerank_enabled,
         )
         logger.info("Retriever initialized successfully")
+
+    if version:
+        collection = get_collection_name(version)
+        vector_store = ChromaStore(collection_name=collection)
+        # Reuse embedder and llm_manager from the default retriever if available,
+        # otherwise create standalone (no legacy fallback needed for direct use).
+        base = _retriever
+        if base is not None:
+            ret = RAGRetriever(
+                embedder=base.embedder,
+                vector_store=vector_store,
+                llm_manager=base.llm_manager,
+                top_k_retrieve=settings.top_k_retrieve,
+                top_k_rerank=settings.top_k_rerank,
+                rerank_enabled=settings.rerank_enabled,
+            )
+        else:
+            ret = RAGRetriever(
+                embedder=FRIDAEmbedder(
+                    model_name=settings.embedding_model,
+                    device=settings.embedding_device,
+                ),
+                vector_store=vector_store,
+                llm_manager=LLMManager(
+                    provider=settings.default_llm_provider,
+                    model=settings.default_model,
+                    temperature=settings.llm_temperature,
+                ),
+                top_k_retrieve=settings.top_k_retrieve,
+                top_k_rerank=settings.top_k_rerank,
+                rerank_enabled=settings.rerank_enabled,
+            )
+        _retrievers[version] = ret
+        return ret
 
     return _retriever
 
@@ -200,6 +257,10 @@ class RetrieveContextSchema(BaseModel):
         description="Optional list of article kb_ids to exclude from results (for deduplication). "
         "Use this to prevent retrieving articles you've already fetched in previous tool calls. ",
     )
+    product_version: ProductVersion = Field(
+        default=DEFAULT_PRODUCT_VERSION,
+        description="Product version to search: v5 or v6. Defaults to v6.",
+    )
 
     @field_validator("query", mode="before")
     @classmethod
@@ -273,15 +334,53 @@ def _format_articles_to_json(articles: list[Article], query: str, top_k: int | N
     return json.dumps(result, ensure_ascii=False, separators=(",", ":"))
 
 
+def _read_article(source_file: str) -> str:
+    """Read complete article from filesystem, stripping YAML frontmatter."""
+    file_path = normalize_path(source_file)
+    if not file_path.exists():
+        raise FileNotFoundError(f"Article file not found: {source_file}")
+    content = file_path.read_text(encoding="utf-8")
+    if content.startswith("---"):
+        parts = content.split("---", 2)
+        if len(parts) >= 3:
+            content = parts[2].strip()
+    return content
+
+
+async def _fetch_articles_by_kb_ids_core(kb_ids: list[str], version: str) -> str:
+    """Fetch articles by kbId from ChromaDB metadata, read full files, format as JSON."""
+    collection = get_collection_name(version)
+    store = ChromaStore(collection_name=collection)
+    articles: list[Article] = []
+
+    for kb_id in kb_ids:
+        meta = await store.get_by_kb_id_async(kb_id)
+        if meta is None:
+            continue
+        source_file = meta.get("source_file", "")
+        if not source_file:
+            continue
+        try:
+            content = _read_article(source_file)
+        except FileNotFoundError:
+            continue
+        articles.append(
+            Article(kb_id=kb_id, content=content, metadata=dict(meta))
+        )
+
+    return _format_articles_to_json(articles, query=f"fetch:{','.join(kb_ids)}", top_k=None)
+
+
 async def _retrieve_context_core(
     query: str,
     top_k: int | None = None,
     exclude_kb_ids: list[str] | None = None,
+    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     try:
         # Get retriever (initialization is fast, but wrap in thread pool for safety)
-        retriever = await run_in_thread_pool(_get_or_create_retriever)
+        retriever = await run_in_thread_pool(_get_or_create_retriever, product_version)
 
         # Use async retrieval directly
         docs = await retriever.retrieve_async(query, top_k=top_k)
@@ -332,11 +431,166 @@ async def retrieve_context(
     query: str,
     top_k: int | None = None,
     exclude_kb_ids: list[str] | None = None,
+    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     return await _retrieve_context_core(
         query=query,
         top_k=top_k,
         exclude_kb_ids=exclude_kb_ids,
+        product_version=product_version,
         runtime=runtime,
+    )
+
+
+class FetchArticleSchema(BaseModel):
+    """Fetch complete knowledge base articles by their kbId.
+
+    Use this tool to retrieve full article content when you already know
+    the article IDs (e.g., from previous search results or citations).
+    This is faster than semantic search and returns exact article content.
+
+    Returns the same JSON format as retrieve_context for compatibility.
+    """
+
+    kb_ids: list[str] = Field(
+        default_factory=list,
+        description="List of article kbIds to fetch. Use extract_numeric_kbid "
+        "to normalize IDs from titles or URLs.",
+    )
+    product_version: ProductVersion = Field(
+        default=DEFAULT_PRODUCT_VERSION,
+        description="Product version: v5 or v6. Defaults to v6.",
+    )
+
+
+@tool("fetch_kb_articles", args_schema=FetchArticleSchema, description=FetchArticleSchema.__doc__)
+async def fetch_kb_articles(
+    kb_ids: list[str],
+    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
+) -> str:
+    return await _fetch_articles_by_kb_ids_core(kb_ids, product_version)
+
+
+class GrepKbArticlesSchema(BaseModel):
+    """Search knowledge base articles by regex/pattern matching (ripgrep).
+
+    This tool runs a full-text search over the raw Markdown corpus files
+    and returns articles where the pattern matches. Use this when you need
+    to find specific terms, error messages, API names, or technical keywords
+    that may not surface well through semantic vector search.
+
+    Returns the same JSON format as retrieve_context, with additional
+    grep-specific metadata (match_count, matched_lines).
+    """
+
+    pattern: str = Field(
+        ...,
+        description="Regex pattern (ripgrep-compatible) to search in corpus. "
+        "Examples: 'api_key_env', 'настр\\w+', 'docker\\.com'.",
+    )
+    product_version: ProductVersion = Field(
+        default=DEFAULT_PRODUCT_VERSION,
+        description="Product version corpus to search: v5 or v6.",
+    )
+    max_matches: int = Field(
+        default=20,
+        description="Maximum number of matched articles to return.",
+    )
+    exclude_kb_ids: list[str] | None = Field(
+        default=None,
+        description="Optional list of kb_ids to exclude from results.",
+    )
+
+
+def _parse_frontmatter(file_path: str) -> dict[str, str]:
+    """Extract kbId and title from YAML frontmatter of a markdown file."""
+    try:
+        import yaml
+
+        with open(file_path, encoding="utf-8") as f:
+            content = f.read()
+        if content.startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                fm = yaml.safe_load(parts[1])
+                if isinstance(fm, dict):
+                    return {"kbId": str(fm.get("kbId", "")), "title": str(fm.get("title", ""))}
+    except Exception:  # noqa: BLE001
+        pass
+    return {}
+
+
+def _grep_kb_articles_core(
+    pattern: str,
+    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
+    max_matches: int = 20,
+    exclude_kb_ids: list[str] | None = None,
+) -> str:
+    try:
+        re.compile(pattern)
+    except re.error as exc:
+        raise ValueError(f"Invalid regex pattern: {exc}") from exc
+
+    corpus_dir = get_corpus_dir(product_version)
+    result = subprocess.run(  # noqa: S603
+        ["rg", "--files-with-matches", "--no-messages", pattern, corpus_dir],
+        capture_output=True,
+        text=True,
+    )
+
+    matched_files = [p.strip() for p in result.stdout.splitlines() if p.strip()]
+    if result.returncode not in (0, 1):
+        return _format_articles_to_json([], query=f"grep:{pattern}", top_k=None)
+
+    exclude_set = set(exclude_kb_ids or [])
+    articles: list[Article] = []
+
+    for file_path in matched_files:
+        if len(articles) >= max_matches:
+            break
+        fm = _parse_frontmatter(file_path)
+        kb_id = fm.get("kbId", "")
+        if kb_id and kb_id in exclude_set:
+            continue
+        title = fm.get("title", "")
+        try:
+            content = _read_article(file_path)
+        except FileNotFoundError:
+            continue
+        articles.append(
+            Article(
+                kb_id=kb_id,
+                content=content,
+                metadata={
+                    "title": title,
+                    "kbId": kb_id,
+                    "source_file": file_path,
+                    "match_source": "grep",
+                },
+            )
+        )
+
+    return _format_articles_to_json(articles, query=f"grep:{pattern}", top_k=None)
+
+
+@tool(
+    "grep_kb_articles",
+    args_schema=GrepKbArticlesSchema,
+    description=GrepKbArticlesSchema.__doc__,
+)
+async def grep_kb_articles(
+    pattern: str,
+    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
+    max_matches: int = 20,
+    exclude_kb_ids: list[str] | None = None,
+) -> str:
+    import asyncio
+
+    return await asyncio.to_thread(
+        _grep_kb_articles_core,
+        pattern,
+        product_version,
+        max_matches,
+        exclude_kb_ids,
     )

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rag_engine.config.settings import Settings
+from rag_engine.config.settings import Settings, get_collection_name
+from rag_engine.config.settings import settings as rag_settings
 
 
 def test_settings_loads_from_env_file():
@@ -55,3 +56,35 @@ def test_environment_overrides_take_precedence(monkeypatch):
 
     # Environment should override .env
     assert settings.top_k_retrieve == 999
+
+
+def test_get_collection_name_v5_falls_back_to_default_suffix():
+    """v5 collection name falls back to {CHROMADB_COLLECTION}_v5 when no override."""
+    rag_settings.chromadb_collection = "mkdocs_kb"
+    rag_settings.chromadb_collection_v5 = ""
+
+    assert get_collection_name("v5") == "mkdocs_kb_v5"
+
+
+def test_get_collection_name_v6_falls_back_to_default_suffix():
+    """v6 collection name falls back to {CHROMADB_COLLECTION}_v6 when no override."""
+    rag_settings.chromadb_collection = "test_coll"
+    rag_settings.chromadb_collection_v6 = ""
+
+    assert get_collection_name("v6") == "test_coll_v6"
+
+
+def test_get_collection_name_override_takes_precedence():
+    """Explicit env override wins over fallback suffix."""
+    rag_settings.chromadb_collection = "mkdocs_kb"
+    rag_settings.chromadb_collection_v5 = "my_custom_v5"
+
+    assert get_collection_name("v5") == "my_custom_v5"
+
+
+def test_get_collection_name_unknown_version_returns_default():
+    """Unknown or missing version key returns the base CHROMADB_COLLECTION."""
+    rag_settings.chromadb_collection = "mkdocs_kb"
+
+    assert get_collection_name("v7") == "mkdocs_kb"
+    assert get_collection_name("") == "mkdocs_kb"

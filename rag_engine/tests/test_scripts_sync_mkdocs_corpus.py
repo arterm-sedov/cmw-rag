@@ -125,6 +125,8 @@ def test_index_corpus_builds_expected_commands_for_all_corpora(
         commands.append((list(command), cwd))
 
     monkeypatch.setattr(sync, "run_command", fake_run_command)
+    monkeypatch.setattr(sync, "get_collection_name", lambda v: f"kb_{v}")
+
     config = sync.CorpusSyncConfig(target_dir=target)
 
     sync.index_corpus(config)
@@ -138,6 +140,8 @@ def test_index_corpus_builds_expected_commands_for_all_corpora(
                 str(v5),
                 "--mode",
                 "folder",
+                "--collection",
+                "kb_v5",
             ],
             sync.PROJECT_ROOT,
         ),
@@ -149,10 +153,34 @@ def test_index_corpus_builds_expected_commands_for_all_corpora(
                 str(v6),
                 "--mode",
                 "folder",
+                "--collection",
+                "kb_v6",
             ],
             sync.PROJECT_ROOT,
         )
     ]
+
+
+def test_index_corpus_passes_collection_per_version(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    target = tmp_path / "cbap-mkdocs-ru"
+    corpus = target / "phpkb_content_rag" / "896-platform_v6"
+    corpus.mkdir(parents=True)
+    recorded: list[str] = []
+
+    def fake_run_command(command, *, cwd=None, dry_run=False):  # noqa: ANN001, ARG001
+        recorded.extend(command)
+
+    monkeypatch.setattr(sync, "run_command", fake_run_command)
+    monkeypatch.setattr(sync, "get_collection_name", lambda v: f"custom_{v}")
+
+    config = sync.CorpusSyncConfig(target_dir=target, corpus="v6")
+    sync.index_corpus(config)
+
+    assert "--collection" in recorded
+    idx = recorded.index("--collection")
+    assert recorded[idx + 1] == "custom_v6"
 
 
 def test_index_corpus_adds_reindex_and_prune_flags(
@@ -167,6 +195,7 @@ def test_index_corpus_adds_reindex_and_prune_flags(
         recorded["command"] = list(command)
 
     monkeypatch.setattr(sync, "run_command", fake_run_command)
+    monkeypatch.setattr(sync, "get_collection_name", lambda v: f"kb_{v}")
     config = sync.CorpusSyncConfig(
         target_dir=target,
         corpus="v6",

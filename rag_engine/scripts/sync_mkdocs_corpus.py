@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from rag_engine.config.settings import get_collection_name
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 DEFAULT_REMOTE_URL = "https://github.com/arterm-sedov/cbap-mkdocs-ru.git"
@@ -48,6 +50,17 @@ class CorpusSyncConfig:
         if self.corpus == "v6":
             return [self.target_dir / V6_CORPUS_PATH]
         return [self.target_dir / V5_CORPUS_PATH, self.target_dir / V6_CORPUS_PATH]
+
+    @property
+    def corpus_version_pairs(self) -> list[tuple[Path, str]]:
+        if self.corpus == "v5":
+            return [(self.target_dir / V5_CORPUS_PATH, "v5")]
+        if self.corpus == "v6":
+            return [(self.target_dir / V6_CORPUS_PATH, "v6")]
+        return [
+            (self.target_dir / V5_CORPUS_PATH, "v5"),
+            (self.target_dir / V6_CORPUS_PATH, "v6"),
+        ]
 
     @property
     def resolved_corpus_dirs(self) -> list[Path]:
@@ -127,17 +140,21 @@ def sync_corpus(config: CorpusSyncConfig) -> None:
 
 def index_corpus(config: CorpusSyncConfig) -> None:
     """Index selected corpus folders through the existing build_index script."""
-    for corpus_dir in config.resolved_corpus_dirs:
-        if not config.dry_run and not corpus_dir.exists():
-            raise CorpusSyncError(f"Corpus folder not found: {corpus_dir}")
+    for corpus_dir, version in config.corpus_version_pairs:
+        resolved = config.resolved_target_dir / corpus_dir.relative_to(config.target_dir)
+        if not config.dry_run and not resolved.exists():
+            raise CorpusSyncError(f"Corpus folder not found: {resolved}")
 
+        collection = get_collection_name(version)
         command = [
             sys.executable,
             "rag_engine/scripts/build_index.py",
             "--source",
-            str(corpus_dir),
+            str(resolved),
             "--mode",
             "folder",
+            "--collection",
+            collection,
         ]
         if config.reindex:
             command.append("--reindex")

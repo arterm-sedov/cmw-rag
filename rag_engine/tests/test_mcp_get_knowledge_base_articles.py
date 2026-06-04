@@ -25,6 +25,7 @@ def test_get_knowledge_base_articles_uses_core_with_converted_top_k():
         query="workflow configuration",
         top_k=2,
         exclude_kb_ids=None,
+        product_version="v6",
         runtime=None,
     )
 

@@ -90,6 +90,15 @@ class ChromaStore:
             return metas[0]
         return None
 
+    async def get_by_kb_id_async(self, kb_id: str) -> dict[str, Any] | None:
+        """Return metadata for a single kbId (first chunk), or None if not found."""
+        collection = await self.get_collection()
+        res = await collection.get(where={"kbId": kb_id}, include=["metadatas"], limit=1)
+        metas = res.get("metadatas", [])
+        if metas:
+            return metas[0]
+        return None
+
     async def delete_where_async(self, where: dict[str, Any]) -> None:
         """Delete all records matching a metadata filter."""
         collection = await self.get_collection()

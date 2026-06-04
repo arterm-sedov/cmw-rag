@@ -56,6 +56,11 @@ async def run_async() -> None:
         action="store_true",
         help="Analyze timestamps without indexing (shows which source is used for each file)",
     )
+    parser.add_argument(
+        "--collection",
+        default=None,
+        help="ChromaDB collection name (overrides CHROMADB_COLLECTION env var)",
+    )
     args = parser.parse_args()
 
     setup_logging()
@@ -73,7 +78,7 @@ async def run_async() -> None:
         print("-" * 80)
 
         store = ChromaStore(
-            collection_name=settings.chromadb_collection,
+            collection_name=args.collection or settings.chromadb_collection,
         )
 
         for doc in docs:
@@ -121,7 +126,8 @@ async def run_async() -> None:
         return
 
     embedder = create_embedder(settings)
-    store = ChromaStore(collection_name=settings.chromadb_collection)
+    collection = args.collection or settings.chromadb_collection
+    store = ChromaStore(collection_name=collection)
 
     indexer = RAGIndexer(embedder=embedder, vector_store=store)
     summary = await indexer.index_documents_async(

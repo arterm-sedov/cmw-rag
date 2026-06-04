@@ -56,6 +56,21 @@ class TestRetrieveContextSchema:
         with pytest.raises(ValueError, match="top_k must be a positive integer"):
             RetrieveContextSchema(query="test", top_k=-1)
 
+    def test_default_product_version_is_v6(self):
+        """product_version defaults to v6."""
+        schema = RetrieveContextSchema(query="test")
+        assert schema.product_version == "v6"
+
+    def test_valid_product_version_v5(self):
+        """product_version accepts v5."""
+        schema = RetrieveContextSchema(query="test", product_version="v5")
+        assert schema.product_version == "v5"
+
+    def test_invalid_product_version_raises_error(self):
+        """Invalid product_version raises validation error."""
+        with pytest.raises(ValueError, match="product_version"):
+            RetrieveContextSchema(query="test", product_version="v7")
+
 
 class TestFormatArticlesToJson:
     """Tests for _format_articles_to_json helper function."""
