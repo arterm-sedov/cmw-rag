@@ -13,7 +13,7 @@ from rag_engine.tools.math_tools import (
     subtract,
 )
 from rag_engine.tools.read_file import read_file
-from rag_engine.tools.retrieve_context import retrieve_context
+from rag_engine.tools.retrieve_context import fetch_kb_articles, grep_kb_articles, retrieve_context
 from rag_engine.tools.utils import (
     accumulate_articles_from_tool_results,
     extract_metadata_from_tool_result,
@@ -23,6 +23,8 @@ from rag_engine.tools.web_search import get_web_search_tool, web_search
 
 __all__ = [
     "retrieve_context",
+    "fetch_kb_articles",
+    "grep_kb_articles",
     "analyse_user_request",
     "generate_resolution_plan",
     "get_current_datetime",
