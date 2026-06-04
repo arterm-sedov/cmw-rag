@@ -3905,24 +3905,25 @@ with gr.Blocks(
             gr.Markdown(
                 f"# {chat_title}",
                 elem_classes=["hero-title"],
-                scale=1,
             )
 
+        version_choices = [
+            f"{i18n_resolve('product_version_label')}: v6",
+            f"{i18n_resolve('product_version_label')}: v5",
+        ]
         version_selector = gr.Dropdown(
-            choices=["v6", "v5"],
-            value="v6",
-            label="Версия",
-            show_label=False,
-            info="Версия базы знаний: v6 (по умолчанию) или v5",
+            choices=version_choices,
+            value=version_choices[0],
             interactive=True,
             scale=0,
-            min_width=110,
+            min_width=160,
         )
 
         def _on_version_change(v: str) -> str:
             from rag_engine.tools.retrieve_context import set_ui_product_version
 
-            set_ui_product_version(v)
+            version = v.rsplit(":", 1)[-1].strip()
+            set_ui_product_version(version)
             return v
 
         version_selector.change(

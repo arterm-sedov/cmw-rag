@@ -56,13 +56,13 @@ class TestRetrieveContextSchema:
         with pytest.raises(ValueError, match="top_k must be a positive integer"):
             RetrieveContextSchema(query="test", top_k=-1)
 
-    def test_default_product_version_is_v6(self):
-        """product_version defaults to v6."""
+    def test_default_product_version_is_none(self):
+        """product_version defaults to None (resolved via UI context or fallback)."""
         schema = RetrieveContextSchema(query="test")
-        assert schema.product_version == "v6"
+        assert schema.product_version is None
 
-    def test_valid_product_version_v5(self):
-        """product_version accepts v5."""
+    def test_explicit_product_version_overrides_context(self):
+        """Explicit product_version takes precedence over context."""
         schema = RetrieveContextSchema(query="test", product_version="v5")
         assert schema.product_version == "v5"
 

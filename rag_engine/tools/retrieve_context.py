@@ -77,27 +77,69 @@ def set_app_retriever(retriever: RAGRetriever | None) -> None:
 def _get_or_create_retriever(version: str | None = None) -> RAGRetriever:
     """Get or create the retriever instance (lazy singleton, optionally per-version).
 
-    Uses app-injected retriever if set (Gradio app); otherwise creates on first use.
-    When a version is provided, creates/returns a version-specific retriever with
-    its own ChromaStore pointed at the versioned collection.
+    When a version is provided, always creates/returns a version-specific retriever
+    with its own ChromaStore pointed at the versioned collection (reusing embedder
+    and llm_manager from the app-injected or default retriever to avoid redundant init).
+    When no version is given, returns the app-injected retriever if set, otherwise
+    lazily creates the default retriever.
     """
     global _retriever
-    if _app_retriever is not None:
-        return _app_retriever
 
     if version:
         cached = _retrievers.get(version)
         if cached is not None:
             return cached
 
-    if _retriever is None and version is None:
-        # Serialize first-time initialization across threads
+        # Resolve base (embedder + llm_manager) from whichever source is available
+        if _app_retriever is not None:
+            base = _app_retriever
+        elif _retriever is not None:
+            base = _retriever
+        else:
+            base = None
+
+        collection = get_collection_name(version)
+        vector_store = ChromaStore(collection_name=collection)
+        if base is not None:
+            ret = RAGRetriever(
+                embedder=base.embedder,
+                vector_store=vector_store,
+                llm_manager=base.llm_manager,
+                top_k_retrieve=settings.top_k_retrieve,
+                top_k_rerank=settings.top_k_rerank,
+                rerank_enabled=settings.rerank_enabled,
+            )
+        else:
+            from rag_engine.llm.llm_manager import LLMManager
+            from rag_engine.retrieval.embedder import FRIDAEmbedder
+
+            ret = RAGRetriever(
+                embedder=FRIDAEmbedder(
+                    model_name=settings.embedding_model,
+                    device=settings.embedding_device,
+                ),
+                vector_store=vector_store,
+                llm_manager=LLMManager(
+                    provider=settings.default_llm_provider,
+                    model=settings.default_model,
+                    temperature=settings.llm_temperature,
+                ),
+                top_k_retrieve=settings.top_k_retrieve,
+                top_k_rerank=settings.top_k_rerank,
+                rerank_enabled=settings.rerank_enabled,
+            )
+        _retrievers[version] = ret
+        return ret
+
+    if _app_retriever is not None:
+        return _app_retriever
+
+    if _retriever is None:
         with _retriever_init_lock:
             if _retriever is not None:
                 return _retriever
         from rag_engine.llm.llm_manager import LLMManager
         from rag_engine.retrieval.embedder import FRIDAEmbedder
-        from rag_engine.storage.vector_store import ChromaStore
 
         logger.info("Initializing retriever for retrieve_context tool (first use)")
 
@@ -123,40 +165,6 @@ def _get_or_create_retriever(version: str | None = None) -> RAGRetriever:
             rerank_enabled=settings.rerank_enabled,
         )
         logger.info("Retriever initialized successfully")
-
-    if version:
-        collection = get_collection_name(version)
-        vector_store = ChromaStore(collection_name=collection)
-        # Reuse embedder and llm_manager from the default retriever if available,
-        # otherwise create standalone (no legacy fallback needed for direct use).
-        base = _retriever
-        if base is not None:
-            ret = RAGRetriever(
-                embedder=base.embedder,
-                vector_store=vector_store,
-                llm_manager=base.llm_manager,
-                top_k_retrieve=settings.top_k_retrieve,
-                top_k_rerank=settings.top_k_rerank,
-                rerank_enabled=settings.rerank_enabled,
-            )
-        else:
-            ret = RAGRetriever(
-                embedder=FRIDAEmbedder(
-                    model_name=settings.embedding_model,
-                    device=settings.embedding_device,
-                ),
-                vector_store=vector_store,
-                llm_manager=LLMManager(
-                    provider=settings.default_llm_provider,
-                    model=settings.default_model,
-                    temperature=settings.llm_temperature,
-                ),
-                top_k_retrieve=settings.top_k_retrieve,
-                top_k_rerank=settings.top_k_rerank,
-                rerank_enabled=settings.rerank_enabled,
-            )
-        _retrievers[version] = ret
-        return ret
 
     return _retriever
 
@@ -267,9 +275,10 @@ class RetrieveContextSchema(BaseModel):
         description="Optional list of article kb_ids to exclude from results (for deduplication). "
         "Use this to prevent retrieving articles you've already fetched in previous tool calls. ",
     )
-    product_version: ProductVersion = Field(
-        default=DEFAULT_PRODUCT_VERSION,
-        description="Product version to search: v5 or v6. Defaults to v6.",
+    product_version: ProductVersion | None = Field(
+        default=None,
+        description="Product version to search: v5 or v6. "
+        "Defaults to the version selected in the UI, or v6 if no version is selected.",
     )
 
     @field_validator("query", mode="before")
@@ -357,7 +366,7 @@ def _read_article(source_file: str) -> str:
     return content
 
 
-async def _fetch_articles_by_kb_ids_core(kb_ids: list[str], version: str) -> str:
+async def _fetch_articles_by_kb_ids_core(kb_ids: list[str], version: str | None = None) -> str:
     """Fetch articles by kbId from ChromaDB metadata, read full files, format as JSON."""
     version = get_effective_product_version(version)
     collection = get_collection_name(version)
@@ -386,7 +395,7 @@ async def _retrieve_context_core(
     query: str,
     top_k: int | None = None,
     exclude_kb_ids: list[str] | None = None,
-    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
+    product_version: ProductVersion | None = None,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     try:
@@ -442,7 +451,7 @@ async def retrieve_context(
     query: str,
     top_k: int | None = None,
     exclude_kb_ids: list[str] | None = None,
-    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
+    product_version: ProductVersion | None = None,
     runtime: ToolRuntime[AgentContext, None] | None = None,
 ) -> str:
     return await _retrieve_context_core(
@@ -469,16 +478,17 @@ class FetchArticleSchema(BaseModel):
         description="List of article kbIds to fetch. Use extract_numeric_kbid "
         "to normalize IDs from titles or URLs.",
     )
-    product_version: ProductVersion = Field(
-        default=DEFAULT_PRODUCT_VERSION,
-        description="Product version: v5 or v6. Defaults to v6.",
+    product_version: ProductVersion | None = Field(
+        default=None,
+        description="Product version: v5 or v6. "
+        "Defaults to the version selected in the UI, or v6 if no version is selected.",
     )
 
 
 @tool("fetch_kb_articles", args_schema=FetchArticleSchema, description=FetchArticleSchema.__doc__)
 async def fetch_kb_articles(
     kb_ids: list[str],
-    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
+    product_version: ProductVersion | None = None,
 ) -> str:
     return await _fetch_articles_by_kb_ids_core(kb_ids, product_version)
 
@@ -500,9 +510,10 @@ class GrepKbArticlesSchema(BaseModel):
         description="Regex pattern (ripgrep-compatible) to search in corpus. "
         "Examples: 'api_key_env', 'настр\\w+', 'docker\\.com'.",
     )
-    product_version: ProductVersion = Field(
-        default=DEFAULT_PRODUCT_VERSION,
-        description="Product version corpus to search: v5 or v6.",
+    product_version: ProductVersion | None = Field(
+        default=None,
+        description="Product version corpus to search: v5 or v6. "
+        "Defaults to the version selected in the UI, or v6 if no version is selected.",
     )
     max_matches: int = Field(
         default=20,
@@ -534,7 +545,7 @@ def _parse_frontmatter(file_path: str) -> dict[str, str]:
 
 def _grep_kb_articles_core(
     pattern: str,
-    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
+    product_version: str = "v6",
     max_matches: int = 20,
     exclude_kb_ids: list[str] | None = None,
 ) -> str:
@@ -543,8 +554,7 @@ def _grep_kb_articles_core(
     except re.error as exc:
         raise ValueError(f"Invalid regex pattern: {exc}") from exc
 
-    version = get_effective_product_version(product_version)
-    corpus_dir = get_corpus_dir(version)
+    corpus_dir = get_corpus_dir(product_version)
     result = subprocess.run(  # noqa: S603
         ["rg", "--files-with-matches", "--no-messages", pattern, corpus_dir],
         capture_output=True,
@@ -593,16 +603,17 @@ def _grep_kb_articles_core(
 )
 async def grep_kb_articles(
     pattern: str,
-    product_version: ProductVersion = DEFAULT_PRODUCT_VERSION,
+    product_version: ProductVersion | None = None,
     max_matches: int = 20,
     exclude_kb_ids: list[str] | None = None,
 ) -> str:
     import asyncio
 
+    version = get_effective_product_version(product_version)
     return await asyncio.to_thread(
         _grep_kb_articles_core,
         pattern,
-        product_version,
+        version,
         max_matches,
         exclude_kb_ids,
     )
