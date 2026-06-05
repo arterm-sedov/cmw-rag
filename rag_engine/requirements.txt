@@ -48,6 +48,9 @@ pytest-asyncio>=0.21.0
 pytest-cov>=4.1.0
 ruff>=0.1.0
 
+# Text Search
+ripgrep>=15.0.0
+
 # PDF Processing
 pymupdf4llm>=0.0.1
 

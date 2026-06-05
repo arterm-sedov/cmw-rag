@@ -560,9 +560,23 @@ def _grep_kb_articles_core(
     except re.error as exc:
         raise ValueError(f"Invalid regex pattern: {exc}") from exc
 
+    import shutil
+    import sys
+
+    rg_bin = shutil.which("rg")
+    if rg_bin is None:
+        venv_rg = Path(sys.executable).parent / "rg"
+        if venv_rg.exists():
+            rg_bin = str(venv_rg)
+        else:
+            raise FileNotFoundError(
+                "ripgrep (rg) not found in PATH or venv. "
+                "Install with: pip install ripgrep"
+            )
+
     corpus_dir = get_corpus_dir(product_version)
     result = subprocess.run(  # noqa: S603
-        ["rg", "--files-with-matches", "--no-messages", pattern, corpus_dir],
+        [rg_bin, "--files-with-matches", "--no-messages", pattern, corpus_dir],
         capture_output=True,
         text=True,
     )
