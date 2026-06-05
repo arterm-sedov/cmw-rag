@@ -4374,8 +4374,6 @@ if __name__ == "__main__":
     import asyncio
     import logging
 
-    import uvicorn
-
     _error_logger = logging.getLogger("uvicorn.error")
 
     class _FilterCancelled(logging.Filter):
@@ -4386,4 +4384,6 @@ if __name__ == "__main__":
 
     _error_logger.addFilter(_FilterCancelled())
 
-    uvicorn.run(app, host=settings.gradio_server_name, port=settings.gradio_server_port)
+    from rag_engine.api.server import run_gradio_uvicorn
+
+    run_gradio_uvicorn(app)
