@@ -16,7 +16,7 @@ DEFAULT_BRANCH = "platform_v6"
 DEFAULT_TARGET_DIR = Path(".reference-repos/cbap-mkdocs-ru")
 DEFAULT_SPARSE_PATH = "phpkb_content_rag"
 
-V5_CORPUS_PATH = Path("phpkb_content_rag") / "798. Версия 5.0. Текущая рекомендованная"
+V5_CORPUS_PATH = Path("phpkb_content_rag") / "798-platform_v5"
 V6_CORPUS_PATH = Path("phpkb_content_rag") / "896-platform_v6"
 
 CorpusChoice = Literal["v5", "v6", "all"]

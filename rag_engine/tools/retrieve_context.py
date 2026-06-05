@@ -52,7 +52,7 @@ _retriever_init_lock = threading.Lock()
 _retrievers: dict[str, RAGRetriever] = {}
 
 DEFAULT_CORPORA_ROOT = ".reference-repos/cbap-mkdocs-ru"
-V5_CORPUS_SUBDIR = "phpkb_content_rag/798. Версия 5.0. Текущая рекомендованная"
+V5_CORPUS_SUBDIR = "phpkb_content_rag/798-platform_v5"
 V6_CORPUS_SUBDIR = "phpkb_content_rag/896-platform_v6"
 
 
