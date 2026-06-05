@@ -3287,7 +3287,6 @@ def get_knowledge_base_articles(
     exclude_kb_ids: list[str] | None = None,
     product_version: str | None = None,
     kb_ids: list[str] | None = None,
-    version: str | None = None,
 ) -> str:
     """Search and retrieve documentation articles from the Comindware Platform knowledge base.
 
@@ -3306,7 +3305,6 @@ def get_knowledge_base_articles(
             'v6' for version 6.0 (current, released 2026). Always specify for accurate,
             version-specific results. Defaults to 'v6' when not provided.
         kb_ids: Optional list of article kb_ids to fetch directly (bypasses semantic search).
-        version: Compatibility alias for product_version.
 
     Returns:
         JSON string containing structured article data.
@@ -3317,12 +3315,7 @@ def get_knowledge_base_articles(
         _fetch_articles_by_kb_ids_core,
     )
 
-    if product_version and version and product_version != version:
-        raise ValueError(
-            "product_version and version must match when both are provided; "
-            f"got product_version={product_version!r}, version={version!r}"
-        )
-    effective_product_version = product_version or version or "v6"
+    effective_product_version = product_version or "v6"
 
     # Direct kbId fetch path
     if kb_ids:

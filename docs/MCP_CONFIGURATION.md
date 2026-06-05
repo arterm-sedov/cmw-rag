@@ -57,7 +57,6 @@ The Comindware RAG Engine exposes an MCP (Model Context Protocol) server via Gra
   - Examples: "authentication", "API integration", "user management"
 - `top_k` (integer, optional): Limit on number of articles to return. If not specified, returns default number (typically 10-20)
 - `product_version` (string, optional): Product documentation version to search. Use `v6` for the current 6.0 documentation or `v5` for 5.0 documentation. Defaults to `v6`.
-- `version` (string, optional): Backward-compatible alias for `product_version`. Do not pass both unless they have the same value.
 
 **Returns:**
 JSON string containing an array of articles, each with:
