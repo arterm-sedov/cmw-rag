@@ -56,6 +56,8 @@ The Comindware RAG Engine exposes an MCP (Model Context Protocol) server via Gra
 - `query` (string, required): Search query or question to find relevant documentation articles
   - Examples: "authentication", "API integration", "user management"
 - `top_k` (integer, optional): Limit on number of articles to return. If not specified, returns default number (typically 10-20)
+- `product_version` (string, optional): Product documentation version to search. Use `v6` for the current 6.0 documentation or `v5` for 5.0 documentation. Defaults to `v6`.
+- `version` (string, optional): Backward-compatible alias for `product_version`. Do not pass both unless they have the same value.
 
 **Returns:**
 JSON string containing an array of articles, each with:
@@ -75,7 +77,8 @@ JSON string containing an array of articles, each with:
     "name": "get_knowledge_base_articles",
     "arguments": {
       "query": "authentication methods",
-      "top_k": 3
+      "top_k": 3,
+      "product_version": "v6"
     }
   }
 }
@@ -198,6 +201,7 @@ If a tool is not in the filtered list, the server returns:
 ## Notes
 
 - The filtered endpoint is recommended for production use
+- UI-only event handlers, such as the product-version dropdown change handler, are intentionally private and should not be exposed as MCP tools.
 - Both tools use the OpenRouter Qwen 30B model (via `qwen/qwen3-30b-a3b-instruct-2507`)
 - Context window: 262,144 tokens
 - Max output tokens: 32,768 tokens

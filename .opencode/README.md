@@ -10,6 +10,7 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 
 | File | Date | Description |
 |------|------|-------------|
+| <plans/20260605_mcp_tool_contract/plan.md> | 2026-06-05 | MCP tool contract fix: version alias and private UI event |
 | <plans/20260321-reranker-refactor.md> | 2026-03-21 | Reranker refactoring with vLLM/Cohere endpoint contracts |
 | <plans/20260321-cmw-rag-analysis.md> | 2026-03-21 | Model sizing and API parameters analysis |
 | <plans/20260321_reranker_instruction_optimize.md> | 2026-03-21 | Reranker instruction optimization session log |
@@ -117,6 +118,7 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 
 | File | Date | Description |
 |------|------|-------------|
+| <research/20260605_mcp_tool_contract/research.md> | 2026-06-05 | MCP tool exposure and Gradio API visibility research |
 | <../docs/research/20260323-advanced-rag-approaches.md> | 2026-03-23 | Deep research report: Most advanced RAG approaches (2024-2026) |
 | <../docs/analysis/context_compression_analysis_20251209.md> | 2025-12-09 | Context compression analysis for small context windows |
 | <../docs/analysis/memory_management_limits_explanation.md> | 2025-01-28 | Memory management limits: timing, precedence, defaults |
