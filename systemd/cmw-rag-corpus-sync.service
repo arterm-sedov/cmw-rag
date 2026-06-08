@@ -1,0 +1,15 @@
+[Unit]
+Description=Sync and reindex CMW RAG corpora from upstream MkDocs repo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/cmw-rag
+ExecStart=%h/cmw-rag/.venv/bin/python rag_engine/scripts/sync_mkdocs_corpus.py --index --corpus all
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cmw-rag-sync
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic sync and reindex of CMW RAG corpora (every 6h)
+Requires=cmw-rag-corpus-sync.service
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:00:00
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target

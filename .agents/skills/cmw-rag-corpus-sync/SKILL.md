@@ -178,6 +178,52 @@ version is passed by the agent tool call.
 - Use `--reindex` only when the user wants to force replacement of existing chunks.
 - Use `--prune-missing` only when the current corpus should become the source of truth for deleting missing `kbId`s from ChromaDB.
 
+## Automated Scheduling (systemd timer)
+
+Systemd user units are available in `systemd/` for hands-off periodic sync+index.
+
+### Install
+
+```bash
+mkdir -p ~/.config/systemd/user
+cp systemd/cmw-rag-corpus-sync.{service,timer} ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now cmw-rag-corpus-sync.timer
+```
+
+### Verify
+
+```bash
+systemctl --user status cmw-rag-corpus-sync.timer
+systemctl --user list-timers --no-pager | grep cmw-rag
+journalctl --user -u cmw-rag-corpus-sync.service --no-pager -n 20
+```
+
+### Manual trigger (skip the timer)
+
+```bash
+systemctl --user start cmw-rag-corpus-sync.service
+```
+
+### Timer schedule
+
+Runs at 00:00, 06:00, 12:00, 18:00 UTC with up to 10 min randomized delay.
+`Persistent=true` catches up missed runs if the host was down.
+
+### Prerequisites (same host, running before timer fires)
+
+- ChromaDB HTTP server (`localhost:8000`)
+- Embedding server as configured in `.env` (e.g. mosec at `localhost:7998`)
+- Project venv at `.venv/` with dependencies installed
+
+### Teardown
+
+```bash
+systemctl --user disable --now cmw-rag-corpus-sync.timer
+rm ~/.config/systemd/user/cmw-rag-corpus-sync.{service,timer}
+systemctl --user daemon-reload
+```
+
 ## Useful Commands
 
 Dry run:
