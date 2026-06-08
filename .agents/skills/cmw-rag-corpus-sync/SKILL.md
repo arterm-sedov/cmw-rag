@@ -1,11 +1,11 @@
 ---
 name: cmw-rag-corpus-sync
-description: Use this skill whenever the user wants to fetch, sync, update, refresh, or index the Comindware MkDocs/PHPKB RAG corpora for the D:\Repo\cmw-rag repository. This skill is specifically for the managed sparse clone workflow that keeps both V5 and V6 corpora under .reference-repos/cbap-mkdocs-ru and indexes them with rag_engine/scripts/build_index.py.
+description: Use this skill whenever the user wants to fetch, sync, update, refresh, or index the Comindware MkDocs/PHPKB RAG corpora. This skill is specifically for the managed sparse clone workflow that keeps both V5 and V6 corpora under .reference-repos/cbap-mkdocs-ru and indexes them with rag_engine/scripts/build_index.py.
 ---
 
 # CMW RAG Corpus Sync
 
-Use this skill in `D:\Repo\cmw-rag` when the task is about preparing or indexing the external MkDocs RAG corpus.
+Use this skill when the task is about preparing or indexing the external MkDocs RAG corpus.
 
 ## Workflow
 
@@ -18,11 +18,7 @@ Platform-specific venv paths:
 
 All commands below use PowerShell; substitute the Python path for Linux/WSL.
 
-1. Work from the repository root:
-
-   ```powershell
-   Set-Location D:\Repo\cmw-rag
-   ```
+1. Work from the repository root (all commands assume repo root).
 
 2. Sync both tracked corpora from the MkDocs repo:
 
@@ -78,7 +74,7 @@ Use this only when the user explicitly asks to update or refresh the corpora fro
 4. Return to `cmw-rag` and index the refreshed local corpus when requested:
 
    ```powershell
-   Set-Location D:\Repo\cmw-rag
+   # return to repo root
    .venv\Scripts\python.exe rag_engine\scripts\sync_mkdocs_corpus.py --index --corpus all
    ```
 
@@ -93,7 +89,7 @@ Use this only when the user explicitly asks to push the refreshed corpus changes
 2. Stay inside the managed MkDocs clone:
 
    ```powershell
-   Set-Location D:\Repo\cmw-rag\.reference-repos\cbap-mkdocs-ru
+   cd .reference-repos\cbap-mkdocs-ru
    ```
 
 3. Inspect the changed corpus files before staging:
@@ -137,7 +133,7 @@ Use this only when the user explicitly asks to push the refreshed corpus changes
 9. Return to `cmw-rag`, sync the managed clone if needed, and index:
 
    ```powershell
-   Set-Location D:\Repo\cmw-rag
+   # return to repo root
    .venv\Scripts\python.exe rag_engine\scripts\sync_mkdocs_corpus.py --index --corpus all
    ```
 
