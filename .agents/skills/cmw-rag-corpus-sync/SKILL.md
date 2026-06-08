@@ -9,6 +9,15 @@ Use this skill in `D:\Repo\cmw-rag` when the task is about preparing or indexing
 
 ## Workflow
 
+Platform-specific venv paths:
+
+| OS | Python |
+|----|--------|
+| Windows | `.venv\Scripts\python.exe` |
+| Linux/WSL | `.venv/bin/python` |
+
+All commands below use PowerShell; substitute the Python path for Linux/WSL.
+
 1. Work from the repository root:
 
    ```powershell
@@ -141,7 +150,7 @@ Use this only when the user explicitly asks to push the refreshed corpus changes
 - Managed clone: `.reference-repos/cbap-mkdocs-ru`
 - Sparse checkout path: `phpkb_content_rag`
 - Indexed corpora:
-  - V5: `phpkb_content_rag/798. Версия 5.0. Текущая рекомендованная`
+  - V5: `phpkb_content_rag/798-platform_v5`
   - V6: `phpkb_content_rag/896-platform_v6`
 - ChromaDB collections (auto-derived from CHROMADB_COLLECTION):
   - V5: `{CHROMADB_COLLECTION}_v5` (e.g. `mkdocs_kb_v5`)

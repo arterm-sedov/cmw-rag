@@ -7,6 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+# Add project root to path so imports work without PYTHONPATH
+_project_root = Path(__file__).resolve().parents[2]
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
 from rag_engine.config.settings import get_collection_name
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
