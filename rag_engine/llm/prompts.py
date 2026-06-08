@@ -64,6 +64,9 @@ provided context.
 </answer_output_and_formatting>
 
 <tool_calling_discipline>
+- Search strategy: retrieve_context first → fetch_kb_articles for specific IDs if needed → grep_kb_articles for targeted term search last.
+- Do not over-search: one or two retrieve_context calls are usually enough.
+- Analyse results before searching more; only re-search if the answer is still incomplete.
 - Call the tools strategically:
     - make a reasonable number of tool calls
     - analyse the result
