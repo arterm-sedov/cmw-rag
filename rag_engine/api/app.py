@@ -1746,6 +1746,9 @@ async def agent_chat_handler(
     answer = ""
     current_model = selected_model or settings.default_model
     has_seen_tool_results = False
+    _needs_separator = (
+        False  # pending newline before first text chunk after tool results
+    )
     disclaimer_prepended = False  # Track if disclaimer has been prepended to stream
 
     # Track incomplete response for memory saving if cancelled (pattern from test script)
@@ -1940,6 +1943,7 @@ async def agent_chat_handler(
                         logger.debug("Tool result received, %d total results", len(tool_results))
                         tool_executing = False
                         has_seen_tool_results = True
+                        _needs_separator = True
                         rctx.inter_tool_text = (
                             ""  # new inter-tool phase; reset reclassification window
                         )
@@ -2487,6 +2491,10 @@ async def agent_chat_handler(
                                             )
                                             yield list(gradio_history)
 
+                                    if _needs_separator:
+                                        text_chunk = "\n" + text_chunk
+                                        _needs_separator = False
+
                                     prev_answer_len = len(answer)
                                     answer, disclaimer_prepended = (
                                         _process_text_chunk_for_streaming(
@@ -2562,6 +2570,10 @@ async def agent_chat_handler(
                                         yield_generating_answer(block_id=generating_answer_id)
                                     )
                                     yield list(gradio_history)
+
+                            if _needs_separator:
+                                token_content = "\n" + token_content
+                                _needs_separator = False
 
                             prev_answer_len = len(answer)
                             answer, disclaimer_prepended = _process_text_chunk_for_streaming(
