@@ -279,9 +279,9 @@ class RetrieveContextSchema(BaseModel):
     product_version: ProductVersion | None = Field(
         default=None,
         description="Product version to filter search results. "
-        "**If omitted, defaults to 'v6' (current recommended version).** "
-        "Use 'v5' for version 5.0 (released 2025), 'v6' for version 6.0 (current, released 2026). "
-        "Always specify explicitly for accurate, version-specific results.",
+        "When omitted, the version selected in the UI is used automatically. "
+        "Specify explicitly to search a specific version's docs "
+        "(e.g., 'v5' for version 5.0 released 2025, 'v6' for version 6.0 released 2026).",
     )
 
     @field_validator("query", mode="before")
@@ -484,9 +484,9 @@ class FetchArticleSchema(BaseModel):
     product_version: ProductVersion | None = Field(
         default=None,
         description="Product version to filter fetch results. "
-        "**If omitted, defaults to 'v6' (current recommended version).** "
-        "Use 'v5' for version 5.0 (released 2025), 'v6' for version 6.0 (current, released 2026). "
-        "Always specify explicitly for accurate, version-specific results.",
+        "When omitted, the version selected in the UI is used automatically. "
+        "Specify explicitly to fetch from a specific version's docs "
+        "(e.g., 'v5' for version 5.0 released 2025, 'v6' for version 6.0 released 2026).",
     )
 
 
@@ -525,9 +525,9 @@ class GrepKbArticlesSchema(BaseModel):
     product_version: ProductVersion | None = Field(
         default=None,
         description="Product version corpus to grep. "
-        "**If omitted, defaults to 'v6' (current recommended version).** "
-        "Use 'v5' for version 5.0 (released 2025), 'v6' for version 6.0 (current, released 2026). "
-        "Always specify explicitly for accurate, version-specific results.",
+        "When omitted, the version selected in the UI is used automatically. "
+        "Specify explicitly to grep a specific version's docs "
+        "(e.g., 'v5' for version 5.0 released 2025, 'v6' for version 6.0 released 2026).",
     )
     max_matches: int = Field(
         default=20,
