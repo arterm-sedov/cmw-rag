@@ -259,16 +259,17 @@ class RetrieveContextSchema(BaseModel):
 
     query: str = Field(
         ...,
-        description="Ыearch query to find relevant articles from the knowledge base. "
-        "This should be unique, clear, specific, focused. ",
+        description="Search query to find relevant articles from the knowledge base. "
+        "This should be unique, clear, specific, focused. "
+        "The knowledge base is in Russian — queries should be in Russian for best results, "
+        "even if the user's question is in English.",
         min_length=1,
     )
     top_k: int | None = Field(
         default=None,
-        description="Maximum number of articles to retrieve. "
+        description=f"Maximum number of articles to retrieve (1–20). "
         f"Default: {settings.top_k_rerank} articles. "
-        "Use a smaller value (e.g., 3) for focused retrieval. "
-        "Use larger value (e.g., 10) for comprehensive coverage. ",
+        "Use 3–5 for focused retrieval, 10+ for comprehensive coverage.",
     )
     exclude_kb_ids: list[str] | None = Field(
         default=None,
@@ -278,9 +279,9 @@ class RetrieveContextSchema(BaseModel):
     product_version: ProductVersion | None = Field(
         default=None,
         description="Product version to filter search results. "
-        "Always specify explicitly for accurate, version-specific results. "
+        "**If omitted, defaults to 'v6' (current recommended version).** "
         "Use 'v5' for version 5.0 (released 2025), 'v6' for version 6.0 (current, released 2026). "
-        "Defaults to 'v6' when not specified.",
+        "Always specify explicitly for accurate, version-specific results.",
     )
 
     @field_validator("query", mode="before")
@@ -483,9 +484,9 @@ class FetchArticleSchema(BaseModel):
     product_version: ProductVersion | None = Field(
         default=None,
         description="Product version to filter fetch results. "
-        "Always specify explicitly for accurate, version-specific results. "
+        "**If omitted, defaults to 'v6' (current recommended version).** "
         "Use 'v5' for version 5.0 (released 2025), 'v6' for version 6.0 (current, released 2026). "
-        "Defaults to 'v6' when not specified.",
+        "Always specify explicitly for accurate, version-specific results.",
     )
 
 
@@ -505,6 +506,12 @@ class GrepKbArticlesSchema(BaseModel):
     to find specific terms, error messages, API names, or technical keywords
     that may not surface well through semantic vector search.
 
+    **When to use grep vs semantic search (retrieve_context):**
+    - Use **grep** for: exact terms, error codes, API names, identifiers,
+      specific N3 syntax, version numbers, or anything pattern-based.
+    - Use **retrieve_context** for: natural-language questions, conceptual
+      topics, broad exploration, or when you don't know the exact terms.
+
     Returns the same JSON format as retrieve_context, with additional
     grep-specific metadata (match_count, matched_lines).
     """
@@ -512,18 +519,20 @@ class GrepKbArticlesSchema(BaseModel):
     pattern: str = Field(
         ...,
         description="Regex pattern (ripgrep-compatible) to search in corpus. "
-        "Examples: 'api_key_env', 'настр\\w+', 'docker\\.com'.",
+        "Examples: 'api_key_env', 'настр\\w+', 'docker\\.com', "
+        "'статус\\s+(запроса|задачи)', 'kbId=\\d{4}'.",
     )
     product_version: ProductVersion | None = Field(
         default=None,
         description="Product version corpus to grep. "
-        "Always specify explicitly for accurate, version-specific results. "
+        "**If omitted, defaults to 'v6' (current recommended version).** "
         "Use 'v5' for version 5.0 (released 2025), 'v6' for version 6.0 (current, released 2026). "
-        "Defaults to 'v6' when not specified.",
+        "Always specify explicitly for accurate, version-specific results.",
     )
     max_matches: int = Field(
         default=20,
-        description="Maximum number of matched articles to return.",
+        description="Maximum number of matched articles to return (1–50). "
+        "Default: 20. Use smaller values (5–10) for focused searches.",
     )
     exclude_kb_ids: list[str] | None = Field(
         default=None,
