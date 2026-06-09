@@ -5,6 +5,8 @@ import hashlib
 import importlib
 from types import SimpleNamespace
 
+import pytest
+
 
 async def _collect_async(gen):
     out = []
@@ -1013,3 +1015,155 @@ def test_session_salting_different_chats_isolated(monkeypatch):
 
     # Different session_ids for different first messages
     assert session_id1 != session_id2
+
+
+# ── Reasoning content round-trip tests ─────────────────────────────────────────
+
+
+def _patch_chromadb(monkeypatch):
+    """Patches chromadb.HttpClient to avoid needing a running ChromaDB server."""
+    monkeypatch.setattr(
+        "chromadb.HttpClient",
+        lambda *args, **kwargs: SimpleNamespace(
+            heartbeat=lambda: 1,
+            get_user_identity=lambda: SimpleNamespace(user_id="test", tenant="default"),
+        ),
+    )
+
+
+def test_reasoning_content_injected_when_reasoning_enabled(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _inject_reasoning_content
+
+    messages = [
+        {"role": "user", "content": "hello"},
+        {"role": "assistant", "content": "hi", "tool_calls": [{"id": "1"}]},
+        {"role": "tool", "content": "result"},
+    ]
+    result = _inject_reasoning_content(messages, reasoning_enabled=True)
+    assert result[1]["reasoning_content"] == ""
+
+
+def test_reasoning_content_not_injected_when_reasoning_disabled(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _inject_reasoning_content
+
+    messages = [
+        {"role": "user", "content": "hello"},
+        {"role": "assistant", "content": "hi", "tool_calls": [{"id": "1"}]},
+    ]
+    result = _inject_reasoning_content(messages, reasoning_enabled=False)
+    assert "reasoning_content" not in result[1]
+
+
+def test_reasoning_content_preserved_in_agent_messages(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _inject_reasoning_content
+
+    messages = [
+        {"role": "user", "content": "hello"},
+        {
+            "role": "assistant",
+            "content": "hi",
+            "additional_kwargs": {"reasoning_content": "thinking..."},
+        },
+    ]
+    result = _inject_reasoning_content(messages, reasoning_enabled=True)
+    assert result[1]["reasoning_content"] == "thinking..."
+
+
+def test_reasoning_content_preserved_on_final_assistant_message(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _preserve_reasoning_on_last_assistant
+
+    gradio = [
+        {"role": "user", "content": "hello"},
+        {"role": "assistant", "content": "answer", "metadata": {"title": "..."}},
+        {"role": "assistant", "content": "the answer"},
+    ]
+    result = _preserve_reasoning_on_last_assistant(gradio, "thinking text")
+    assert result[2].get("additional_kwargs", {}).get("reasoning_content") == "thinking text"
+
+
+@pytest.mark.parametrize(
+    "reasoning_text, expected_inject",
+    [
+        ("", False),
+        ("   ", False),
+        ("thinking", True),
+    ],
+)
+def test_preserve_reasoning_skip_empty(monkeypatch, reasoning_text, expected_inject):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _preserve_reasoning_on_last_assistant
+
+    gradio = [{"role": "assistant", "content": "answer"}]
+    result = _preserve_reasoning_on_last_assistant(gradio, reasoning_text)
+    has_reasoning = "additional_kwargs" in result[0] and "reasoning_content" in result[0].get("additional_kwargs", {})
+    assert has_reasoning is expected_inject
+
+
+def test_find_last_assistant_message(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _find_last_assistant_message
+
+    gradio = [
+        {"role": "user", "content": "q"},
+        {"role": "assistant", "content": "a", "metadata": {"title": "..."}},
+        {"role": "assistant", "content": "real answer"},
+    ]
+    assert _find_last_assistant_message(gradio) == {"role": "assistant", "content": "real answer"}
+
+
+def test_find_last_assistant_message_no_assistant(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _find_last_assistant_message
+
+    gradio = [
+        {"role": "user", "content": "q"},
+        {"role": "user", "content": "q2"},
+    ]
+    assert _find_last_assistant_message(gradio) is None
+
+
+def test_find_last_assistant_message_all_metadata(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _find_last_assistant_message
+
+    gradio = [
+        {"role": "assistant", "content": "a", "metadata": {"title": "..."}},
+        {"role": "assistant", "content": "b", "metadata": {"title": "..."}},
+    ]
+    assert _find_last_assistant_message(gradio) is None
+
+
+def test_reasoning_ctx_close_handles_dangling_in_block(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _ReasoningCtx
+
+    rctx = _ReasoningCtx(buffer="partial thinking", in_block=True, inter_tool_text="")
+    remaining = rctx.close()
+    assert rctx.in_block is False
+    assert rctx.inter_tool_text == ""
+    assert remaining == "partial thinking"
+
+
+def test_reasoning_ctx_close_idempotent(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _ReasoningCtx
+
+    rctx = _ReasoningCtx(buffer="done", in_block=True, inter_tool_text="")
+    rctx.close()
+    second = rctx.close()
+    assert rctx.in_block is False
+    assert second == ""
+
+
+def test_reasoning_ctx_close_no_dangling(monkeypatch):
+    _patch_chromadb(monkeypatch)
+    from rag_engine.api.app import _ReasoningCtx
+
+    rctx = _ReasoningCtx(buffer="", in_block=False, inter_tool_text="")
+    remaining = rctx.close()
+    assert remaining == ""
+    assert rctx.in_block is False

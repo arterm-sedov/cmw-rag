@@ -234,6 +234,16 @@ class OpenRouterNativeFullChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> dict[str, Any]:
         oai_messages = convert_to_openai_messages(messages, text_format="block", include_id=False)
+        # Restore reasoning_content from BaseMessage, which convert_to_openai_messages
+        # discards regardless of whether it's stored in additional_kwargs or as a
+        # top-level attribute. Reasoning-enabled models require this field on every
+        # assistant message in multi-turn conversations with tool calls.
+        for src, dst in zip(messages, oai_messages, strict=False):
+            if not isinstance(src, BaseMessage) or dst.get("role") != "assistant":
+                continue
+            rc = src.additional_kwargs.get("reasoning_content") or getattr(src, "reasoning_content", None)
+            if rc is not None:
+                dst["reasoning_content"] = rc
         body: dict[str, Any] = {
             "model": self.model,
             "messages": oai_messages,

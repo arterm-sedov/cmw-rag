@@ -919,6 +919,47 @@ def _parse_think_tags(
     return "".join(clean), reasoning, in_block, saw_orphan
 
 
+def _inject_reasoning_content(
+    messages: list[dict],
+    *,
+    reasoning_enabled: bool = False,
+) -> list[dict]:
+    if not reasoning_enabled:
+        return messages
+    for msg in messages:
+        if msg.get("role") != "assistant":
+            continue
+        if "reasoning_content" in msg:
+            continue
+        additional_kwargs = msg.get("additional_kwargs") or {}
+        if "reasoning_content" in additional_kwargs:
+            msg["reasoning_content"] = additional_kwargs["reasoning_content"]
+            continue
+        msg["reasoning_content"] = ""
+    return messages
+
+
+def _find_last_assistant_message(messages: list[dict]) -> dict | None:
+    for msg in reversed(messages):
+        if msg.get("role") == "assistant" and "metadata" not in msg:
+            return msg
+    return None
+
+
+def _preserve_reasoning_on_last_assistant(
+    gradio_history: list[dict],
+    reasoning_text: str,
+) -> list[dict]:
+    if not reasoning_text.strip():
+        return gradio_history
+    target = _find_last_assistant_message(gradio_history)
+    if target is not None:
+        if "additional_kwargs" not in target:
+            target["additional_kwargs"] = {}
+        target["additional_kwargs"]["reasoning_content"] = reasoning_text.strip()
+    return gradio_history
+
+
 # ── Per-turn reasoning state ────────────────────────────────────────────────────
 
 
@@ -931,6 +972,14 @@ class _ReasoningCtx:
     inter_tool_text: str = ""  # text added to `answer` since last tool boundary
     bubble_id: str | None = None
     bubble_text: str = ""  # last content shown in the reasoning bubble
+
+    def close(self) -> str:
+        remaining = ""
+        if self.in_block and self.buffer:
+            remaining = self.buffer
+        self.in_block = False
+        self.inter_tool_text = ""
+        return remaining
 
 
 def _has_generating_spinner(gradio_history: list, generating_answer_id: str) -> bool:
@@ -1505,6 +1554,15 @@ async def agent_chat_handler(
     # and ensures the agent only sees actual conversation content
     messages = _build_agent_messages_from_gradio_history(
         gradio_history, wrapped_user_content=wrapped_message
+    )
+
+    # Inject reasoning_content on all assistant messages for multi-turn round-trip.
+    # Reasoning-enabled models (DeepSeek, OpenAI reasoning, etc.) require this field
+    # on outgoing assistant messages to continue emitting thinking as reasoning_content.
+    # Without it, the model falls back to plain content (thinking leak) or returns 400.
+    messages = _inject_reasoning_content(
+        messages,
+        reasoning_enabled=getattr(settings, "llm_reasoning_enabled", False),
     )
 
     # Log messages being sent to agent for debugging memory issues
@@ -2657,6 +2715,7 @@ async def agent_chat_handler(
         # Check if we were cancelled during streaming
         if is_cancelled():
             logger.info("Stream cancelled by user - saving incomplete response and returning")
+            rctx.close()
             if incomplete_response and session_id:
                 llm_manager.save_assistant_turn(session_id, incomplete_response)
                 logger.info(
@@ -2765,6 +2824,11 @@ async def agent_chat_handler(
             except Exception:
                 logger.warning("Failed to inject reasoning bubble", exc_info=True)
 
+        # Preserve reasoning_content on final assistant message for next-turn round-trip.
+        # This ensures the model sees its own prior reasoning in subsequent LLM calls.
+        if reasoning_enabled and rctx.buffer.strip():
+            _preserve_reasoning_on_last_assistant(gradio_history, rctx.buffer)
+
         # ========== SRP (Support Resolution Plan) - if enabled ==========
         resolution_plan = None
         resolution_markdown = ""
@@ -2866,7 +2930,7 @@ async def agent_chat_handler(
         # ========== Assemble Final Message ==========
         # Structure: Answer + [Plan] + [Sources at end]
         # Always add sources at the end (regardless of plan presence)
-        complete_content = f"{final_text}{plan_section}"
+        complete_content = f"\n{final_text}{plan_section}"
         if articles:
             complete_content += format_sources_list(articles)
         # Update the answer in gradio_history
@@ -2935,10 +2999,12 @@ async def agent_chat_handler(
         except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to populate AgentContext final fields: %s", exc)
 
+        rctx.close()
         yield agent_context
         return
 
     except GeneratorExit:
+        rctx.close()
         # Stream was cancelled - save incomplete response to memory if available (pattern from test script)
         logger.info("Stream cancelled (GeneratorExit) - saving incomplete response")
         if incomplete_response and session_id:
@@ -2949,6 +3015,7 @@ async def agent_chat_handler(
         raise  # Re-raise to allow Gradio to handle cancellation properly
 
     except Exception as e:
+        rctx.close()
         logger.error("Error in agent_chat_handler: %s", e, exc_info=True)
         # Variables are initialized at function start, so they should always exist
         # Handle context-length overflow gracefully by switching to a larger model (once)
