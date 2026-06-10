@@ -36,6 +36,15 @@ RAG Backend (same port)
   └── /kb_assist  → lite app (chatbot only, no header controls)
 ```
 
+### Gradio version
+
+- **Requirements**: `gradio[mcp]>=6.8.0` → pin to `gradio[mcp]==6.9.0` (pre-step, before any code changes)
+- **Stable (remote production)**: 6.9.0 — canonical version, no breaking changes
+- **Local dev override**: 6.16.0 (harmless for dev, but not deployed)
+- **`<gradio-app>` web component**: Self-hosted by the Gradio server — no CDN dependency. The browser fetches the component definition directly from `<gradio-url>/kb_assist`.
+- **No external JS dependency**: Programmatic messaging (Explain buttons, pre-fill) uses shadow DOM traversal — find the textbox inside `<gradio-app>` shadow root, set value, dispatch input + submit events. No Gradio JS client library needed.
+- **Existing widgets**: Use outdated CDN scripts (6.1.0, 6.5.1) — those should be removed in the new widget since they're unnecessary.
+
 ---
 
 ## Phase 1: Backend — `/kb_assist` Gradio App
@@ -145,6 +154,7 @@ Extracted from `platform/v5.0/chat/index.php`:
         <div class="cmw-widget-gradio-container">
             <div id="cmw-widget-loading">Загрузка...</div>
             <gradio-app id="cmw-widget-gradio-app" src="" style="display:none;">
+            <!-- ^ self-hosted: Gradio server serves the web component JS automatically -->
         </div>
     </div>
 </div>
@@ -158,10 +168,11 @@ Extracted from `platform/v5.0/chat/index.php`:
 **Reused from `chat/index.php`:**
 - `toggleWidget(forceState)` — open/close with animation
 - `initializeGradioApp(url)` — set `<gradio-app>` src, loading state
-- `updateChatbotHeight()` — calculate `--chatbot-height` from available space (66%/76% formula)
+- `updateChatbotHeight()` — calculate `--chatbot-height` from available space (66%/76% formula) via shadow DOM traversal
 - Resize handlers — pointer-event drag from top-left
 - `localStorage` state — persist open/closed, size, position
 - GRADIO_URL loading — `fetch('gradio-config.json')` → fallback `window.GRADIO_URL` → append `/kb_assist`
+- **No CDN scripts** — `<gradio-app>` is self-hosted, messaging via shadow DOM
 
 **New: "Explain selected text" feature**
 ```javascript
@@ -197,20 +208,7 @@ document.querySelector('.cmw-widget-explain-article').addEventListener('click', 
 });
 ```
 
-**Messaging Gradio**: Since `<gradio-app>` is a web component, we need to send messages programmatically. The Gradio JS client exposes an API:
-
-```javascript
-// Option A: Use Gradio's JS client to call the chat handler
-import { Client } from '.../gradio.js';
-const client = await Client.connect(gradioUrl);
-client.predict(message);
-
-// Option B: Dispatch a custom event the Gradio app listens for
-// Option C: Use the Gradio app's internal textbox + submit
-//    → querySelector the textbox inside shadow DOM, set value, click submit
-```
-
-The simplest approach: **Option C** — reach into the Gradio shadow DOM, set the textbox value, and dispatch an Enter key or click the submit button. The existing `updateChatbotHeight()` already traverses shadow DOM, so we have the pattern.
+**Messaging Gradio**: Reach into the `<gradio-app>` shadow DOM, set the textbox value, dispatch submit. The existing `updateChatbotHeight()` already traverses shadow DOM, so the pattern is established. No external library needed — zero CDN dependency.
 
 #### `gradio-config.json` (gitignored, per-deployment)
 
@@ -283,6 +281,7 @@ This means `/kb_assist` has **no version dropdown** in its Gradio UI — it's pu
 
 | Repo | File | Action | Lines |
 |---|---|---|---|
+| rag | `rag_engine/requirements.txt` | Pin Gradio to 6.9.0 | 1 |
 | rag | `rag_engine/api/app.py` | Add `kb_assist_handler` + 2nd `gr.Blocks` + 2nd mount | ~100 |
 | rag | `rag_engine/resources/css/kb_assist_theme.css` | New (optional overrides) | 0+ |
 | kb | `ai-assistant.php` | New (PHP context + CSS + HTML + JS) | ~200 |
