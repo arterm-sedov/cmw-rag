@@ -1310,6 +1310,7 @@ async def agent_chat_handler(
     history: list[dict],
     cancel_state: dict | None = None,
     request: gr.Request | None = None,
+    skip_srp: bool = False,
 ) -> AsyncGenerator[list[dict], None]:
     """Ask questions about Comindware Platform documentation and get intelligent answers with citations.
 
@@ -2844,8 +2845,8 @@ async def agent_chat_handler(
         # ========== SRP (Support Resolution Plan) - if enabled ==========
         resolution_plan = None
         resolution_markdown = ""
-        srp_enabled = getattr(settings, "srp_enabled", False)
-        logger.info("SRP check: srp_enabled=%s", srp_enabled)
+        srp_enabled = getattr(settings, "srp_enabled", False) and not skip_srp
+        logger.info("SRP check: srp_enabled=%s skip_srp=%s", bool(srp_enabled), skip_srp)
         if srp_enabled:
             from rag_engine.api.stream_helpers import (
                 remove_message_by_ui_type,
@@ -3705,6 +3706,7 @@ async def chat_with_metadata(
     history: list[dict],
     cancel_state: dict | None = None,
     request: gr.Request | None = None,
+    skip_srp: bool = False,
 ) -> AsyncGenerator[tuple[list[dict], Any, Any, Any, Any, Any, Any], None]:
     """Streaming UI handler with metadata - yields chatbot during streaming, metadata once at end."""
     last_history: list[dict] = history if history else []
@@ -3716,6 +3718,7 @@ async def chat_with_metadata(
         history=history,
         cancel_state=cancel_state,
         request=request,
+        skip_srp=skip_srp,
     ):
         if isinstance(chunk, list):
             last_history = chunk
@@ -3983,7 +3986,8 @@ async def kb_assist_handler(
     request: gr.Request | None = None,
 ) -> AsyncGenerator[list[dict], None]:
     """Same agent as chat_with_metadata, yields only chatbot history (no metadata panels)."""
-    async for result in chat_with_metadata(message, history, cancel_state, request):
+    async for result in chat_with_metadata(message, history, cancel_state, request,
+                                           skip_srp=True):
         yield result[0]  # chatbot only
 
 
