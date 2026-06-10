@@ -42,12 +42,12 @@ RAG Backend (same port)
 
 ### File: `rag_engine/api/app.py`
 
-### Step 1.1: Add `chat_lite` wrapper
+### Step 1.1: Add `kb_assist_handler` wrapper
 
 Thin async generator wrapping `chat_with_metadata`, stripping the 5 metadata outputs. No agent logic duplication — SRP already gated by `SRP_ENABLED=false` (default).
 
 ```python
-async def chat_lite(message, history, cancel_state=None, request=None):
+async def kb_assist_handler(message, history, cancel_state=None, request=None):
     async for result in chat_with_metadata(message, history, cancel_state, request):
         yield result[0]  # chatbot only
 ```
@@ -60,7 +60,7 @@ async def chat_lite(message, history, cancel_state=None, request=None):
 | Header | Hero title + version selector | **None** (no header at all) |
 | Chatbot | `elem_id="chatbot-main"`, `elem_classes=["chatbot-card"]` | Same |
 | Metadata panels | 5 panels | **None** |
-| Handler | `chat_with_metadata` | `chat_lite` |
+| Handler | `chat_with_metadata` | `kb_assist_handler` |
 | Output count | 6 (chatbot + 5 panels) | **1** (chatbot only) |
 | MCP server | yes | no |
 
@@ -283,7 +283,7 @@ This means `/kb_assist` has **no version dropdown** in its Gradio UI — it's pu
 
 | Repo | File | Action | Lines |
 |---|---|---|---|
-| rag | `rag_engine/api/app.py` | Add `chat_lite` + 2nd `gr.Blocks` + 2nd mount | ~100 |
+| rag | `rag_engine/api/app.py` | Add `kb_assist_handler` + 2nd `gr.Blocks` + 2nd mount | ~100 |
 | rag | `rag_engine/resources/css/kb_assist_theme.css` | New (optional overrides) | 0+ |
 | kb | `ai-assistant.php` | New (PHP context + CSS + HTML + JS) | ~200 |
 | kb | `article.php` | Add include | 1 |
