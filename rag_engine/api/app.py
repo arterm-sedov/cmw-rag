@@ -3976,6 +3976,17 @@ async def chat_with_metadata(
         )
 
 
+async def kb_assist_handler(
+    message: str,
+    history: list[dict],
+    cancel_state: dict | None = None,
+    request: gr.Request | None = None,
+) -> AsyncGenerator[list[dict], None]:
+    """Same agent as chat_with_metadata, yields only chatbot history (no metadata panels)."""
+    async for result in chat_with_metadata(message, history, cancel_state, request):
+        yield result[0]  # chatbot only
+
+
 # Use metadata-enabled wrapper to populate debug UI panels after streaming.
 handler_fn = chat_with_metadata
 logger.info("Using agent-based (LangChain) handler for chat interface")
@@ -4314,6 +4325,152 @@ with gr.Blocks(
 
     demo.title = "Comindware Platform Documentation Assistant"
 
+
+# ── KB Assist UI: same agent, no metadata panels, no header ──────────────────
+kb_assist_title = "Ассистент базы знаний"
+
+with gr.Blocks(
+    title=kb_assist_title or "Comindware KB Assistant",
+) as kb_assist_demo:
+    chatbot = gr.Chatbot(
+        label="Диалог с агентом",
+        height="70vh",
+        max_height="70vh",
+        show_label=True,
+        container=True,
+        buttons=["copy", "copy_all"],
+        elem_id="chatbot-main",
+        elem_classes=["chatbot-card"],
+    )
+    msg = gr.Textbox(
+        label="Сообщение",
+        placeholder="Введите ваш вопрос...",
+        lines=1,
+        max_lines=4,
+        show_label=False,
+        elem_id="message-input",
+        elem_classes=["message-card"],
+        submit_btn=True,
+        stop_btn=False,
+    )
+    saved_input = gr.State()
+    current_session_id = gr.State(None)
+    cancellation_state = gr.State(value={"cancelled": False})
+
+    def _kb_handle_stop_click(
+        history: list[dict], cancel_state: dict | None
+    ) -> tuple[list[dict], dict]:
+        from rag_engine.api.stream_helpers import yield_cancelled
+
+        if cancel_state is None or not isinstance(cancel_state, dict):
+            cancel_state = {"cancelled": True}
+        else:
+            cancel_state["cancelled"] = True
+        history.append(yield_cancelled())
+        return history, cancel_state
+
+    def _kb_clear_and_save_textbox(message: str) -> tuple[gr.Textbox, str]:
+        return (
+            gr.Textbox(value="", interactive=False, placeholder=""),
+            message,
+        )
+
+    def _kb_handle_chatbot_clear(session_id: str | None) -> None:
+        if session_id:
+            llm_manager._conversations.clear(session_id)
+        return None
+
+    def _kb_save_session_id(
+        message: str, history: list[dict], request: gr.Request | None
+    ) -> str | None:
+        base_session_id = getattr(request, "session_hash", None) if request is not None else None
+        return salt_session_id(base_session_id, history, message)
+
+    def _kb_reset_cancellation_state(cancel_state: dict | None) -> dict:
+        if cancel_state is None or not isinstance(cancel_state, dict):
+            cancel_state = {"cancelled": False}
+        else:
+            cancel_state["cancelled"] = False
+        return cancel_state
+
+    def _kb_re_enable_textbox():
+        return gr.Textbox(value="", interactive=True, submit_btn=True, stop_btn=False)
+
+    original_stop_btn = True
+
+    user_submit = msg.submit(
+        fn=_kb_clear_and_save_textbox,
+        inputs=[msg],
+        outputs=[msg, saved_input],
+        queue=False,
+        api_visibility="private",
+    )
+    user_submit.success(
+        lambda: gr.Textbox(submit_btn=False, stop_btn=original_stop_btn),
+        outputs=[msg],
+        queue=False,
+        api_visibility="private",
+    )
+
+    submit_event = (
+        user_submit.then(
+            fn=_kb_reset_cancellation_state,
+            inputs=[cancellation_state],
+            outputs=[cancellation_state],
+            queue=False,
+            api_visibility="private",
+        )
+        .then(
+            lambda message, history: history + [{"role": "user", "content": message}],
+            inputs=[saved_input, chatbot],
+            outputs=[chatbot],
+            queue=False,
+            api_visibility="private",
+        )
+        .then(
+            fn=_kb_save_session_id,
+            inputs=[saved_input, chatbot],
+            outputs=[current_session_id],
+            queue=False,
+            api_visibility="private",
+        )
+    )
+
+    submit_event = submit_event.then(
+        fn=kb_assist_handler,
+        inputs=[saved_input, chatbot, cancellation_state],
+        outputs=[chatbot],
+        concurrency_limit=settings.gradio_default_concurrency_limit,
+        api_visibility="private",
+    ).then(
+        fn=_kb_re_enable_textbox,
+        outputs=[msg],
+        api_visibility="private",
+    )
+
+    msg.stop(
+        fn=_kb_handle_stop_click,
+        inputs=[chatbot, cancellation_state],
+        outputs=[chatbot, cancellation_state],
+        cancels=[submit_event],
+        api_visibility="private",
+    ).then(
+        lambda: gr.Textbox(submit_btn=True, stop_btn=False),
+        outputs=[msg],
+        queue=False,
+        api_visibility="private",
+    )
+
+    chatbot.clear(
+        fn=_kb_handle_chatbot_clear,
+        inputs=[current_session_id],
+        outputs=[current_session_id],
+        api_visibility="private",
+    )
+
+    kb_assist_demo.title = kb_assist_title or "Comindware KB Assistant"
+
+
     # CMW Platform API endpoint - works with both direct REST and Gradio API calls
     def cmw_process_support_request(request_id: str | dict, request: gr.Request) -> dict:
         """Process CMW Platform support request via API."""
@@ -4454,6 +4611,19 @@ if __name__ == "__main__":
         path="/",
         mcp_server=True,
         footer_links=["api"],
+        theme=gr.themes.Soft(),
+        css_paths=[css_file_path] if css_file_path.exists() else [],
+        allowed_paths=allowed_paths_list or None,
+    )
+
+    kb_assist_css_path = Path(__file__).parent.parent / "resources" / "css" / "kb_assist_theme.css"
+
+    app = mount_gradio_app(
+        fastapi_app,
+        kb_assist_demo,
+        path="/kb_assist",
+        mcp_server=False,
+        footer_links=[],
         theme=gr.themes.Soft(),
         css_paths=[css_file_path] if css_file_path.exists() else [],
         allowed_paths=allowed_paths_list or None,
