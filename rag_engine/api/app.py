@@ -4542,10 +4542,15 @@ if __name__ == "__main__":
 
     # Build FastAPI app with CMW Platform endpoint
     from fastapi import FastAPI, Request
+    from fastapi.responses import RedirectResponse
     from gradio import mount_gradio_app
     from pydantic import BaseModel
 
     fastapi_app = FastAPI(title="CMW RAG API")
+
+    @fastapi_app.get("/kb_assist")
+    async def _kb_assist_redirect():
+        return RedirectResponse(url="/kb_assist/", status_code=301)
 
     class ProcessSupportRequest(BaseModel):
         request_id: str
@@ -4605,6 +4610,18 @@ if __name__ == "__main__":
     if project_resources_dir.exists():
         allowed_paths_list.append(str(project_resources_dir))
 
+    # Mount /kb_assist FIRST — sub-path must precede root mount for Starlette routing
+    app = mount_gradio_app(
+        fastapi_app,
+        kb_assist_demo,
+        path="/kb_assist",
+        mcp_server=False,
+        footer_links=[],
+        theme=gr.themes.Soft(),
+        css_paths=[css_file_path] if css_file_path.exists() else [],
+        allowed_paths=allowed_paths_list or None,
+    )
+
     app = mount_gradio_app(
         fastapi_app,
         demo,
@@ -4616,18 +4633,12 @@ if __name__ == "__main__":
         allowed_paths=allowed_paths_list or None,
     )
 
-    kb_assist_css_path = Path(__file__).parent.parent / "resources" / "css" / "kb_assist_theme.css"
-
-    app = mount_gradio_app(
-        fastapi_app,
-        kb_assist_demo,
-        path="/kb_assist",
-        mcp_server=False,
-        footer_links=[],
-        theme=gr.themes.Soft(),
-        css_paths=[css_file_path] if css_file_path.exists() else [],
-        allowed_paths=allowed_paths_list or None,
-    )
+    # Starlette Mount at "/" catches all — move /kb_assist before root mount
+    _routes = app.routes
+    for i, r in enumerate(_routes):
+        if getattr(r, "path", None) == "/kb_assist" and i > 0:
+            _routes.insert(0, _routes.pop(i))
+            break
 
     import asyncio
     import logging
