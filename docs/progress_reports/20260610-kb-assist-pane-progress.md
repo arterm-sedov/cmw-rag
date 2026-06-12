@@ -47,8 +47,10 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 | Feature | Status | Details |
 |---|---|---|
 | **Responsive layout** | ✅ | Right pane pushes content on all desktop widths; full-screen overlay only on mobile <768px |
-| **Header matches KB top bar** | ✅ | Height via `--cmw-topnav-height` CSS variable (91px), `#2d9adf` primary color, rounded top corners. Both KB top nav and widget header share one source of truth |
+| **Header matches KB top bar** | ✅ | Height via `--cmw-topnav-height` CSS variable (91px), `#2d9adf` primary color, no border offset. Both KB top nav and widget header share one source of truth |
 | **Overflow fix** | ✅ | `overflow: hidden` + `box-sizing: border-box` on container — prevents vertical/horizontal scroll within widget |
+| **Resizable pane** | ✅ | Drag left edge of widget to resize width; body margin-right and toggle button position sync dynamically; width persisted in localStorage |
+| **No page scroll in pane mode** | ✅ | Body margin-right driven by JS (not CSS) — page scrolls freely when pane is closed, reflows when open |
 | **GRADIO_URL simplified** | ✅ | Full URL in PHP variable, no JS concatenation (removed `/kb_assist` suffix appending that caused path doubling) |
 | **FA Pro icons** | ✅ | `fa-microchip-ai` (search button), `fa-wand-magic-sparkles` (explain), `fa-chevron-left` / `fa-xmark` (header), `fa-bolt` (loading) |
 | **AI chip search button** | ✅ | Injected between search input and dropdowns (`col-xs-12` in `.row .text-right`), toggles pane open/close |
@@ -59,7 +61,7 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 | **Gradio CDN integration** | ✅ | CDN 6.5.1 `<gradio-app>` web component. Plan said no CDN but self-hosted didn't register web component; CDN needed |
 | **Shadow DOM messaging** | ✅ | `_sendWhenReady()` retry loop — polls for textarea, sets value, dispatches input + submit events |
 | **localStorage persistence** | ✅ | Pane open/closed state, width remembered across page loads |
-| **Resize handle** | ✅ | Top-left corner drag for pane width (hidden on mobile) |
+| **Resize handle** | ✅ | Visible on left edge in pane mode (`cursor: ew-resize`); dragging syncs widget width, body margin, and toggle button position. Width saved to localStorage |
 | **Redundant buttons removed** | ✅ | Bottom floating toggle + widget-header explain article button removed |
 
 ### Deviations from plan
@@ -104,6 +106,8 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
 3. **Widget header match KB top bar** — Now uses `--cmw-topnav-height` CSS variable (91px) shared by both `.bg-cmw.top_nav` and `.cmw-widget-header`. Pure CSS, no JS measurement needed.
 4. **Responsive layout simplified** — Right pane push now applies at all desktop widths; floating overlay breakpoint (769-1399px) removed.
 5. **Widget overflow fixed** — Added `overflow: hidden` + `box-sizing: border-box` to `#cmw-widget-container` in pane mode. Container no longer causes vertical/horizontal scroll.
+6. **Pane resize** — Drag left edge to resize width; body margin-right and toggle position sync dynamically. Width persisted in localStorage; `saveState()` skips left/bottom in pane mode to prevent floating-mode restore.
+7. **Blue bar alignment** — Removed `border-top` from pane-mode container, eliminating 1px offset. Both bars now start at y=0 with matching 91px height.
 
 ### Pending (no blockers)
 5. **Merge `cmw-rag:20260610-kb-assist` → `main`** — 6 commits, all pushed to origin, no conflicts
@@ -128,4 +132,5 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
 | Search AI chip toggles pane | ✅ |
 | Mobile <768px full-screen | ✅ |
 | FA Pro icons render | ✅ |
+| Pane resize syncs body margin | ✅ (local Playwright) |
 | ennoia production deploy | ❌ blocked |
