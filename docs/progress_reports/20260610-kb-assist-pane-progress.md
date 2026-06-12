@@ -1,8 +1,8 @@
 # KB Assist Pane — Implementation Progress Report
 
-**Date:** 2026-06-10  
+**Date:** 2026-06-12  
 **Plan:** `.opencode/plans/20260610_kb-assist/plan.md`  
-**Branches:** `cmw-rag:20260610-kb-assist` (5 commits, pushed), `kb.comindware.ru:20260610-kb-assist-pane` (19 commits, pushed)
+**Branches:** `cmw-rag:20260610-kb-assist` (6 commits, pushed), `kb.comindware.ru:20260610-kb-assist` (25 commits, pushed, merged from `-pane`)
 
 ---
 
@@ -46,7 +46,9 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 
 | Feature | Status | Details |
 |---|---|---|
-| **Responsive layout** | ✅ | Right pane >1400px (pushes content), floating overlay 769-1399px, full-screen <768px |
+| **Responsive layout** | ✅ | Right pane pushes content on all desktop widths; full-screen overlay only on mobile <768px |
+| **Header matches KB top bar** | ✅ | 64px height, `#2d9adf` primary color, rounded top corners — matches `.bg-cmw.top_nav` exactly |
+| **GRADIO_URL simplified** | ✅ | Full URL in PHP variable, no JS concatenation (removed `/kb_assist` suffix appending that caused path doubling) |
 | **FA Pro icons** | ✅ | `fa-microchip-ai` (search button), `fa-wand-magic-sparkles` (explain), `fa-chevron-left` / `fa-xmark` (header), `fa-bolt` (loading) |
 | **AI chip search button** | ✅ | Injected between search input and dropdowns (`col-xs-12` in `.row .text-right`), toggles pane open/close |
 | **Tooltip toggle** | ✅ | Title changes: "Открыть ИИ-ассистент" / "Закрыть ИИ-ассистент" (committed & pushed) |
@@ -65,7 +67,8 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 |---|---|---|
 | Self-hosted `<gradio-app>` | CDN 6.5.1 | Gradio 6.9.0 server doesn't serve the web component JS; `<gradio-app>` tag requires the CDN bundle to register the custom element |
 | `gradio-config.json` | PHP `$GRADIO_URL` variable | Simpler — one PHP variable per deployment, no additional HTTP request |
-| Right-pane push layout | Not in plan | Discovered GitBook/Mintlify pattern during implementation; much better UX than floating popup |
+| Right-pane push layout | Not in plan | Discovered GitBook/Mintlify pattern during implementation; later expanded to all desktop widths (removed 1400px breakpoint) |
+| Floating overlay (769-1399px) | Removed | Pane push works on all desktop widths now; only mobile gets full-screen overlay |
 | FA Free icons | FA Pro 6.2.1 | CBAP_MONO had Pro license; `microchip-ai` and `wand-magic-sparkles` are Pro-only |
 | 3 explain buttons (selection, article, widget-header) | 3 buttons (selection, H1, search AI chip) | Widget-header removed as redundant with H1 and search AI; bottom toggle removed |
 
@@ -79,9 +82,14 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 ### Blocked (by infrastructure)
 1. **Deploy `20260610-kb-assist-pane` to ennoia production** — WSL localhost proxy not mirrored into WSL NAT mode. `ssh ennoia` cannot resolve hostname. Needs manual deploy or WSL proxy config fix.
 
+### Resolved
+2. **GRADIO_URL path doubling** — Fixed: removed `+ '/kb_assist'` concatenation in JS, now uses full URL directly. Config URL now resolves correctly to `/kb_assist/config` without doubling.
+3. **Widget header match KB top bar** — Height 64px, primary color `#2d9adf`, rounded top corners retained.
+4. **Responsive layout simplified** — Right pane push now applies at all desktop widths; floating overlay breakpoint (769-1399px) removed.
+
 ### Pending (no blockers)
-2. **Merge `cmw-rag:20260610-kb-assist` → `main`** — 5 commits, all pushed to origin, no conflicts
-3. **Merge `kb:20260610-kb-assist-pane` → `develop`** — merge-base is `440f6e1` (shared with develop at `5254370` and master at `95b7805`). Branch has 302 commits ahead of master (includes full develop history) but only 19 unique to our feature. Prefer squash-merge or rebase for clean history.
+5. **Merge `cmw-rag:20260610-kb-assist` → `main`** — 6 commits, all pushed to origin, no conflicts
+6. **Merge `kb:20260610-kb-assist` → `develop`** — 25 commits on branch, merged from `-pane` sub-branch. Prefer squash-merge or rebase for clean history.
 
 ### Not implemented
 4. **Playwright test for widget interaction** — plan mentioned verification but no automated test was written. Manual testing done.
