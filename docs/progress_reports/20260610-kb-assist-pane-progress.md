@@ -78,6 +78,65 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 ### Known issues
 - `TypeError: this.app.$destroy is not a function` — Gradio CDN 6.5.1 cosmetic bug, does not block functionality
 
+---
+
+## KB ↔ Widget Interaction Discoveries
+
+### Layout Architecture
+
+| KB element | CSS class | Behavior |
+|---|---|---|
+| Blue top bar | `.bg-cmw.top_nav` > `.mainnav.navbar` | Height driven by content (line-height: 90px on menu links). No explicit height. |
+| Logo | `.navbar-brand` > `img` | Hidden by KB's own JS at narrow widths (≤1031px). Widget pane does NOT need to hide it. |
+| Menu | `.xv-menuwrapper .dl-menu` | Right-aligned via `justify-content-between` on `.mainnav`. At ≤1031px, KB switches to hamburger (`.dl-menuwrapper`). |
+| Sidebar | `.left-side` / `.main-sidebar` | Collapses at ≤1047px via `xv-menu.js` adding `sidebar-collapse` to `<body>`. Uses `transform: translate(-330px, 0)`. |
+| Search bar | `.search-section` | Inside `.container` below the blue bar. Not affected by pane. |
+
+### How KB responsive breakpoints work
+
+- **1047px**: Sidebar collapses (`sidebar-collapse` class added to body). Menu switches to `dl-menuwrapper` (hamburger).
+- **1031px**: Hamburger toggle shows (`.paper-nav-toggle`). Nav gets padding. Menu links compact.
+- These breakpoints are based on `window.innerWidth`, NOT content width. Body `margin-right` from the widget does NOT trigger them.
+
+### What widget CSS must override when pane is active
+
+| Rule | Purpose |
+|---|---|
+| `body.cmw-widget-pane-active .mainnav { padding: 15px }` | Compact nav padding (KB only does this at ≤1031px) |
+| `body.cmw-widget-pane-active .xv-menuwrapper .dl-menu > li > a { line-height: 60px; font-size: 12px; ... }` | Compact menu items (KB only does this at ≤1031px) |
+| `body.cmw-widget-pane-active .xv-menuwrapper { margin-left: auto }` | Keep menu right-aligned when logo is hidden |
+
+### What widget CSS must NOT do
+
+- **Do NOT hide `.navbar-brand`** — KB's own JS handles this at narrow widths
+- **Do NOT add `overflow: hidden` to `html`/`body`** — kills page scroll entirely
+- **Do NOT use hardcoded `margin-right` in CSS** — must be JS-driven to stay in sync with resizable widget width
+
+### Pane-mode CSS architecture
+
+```
+body.cmw-widget-pane-active     → margin-right: {widget-width}px (JS-driven)
+#cmw-widget-container           → width: 400px; height: 100vh; right: 0; top: 0; bottom: 0
+                                  border: none; border-left: 1px solid var(--cmw-border)
+                                  overflow: hidden; box-sizing: border-box
+#cmw-widget-container.show      → transform: translateX(0)
+```
+
+### JS state management in pane mode
+
+- `toggleWidget(true)`: adds `cmw-widget-pane-active` + `sidebar-collapse` to body, sets `body.style.marginRight`, calls `restoreContainerSize()`
+- `toggleWidget(false)`: removes classes, clears `body.style.marginRight`, conditionally removes `sidebar-collapse` if viewport > 1047px
+- `saveState()`: skips `left`/`bottom` in pane mode (prevents floating-mode restore on reopen)
+- `restoreContainerSize()`: in pane mode, syncs body margin + toggle button position from stored width
+- `doResize()`: in pane mode, updates widget width + body margin + toggle position (no height/left/bottom changes)
+
+### Gradio CDN vs self-hosted
+
+- `<gradio-app>` web component requires CDN bundle to register the custom element
+- Self-hosted Gradio 6.9.0 does NOT serve the web component JS
+- CDN version used: 6.5.1 (works with Gradio 6.9.0 backend)
+- `GRADIO_URL` must be a full URL (no path concatenation in JS)
+
 ### WSL Dev Environment — PHP File Propagation
 
 **Critical finding:** The KB nginx server in WSL reads from `/var/www/kb/`, **not** from the Windows-mounted `D:\Repo\kb.comindware.ru\`. These are **separate copies** of the files.
