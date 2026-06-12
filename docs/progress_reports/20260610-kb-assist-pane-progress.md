@@ -10,6 +10,10 @@
 
 Implementation of a native AI assistant widget for kb.comindware.ru is **substantially complete**. Both repos have been deployed locally and verified via Playwright. The production (ennoia) deploy is blocked by WSL SSH proxy config.
 
+**Known remaining issues (not blocking):**
+- Widget gains ~5% extra height when manually resized via drag handle (initial load is correct)
+- Sidebar/logo collapse CSS changes not propagating to browser despite WSL sync + nginx reload — likely browser cache or PHP opcache issue
+
 ---
 
 ## Backend (cmw-rag) — 100% Complete
@@ -62,6 +66,10 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 | **Shadow DOM messaging** | ✅ | `_sendWhenReady()` retry loop — polls for textarea, sets value, dispatches input + submit events |
 | **localStorage persistence** | ✅ | Pane open/closed state, width remembered across page loads |
 | **Resize handle** | ✅ | Visible on left edge in pane mode (`cursor: ew-resize`); dragging syncs widget width, body margin, and toggle button position. Width saved to localStorage |
+| **Sidebar collapse** | ✅ | At ≤1047px with pane active: sidebar slides left via KB's own CSS transition, hamburger toggle appears to reopen. Uses KB's native `xv-menu.js` mechanism |
+| **Logo collapse** | ✅ | At ≤1031px with pane active: logo hidden, hamburger toggle shown. Menu items hidden, replaced by hamburger |
+| **Menu right-aligned** | ✅ | `margin-left: auto` on `.xv-menuwrapper`/`.dl-menuwrapper` keeps menu right-aligned regardless of logo visibility |
+| **Widget height fit** | ✅ | Padding buffer 50px accounts for Gradio internal margins; textarea measured via `.closest()` to include container margins |
 | **Redundant buttons removed** | ✅ | Bottom floating toggle + widget-header explain article button removed |
 
 ### Deviations from plan
@@ -167,6 +175,14 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
 5. **Widget overflow fixed** — Added `overflow: hidden` + `box-sizing: border-box` to `#cmw-widget-container` in pane mode. Container no longer causes vertical/horizontal scroll.
 6. **Pane resize** — Drag left edge to resize width; body margin-right and toggle position sync dynamically. Width persisted in localStorage; `saveState()` skips left/bottom in pane mode to prevent floating-mode restore.
 7. **Blue bar alignment** — Removed `border-top` from pane-mode container, eliminating 1px offset. Both bars now start at y=0 with matching 91px height.
+8. **Sidebar collapse** — CSS media queries at KB's native breakpoints (1047px sidebar, 1031px nav) trigger when pane is active. Sidebar slides left with transition, hamburger toggle appears.
+9. **Logo collapse** — At ≤1031px with pane active: `.navbar-brand` hidden, hamburger shown, menu items hidden.
+10. **Menu alignment** — `margin-left: auto` on menu wrapper keeps it right-aligned regardless of logo visibility.
+11. **Widget height fit** — Padding buffer increased to 50px for Gradio internal margins; textarea measured via `.closest()` to include container margins.
+
+### Not resolved (investigation needed)
+12. **Widget gains ~5% height on manual resize** — Initial load is correct; resize drag causes Gradio app to exceed container. Root cause: Gradio's internal layout doesn't respect `max-height` after resize.
+13. **Collapse CSS not visible in browser** — Changes verified in Playwright but not rendering in user's Chrome. Suspected: PHP opcache or aggressive browser cache. WSL file sync confirmed (md5 match), nginx reloaded.
 
 ### Pending (no blockers)
 5. **Merge `cmw-rag:20260610-kb-assist` → `main`** — 6 commits, all pushed to origin, no conflicts
@@ -192,4 +208,8 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
 | Mobile <768px full-screen | ✅ |
 | FA Pro icons render | ✅ |
 | Pane resize syncs body margin | ✅ (local Playwright) |
+| Sidebar collapses at ≤1047px with pane | ⚠️ Playwright OK, browser not verified |
+| Logo hides at ≤1031px with pane | ⚠️ Playwright OK, browser not verified |
+| Widget fits viewport (no overflow) | ✅ (Playwright) |
+| Widget height on manual resize | ❌ ~5% overflow after drag |
 | ennoia production deploy | ❌ blocked |
