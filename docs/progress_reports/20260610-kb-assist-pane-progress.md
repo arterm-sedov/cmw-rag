@@ -47,7 +47,8 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 | Feature | Status | Details |
 |---|---|---|
 | **Responsive layout** | ✅ | Right pane pushes content on all desktop widths; full-screen overlay only on mobile <768px |
-| **Header matches KB top bar** | ✅ | 64px height, `#2d9adf` primary color, rounded top corners — matches `.bg-cmw.top_nav` exactly |
+| **Header matches KB top bar** | ✅ | Height via `--cmw-topnav-height` CSS variable (91px), `#2d9adf` primary color, rounded top corners. Both KB top nav and widget header share one source of truth |
+| **Overflow fix** | ✅ | `overflow: hidden` + `box-sizing: border-box` on container — prevents vertical/horizontal scroll within widget |
 | **GRADIO_URL simplified** | ✅ | Full URL in PHP variable, no JS concatenation (removed `/kb_assist` suffix appending that caused path doubling) |
 | **FA Pro icons** | ✅ | `fa-microchip-ai` (search button), `fa-wand-magic-sparkles` (explain), `fa-chevron-left` / `fa-xmark` (header), `fa-bolt` (loading) |
 | **AI chip search button** | ✅ | Injected between search input and dropdowns (`col-xs-12` in `.row .text-right`), toggles pane open/close |
@@ -75,6 +76,22 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 ### Known issues
 - `TypeError: this.app.$destroy is not a function` — Gradio CDN 6.5.1 cosmetic bug, does not block functionality
 
+### WSL Dev Environment — PHP File Propagation
+
+**Critical finding:** The KB nginx server in WSL reads from `/var/www/kb/`, **not** from the Windows-mounted `D:\Repo\kb.comindware.ru\`. These are **separate copies** of the files.
+
+| Path | Role |
+|---|---|
+| `D:\Repo\kb.comindware.ru\` | Git repo on Windows — where edits are made |
+| `/var/www/kb/` (WSL) | nginx document root — what the server actually serves |
+
+**To propagate PHP changes to the local dev server:**
+```bash
+wsl bash -c "cp /mnt/d/Repo/kb.comindware.ru/ai-assistant.php /var/www/kb/ai-assistant.php && chown www-data:www-data /var/www/kb/ai-assistant.php"
+```
+
+For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` git repo and deployed separately. The `D:\Repo\kb.comindware.ru\` working copy is not the live server.
+
 ---
 
 ## Remaining Work
@@ -84,8 +101,9 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 
 ### Resolved
 2. **GRADIO_URL path doubling** — Fixed: removed `+ '/kb_assist'` concatenation in JS, now uses full URL directly. Config URL now resolves correctly to `/kb_assist/config` without doubling.
-3. **Widget header match KB top bar** — Height 64px, primary color `#2d9adf`, rounded top corners retained.
+3. **Widget header match KB top bar** — Now uses `--cmw-topnav-height` CSS variable (91px) shared by both `.bg-cmw.top_nav` and `.cmw-widget-header`. Pure CSS, no JS measurement needed.
 4. **Responsive layout simplified** — Right pane push now applies at all desktop widths; floating overlay breakpoint (769-1399px) removed.
+5. **Widget overflow fixed** — Added `overflow: hidden` + `box-sizing: border-box` to `#cmw-widget-container` in pane mode. Container no longer causes vertical/horizontal scroll.
 
 ### Pending (no blockers)
 5. **Merge `cmw-rag:20260610-kb-assist` → `main`** — 6 commits, all pushed to origin, no conflicts
