@@ -4339,8 +4339,6 @@ with gr.Blocks(
     with gr.Column(elem_id="assistant-column", elem_classes=["assistant-column"]):
         chatbot = gr.Chatbot(
             label="Диалог с агентом",
-            height="70vh",
-            max_height="70vh",
             show_label=True,
             container=True,
             buttons=["copy", "copy_all"],
