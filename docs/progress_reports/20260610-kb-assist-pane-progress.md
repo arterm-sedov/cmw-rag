@@ -11,7 +11,6 @@
 Implementation of a native AI assistant widget for kb.comindware.ru is **substantially complete**. Both repos have been deployed locally and verified via Playwright. The production (ennoia) deploy is blocked by WSL SSH proxy config.
 
 **Known remaining issues (not blocking):**
-- Widget gains ~5% extra height when manually resized via drag handle (initial load is correct)
 - Sidebar/logo collapse CSS changes not propagating to browser despite WSL sync + nginx reload — likely browser cache or PHP opcache issue
 
 ---
@@ -31,6 +30,7 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 | Route ordering fix | ✅ | `/kb_assist` mounted before `/` in Starlette routes to prevent catch-all |
 | Trailing-slash redirect | ✅ | FastAPI route `GET /kb_assist` → `301 /kb_assist/` |
 | SRP gate per handler | ✅ | `skip_srp=True` flag threads through `kb_assist_handler` → `chat_with_metadata` → `agent_chat_handler` |
+| Chatbot height removed | ✅ | `height`/`max_height` removed from `kb_assist_demo` Chatbot — CSS flex chain handles sizing |
 
 ### Verification
 - Ruff check: clean
@@ -70,6 +70,8 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 | **Logo collapse** | ✅ | At ≤1031px with pane active: logo hidden, hamburger toggle shown. Menu items hidden, replaced by hamburger |
 | **Menu right-aligned** | ✅ | `margin-left: auto` on `.xv-menuwrapper`/`.dl-menuwrapper` keeps menu right-aligned regardless of logo visibility |
 | **Widget height fit** | ✅ | Padding buffer 50px accounts for Gradio internal margins; textarea measured via `.closest()` to include container margins |
+| **Flex chain height** | ✅ | Complete chain from container to `#chatbot-main` via flex. Resizes correctly in both pane and floating modes |
+| **Pane inline !important removed** | ✅ | Replaced inline `max-height:69vh!important` with CSS class; JS clears Gradio's inline styles in both modes |
 | **Redundant buttons removed** | ✅ | Bottom floating toggle + widget-header explain article button removed |
 
 ### Deviations from plan
@@ -180,8 +182,20 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
 10. **Menu alignment** — `margin-left: auto` on menu wrapper keeps it right-aligned regardless of logo visibility.
 11. **Widget height fit** — Padding buffer increased to 50px for Gradio internal margins; textarea measured via `.closest()` to include container margins.
 
+### Resolved (2026-06-14)
+- **Widget chatbot height cap on resize** — Root cause chain:
+  1. `#chatbot-main` missing `flex: 1` in `.main.fillable` broke the vertical flex chain
+  2. `main` lacked `display: flex; flex-direction: column` so `.main.fillable`'s `flex: 1` had no effect
+  3. Pane mode set inline `max-height: 69vh !important` via `element.style.setProperty()` — inline `!important` has highest cascade priority, persists across mode switches, beats all CSS
+  4. Gradio's `cmw_copilot_theme.css` set `#chatbot-main { max-height: 80vh !important }` — same specificity `(1,2,0)` as our PHP CSS, won on source order (injected later)
+  5. `app.py` set `height="70vh"` and `max_height="70vh"` on Chatbot component — inline styles re-applied on Gradio re-renders
+- **Fixes applied (3 commits across 2 repos):**
+  - `cmw_copilot_theme.css`: Removed `resize: vertical`, `overflow: auto`, `max-height: 80vh !important` from `#chatbot-main` — flex chain handles sizing
+  - `ai-assistant.php`: Complete flex chain — `main { display:flex; flex-direction:column; flex:1 }`, `.main.fillable { flex:1 }`, `gradio-app > div { height:100% }`. All selectors use `#cmw-widget-container` prefix `(1,2,0)` specificity. Removed inline `!important` from pane mode `updateChatbotHeight()`. JS now clears Gradio's inline `height`/`max-height` on chatbot element in both modes.
+  - `app.py`: Removed `height="70vh"` and `max_height="70vh"` from `kb_assist_demo` Chatbot — CSS flex chain handles sizing
+  - `ai-assistant-standalone.php`: Matching flex chain with `#cmw-standalone-page` prefix
+
 ### Not resolved (investigation needed)
-12. **Widget gains ~5% height on manual resize** — Initial load is correct; resize drag causes Gradio app to exceed container. Root cause: Gradio's internal layout doesn't respect `max-height` after resize.
 13. **Collapse CSS not visible in browser** — Changes verified in Playwright but not rendering in user's Chrome. Suspected: PHP opcache or aggressive browser cache. WSL file sync confirmed (md5 match), nginx reloaded.
 
 ### Pending (no blockers)
@@ -211,5 +225,5 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
 | Sidebar collapses at ≤1047px with pane | ⚠️ Playwright OK, browser not verified |
 | Logo hides at ≤1031px with pane | ⚠️ Playwright OK, browser not verified |
 | Widget fits viewport (no overflow) | ✅ (Playwright) |
-| Widget height on manual resize | ❌ ~5% overflow after drag |
+| Widget height on manual resize | ✅ Fixed 2026-06-14 (flex chain + theme CSS cap removal) |
 | ennoia production deploy | ❌ blocked |
