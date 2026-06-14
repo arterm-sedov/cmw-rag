@@ -100,6 +100,32 @@ pytest -m integration
 - **LangChain:** Prefer LCEL/runnables, typed tool schemas, and streaming-safe patterns.
 - **Gradio:** Keep state/event flow explicit and UI logic separated from domain logic.
 
+## CSS Style & Conventions
+
+- Prefer CSS cascade and inheritance over `!important` — only use `!important` to override inline styles (set by JS), not to resolve specificity battles.
+- Set properties at the highest meaningful level and let inheritance propagate them down.
+- Use CSS custom properties (`--var`) for shared values and theming to avoid repetition and enable easy overrides.
+- Override third‑party constraints by targeting the container first (e.g. `max-width: none` on `.gradio-container`) rather than patching every child element.
+- Keep selectors flat and traceable — long chains of nested selectors are brittle and hard to override.
+- Test layout changes by resizing the viewport; flex layouts with `min-height: 0` and `flex: 1` adapt naturally without hardcoded heights.
+
+#### Gradio: Stable Element IDs
+
+Always use `elem_id` on Gradio components that the PHP wrapper needs to target in CSS:
+
+```python
+gr.Chatbot(elem_id="chatbot-main", elem_classes=["chatbot-card"])
+gr.Textbox(elem_id="message-input")
+gr.Column(elem_id="assistant-column")
+```
+
+- `elem_id` on `gr.Blocks` is **ignored** in Gradio 6.x (no-op) — use `gr.Column(elem_id=...)` instead
+- `elem_id` on components renders as `id="..."` in the DOM — stable across versions
+- `elem_classes` renders as CSS classes — stable across versions
+- Svelte hash selectors (`.svelte-xxxxx`) change every build — never rely on them
+
+In PHP CSS, prefix overrides with a stable ID (`#cmw-standalone-page`, `#cmw-widget-container`) to guarantee specificity against dynamically-injected Gradio CSS.
+
 ## Error Handling
 
 - Avoid unnecessary try-catches; use robust explicit logic.

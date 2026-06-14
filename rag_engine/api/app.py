@@ -4039,40 +4039,40 @@ with gr.Blocks(
     # Chatbot component (like reference agent - NOT ChatInterface)
     # In Gradio 6, Chatbot uses messages format by default (no type parameter needed)
     # Conditional sizing: embedded widget uses fixed height and follows container, standalone is resizable
-    chatbot = gr.Chatbot(
-        label="Диалог с агентом",
-        height=chatbot_height,  # Always set height (400px for embedded, 70vh for standalone)
-        max_height=chatbot_max_height,  # Always set max_height (65vh for embedded, 70vh for standalone)
-        show_label=True,
-        container=True,
-        buttons=["copy", "copy_all"],
-        elem_id="chatbot-main",
-        elem_classes=["chatbot-card"],
-        resizable=not settings.gradio_embedded_widget,  # Resizable only in standalone mode, not embedded
-    )
+    # Stable container for the chatbot + input column (replaces fragile Svelte hash selectors)
+    with gr.Column(elem_id="assistant-column", elem_classes=["assistant-column"]):
+        chatbot = gr.Chatbot(
+            label="Диалог с агентом",
+            height=chatbot_height,  # Always set height (400px for embedded, 70vh for standalone)
+            max_height=chatbot_max_height,  # Always set max_height (65vh for embedded, 70vh for standalone)
+            show_label=True,
+            container=True,
+            buttons=["copy", "copy_all"],
+            elem_id="chatbot-main",
+            elem_classes=["chatbot-card"],
+            resizable=not settings.gradio_embedded_widget,  # Resizable only in standalone mode, not embedded
+        )
 
-    # Message input (regular Textbox, NOT MultimodalTextbox)
-    # Small built-in submit and stop buttons (icons) in the Textbox
-    # Pattern from test script: dynamic stop button visibility
-    msg = gr.Textbox(
-        label="Сообщение",
-        placeholder="Введите ваш вопрос...",
-        # Enter submits, Shift+Enter inserts newline, textbox grows up to 4 lines
-        lines=1,
-        max_lines=4,
-        show_label=False,  # Hide label for cleaner UI
-        elem_id="message-input",
-        elem_classes=["message-card"],
-        submit_btn=True,  # Small built-in submit icon button
-        stop_btn=False,  # Start hidden, will be shown when streaming starts
-    )
+        # Message input (regular Textbox, NOT MultimodalTextbox)
+        # Small built-in submit and stop buttons (icons) in the Textbox
+        # Pattern from test script: dynamic stop button visibility
+        msg = gr.Textbox(
+            label="Сообщение",
+            placeholder="Введите ваш вопрос...",
+            lines=1,
+            max_lines=4,
+            show_label=False,
+            elem_id="message-input",
+            elem_classes=["message-card"],
+            submit_btn=True,
+            stop_btn=False,
+        )
 
-    # State to store saved message (pattern from ChatInterface/test script)
+    # State to store saved message
     saved_input = gr.State()
     # State to store current session_id for memory clearing
     current_session_id = gr.State(None)
     # Cancellation state - mutable dict so changes propagate to running generator
-    # Note: Using direct dict value (not lambda) for Gradio 6 compatibility
     cancellation_state = gr.State(value={"cancelled": False})
 
     # Metadata panels (always visible, populated after streaming completes)
@@ -4336,27 +4336,28 @@ kb_assist_title = "Ассистент базы знаний"
 with gr.Blocks(
     title=kb_assist_title or "Comindware KB Assistant",
 ) as kb_assist_demo:
-    chatbot = gr.Chatbot(
-        label="Диалог с агентом",
-        height="70vh",
-        max_height="70vh",
-        show_label=True,
-        container=True,
-        buttons=["copy", "copy_all"],
-        elem_id="chatbot-main",
-        elem_classes=["chatbot-card"],
-    )
-    msg = gr.Textbox(
-        label="Сообщение",
-        placeholder="Введите ваш вопрос...",
-        lines=1,
-        max_lines=4,
-        show_label=False,
-        elem_id="message-input",
-        elem_classes=["message-card"],
-        submit_btn=True,
-        stop_btn=False,
-    )
+    with gr.Column(elem_id="assistant-column", elem_classes=["assistant-column"]):
+        chatbot = gr.Chatbot(
+            label="Диалог с агентом",
+            height="70vh",
+            max_height="70vh",
+            show_label=True,
+            container=True,
+            buttons=["copy", "copy_all"],
+            elem_id="chatbot-main",
+            elem_classes=["chatbot-card"],
+        )
+        msg = gr.Textbox(
+            label="Сообщение",
+            placeholder="Введите ваш вопрос...",
+            lines=1,
+            max_lines=4,
+            show_label=False,
+            elem_id="message-input",
+            elem_classes=["message-card"],
+            submit_btn=True,
+            stop_btn=False,
+        )
     saved_input = gr.State()
     current_session_id = gr.State(None)
     cancellation_state = gr.State(value={"cancelled": False})
