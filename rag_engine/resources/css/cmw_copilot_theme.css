@@ -462,7 +462,7 @@ body {
 
 /* Font Awesome 6 Pro Light — self-hosted for chat download icon (fa-light fa-download).
  * Unicode f019 is shared across FA styles; weight 300 selects the light glyph.
- * Source: ui/assets/fontawesome/webfonts/fa-light-300.ttf (FA Pro 6.2.1).
+ * Source: rag_engine/resources/fonts/FontAwesome/fa-light-300.ttf (FA Pro 6.2.1).
  */
 @font-face {
     font-family: 'Font Awesome 6 Pro';

@@ -285,7 +285,8 @@ python rag_engine\api\app.py
 ### 5. Access the Application
 
 - **Web UI**: http://localhost:7860
-- **Embeddable Widget**: `ui/gradio-embedded.html` (can be served via web server)
+- **KB Assist demo**: http://localhost:7860/kb_assist
+- **Production widget**: embedded via `ai-widget.php` in the [kb.comindware.ru](https://kb.comindware.ru) repo
 - **REST API**: http://localhost:7860/api/query_rag
 
 ## Usage
@@ -301,11 +302,7 @@ The Gradio ChatInterface provides:
 
 ### Embeddable Widget
 
-A floating chat widget is available for embedding on external websites (e.g., kb.comindware.ru):
-
-**Files:**
-- `ui/gradio-embedded.html` - Complete widget HTML with embedded script
-- `ui/cmw-widget-theme.css` - KB site-aligned styling
+The KB copilot widget is embedded on [kb.comindware.ru](https://kb.comindware.ru) via `ai-widget.php` in the sibling `kb.comindware.ru` repo. Gradio styling lives in this repo under `rag_engine/resources/css/cmw_copilot_theme.css`.
 
 **Features:**
 - Floating toggle button (bottom-right corner)
@@ -319,23 +316,10 @@ A floating chat widget is available for embedding on external websites (e.g., kb
 - Dark theme support
 
 **Configuration:**
-The widget connects to the Gradio app URL specified in the HTML (default: `10.9.7.7:7860`). To override, set:
-```javascript
-window.GRADIO_URL = 'http://your-server:port';
-```
+The widget connects to the Gradio app URL configured in `ai-widget.php` (default points at the deployed RAG engine). Override via the `GRADIO_URL` JavaScript variable when testing locally.
 
-**Serving the Widget:**
-Serve via any web server. For local testing:
-```bash
-# Python HTTP server
-cd ui
-python -m http.server 8000
-
-# Access at: http://localhost:8000/gradio-embedded.html
-```
-
-**Embedding on External Sites:**
-The widget is self-contained and can be embedded via iframe or integrated directly into the target website's HTML. All dependencies (Gradio SDK, fonts) are loaded from CDNs.
+**Local testing:**
+Run `python rag_engine/api/app.py`, then load a KB page that includes `ai-widget.php` against your local Gradio endpoint.
 
 ### REST API
 
@@ -565,9 +549,6 @@ rag_engine/
 ├── scripts/          # CLI tools for indexing and startup
 ├── storage/          # ChromaDB vector store
 └── utils/            # Logging and formatting utilities
-ui/                   # Embeddable widget files
-├── gradio-embedded.html  # Floating widget HTML
-└── cmw-widget-theme.css  # KB site-aligned styling
 ```
 
 ## Troubleshooting
@@ -663,7 +644,7 @@ Notes on tests:
 
 - Retriever tests expect summarization-first budgeting; assertions check token budgets rather than hard-coding article counts.
 - Token accounting is centralized in `rag_engine/llm/token_utils.py` and used consistently in tests and implementation.
-- Widget testing: The embeddable widget (`ui/gradio-embedded.html`) should be tested manually with browser dev tools. Automated browser tests are not included in the test suite. Key areas to verify:
+- Widget testing: Test the production widget via `ai-widget.php` on kb.comindware.ru (or a local KB checkout) with browser dev tools. Automated browser tests are not included in the test suite. Key areas to verify:
   - Widget appears/disappears correctly
   - Resize functionality works
   - Gradio app loads and functions properly

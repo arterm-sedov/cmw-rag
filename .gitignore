@@ -34,8 +34,6 @@ build/
 
 .playwright-mcp/
 
-ui/gradio-config.json
-ui/index.php
 *.pid
 *.log
 *.swp

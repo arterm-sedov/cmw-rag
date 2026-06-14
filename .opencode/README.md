@@ -400,16 +400,9 @@ All plans, reports, analysis, code, tests, scripts, and configuration files in c
 | <../pyproject.toml> | Build config (setuptools, ruff, pytest) |
 | <../.env-example> | Environment variable template |
 
-## UI (`ui/`)
+## KB Widget (kb.comindware.ru)
 
-| File | Description |
-|------|-------------|
-| <../ui/run_widget.py> | Widget runner (HTTP server for embedded Gradio) |
-| <../ui/kb_proxy.py> | KB proxy for Comindware KB |
-| <../ui/index.html> | Main index HTML |
-| <../ui/gradio-embedded.html> | Embedded Gradio widget |
-| <../ui/cmw-kb-copilot.html> | CMW KB copilot |
-| <../ui/embed-snippet.html> | Embed snippet |
+The production floating widget is embedded via `ai-widget.php` in the sibling `kb.comindware.ru` repo. Gradio theme CSS lives in `rag_engine/resources/css/cmw_copilot_theme.css`.
 
 ## Root Documentation
 
