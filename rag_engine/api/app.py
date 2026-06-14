@@ -4344,6 +4344,7 @@ with gr.Blocks(
             buttons=["copy", "copy_all"],
             elem_id="chatbot-main",
             elem_classes=["chatbot-card"],
+            resizable=True,
         )
         msg = gr.Textbox(
             label="Сообщение",
