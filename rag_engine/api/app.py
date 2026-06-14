@@ -4457,6 +4457,11 @@ with gr.Blocks(
         inputs=[chat_history],
         outputs=[chatbot],
         api_visibility="private",
+    ).then(
+        fn=_kb_show_download,
+        inputs=[chatbot],
+        outputs=[download_btn],
+        api_visibility="private",
     )
 
     user_submit = msg.submit(
