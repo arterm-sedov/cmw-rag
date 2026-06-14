@@ -471,9 +471,17 @@ body {
     font-weight: 900 !important;
     font-size: 1.1em !important;
     align-self: center !important;
+}
+
+/* Gradio sets .hidden on the button when visible=False; do not override that. */
+#chat-download-btn:not(.hidden) {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+}
+
+#chat-download-btn.hidden {
+    display: none !important;
 }
 
 #chat-download-btn::after {

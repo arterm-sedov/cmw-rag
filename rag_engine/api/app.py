@@ -33,6 +33,7 @@ from rag_engine.llm.usage_accounting import accumulate_conversation_usage
 from rag_engine.retrieval.embedder import create_embedder
 from rag_engine.retrieval.retriever import RAGRetriever
 from rag_engine.storage.vector_store import ChromaStore
+from rag_engine.tools.get_datetime import _get_current_datetime_dict
 from rag_engine.tools.retrieve_context import _retrieve_context_core, set_app_retriever
 from rag_engine.utils.context_tracker import (
     AgentContext,
@@ -4434,9 +4435,12 @@ with gr.Blocks(
                 )
             heading = "Пользователь" if role == "user" else "Ассистент"
             lines.append(f"## {heading}\n\n{content}\n")
-        ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        fn = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        md = f"# Диалог с ИИ-ассистентом\n\n*{ts}*\n\n" + "\n---\n\n".join(lines)
+        dt_info = _get_current_datetime_dict()
+        now = datetime.datetime.fromisoformat(dt_info["iso_format"])
+        tz_label = dt_info["timezone"]
+        ts = f"{now.strftime('%Y-%m-%d %H:%M')} ({tz_label})"
+        fn = now.strftime("%Y%m%d-%H%M%S")
+        md = f"# Диалог с ИИ-ассистентом\n\n*Экспорт: {ts}*\n\n" + "\n---\n\n".join(lines)
         path = os.path.join(tempfile.mkdtemp(), f"{fn}_chat_export.md")
         with open(path, "w", encoding="utf-8") as f:
             f.write(md)
@@ -4560,7 +4564,8 @@ with gr.Blocks(
         outputs=[chat_history],
         api_visibility="private",
     ).then(
-        lambda: gr.update(visible=False, value=None),
+        fn=_kb_show_download,
+        inputs=[chatbot],
         outputs=[download_btn],
         queue=False,
         api_visibility="private",
