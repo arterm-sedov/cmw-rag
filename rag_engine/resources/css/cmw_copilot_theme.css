@@ -460,12 +460,38 @@ body {
     max-height: 50vh !important;
 }
 
-/* Chat download button — compact icon next to send */
+/* Chat download button — FA icon next to send */
 #chat-download-btn {
     min-width: 40px !important;
     padding: 0 8px !important;
-    font-size: 1.2em !important;
+    font-family: 'Font Awesome 6 Pro', 'Font Awesome 6 Free', 'Font Awesome 6', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 1.1em !important;
     align-self: center !important;
+}
+
+#chat-download-btn::after {
+    content: 'Скачать диалог (Markdown)';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gradio-background-fill, #1f1f1f);
+    color: var(--gradio-text-color, #fff);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: 400;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 100;
+}
+
+#chat-download-btn:hover::after {
+    opacity: 1;
 }
 
 /* Input row alignment */

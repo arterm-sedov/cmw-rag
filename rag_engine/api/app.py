@@ -4362,7 +4362,7 @@ with gr.Blocks(
                 stop_btn=False,
             )
             download_btn = gr.DownloadButton(
-                "⬇",
+                "\uf019",
                 elem_id="chat-download-btn",
                 elem_classes=["chat-download-btn"],
                 visible=False,
@@ -4435,8 +4435,9 @@ with gr.Blocks(
             heading = "Пользователь" if role == "user" else "Ассистент"
             lines.append(f"## {heading}\n\n{content}\n")
         ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        fn = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         md = f"# Диалог с ИИ-ассистентом\n\n*{ts}*\n\n" + "\n---\n\n".join(lines)
-        path = os.path.join(tempfile.mkdtemp(), "chat_export.md")
+        path = os.path.join(tempfile.mkdtemp(), f"{fn}_chat_export.md")
         with open(path, "w", encoding="utf-8") as f:
             f.write(md)
         return path
