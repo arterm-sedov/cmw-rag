@@ -450,6 +450,17 @@ body {
    so Gradio never collapses the chatbot below a usable size. */
 #chatbot-main {
     min-height: 240px !important;
+    overflow: hidden !important;
+}
+
+/* Messages scroll inside .wrapper; .bubble-wrap shrinks to fit */
+#chatbot-main > .wrapper {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+#chatbot-main .bubble-wrap {
+    min-height: 0 !important;
 }
 
 /* Make message input textarea vertically resizable */
