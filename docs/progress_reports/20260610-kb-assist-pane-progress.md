@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-14 (updated)  
 **Plan:** `.opencode/plans/20260610_kb-assist/plan.md`  
-**Branches:** `cmw-rag:main` (merged from `20260614-chat-persistence`), `kb.comindware.ru:develop` (merged from `20260610-kb-assist`)
+**Branches:** `cmw-rag:main` (merged from `20260614-chat-persistence`), `kb.comindware.ru:develop` (merged from `20260610-kb-assist`), `cmw-rag:20260614_chat_download` (in progress)
 
 ---
 
@@ -217,6 +217,21 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
 - **Chat persistence:** `gr.BrowserState([], storage_key="kb_chat_history")` in `kb_assist_demo` — chat survives page navigation via localStorage (AES encrypted). Branch `20260614-chat-persistence` merged to main.
 - **Navigation warning:** Commented out (was intercepting link clicks when pane open). Re-enable if persistence is removed.
 
+### In Progress
+- **Chat download button** (`20260614_chat_download` branch):
+  - `gr.Row` with `gr.Textbox` + `gr.DownloadButton` side by side
+  - Export function serializes chat to Markdown with timestamp prefix `YYYYMMDD-HHMMSS_chat_export.md`
+  - Button pre-generates file on bot response, sets `DownloadButton.value` to file path
+  - FA icon via `\uf019` unicode + CSS `font-family: 'Font Awesome 6 Pro'`
+  - Square 40x40 button with CSS tooltip "Скачать диалог (Markdown)"
+  - Hidden during streaming, shown when idle with content, hidden on clear
+  - **Key discoveries:**
+    - Gradio `DownloadButton` doesn't render HTML in labels — must use unicode or `icon` parameter
+    - FA icon requires CSS `font-family` override since Gradio doesn't load FA by default
+    - Pre-generating file + setting `DownloadButton.value` is more reliable than `.click()` handler for downloads
+    - `submit_btn=True, stop_btn=False` is the correct combo — Gradio swaps send↔stop automatically during streaming
+    - `gr.Row` for input area shifts layout — needs `align-items: center` on `.input-row`
+
 ### Not resolved (investigation needed)
 13. **Collapse CSS not visible in browser** — Changes verified in Playwright but not rendering in user's Chrome. Suspected: PHP opcache or aggressive browser cache. WSL file sync confirmed (md5 match), nginx reloaded.
 
@@ -246,4 +261,5 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
 | Widget fits viewport (no overflow) | ✅ (Playwright) |
 | Chatbot scroll + input pinned | ✅ Fixed — `overflow: auto; max-height: calc(100vh-120px)` |
 | Chat persists across pages | ✅ `gr.BrowserState` localStorage |
+| Chat download button | ✅ FA icon, Markdown export, tooltip, square button |
 | ennoia production deploy | ✅ Deployed 2026-06-14 |
