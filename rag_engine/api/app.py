@@ -4562,6 +4562,7 @@ with gr.Blocks(
     ).then(
         lambda: gr.update(visible=False, value=None),
         outputs=[download_btn],
+        queue=False,
         api_visibility="private",
     )
 
