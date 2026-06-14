@@ -460,6 +460,13 @@ body {
     max-height: 50vh !important;
 }
 
+/* Chat download button — compact icon next to send */
+#chat-download-btn {
+    min-width: 40px !important;
+    padding: 0 8px !important;
+    font-size: 1.2em !important;
+}
+
 .chat-hints {
     padding: 0.5rem;
     margin: 0.20rem 0 !important;

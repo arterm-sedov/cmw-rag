@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime
 import json
 import logging
 import os
 import sys
+import tempfile
 import time
 import uuid
 from collections.abc import AsyncGenerator, Generator
@@ -4346,17 +4348,25 @@ with gr.Blocks(
             elem_classes=["chatbot-card"],
             resizable=True,
         )
-        msg = gr.Textbox(
-            label="Сообщение",
-            placeholder="Введите ваш вопрос...",
-            lines=1,
-            max_lines=4,
-            show_label=False,
-            elem_id="message-input",
-            elem_classes=["message-card"],
-            submit_btn=True,
-            stop_btn=False,
-        )
+        with gr.Row(elem_id="input-row", elem_classes=["input-row"]):
+            msg = gr.Textbox(
+                label="Сообщение",
+                placeholder="Введите ваш вопрос...",
+                lines=1,
+                max_lines=4,
+                show_label=False,
+                elem_id="message-input",
+                elem_classes=["message-card"],
+                scale=4,
+            )
+            download_btn = gr.DownloadButton(
+                "↓",
+                elem_id="chat-download-btn",
+                elem_classes=["chat-download-btn"],
+                visible=False,
+                scale=0,
+                min_width=40,
+            )
     saved_input = gr.State()
     current_session_id = gr.State(None)
     cancellation_state = gr.State(value={"cancelled": False})
@@ -4399,13 +4409,35 @@ with gr.Blocks(
         return cancel_state
 
     def _kb_re_enable_textbox():
-        return gr.Textbox(value="", interactive=True, submit_btn=True, stop_btn=False)
+        return gr.Textbox(value="", interactive=True)
 
     def _kb_restore_chat(history):
         return history or []
 
     def _kb_save_chat(history):
         return history or []
+
+    def _kb_export_chat(history: list[dict]) -> str | None:
+        if not history:
+            return None
+        lines = []
+        for msg in history:
+            role = msg.get("role", "unknown")
+            content = msg.get("content", "")
+            if isinstance(content, list):
+                content = " ".join(
+                    block.get("text", "")
+                    for block in content
+                    if isinstance(block, dict) and block.get("type") == "text"
+                )
+            heading = "Пользователь" if role == "user" else "Ассистент"
+            lines.append(f"## {heading}\n\n{content}\n")
+        ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        md = f"# Диалог с ИИ-ассистентом\n\n*{ts}*\n\n" + "\n---\n\n".join(lines)
+        path = os.path.join(tempfile.mkdtemp(), "chat_export.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(md)
+        return path
 
     original_stop_btn = True
 
@@ -4424,8 +4456,8 @@ with gr.Blocks(
         api_visibility="private",
     )
     user_submit.success(
-        lambda: gr.Textbox(submit_btn=False, stop_btn=original_stop_btn),
-        outputs=[msg],
+        lambda: (gr.Textbox(interactive=False), gr.DownloadButton(visible=False)),
+        outputs=[msg, download_btn],
         queue=False,
         api_visibility="private",
     )
@@ -4469,6 +4501,11 @@ with gr.Blocks(
         fn=_kb_re_enable_textbox,
         outputs=[msg],
         api_visibility="private",
+    ).then(
+        lambda history: gr.DownloadButton(visible=bool(history)),
+        inputs=[chatbot],
+        outputs=[download_btn],
+        api_visibility="private",
     )
 
     msg.stop(
@@ -4483,9 +4520,14 @@ with gr.Blocks(
         outputs=[chat_history],
         api_visibility="private",
     ).then(
-        lambda: gr.Textbox(submit_btn=True, stop_btn=False),
+        lambda: gr.Textbox(interactive=True),
         outputs=[msg],
         queue=False,
+        api_visibility="private",
+    ).then(
+        lambda history: gr.DownloadButton(visible=bool(history)),
+        inputs=[chatbot],
+        outputs=[download_btn],
         api_visibility="private",
     )
 
@@ -4500,6 +4542,16 @@ with gr.Blocks(
     ).then(
         fn=_kb_clear_chat_history,
         outputs=[chat_history],
+        api_visibility="private",
+    ).then(
+        lambda: gr.DownloadButton(visible=False),
+        outputs=[download_btn],
+        api_visibility="private",
+    )
+
+    download_btn.click(
+        fn=_kb_export_chat,
+        inputs=[chatbot],
         api_visibility="private",
     )
 
