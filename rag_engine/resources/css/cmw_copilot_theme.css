@@ -536,6 +536,9 @@ body {
     width: 100% !important;
     flex-wrap: nowrap !important;
     gap: var(--cmw-space-2, 8px) !important;
+    /* Cancel Gradio .row -15px gutter margins so edges match #chatbot-main card. */
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 
 #input-row > .form,
