@@ -3994,6 +3994,42 @@ async def kb_assist_handler(
         yield result[0]  # chatbot only
 
 
+def _export_chat(history: list[dict]) -> str | None:
+    if not history:
+        return None
+    lines = []
+    for msg_item in history:
+        role = msg_item.get("role", "unknown")
+        content = msg_item.get("content", "")
+        if isinstance(content, list):
+            content = " ".join(
+                block.get("text", "")
+                for block in content
+                if isinstance(block, dict) and block.get("type") == "text"
+            )
+        heading = "Пользователь" if role == "user" else "Ассистент"
+        lines.append(f"## {heading}\n\n{content}\n")
+    dt_info = _get_current_datetime_dict()
+    now = datetime.datetime.fromisoformat(dt_info["iso_format"])
+    tz_label = dt_info["timezone"]
+    ts = f"{now.strftime('%Y-%m-%d %H:%M')} ({tz_label})"
+    fn = now.strftime("%Y%m%d-%H%M%S")
+    md = f"# Диалог с ИИ-ассистентом\n\n*Экспорт: {ts}*\n\n" + "\n---\n\n".join(lines)
+    path = os.path.join(tempfile.mkdtemp(), f"{fn}_chat_export.md")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(md)
+    return path
+
+
+def _show_download(history: list[dict]):
+    if not history:
+        return gr.update(visible=False, value=None)
+    path = _export_chat(history)
+    if path:
+        return gr.update(value=path, visible=True)
+    return gr.update(visible=False, value=None)
+
+
 # Use metadata-enabled wrapper to populate debug UI panels after streaming.
 handler_fn = chat_with_metadata
 logger.info("Using agent-based (LangChain) handler for chat interface")
@@ -4059,17 +4095,27 @@ with gr.Blocks(
         # Message input (regular Textbox, NOT MultimodalTextbox)
         # Small built-in submit and stop buttons (icons) in the Textbox
         # Pattern from test script: dynamic stop button visibility
-        msg = gr.Textbox(
-            label="Сообщение",
-            placeholder="Введите ваш вопрос...",
-            lines=1,
-            max_lines=4,
-            show_label=False,
-            elem_id="message-input",
-            elem_classes=["message-card"],
-            submit_btn=True,
-            stop_btn=False,
-        )
+        with gr.Row(elem_id="input-row", elem_classes=["input-row"]):
+            msg = gr.Textbox(
+                label="Сообщение",
+                placeholder="Введите ваш вопрос...",
+                lines=1,
+                max_lines=4,
+                show_label=False,
+                elem_id="message-input",
+                elem_classes=["message-card"],
+                scale=4,
+                submit_btn=True,
+                stop_btn=False,
+            )
+            download_btn = gr.DownloadButton(
+                "\uf019",
+                elem_id="chat-download-btn",
+                elem_classes=["chat-download-btn"],
+                visible=False,
+                scale=0,
+                min_width=40,
+            )
 
     # State to store saved message
     saved_input = gr.State()
@@ -4162,8 +4208,11 @@ with gr.Blocks(
     # Show stop button when submit succeeds (before streaming starts)
     # Pattern from ChatInterface: after_success.success() shows stop button
     user_submit.success(
-        lambda: gr.Textbox(submit_btn=False, stop_btn=original_stop_btn),
-        outputs=[msg],
+        lambda: (
+            gr.Textbox(submit_btn=False, stop_btn=original_stop_btn),
+            gr.update(visible=False, value=None),
+        ),
+        outputs=[msg, download_btn],
         queue=False,
         api_visibility="private",
     )
@@ -4287,6 +4336,11 @@ with gr.Blocks(
         fn=re_enable_textbox_and_hide_stop,
         outputs=[msg],
         api_visibility="private",
+    ).then(
+        fn=_show_download,
+        inputs=[chatbot],
+        outputs=[download_btn],
+        api_visibility="private",
     )
 
     # Built-in stop button automatically cancels submit_event when stop_btn=True
@@ -4303,6 +4357,11 @@ with gr.Blocks(
         outputs=[msg],
         queue=False,
         api_visibility="private",
+    ).then(
+        fn=_show_download,
+        inputs=[chatbot],
+        outputs=[download_btn],
+        api_visibility="private",
     )
 
     # Bind to the built-in clear button's clear event
@@ -4311,6 +4370,18 @@ with gr.Blocks(
         fn=handle_chatbot_clear,
         inputs=[current_session_id],  # Use stored session_id
         outputs=[current_session_id],  # Clear session_id after clearing memory
+        api_visibility="private",
+    ).then(
+        fn=_show_download,
+        inputs=[chatbot],
+        outputs=[download_btn],
+        queue=False,
+        api_visibility="private",
+    )
+
+    download_btn.click(
+        fn=_export_chat,
+        inputs=[chatbot],
         api_visibility="private",
     )
 
@@ -4420,40 +4491,6 @@ with gr.Blocks(
     def _kb_save_chat(history):
         return history or []
 
-    def _kb_export_chat(history: list[dict]) -> str | None:
-        if not history:
-            return None
-        lines = []
-        for msg in history:
-            role = msg.get("role", "unknown")
-            content = msg.get("content", "")
-            if isinstance(content, list):
-                content = " ".join(
-                    block.get("text", "")
-                    for block in content
-                    if isinstance(block, dict) and block.get("type") == "text"
-                )
-            heading = "Пользователь" if role == "user" else "Ассистент"
-            lines.append(f"## {heading}\n\n{content}\n")
-        dt_info = _get_current_datetime_dict()
-        now = datetime.datetime.fromisoformat(dt_info["iso_format"])
-        tz_label = dt_info["timezone"]
-        ts = f"{now.strftime('%Y-%m-%d %H:%M')} ({tz_label})"
-        fn = now.strftime("%Y%m%d-%H%M%S")
-        md = f"# Диалог с ИИ-ассистентом\n\n*Экспорт: {ts}*\n\n" + "\n---\n\n".join(lines)
-        path = os.path.join(tempfile.mkdtemp(), f"{fn}_chat_export.md")
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(md)
-        return path
-
-    def _kb_show_download(history: list[dict]):
-        if not history:
-            return gr.update(visible=False, value=None)
-        path = _kb_export_chat(history)
-        if path:
-            return gr.update(value=path, visible=True)
-        return gr.update(visible=False, value=None)
-
     original_stop_btn = True
 
     kb_assist_demo.load(
@@ -4462,7 +4499,7 @@ with gr.Blocks(
         outputs=[chatbot],
         api_visibility="private",
     ).then(
-        fn=_kb_show_download,
+        fn=_show_download,
         inputs=[chatbot],
         outputs=[download_btn],
         api_visibility="private",
@@ -4522,7 +4559,7 @@ with gr.Blocks(
         outputs=[msg],
         api_visibility="private",
     ).then(
-        fn=_kb_show_download,
+        fn=_show_download,
         inputs=[chatbot],
         outputs=[download_btn],
         api_visibility="private",
@@ -4545,7 +4582,7 @@ with gr.Blocks(
         queue=False,
         api_visibility="private",
     ).then(
-        fn=_kb_show_download,
+        fn=_show_download,
         inputs=[chatbot],
         outputs=[download_btn],
         api_visibility="private",
@@ -4564,7 +4601,7 @@ with gr.Blocks(
         outputs=[chat_history],
         api_visibility="private",
     ).then(
-        fn=_kb_show_download,
+        fn=_show_download,
         inputs=[chatbot],
         outputs=[download_btn],
         queue=False,
@@ -4572,7 +4609,7 @@ with gr.Blocks(
     )
 
     download_btn.click(
-        fn=_kb_export_chat,
+        fn=_export_chat,
         inputs=[chatbot],
         api_visibility="private",
     )
