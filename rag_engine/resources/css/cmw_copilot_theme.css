@@ -471,6 +471,8 @@ body {
     min-height: unset !important;
     height: auto !important;
     box-sizing: border-box !important;
+    /* Gradio sets overflow:hidden on .block; do not clip label.container shadow (0 2px 6px). */
+    overflow: visible !important;
 }
 
 #message-input label.container {
@@ -497,6 +499,7 @@ body {
     min-height: 48px !important;
     flex: 1 1 auto !important;
     box-sizing: border-box !important;
+    overflow: visible !important;
 }
 
 /* Make message input textarea vertically resizable */
