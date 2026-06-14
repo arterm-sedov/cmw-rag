@@ -291,3 +291,16 @@ Based on https://12factor.net/ and https://github.com/humanlayer/12-factor-agent
 ---
 
 **Remember:** Make sure code is clean, lean, brilliant, dry, minimalistic, abstract, non-duplicating, non-breaking, perfect, genius, and pythonic.
+
+## Learned User Preferences
+
+- Deployment workflow varies by context (sometimes git pull on remote, sometimes local server testing); do not assume one approach.
+- Use Font Awesome Pro Light (`fa-light`) icons in Gradio UI, not solid; in FA Pro, light and solid are different glyphs, not just font-weight.
+- Commit research and discovery notes to the repo to avoid revisiting dead ends.
+
+## Learned Workspace Facts
+
+- Gradio source reference: local checkout under `.reference-repos/gradio` (gitignored; sibling `gradio` repo per `.cursor/rules/cmw-rag-agent.mdc`).
+- Font Awesome Pro assets: in-repo under `rag_engine/resources/fonts/FontAwesome/`; full FA Pro set in the `CBAP_MONO` repo (sibling checkout).
+- KB widget PHP integration lives in the `kb.comindware.ru` repo (embedded widget CSS may be in `ai-widget.php`).
+- Two Gradio demos in `rag_engine/api/app.py`: main agent at `/`, kb_assist at `/kb_assist`.
