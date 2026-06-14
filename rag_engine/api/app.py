@@ -4358,6 +4358,8 @@ with gr.Blocks(
                 elem_id="message-input",
                 elem_classes=["message-card"],
                 scale=4,
+                submit_btn=True,
+                stop_btn=True,
             )
             download_btn = gr.DownloadButton(
                 "↓",
@@ -4409,7 +4411,7 @@ with gr.Blocks(
         return cancel_state
 
     def _kb_re_enable_textbox():
-        return gr.Textbox(value="", interactive=True)
+        return gr.Textbox(value="", interactive=True, submit_btn=True, stop_btn=True)
 
     def _kb_restore_chat(history):
         return history or []
@@ -4456,7 +4458,7 @@ with gr.Blocks(
         api_visibility="private",
     )
     user_submit.success(
-        lambda: (gr.Textbox(interactive=False), gr.DownloadButton(visible=False)),
+        lambda: (gr.Textbox(interactive=False, submit_btn=False, stop_btn=True), gr.DownloadButton(visible=False)),
         outputs=[msg, download_btn],
         queue=False,
         api_visibility="private",
@@ -4520,7 +4522,7 @@ with gr.Blocks(
         outputs=[chat_history],
         api_visibility="private",
     ).then(
-        lambda: gr.Textbox(interactive=True),
+        lambda: gr.Textbox(interactive=True, submit_btn=True, stop_btn=True),
         outputs=[msg],
         queue=False,
         api_visibility="private",
