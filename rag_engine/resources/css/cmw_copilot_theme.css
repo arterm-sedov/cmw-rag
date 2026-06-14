@@ -447,7 +447,8 @@ body {
 
 /* Chatbot: fill available space, scroll when content exceeds */
 #chatbot-main {
-    min-height: calc(100vh - 120px) !important;
+    min-height: calc(50vh - 120px) !important;
+    height: calc(100vh - 120px) !important;
     overflow: auto !important;
     max-height: calc(100vh - 120px) !important;
 }
