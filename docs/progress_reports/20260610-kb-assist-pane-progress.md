@@ -72,6 +72,7 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 | **Widget height fit** | ✅ | Padding buffer 50px accounts for Gradio internal margins; textarea measured via `.closest()` to include container margins |
 | **Flex chain height** | ✅ | Complete chain from container to `#chatbot-main` via flex. Resizes correctly in both pane and floating modes |
 | **Pane inline !important removed** | ✅ | Replaced inline `max-height:69vh!important` with CSS class; JS clears Gradio's inline styles in both modes |
+| **Chat input pinned at bottom** | ✅ | `#assistant-column` gets `display:flex; flex-direction:column`; input row gets `flex:0 0 auto`; chatbot scrolls inside |
 | **Redundant buttons removed** | ✅ | Bottom floating toggle + widget-header explain article button removed |
 
 ### Deviations from plan
