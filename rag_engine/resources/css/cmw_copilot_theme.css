@@ -445,6 +445,11 @@ body {
     box-shadow: var(--cmw-shadow-soft) !important;
 }
 
+/* Clip .gradio-container so the flex chain constrains all children */
+.gradio-container {
+    overflow: hidden !important;
+}
+
 /* Chat history sizing — height/max-height are handled by the flex chain
    in the widget (PHP CSS) and standalone.  Only min-height is kept here
    so Gradio never collapses the chatbot below a usable size. */
