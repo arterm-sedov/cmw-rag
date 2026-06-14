@@ -279,6 +279,7 @@ Based on https://12factor.net/ and https://github.com/humanlayer/12-factor-agent
 
 - Docs: put reports in `docs/progress_reports/`.
 - Tests: put tests in `rag_engine/tests`.
+- Scratch: put disposable agent experiments in `.scratch/` (gitignored). One-off Playwright/DOM measurement scripts, local `package.json`, debug screenshots, and similar throwaway artifacts belong here—not under `docs/` or `rag_engine/tests/`. Commit **text** progress notes in `docs/progress_reports/*.md` (root causes, dead ends, final fix); do not commit scratch scripts, screenshots, or `node_modules`.
 - Updates: always update `README.md` if changes affect it.
 - Refactoring: change only relevant parts.
 
