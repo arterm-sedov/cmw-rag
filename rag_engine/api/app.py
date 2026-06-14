@@ -4362,7 +4362,7 @@ with gr.Blocks(
                 stop_btn=False,
             )
             download_btn = gr.DownloadButton(
-                "↓",
+                '<i class="fa-light fa-download"></i>',
                 elem_id="chat-download-btn",
                 elem_classes=["chat-download-btn"],
                 visible=False,
@@ -4441,6 +4441,14 @@ with gr.Blocks(
             f.write(md)
         return path
 
+    def _kb_show_download(history: list[dict]):
+        if not history:
+            return gr.DownloadButton(visible=False)
+        path = _kb_export_chat(history)
+        if path:
+            return gr.DownloadButton(value=path, visible=True)
+        return gr.DownloadButton(visible=False)
+
     original_stop_btn = True
 
     kb_assist_demo.load(
@@ -4504,7 +4512,7 @@ with gr.Blocks(
         outputs=[msg],
         api_visibility="private",
     ).then(
-        lambda history: gr.DownloadButton(visible=bool(history)),
+        fn=_kb_show_download,
         inputs=[chatbot],
         outputs=[download_btn],
         api_visibility="private",
@@ -4527,7 +4535,7 @@ with gr.Blocks(
         queue=False,
         api_visibility="private",
     ).then(
-        lambda history: gr.DownloadButton(visible=bool(history)),
+        fn=_kb_show_download,
         inputs=[chatbot],
         outputs=[download_btn],
         api_visibility="private",
