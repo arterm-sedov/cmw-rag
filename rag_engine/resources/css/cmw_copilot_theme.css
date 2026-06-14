@@ -431,7 +431,7 @@ body {
 .model-card,
 .quick-actions-card,
 .sidebar-card,
-.message-card,
+.message-card:not(#message-input),
 .chatbot-card,
 .download-file-pane,
 .stats-card,
@@ -455,20 +455,37 @@ body {
 
 /* Input: card chrome on label.container; zero-padding outer .message-card shell */
 #message-input.message-card,
-#message-input.block.padded {
+#message-input.padded,
+#message-input.block.padded,
+.gradio-container #message-input.block.message-card.padded {
     padding: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
     border: none !important;
     background: transparent !important;
     box-shadow: none !important;
     min-height: unset !important;
+    height: auto !important;
+    box-sizing: border-box !important;
 }
 
 #message-input label.container {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
     padding: 0 !important;
+    margin: 0 !important;
     border: 1px solid var(--cmw-border) !important;
     border-radius: var(--cmw-radius-md) !important;
     background: var(--cmw-surface) !important;
     box-shadow: var(--cmw-shadow-soft) !important;
+    min-height: 48px !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
 }
 
 #message-input .wrap,
@@ -477,6 +494,9 @@ body {
     border: none !important;
     background: transparent !important;
     box-shadow: none !important;
+    min-height: 48px !important;
+    flex: 1 1 auto !important;
+    box-sizing: border-box !important;
 }
 
 /* Make message input textarea vertically resizable */
@@ -484,6 +504,8 @@ body {
     resize: vertical !important;
     min-height: 48px !important;
     max-height: 50vh !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
 }
 
 /* Font Awesome 6 Pro Light — self-hosted for chat download icon (fa-light fa-download).
