@@ -41,10 +41,10 @@ Implementation of a native AI assistant widget for kb.comindware.ru is **substan
 ## Frontend (kb.comindware.ru) — 95% Complete
 
 ### Files changed
-- `ai-assistant.php` — **new**, 1237 lines (plan estimated ~200; actual blew up due to responsive right-pane layout, FA Pro icons, multiple explain buttons, and advanced JS)
+- `ai-widget.php` — **renamed from `ai-assistant.php`**, 1237 lines (plan estimated ~200; actual blew up due to responsive right-pane layout, FA Pro icons, multiple explain buttons, and advanced JS)
 - `.gitignore` — exception `!/assets/fontawesome/`
 - `assets/fontawesome/` — FA Pro 6.2.1 webfonts + CSS from CBAP_MONO (committed)
-- 6 PHP pages — each gets `<?php include('ai-assistant.php'); ?>` before `</body>`
+- 6 PHP pages — each gets `<?php include('ai-widget.php'); ?>` before `</body>`
 
 ### What was built
 
@@ -158,7 +158,7 @@ body.cmw-widget-pane-active     → margin-right: {widget-width}px (JS-driven)
 
 **To propagate PHP changes to the local dev server:**
 ```bash
-wsl bash -c "cp /mnt/d/Repo/kb.comindware.ru/ai-assistant.php /var/www/kb/ai-assistant.php && chown www-data:www-data /var/www/kb/ai-assistant.php"
+wsl bash -c "cp /mnt/d/Repo/kb.comindware.ru/ai-widget.php /var/www/kb/ai-widget.php && chown www-data:www-data /var/www/kb/ai-widget.php"
 ```
 
 For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` git repo and deployed separately. The `D:\Repo\kb.comindware.ru\` working copy is not the live server.
@@ -191,9 +191,10 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
   5. `app.py` set `height="70vh"` and `max_height="70vh"` on Chatbot component — inline styles re-applied on Gradio re-renders
 - **Fixes applied (3 commits across 2 repos):**
   - `cmw_copilot_theme.css`: Removed `resize: vertical`, `overflow: auto`, `max-height: 80vh !important` from `#chatbot-main` — flex chain handles sizing
-  - `ai-assistant.php`: Complete flex chain — `main { display:flex; flex-direction:column; flex:1 }`, `.main.fillable { flex:1 }`, `gradio-app > div { height:100% }`. All selectors use `#cmw-widget-container` prefix `(1,2,0)` specificity. Removed inline `!important` from pane mode `updateChatbotHeight()`. JS now clears Gradio's inline `height`/`max-height` on chatbot element in both modes.
+  - `ai-widget.php`: Complete flex chain — `main { display:flex; flex-direction:column; flex:1 }`, `.main.fillable { flex:1 }`, `gradio-app > div { height:100% }`. All selectors use `#cmw-widget-container` prefix `(1,2,0)` specificity. Removed inline `!important` from pane mode `updateChatbotHeight()`. JS now clears Gradio's inline `height`/`max-height` on chatbot element in both modes.
   - `app.py`: Removed `height="70vh"` and `max_height="70vh"` from `kb_assist_demo` Chatbot — CSS flex chain handles sizing
-  - `ai-assistant-standalone.php`: Matching flex chain with `#cmw-standalone-page` prefix
+  - `ai-assistant.php` (standalone, renamed from `ai-assistant-standalone.php`): Matching flex chain with `#cmw-standalone-page` prefix
+  - `ai-widget.php` (widget, renamed from `ai-assistant.php`): All 6 KB page includes updated
 
 ### Not resolved (investigation needed)
 13. **Collapse CSS not visible in browser** — Changes verified in Playwright but not rendering in user's Chrome. Suspected: PHP opcache or aggressive browser cache. WSL file sync confirmed (md5 match), nginx reloaded.
