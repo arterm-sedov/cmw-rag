@@ -1,8 +1,8 @@
 # KB Assist Pane — Implementation Progress Report
 
-**Date:** 2026-06-12  
+**Date:** 2026-06-14 (updated)  
 **Plan:** `.opencode/plans/20260610_kb-assist/plan.md`  
-**Branches:** `cmw-rag:20260610-kb-assist` (6 commits, pushed), `kb.comindware.ru:20260610-kb-assist` (25 commits, pushed, merged from `-pane`)
+**Branches:** `cmw-rag:main` (merged from `20260614-chat-persistence`), `kb.comindware.ru:develop` (merged from `20260610-kb-assist`)
 
 ---
 
@@ -197,15 +197,32 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
   - `ai-assistant.php` (standalone, renamed from `ai-assistant-standalone.php`): Matching flex chain with `#cmw-standalone-page` prefix
   - `ai-widget.php` (widget, renamed from `ai-assistant.php`): All 6 KB page includes updated
 
+### Resolved (2026-06-14, continued)
+- **Chat height & scroll (final solution):** After experimenting with complex flex chains, the working approach is simple CSS on `#chatbot-main` in `cmw_copilot_theme.css`:
+  ```css
+  #chatbot-main {
+      min-height: calc(50vh - 120px) !important;
+      height: calc(80vh - 120px) !important;
+      overflow: auto !important;
+      max-height: calc(100vh - 120px) !important;
+  }
+  ```
+  - `overflow: auto` makes the chatbot itself scroll when content exceeds max-height
+  - `height: calc(80vh - 120px)` is the initial/target height
+  - `max-height: calc(100vh - 120px)` caps at viewport minus header+input
+  - PHP standalone/widget override `max-height: calc(100vh - 120px)` to match
+  - **Key discovery:** Gradio's `.bubble-wrap` has `min-height: auto` which prevents flex from constraining it. `overflow: hidden` on `#chatbot-main` clips but doesn't prevent growth. Only `overflow: auto` + explicit `max-height` works reliably.
+- **File renames:** `ai-assistant.php` → `ai-widget.php` (widget), `ai-assistant-standalone.php` → `ai-assistant.php` (standalone). 6 KB page includes updated.
+- **Toast timer:** 3.5s → 10s
+- **Chat persistence:** `gr.BrowserState([], storage_key="kb_chat_history")` in `kb_assist_demo` — chat survives page navigation via localStorage (AES encrypted). Branch `20260614-chat-persistence` merged to main.
+- **Navigation warning:** Commented out (was intercepting link clicks when pane open). Re-enable if persistence is removed.
+
 ### Not resolved (investigation needed)
 13. **Collapse CSS not visible in browser** — Changes verified in Playwright but not rendering in user's Chrome. Suspected: PHP opcache or aggressive browser cache. WSL file sync confirmed (md5 match), nginx reloaded.
 
-### Pending (no blockers)
-5. **Merge `cmw-rag:20260610-kb-assist` → `main`** — 6 commits, all pushed to origin, no conflicts
-6. **Merge `kb:20260610-kb-assist` → `develop`** — 25 commits on branch, merged from `-pane` sub-branch. Prefer squash-merge or rebase for clean history.
-
-### Not implemented
-4. **Playwright test for widget interaction** — plan mentioned verification but no automated test was written. Manual testing done.
+### Merged
+- `cmw-rag:20260614-chat-persistence` → `main` (chat persistence + all prior fixes)
+- `kb:20260610-kb-assist` → `develop` (widget + standalone + all fixes)
 
 ---
 
@@ -227,5 +244,6 @@ For **production** (ennoia), changes must be pushed to the `kb.comindware.ru` gi
 | Sidebar collapses at ≤1047px with pane | ⚠️ Playwright OK, browser not verified |
 | Logo hides at ≤1031px with pane | ⚠️ Playwright OK, browser not verified |
 | Widget fits viewport (no overflow) | ✅ (Playwright) |
-| Widget height on manual resize | ✅ Fixed 2026-06-14 (flex chain + theme CSS cap removal) |
-| ennoia production deploy | ❌ blocked |
+| Chatbot scroll + input pinned | ✅ Fixed — `overflow: auto; max-height: calc(100vh-120px)` |
+| Chat persists across pages | ✅ `gr.BrowserState` localStorage |
+| ennoia production deploy | ✅ Deployed 2026-06-14 |
