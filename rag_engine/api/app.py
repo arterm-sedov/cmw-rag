@@ -4360,6 +4360,7 @@ with gr.Blocks(
     saved_input = gr.State()
     current_session_id = gr.State(None)
     cancellation_state = gr.State(value={"cancelled": False})
+    chat_history = gr.BrowserState([], storage_key="kb_chat_history")
 
     def _kb_handle_stop_click(
         history: list[dict], cancel_state: dict | None
@@ -4400,7 +4401,20 @@ with gr.Blocks(
     def _kb_re_enable_textbox():
         return gr.Textbox(value="", interactive=True, submit_btn=True, stop_btn=False)
 
+    def _kb_restore_chat(history):
+        return history or []
+
+    def _kb_save_chat(history):
+        return history or []
+
     original_stop_btn = True
+
+    kb_assist_demo.load(
+        fn=_kb_restore_chat,
+        inputs=[chat_history],
+        outputs=[chatbot],
+        api_visibility="private",
+    )
 
     user_submit = msg.submit(
         fn=_kb_clear_and_save_textbox,
@@ -4447,6 +4461,11 @@ with gr.Blocks(
         concurrency_limit=settings.gradio_default_concurrency_limit,
         api_visibility="private",
     ).then(
+        fn=_kb_save_chat,
+        inputs=[chatbot],
+        outputs=[chat_history],
+        api_visibility="private",
+    ).then(
         fn=_kb_re_enable_textbox,
         outputs=[msg],
         api_visibility="private",
@@ -4459,16 +4478,28 @@ with gr.Blocks(
         cancels=[submit_event],
         api_visibility="private",
     ).then(
+        fn=_kb_save_chat,
+        inputs=[chatbot],
+        outputs=[chat_history],
+        api_visibility="private",
+    ).then(
         lambda: gr.Textbox(submit_btn=True, stop_btn=False),
         outputs=[msg],
         queue=False,
         api_visibility="private",
     )
 
+    def _kb_clear_chat_history():
+        return []
+
     chatbot.clear(
         fn=_kb_handle_chatbot_clear,
         inputs=[current_session_id],
         outputs=[current_session_id],
+        api_visibility="private",
+    ).then(
+        fn=_kb_clear_chat_history,
+        outputs=[chat_history],
         api_visibility="private",
     )
 
