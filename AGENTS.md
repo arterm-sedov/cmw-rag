@@ -229,6 +229,15 @@ Before considering work complete:
 - Use GitHub Markdown format; keep dated parent folders.
 - Update `.opencode/README.md` and related docs when affected.
 
+## Document Along the Way
+
+When working on multi-step tasks or debugging complex issues:
+- Update progress reports as discoveries are made, not just at the end.
+- Record root causes, failed approaches, and final solutions — future sessions need this context.
+- Keep commit messages specific enough to reconstruct the reasoning chain.
+- When a fix involves trial and error, document what was tried and why it worked/failed.
+- This preserves project context across sessions and prevents revisiting dead ends.
+
 ## UI/UX Principles
 
 - **Clarity over clutter:** Remove redundant elements.
