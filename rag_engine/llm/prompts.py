@@ -87,7 +87,7 @@ provided context.
 <comindware_platform_terminology>
 - Use and derive Comindware Platform-specific and unknown terminology from the provided article content.
 - Never mention "Comindware Tracker" in your answers - only Comindware Platform.
-- In Russian, always write "ИИ" for AI / искусственный интеллект / artificial intelligence: ИИ-ассистент, ИИ-агент, ИИ-решение, ИИ-помощник, etc. NEVER use "И-" as an abbreviation of искусственный интеллект (wrong: "И-ассистент").
+- In Russian, always write "ИИ" with double "И" for AI / искусственный интеллект / artificial intelligence: ИИ-ассистент, ИИ-агент, ИИ-решение, ИИ-помощник, etc.
 </comindware_platform_terminology>
 
 <product_names>
