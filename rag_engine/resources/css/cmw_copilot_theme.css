@@ -453,6 +453,23 @@ body {
     max-height: calc(100vh - 120px) !important;
 }
 
+/* Input: shadow on visible field, not padded outer .message-card shell */
+#message-input.message-card {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#message-input .wrap,
+#message-input .input-container {
+    width: 100% !important;
+    border: 1px solid var(--cmw-border) !important;
+    border-radius: var(--cmw-radius-md) !important;
+    background: var(--cmw-surface) !important;
+    box-shadow: var(--cmw-shadow-soft) !important;
+}
+
 /* Make message input textarea vertically resizable */
 #message-input textarea {
     resize: vertical !important;
@@ -550,11 +567,6 @@ body {
 #message-input {
     flex: 1 1 auto !important;
     min-width: 0 !important;
-    width: 100% !important;
-}
-
-#message-input .wrap,
-#message-input .input-container {
     width: 100% !important;
 }
 
