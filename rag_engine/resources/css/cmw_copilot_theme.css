@@ -575,10 +575,25 @@ body {
     opacity: 1;
 }
 
-/* Input row: textbox form grows to fill row beside download button */
-#assistant-column {
+/* Assistant column: chatbot grows, input row pinned at bottom */
+#assistant-column,
+.assistant-column {
+    display: flex !important;
+    flex-direction: column !important;
     align-items: stretch !important;
     width: 100% !important;
+    min-height: 0 !important;
+}
+
+#assistant-column > #chatbot-main {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+}
+
+/* Input row: textbox form grows to fill row beside download button */
+#input-row,
+#assistant-column > #input-row {
+    flex: 0 0 auto !important;
 }
 
 .input-row,
