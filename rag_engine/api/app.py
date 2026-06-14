@@ -4114,7 +4114,7 @@ with gr.Blocks(
                 elem_classes=["chat-download-btn"],
                 visible=False,
                 scale=0,
-                min_width=40,
+                min_width=30,
             )
 
     # State to store saved message
@@ -4439,7 +4439,7 @@ with gr.Blocks(
                 elem_classes=["chat-download-btn"],
                 visible=False,
                 scale=0,
-                min_width=40,
+                min_width=30,
             )
     saved_input = gr.State()
     current_session_id = gr.State(None)
