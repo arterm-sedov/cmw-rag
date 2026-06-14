@@ -453,21 +453,30 @@ body {
     max-height: calc(100vh - 120px) !important;
 }
 
-/* Input: shadow on visible field, not padded outer .message-card shell */
-#message-input.message-card {
+/* Input: card chrome on label.container; zero-padding outer .message-card shell */
+#message-input.message-card,
+#message-input.block.padded {
     padding: 0 !important;
     border: none !important;
     background: transparent !important;
     box-shadow: none !important;
+    min-height: unset !important;
+}
+
+#message-input label.container {
+    padding: 0 !important;
+    border: 1px solid var(--cmw-border) !important;
+    border-radius: var(--cmw-radius-md) !important;
+    background: var(--cmw-surface) !important;
+    box-shadow: var(--cmw-shadow-soft) !important;
 }
 
 #message-input .wrap,
 #message-input .input-container {
     width: 100% !important;
-    border: 1px solid var(--cmw-border) !important;
-    border-radius: var(--cmw-radius-md) !important;
-    background: var(--cmw-surface) !important;
-    box-shadow: var(--cmw-shadow-soft) !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 /* Make message input textarea vertically resizable */
@@ -556,6 +565,7 @@ body {
     /* Cancel Gradio .row -15px gutter margins so edges match #chatbot-main card. */
     margin-left: 0 !important;
     margin-right: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 #input-row > .form,
