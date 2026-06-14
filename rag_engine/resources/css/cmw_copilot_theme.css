@@ -445,27 +445,11 @@ body {
     box-shadow: var(--cmw-shadow-soft) !important;
 }
 
-/* Clip .gradio-container so the flex chain constrains all children */
-.gradio-container {
-    overflow: hidden !important;
-}
-
-/* Chat history sizing — height/max-height are handled by the flex chain
-   in the widget (PHP CSS) and standalone.  Only min-height is kept here
-   so Gradio never collapses the chatbot below a usable size. */
+/* Chatbot: fill available space, scroll when content exceeds */
 #chatbot-main {
     min-height: 240px !important;
-    overflow: hidden !important;
-}
-
-/* Messages scroll inside .wrapper; .bubble-wrap shrinks to fit */
-#chatbot-main > .wrapper {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-}
-
-#chatbot-main .bubble-wrap {
-    min-height: 0 !important;
+    overflow: auto !important;
+    max-height: calc(100vh - 120px) !important;
 }
 
 /* Make message input textarea vertically resizable */
