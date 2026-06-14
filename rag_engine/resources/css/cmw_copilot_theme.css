@@ -481,18 +481,20 @@ body {
     position: absolute;
     bottom: calc(100% + 6px);
     right: 0;
-    background: var(--gradio-background-fill, #1f1f1f);
-    color: var(--gradio-text-color, #fff);
+    background: var(--cmw-surface, #fff);
+    color: var(--cmw-text-strong, #404040);
+    border: 1px solid var(--cmw-border, #dce2ea);
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: var(--cmw-radius-md, 5px);
     font-size: 12px;
-    font-family: sans-serif;
+    font-family: var(--cmw-font-family, sans-serif);
     font-weight: 400;
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s;
     z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 #chat-download-btn:hover::after {
