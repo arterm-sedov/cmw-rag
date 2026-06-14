@@ -4444,11 +4444,11 @@ with gr.Blocks(
 
     def _kb_show_download(history: list[dict]):
         if not history:
-            return gr.DownloadButton(visible=False)
+            return gr.update(visible=False, value=None)
         path = _kb_export_chat(history)
         if path:
-            return gr.DownloadButton(value=path, visible=True)
-        return gr.DownloadButton(visible=False)
+            return gr.update(value=path, visible=True)
+        return gr.update(visible=False, value=None)
 
     original_stop_btn = True
 
@@ -4472,7 +4472,7 @@ with gr.Blocks(
         api_visibility="private",
     )
     user_submit.success(
-        lambda: (gr.Textbox(interactive=False, submit_btn=False, stop_btn=True), gr.DownloadButton(visible=False)),
+        lambda: (gr.Textbox(interactive=False, submit_btn=False, stop_btn=True), gr.update(visible=False, value=None)),
         outputs=[msg, download_btn],
         queue=False,
         api_visibility="private",
@@ -4560,7 +4560,7 @@ with gr.Blocks(
         outputs=[chat_history],
         api_visibility="private",
     ).then(
-        lambda: gr.DownloadButton(visible=False),
+        lambda: gr.update(visible=False, value=None),
         outputs=[download_btn],
         api_visibility="private",
     )
