@@ -4362,7 +4362,7 @@ with gr.Blocks(
                 stop_btn=False,
             )
             download_btn = gr.DownloadButton(
-                '<i class="fa-light fa-download"></i>',
+                "⬇",
                 elem_id="chat-download-btn",
                 elem_classes=["chat-download-btn"],
                 visible=False,
