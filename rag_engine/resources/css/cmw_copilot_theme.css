@@ -445,12 +445,11 @@ body {
     box-shadow: var(--cmw-shadow-soft) !important;
 }
 
-/* Make chat history (Chatbot) vertically resizable */
+/* Chat history sizing — height/max-height are handled by the flex chain
+   in the widget (PHP CSS) and standalone.  Only min-height is kept here
+   so Gradio never collapses the chatbot below a usable size. */
 #chatbot-main {
-    resize: vertical !important;
-    overflow: auto !important;
     min-height: 240px !important;
-    max-height: 80vh !important;
 }
 
 /* Make message input textarea vertically resizable */
