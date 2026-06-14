@@ -524,9 +524,40 @@ body {
     opacity: 1;
 }
 
-/* Input row alignment */
-.input-row {
+/* Input row: textbox form grows to fill row beside download button */
+#assistant-column {
+    align-items: stretch !important;
+    width: 100% !important;
+}
+
+.input-row,
+#input-row {
     align-items: center !important;
+    width: 100% !important;
+    flex-wrap: nowrap !important;
+    gap: var(--cmw-space-2, 8px) !important;
+}
+
+#input-row > .form,
+.input-row > .form {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+}
+
+#message-input {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: 100% !important;
+}
+
+#message-input .wrap,
+#message-input .input-container {
+    width: 100% !important;
+}
+
+#chat-download-btn {
+    flex: 0 0 40px !important;
+    flex-shrink: 0 !important;
 }
 
 .chat-hints {
