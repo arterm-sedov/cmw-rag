@@ -480,8 +480,7 @@ body {
     content: 'Скачать диалог (Markdown)';
     position: absolute;
     bottom: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%);
+    right: 0;
     background: var(--gradio-background-fill, #1f1f1f);
     color: var(--gradio-text-color, #fff);
     padding: 4px 8px;
