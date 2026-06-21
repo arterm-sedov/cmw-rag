@@ -217,6 +217,12 @@ and `mkdocs_kb_v6`). The collection names are derived from `CHROMADB_COLLECTION`
 be overridden via `CHROMADB_COLLECTION_V5` / `CHROMADB_COLLECTION_V6` env vars. The Gradio
 UI exposes a session-scoped dropdown to select the active version for retrieval.
 
+**Automated (systemd timer)** — Runs every 6h. View logs:
+```bash
+journalctl --user -u cmw-rag-corpus-sync.service --no-pager -n 50
+```
+Install: `cp systemd/cmw-rag-corpus-sync.{service,timer} ~/.config/systemd/user/ && systemctl --user enable --now cmw-rag-corpus-sync.timer`
+
 **Mode: Folder (Recommended)**
 ```bash
 python rag_engine/scripts/build_index.py \
