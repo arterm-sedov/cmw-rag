@@ -1,8 +1,8 @@
 [Unit]
 Description=CMW RAG Engine Gradio UI
 Documentation=https://github.com/cmw-team/cmw-rag
-After=network-online.target cmw-rag-chroma.service
-Wants=network-online.target cmw-rag-chroma.service
+After=network-online.target cmw-rag-chroma.service cmw-rag-mosec.service
+Wants=network-online.target cmw-rag-chroma.service cmw-rag-mosec.service
 
 [Service]
 Type=simple

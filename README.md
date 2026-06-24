@@ -294,7 +294,7 @@ systemctl --user start/stop/restart/status cmw-rag-app
 journalctl --user -u cmw-rag-app -f
 ```
 
-The app starts after ChromaDB (`After=cmw-rag-chroma.service`) and restarts automatically on failure and after reboot.
+The app starts after ChromaDB and Mosec (`After=cmw-rag-chroma.service cmw-rag-mosec.service`) and restarts automatically on failure and after reboot.
 
 **Development (manual):**
 
@@ -632,6 +632,43 @@ python rag_engine/scripts/start_chroma_server.py --foreground
 
 # Or directly
 chroma run --host 0.0.0.0 --port 8000 --path ~/cmw-rag/data/chromadb_data
+```
+
+### Running Mosec Server
+
+Embedding, reranker, and guard inference server on port 7998.
+
+#### Production (systemd user service)
+
+```bash
+# Install (one-time)
+ln -sf "$(pwd)/systemd/cmw-rag-mosec.service" ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable cmw-rag-mosec.service
+
+# Manage
+systemctl --user start/stop/restart/status cmw-rag-mosec
+
+# Logs
+journalctl --user -u cmw-rag-mosec -f
+```
+
+The service restarts automatically after reboot. Configured via `~/.config/systemd/user/cmw-rag-mosec.service`.
+
+Config in `~/cmw-mosec/.env`:
+```bash
+ACTIVE_EMBEDDING_MODEL=Qwen/Qwen3-Embedding-0.6B
+ACTIVE_RERANKER_MODEL=Qwen/Qwen3-Reranker-0.6B
+ACTIVE_GUARD_MODEL=Qwen/Qwen3Guard-Gen-0.6B
+SERVER_PORT=7998
+```
+
+#### Development (manual)
+
+```bash
+cd ~/cmw-mosec
+source .venv/bin/activate
+cmw-mosec serve --foreground
 ```
 
 ### HTTPS Reverse Proxy (Production)

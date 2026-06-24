@@ -1,0 +1,17 @@
+[Unit]
+Description=CMW Mosec embedding/reranker/guard server
+Documentation=https://github.com/cmw-team/cmw-mosec
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/cmw-mosec
+ExecStart=%h/cmw-mosec/.venv/bin/cmw-mosec serve --foreground
+Restart=always
+RestartSec=10
+KillMode=mixed
+SyslogIdentifier=cmw-rag-mosec
+
+[Install]
+WantedBy=default.target

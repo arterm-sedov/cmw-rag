@@ -7,7 +7,7 @@
 | Service | Port | Process | Status |
 |---------|------|---------|--------|
 | RAG Gradio UI | 7860 | `cmw-rag-app.service` (systemd) | Active |
-| CMW-Mosec | 7998 | `cmw_mosec.v2.dynamic_server` (tmux) | Active |
+| CMW-Mosec | 7998 | `cmw-rag-mosec.service` (systemd) | Active |
 | ChromaDB | 8000 | `cmw-rag-chroma.service` (systemd) | Active |
 
 ### Not Running on this Host
@@ -46,10 +46,19 @@ HF_TOKEN=<huggingface-token>
 
 ### Start Command
 
+**Production (systemd user service):**
+
+```bash
+systemctl --user start/stop/status cmw-rag-mosec
+journalctl --user -u cmw-rag-mosec -f
+```
+
+**Development (manual):**
+
 ```bash
 cd cmw-mosec
 source .venv/bin/activate
-cmw-mosec serve
+cmw-mosec serve --foreground
 ```
 
 ### Available Model Alternatives
@@ -113,7 +122,7 @@ Source: `github.com/cmw-team/cmw-rag` (pushurl: `arterm-sedov`)
 
 Both agents use the same LangChain agent handler (`chat_with_metadata`). The only difference is KB Assist suppresses metadata panel rendering and SRP generation.
 
-Managed as a **systemd user service** (`cmw-rag-app.service`). Depends on ChromaDB (`After=cmw-rag-chroma.service`).
+Managed as a **systemd user service** (`cmw-rag-app.service`). Depends on ChromaDB and Mosec (`After=cmw-rag-chroma.service cmw-rag-mosec.service`).
 
 ### Start / Stop / Status
 
@@ -462,15 +471,16 @@ To replicate this deployment on a new host:
 2. **Install dependencies** — `pip install -e .` in cmw-mosec, `pip install -r rag_engine/requirements.txt` in cmw-rag
 3. **Install ChromaDB** — `pip install chromadb`
 4. **Configure .env** in cmw-mosec (models, port, HF token) and cmw-rag (LLM keys, platform credentials, as shown above)
-5. **Start Mosec** → `cmw-mosec serve` (downloads models on first run, ~8GB total GPU mem)
-6. **Start ChromaDB** → `python rag_engine/scripts/start_chroma_server.py`
-7. **Build/verify index** → run corpus sync to populate ChromaDB collections
-8. **Start RAG UI** → `python rag_engine/api/app.py`
-9. **Configure CMW Platform webhooks** to call:
+5. **Install systemd services** → see `systemd/` in cmw-rag repo — symlink to `~/.config/systemd/user/` and `systemctl --user enable --now` for each
+6. **Start Mosec** → `systemctl --user start cmw-rag-mosec` (downloads models on first run, ~8GB total GPU mem)
+7. **Start ChromaDB** → `systemctl --user start cmw-rag-chroma`
+8. **Build/verify index** → run corpus sync to populate ChromaDB collections
+9. **Start RAG UI** → `systemctl --user start cmw-rag-app`
+10. **Configure CMW Platform webhooks** to call:
    - `POST http://<host>:7860/api/v1/cmw/process-support-request` (support.comindware.com)
    - `POST http://<host>:7860/api/v1/cmw/summarize-document` (lukoil.bau.cbap.ru)
-   - Both accept `{"request_id": "..."}` with optional `X-API-Key` header
-10. **Verify**:
+    - Both accept `{"request_id": "..."}` with optional `X-API-Key` header
+11. **Verify**:
     - `curl http://localhost:7998/v1/embeddings -X POST -d '{"input":"test","model":"Qwen/Qwen3-Embedding-0.6B"}'`
     - `curl http://localhost:7998/v1/moderate -X POST -d '{"input":"test"}'`
     - `curl http://localhost:8000/api/v1/heartbeat`
@@ -495,7 +505,7 @@ Mosec with the three active models requires ~8GB GPU VRAM total (embedding 2GB, 
 | Model config | `config/models.yaml` |
 | Active usage | Serving embeddings, scores, moderation on this host |
 
-Command: `cmw-mosec serve` (reads `ACTIVE_*_MODEL` env vars, starts on `SERVER_PORT`).
+Command: `systemctl --user start cmw-rag-mosec` (wraps `cmw-mosec serve --foreground`). Reads `ACTIVE_*_MODEL` env vars, starts on `SERVER_PORT`.
 
 ### cmw-vllm
 
