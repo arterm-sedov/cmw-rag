@@ -671,6 +671,44 @@ source .venv/bin/activate
 cmw-mosec serve --foreground
 ```
 
+### Running vLLM Server
+
+Optional local LLM server (alternative to OpenRouter). Requires a separate GPU.
+
+**Note:** Port 8000 conflicts with ChromaDB on the standard deployment — set `VLLM_PORT=8001` in `~/cmw-vllm/.env`.
+
+#### Production (systemd user service)
+
+```bash
+# Install (one-time)
+ln -sf "$(pwd)/systemd/cmw-rag-vllm.service" ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable cmw-rag-vllm.service
+
+# Manage
+systemctl --user start/stop/restart/status cmw-rag-vllm
+
+# Logs
+journalctl --user -u cmw-rag-vllm -f
+```
+
+#### Development (manual)
+
+```bash
+cd ~/cmw-vllm
+source .venv/bin/activate
+cmw-vllm start --foreground
+```
+
+Switch cmw-rag to use vLLM instead of OpenRouter:
+
+```bash
+# In cmw-rag/.env
+DEFAULT_LLM_PROVIDER=vllm
+VLLM_BASE_URL=http://localhost:8001/v1
+VLLM_API_KEY=EMPTY
+```
+
 ### HTTPS Reverse Proxy (Production)
 
 In production, the Gradio app runs behind an **nginx** reverse proxy that handles TLS termination:

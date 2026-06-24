@@ -25,7 +25,7 @@
 | [**cmw-rag**](https://github.com/cmw-team/cmw-rag) | RAG: Gradio UI + ChromaDB + интеграция с платформой | `rag_engine/api/app.py` | :7860 | `cmw-rag-app.service` | ✅ Работает |
 | | Векторное хранилище ChromaDB | `chroma run` | :8000 | `cmw-rag-chroma.service` | ✅ Работает |
 | [**cmw-mosec**](https://github.com/cmw-team/cmw-mosec) | Инференс эмбеддингов, ранжировщика, модератора | `cmw-mosec serve --foreground` | :7998 | `cmw-rag-mosec.service` | ✅ Работает |
-| [**cmw-vllm**](https://github.com/cmw-team/cmw-vllm) | Опционально: локальная LLM (замена OpenRouter) | `cmw-vllm start` | 8000 | — | ⬜ Не развёрнут |
+| [**cmw-vllm**](https://github.com/cmw-team/cmw-vllm) | Опционально: локальная LLM (замена OpenRouter) | `cmw-vllm start` | 8001 | `cmw-rag-vllm.service` | ⬜ Не развёрнут |
 
 ### Граф зависимостей
 
@@ -75,6 +75,10 @@
 | **RAG UI** (:7860) | `start/stop/restart/status cmw-rag-app` | `journalctl --user -u cmw-rag-app -f` |
 | **Корпус** (таймер) | `enable/disable/start/stop/status cmw-rag-corpus-sync.timer` | `journalctl --user -u cmw-rag-corpus-sync -f` |
 | **Корпус** (oneshot) | `start cmw-rag-corpus-sync.service` | `systemctl --user list-timers --user` |
+| **vLLM** (:8001, опционально) | `start/stop/restart/status cmw-rag-vllm` | `journalctl --user -u cmw-rag-vllm -f` |
+
+> vLLM опционален — нужен только если `DEFAULT_LLM_PROVIDER=vllm` в cmw-rag/.env.
+> Порт 8000 занят ChromaDB на этом хосте; установите `VLLM_PORT=8001` в cmw-vllm/.env.
 
 **Первоначальная установка каждого сервиса:**
 ```bash
@@ -90,7 +94,7 @@ loginctl enable-linger $USER
 
 **Быстрый статус всех сервисов:**
 ```bash
-systemctl --user status cmw-rag-mosec cmw-rag-chroma cmw-rag-app
+systemctl --user status cmw-rag-mosec cmw-rag-chroma cmw-rag-app cmw-rag-vllm
 ```
 
 ---
@@ -562,6 +566,8 @@ python rag_engine/scripts/sync_mkdocs_corpus.py --index --corpus v6
 
 Mosec с тремя активными моделями требует около 8 ГБ видеопамяти GPU (эмбеддинг — 2 ГБ, ранжировщик — 2 ГБ, модератор — 4 ГБ). Все обработчики работают на одном устройстве через пакетную обработку Mosec.
 
+vLLM (если развёрнут) требует отдельного GPU — модель `openai/gpt-oss-20b` нуждается в ~24 ГБ видеопамяти. Может работать на том же GPU, что и Mosec, при наличии свободной памяти, или на отдельном хосте.
+
 ---
 
 ## Соседние репозитории
@@ -588,15 +594,16 @@ CLI-утилита для управления inference-серверами vLLM
 | Точка входа | `cmw_vllm.cli:cli` (Click CLI) |
 | Реестр моделей | `cmw_vllm/model_registry.py` |
 | Активная модель (если запущен) | `openai/gpt-oss-20b` |
-| Порт по умолчанию | 8000 |
-| Статус | Не развёрнут. Порт 8000 занят ChromaDB. |
+| Порт по умолчанию | 8000 (используйте 8001 — конфликт с ChromaDB) |
+| Статус | Не развёрнут. Требуется отдельный GPU. |
+| systemd-юнит | `cmw-rag-vllm.service` (в `systemd/` cmw-rag) |
 
 ```bash
-# .env: VLLM_MODEL=openai/gpt-oss-20b  VLLM_PORT=8000  VLLM_HOST=0.0.0.0
-cmw-vllm start openai/gpt-oss-20b
+# .env: VLLM_MODEL=openai/gpt-oss-20b  VLLM_PORT=8001  VLLM_HOST=0.0.0.0
+systemctl --user start cmw-rag-vllm
 ```
 
-RAG подключается через `VLLM_BASE_URL=http://<host>:8000/v1` и `DEFAULT_LLM_PROVIDER=vllm`.
+RAG подключается через `VLLM_BASE_URL=http://<host>:8001/v1` и `DEFAULT_LLM_PROVIDER=vllm`.
 
 ---
 

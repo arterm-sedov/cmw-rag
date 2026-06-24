@@ -1,0 +1,17 @@
+[Unit]
+Description=CMW vLLM inference server (local LLM, optional OpenRouter alternative)
+Documentation=https://github.com/cmw-team/cmw-vllm
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/cmw-vllm
+ExecStart=%h/cmw-vllm/.venv/bin/cmw-vllm start --foreground
+Restart=always
+RestartSec=10
+KillMode=mixed
+SyslogIdentifier=cmw-rag-vllm
+
+[Install]
+WantedBy=default.target

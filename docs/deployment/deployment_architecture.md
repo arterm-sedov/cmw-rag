@@ -25,7 +25,7 @@ Three sibling repositories form the CMW RAG deployment. cmw-rag is the central o
 | [**cmw-rag**](https://github.com/cmw-team/cmw-rag) | RAG engine: Gradio UI + ChromaDB + platform integration | `rag_engine/api/app.py` | :7860 | `cmw-rag-app.service` | ✅ Active |
 | | ChromaDB vector store | `chroma run` | :8000 | `cmw-rag-chroma.service` | ✅ Active |
 | [**cmw-mosec**](https://github.com/cmw-team/cmw-mosec) | Embedding, reranker, guard inference | `cmw-mosec serve --foreground` | :7998 | `cmw-rag-mosec.service` | ✅ Active |
-| [**cmw-vllm**](https://github.com/cmw-team/cmw-vllm) | Optional: local LLM (OpenRouter alternative) | `cmw-vllm start` | 8000 | — | ⬜ Not deployed |
+| [**cmw-vllm**](https://github.com/cmw-team/cmw-vllm) | Optional: local LLM (OpenRouter alternative) | `cmw-vllm start` | 8001 | `cmw-rag-vllm.service` | ⬜ Not deployed |
 
 ### Dependency Graph
 
@@ -75,6 +75,10 @@ All systemd service definitions live in `cmw-rag/systemd/` and are symlinked to 
 | **RAG UI** (:7860) | `start/stop/restart/status cmw-rag-app` | `journalctl --user -u cmw-rag-app -f` |
 | **Corpus sync** (timer) | `enable/disable/start/stop/status cmw-rag-corpus-sync.timer` | `journalctl --user -u cmw-rag-corpus-sync -f` |
 | **Corpus sync** (oneshot) | `start cmw-rag-corpus-sync.service` | `systemctl --user list-timers --user` |
+| **vLLM** (:8001, optional) | `start/stop/restart/status cmw-rag-vllm` | `journalctl --user -u cmw-rag-vllm -f` |
+
+> vLLM is optional — only needed if `DEFAULT_LLM_PROVIDER=vllm` in cmw-rag/.env.
+> Port 8000 conflicts with ChromaDB on this host; set `VLLM_PORT=8001` in cmw-vllm/.env.
 
 **Initial setup per service:**
 ```bash
@@ -90,7 +94,7 @@ loginctl enable-linger $USER
 
 **Quick status of all services:**
 ```bash
-systemctl --user status cmw-rag-mosec cmw-rag-chroma cmw-rag-app
+systemctl --user status cmw-rag-mosec cmw-rag-chroma cmw-rag-app cmw-rag-vllm
 ```
 
 ---
@@ -570,6 +574,8 @@ To replicate this deployment on a new host:
 
 Mosec with the three active models requires ~8GB GPU VRAM total (embedding 2GB, reranker 2GB, guard 4GB). Each worker runs on the same device via Mosec batching.
 
+vLLM (if deployed) requires an additional GPU — the default model `openai/gpt-oss-20b` needs ~24GB VRAM. May run on the same GPU as Mosec if capacity allows, or on a separate host.
+
 ---
 
 ## Sibling Repos
@@ -596,15 +602,16 @@ CLI tool to manage vLLM inference servers (OpenAI-compatible). Can serve LLM loc
 | Entry | `cmw_vllm.cli:cli` (Click CLI) |
 | Model registry | `cmw_vllm/model_registry.py` |
 | Active model (if deployed) | `openai/gpt-oss-20b` |
-| Default port | 8000 |
-| Status | Not deployed. Port 8000 occupied by ChromaDB. |
+| Default port | 8000 (use 8001 — ChromaDB conflict) |
+| Status | Not deployed. Needs separate GPU. |
+| systemd unit | `cmw-rag-vllm.service` (in cmw-rag `systemd/`) |
 
 ```bash
-# .env: VLLM_MODEL=openai/gpt-oss-20b  VLLM_PORT=8000  VLLM_HOST=0.0.0.0
-cmw-vllm start openai/gpt-oss-20b
+# .env: VLLM_MODEL=openai/gpt-oss-20b  VLLM_PORT=8001  VLLM_HOST=0.0.0.0
+systemctl --user start cmw-rag-vllm
 ```
 
-RAG uses it via `VLLM_BASE_URL=http://<host>:8000/v1` + `DEFAULT_LLM_PROVIDER=vllm`.
+RAG uses it via `VLLM_BASE_URL=http://<host>:8001/v1` + `DEFAULT_LLM_PROVIDER=vllm`.
 
 ---
 
