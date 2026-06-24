@@ -476,14 +476,23 @@ Command: `cmw-mosec serve` (reads `ACTIVE_*_MODEL` env vars, starts on `SERVER_P
 
 ### cmw-vllm
 
-LLM inference server, OpenAI-compatible API. Can serve as alternative to OpenRouter.
+CLI tool to manage vLLM inference servers (OpenAI-compatible). Can serve LLM locally instead of OpenRouter.
 
 | Attribute | Value |
 |-----------|-------|
 | Source | `github.com/arterm-sedov/cmw-vllm` (remote `cmw-team` added) |
-| Default port | 8000 |
+| Entry | `cmw_vllm.cli:cli` (Click CLI) |
+| Model registry | `cmw_vllm/model_registry.py` |
 | Active model (if deployed) | `openai/gpt-oss-20b` |
-| Status | Not currently deployed. Port 8000 occupied by ChromaDB on this host. |
+| Default port | 8000 |
+| Status | Not deployed. Port 8000 occupied by ChromaDB. |
+
+```bash
+# .env: VLLM_MODEL=openai/gpt-oss-20b  VLLM_PORT=8000  VLLM_HOST=0.0.0.0
+cmw-vllm start openai/gpt-oss-20b
+```
+
+RAG uses it via `VLLM_BASE_URL=http://<host>:8000/v1` + `DEFAULT_LLM_PROVIDER=vllm`.
 
 ---
 
