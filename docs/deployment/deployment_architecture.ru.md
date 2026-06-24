@@ -66,12 +66,21 @@ cmw-mosec serve
 
 Векторное хранилище для поиска в RAG.
 
-### Запуск
+Управляется как **systemd user service** (`cmw-rag-chroma.service`). Автоматически перезапускается при сбоях и после перезагрузки.
+
+### Пуск / Стоп / Статус
 
 ```bash
-cd cmw-rag
-source .venv/bin/activate
-python rag_engine/scripts/start_chroma_server.py
+systemctl --user start/stop/status cmw-rag-chroma
+journalctl --user -u cmw-rag-chroma -f
+```
+
+### Файл сервиса
+
+`systemd/cmw-rag-chroma.service` в репозитории cmw-rag. Устанавливается через симлинк в `~/.config/systemd/user/`.
+
+```ini
+ExecStart=%h/cmw-rag/.venv/bin/chroma run --host 0.0.0.0 --port 8000 --path %h/cmw-rag/data/chromadb_data
 ```
 
 ### Активная коллекция

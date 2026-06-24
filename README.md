@@ -572,21 +572,24 @@ This project depends on the following sibling repositories:
 
 ### Running ChromaDB Server
 
-The RAG engine requires a running ChromaDB instance for vector storage:
+The RAG engine requires a running ChromaDB instance for vector storage.
+
+#### Production (systemd user service)
 
 ```bash
-# Create data directory
-mkdir -p ~/cmw-rag/data/chromadb_data
+# Install (one-time)
+ln -sf "$(pwd)/systemd/cmw-rag-chroma.service" ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable cmw-rag-chroma.service
 
-# Start from the project root
-cd cmw-rag
-source .venv/bin/activate
-python rag_engine/scripts/start_chroma_server.py
+# Manage
+systemctl --user start/stop/restart/status cmw-rag-chroma
 
-# Or install and run directly
-pip install chromadb
-chroma run --host 0.0.0.0 --port 8000 --path ~/cmw-rag/data/chromadb_data
+# Logs
+journalctl --user -u cmw-rag-chroma -f
 ```
+
+The service restarts automatically after reboot (`loginctl enable-linger asedov` ensures the user systemd instance starts at boot).
 
 Configure in `.env`:
 ```bash
@@ -594,6 +597,22 @@ CHROMADB_PORT=8000
 CHROMA_CLIENT_HOST=localhost
 CHROMADB_COLLECTION=mkdocs_kb_qwen06b_linux_qwen_default_instruct_chunk_768
 CHROMADB_PERSIST_DIR=~/cmw-rag/data/chromadb_data
+```
+
+#### Development (manual)
+
+```bash
+# Create data directory
+mkdir -p ~/cmw-rag/data/chromadb_data
+
+# From the project root
+source .venv/bin/activate
+
+# Via helper script (reads .env)
+python rag_engine/scripts/start_chroma_server.py --foreground
+
+# Or directly
+chroma run --host 0.0.0.0 --port 8000 --path ~/cmw-rag/data/chromadb_data
 ```
 
 ### HTTPS Reverse Proxy (Production)

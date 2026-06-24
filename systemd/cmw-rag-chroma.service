@@ -1,0 +1,17 @@
+[Unit]
+Description=ChromaDB vector store for CMW RAG
+Documentation=https://github.com/cmw-team/cmw-rag
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/cmw-rag
+ExecStartPre=/usr/bin/mkdir -p %h/cmw-rag/data/chromadb_data
+ExecStart=%h/cmw-rag/.venv/bin/chroma run --host 0.0.0.0 --port 8000 --path %h/cmw-rag/data/chromadb_data
+Restart=always
+RestartSec=5
+SyslogIdentifier=cmw-rag-chroma
+
+[Install]
+WantedBy=default.target

@@ -66,12 +66,21 @@ cmw-mosec serve
 
 Vector store for RAG retrieval.
 
-### Start Command
+Managed as a **systemd user service** (`cmw-rag-chroma.service`). Restarts automatically on failure and after reboot.
+
+### Start / Stop / Status
 
 ```bash
-cd cmw-rag
-source .venv/bin/activate
-python rag_engine/scripts/start_chroma_server.py
+systemctl --user start/stop/status cmw-rag-chroma
+journalctl --user -u cmw-rag-chroma -f
+```
+
+### Service File
+
+`systemd/cmw-rag-chroma.service` in the cmw-rag repo. Installed via symlink to `~/.config/systemd/user/`.
+
+```ini
+ExecStart=%h/cmw-rag/.venv/bin/chroma run --host 0.0.0.0 --port 8000 --path %h/cmw-rag/data/chromadb_data
 ```
 
 ### Active Collection
