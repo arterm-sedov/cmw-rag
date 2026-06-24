@@ -66,6 +66,33 @@ User browser (https://ennoia.slickjump.org)
 
 All systemd service definitions live in `cmw-rag/systemd/` and are symlinked to `~/.config/systemd/user/`.
 
+### Service Management Quick Reference
+
+| Service | `systemctl --user ...` | Logs |
+|---------|------------------------|------|
+| **Mosec** (:7998) | `start/stop/restart/status cmw-rag-mosec` | `journalctl --user -u cmw-rag-mosec -f` |
+| **ChromaDB** (:8000) | `start/stop/restart/status cmw-rag-chroma` | `journalctl --user -u cmw-rag-chroma -f` |
+| **RAG UI** (:7860) | `start/stop/restart/status cmw-rag-app` | `journalctl --user -u cmw-rag-app -f` |
+| **Corpus sync** (timer) | `enable/disable/start/stop/status cmw-rag-corpus-sync.timer` | `journalctl --user -u cmw-rag-corpus-sync -f` |
+| **Corpus sync** (oneshot) | `start cmw-rag-corpus-sync.service` | `systemctl --user list-timers --user` |
+
+**Initial setup per service:**
+```bash
+ln -sf /path/to/cmw-rag/systemd/<service-file> ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now <service-name>
+```
+
+**Prerequisite (first time on host):**
+```bash
+loginctl enable-linger $USER
+```
+
+**Quick status of all services:**
+```bash
+systemctl --user status cmw-rag-mosec cmw-rag-chroma cmw-rag-app
+```
+
 ---
 
 ## CMW-Mosec (port 7998)
@@ -101,7 +128,7 @@ HF_TOKEN=<huggingface-token>
 **Production (systemd user service):**
 
 ```bash
-systemctl --user start/stop/status cmw-rag-mosec
+systemctl --user start/stop/restart/status cmw-rag-mosec
 journalctl --user -u cmw-rag-mosec -f
 ```
 
@@ -132,7 +159,7 @@ Managed as a **systemd user service** (`cmw-rag-chroma.service`). Restarts autom
 ### Start / Stop / Status
 
 ```bash
-systemctl --user start/stop/status cmw-rag-chroma
+systemctl --user start/stop/restart/status cmw-rag-chroma
 journalctl --user -u cmw-rag-chroma -f
 ```
 
@@ -179,7 +206,7 @@ Managed as a **systemd user service** (`cmw-rag-app.service`). Depends on Chroma
 ### Start / Stop / Status
 
 ```bash
-systemctl --user start/stop/status cmw-rag-app
+systemctl --user start/stop/restart/status cmw-rag-app
 journalctl --user -u cmw-rag-app -f
 ```
 

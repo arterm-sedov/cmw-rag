@@ -66,6 +66,33 @@
 
 Все systemd-юниты находятся в `cmw-rag/systemd/` и устанавливаются симлинком в `~/.config/systemd/user/`.
 
+### Краткая таблица управления сервисами
+
+| Сервис | `systemctl --user ...` | Логи |
+|--------|------------------------|------|
+| **Mosec** (:7998) | `start/stop/restart/status cmw-rag-mosec` | `journalctl --user -u cmw-rag-mosec -f` |
+| **ChromaDB** (:8000) | `start/stop/restart/status cmw-rag-chroma` | `journalctl --user -u cmw-rag-chroma -f` |
+| **RAG UI** (:7860) | `start/stop/restart/status cmw-rag-app` | `journalctl --user -u cmw-rag-app -f` |
+| **Корпус** (таймер) | `enable/disable/start/stop/status cmw-rag-corpus-sync.timer` | `journalctl --user -u cmw-rag-corpus-sync -f` |
+| **Корпус** (oneshot) | `start cmw-rag-corpus-sync.service` | `systemctl --user list-timers --user` |
+
+**Первоначальная установка каждого сервиса:**
+```bash
+ln -sf /путь/к/cmw-rag/systemd/<файл-сервиса> ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now <имя-сервиса>
+```
+
+**Предварительное условие (первый раз на хосте):**
+```bash
+loginctl enable-linger $USER
+```
+
+**Быстрый статус всех сервисов:**
+```bash
+systemctl --user status cmw-rag-mosec cmw-rag-chroma cmw-rag-app
+```
+
 ---
 
 ## CMW-Mosec (порт 7998)
@@ -101,7 +128,7 @@ HF_TOKEN=<токен-huggingface>
 **Production (systemd user service):**
 
 ```bash
-systemctl --user start/stop/status cmw-rag-mosec
+systemctl --user start/stop/restart/status cmw-rag-mosec
 journalctl --user -u cmw-rag-mosec -f
 ```
 
@@ -132,7 +159,7 @@ cmw-mosec serve --foreground
 ### Пуск / Стоп / Статус
 
 ```bash
-systemctl --user start/stop/status cmw-rag-chroma
+systemctl --user start/stop/restart/status cmw-rag-chroma
 journalctl --user -u cmw-rag-chroma -f
 ```
 
@@ -179,7 +206,7 @@ ExecStart=%h/cmw-rag/.venv/bin/chroma run --host 0.0.0.0 --port 8000 --path %h/c
 ### Пуск / Стоп / Статус
 
 ```bash
-systemctl --user start/stop/status cmw-rag-app
+systemctl --user start/stop/restart/status cmw-rag-app
 journalctl --user -u cmw-rag-app -f
 ```
 
