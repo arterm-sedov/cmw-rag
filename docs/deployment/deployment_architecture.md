@@ -574,6 +574,10 @@ To replicate this deployment on a new host:
 
 Mosec with the three active models requires ~8GB GPU VRAM total (embedding 2GB, reranker 2GB, guard 4GB). Each worker runs on the same device via Mosec batching.
 
+> **Driver version mismatch:** Two nvidia-driver packages are installed on this host
+> (590 kernel module, 595 userspace libs). PyTorch logs `"Can't initialize NVML"`
+> but this is **non-fatal** — CUDA compute and inference work correctly.
+
 vLLM (if deployed) requires an additional GPU — the default model `openai/gpt-oss-20b` needs ~24GB VRAM. May run on the same GPU as Mosec if capacity allows, or on a separate host.
 
 ---

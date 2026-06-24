@@ -7,6 +7,9 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=%h/cmw-mosec
+# GPU is safe: the "Can't initialize NVML" warning from PyTorch is non-fatal.
+# CUDA compute and inference work correctly despite the warning.
+# Set to "" only as CPU fallback if GPU hardware is unavailable.
 ExecStart=%h/cmw-mosec/.venv/bin/cmw-mosec serve --foreground
 Restart=always
 RestartSec=10
