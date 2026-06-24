@@ -44,7 +44,7 @@ Before any coding, changes or implementation:
 # Activate venv first (required)
 # Use the active/default Cursor terminal session first
 source .venv/bin/activate        # Linux (native)
-source .venv-wsl/bin/activate    # Windows (WSL)
+source .venv/bin/activate    # Linux (native)
 .venv\Scripts\Activate.ps1       # Windows (PowerShell)
 
 # Install dependencies

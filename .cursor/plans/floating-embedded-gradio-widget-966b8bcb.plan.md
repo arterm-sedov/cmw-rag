@@ -33,7 +33,7 @@ Create a floating chat widget that combines the full-featured Gradio web compone
 
 - Use `gradio_server_name` and `gradio_server_port` from settings (or environment variable) to construct URL
 - Format: `http://${GRADIO_SERVER_NAME}:${GRADIO_SERVER_PORT}` or `https://...` for production
-- Fallback to `10.9.7.7:7860` if settings not available
+- Fallback to `<host>:7860` if settings not available
 - Load Gradio JS from CDN (latest stable version)
 
 ### 5. Features Preserved

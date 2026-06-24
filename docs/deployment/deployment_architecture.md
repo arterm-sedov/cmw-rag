@@ -1,6 +1,6 @@
 # Deployment Architecture
 
-## Host: 10.9.7.7
+## Host
 
 ### Running Services
 
@@ -20,7 +20,7 @@
 
 Single Mosec process serving multiple model types via env-conditional route registration.
 
-Source: `github.com/arterm-sedov/cmw-mosec` → added remote `cmw-team`
+Source: `github.com/cmw-team/cmw-mosec`
 
 ### Routes
 
@@ -93,7 +93,7 @@ When switching embedding models with different dimensions, a new collection must
 
 Entry: `rag_engine/api/app.py`
 
-Source: `github.com/arterm-sedov/cmw-rag` → added remote `cmw-team`
+Source: `github.com/cmw-team/cmw-rag` (pushurl: `arterm-sedov`)
 
 ### Two Agents
 
@@ -117,10 +117,14 @@ python rag_engine/api/app.py
 ```
 User Browser
     │
-    ├──→ 10.9.7.7:7860/        (Support Agent)
-    │       └──→ uses same internal chain as KB Assist
-    │
-    ├──→ 10.9.7.7:7860/kb_assist (KB Assist Agent)
+    ├──→ https://ennoia.slickjump.org/  (HTTPS, nginx reverse proxy)
+    │       │
+    │       └──→ nginx (:443, Let's Encrypt TLS)
+    │               │
+    │               ├──→ localhost:7860/        (Support Agent, plain HTTP)
+    │               │       └──→ uses same internal chain as KB Assist
+    │               │
+    │               └──→ localhost:7860/kb_assist (KB Assist Agent, plain HTTP)
     │
     ├── External integrations (from CMW Platform → RAG API):
     │       │
@@ -466,7 +470,7 @@ Mosec with the three active models requires ~8GB GPU VRAM total (embedding 2GB, 
 
 | Attribute | Value |
 |-----------|-------|
-| Source | `github.com/arterm-sedov/cmw-mosec` (remote `cmw-team` added) |
+| Source | `github.com/cmw-team/cmw-mosec` (pushurl: `arterm-sedov`) |
 | Entry | `cmw_mosec.cli:cli` (Click CLI) |
 | Server module | `cmw_mosec.v2.dynamic_server` |
 | Model config | `config/models.yaml` |
@@ -480,7 +484,7 @@ CLI tool to manage vLLM inference servers (OpenAI-compatible). Can serve LLM loc
 
 | Attribute | Value |
 |-----------|-------|
-| Source | `github.com/arterm-sedov/cmw-vllm` (remote `cmw-team` added) |
+| Source | `github.com/cmw-team/cmw-vllm` (pushurl: `arterm-sedov`) |
 | Entry | `cmw_vllm.cli:cli` (Click CLI) |
 | Model registry | `cmw_vllm/model_registry.py` |
 | Active model (if deployed) | `openai/gpt-oss-20b` |

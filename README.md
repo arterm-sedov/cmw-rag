@@ -2,13 +2,16 @@
 
 Production-ready RAG (Retrieval-Augmented Generation) engine for document Q&A with support for MkDocs, markdown folders, and single-file ingestion. Features FRIDA embeddings (Russian/English), ChromaDB vector storage, reranking, and multi-LLM support with streaming responses.
 
+**Original author:** [Arterm Sedov](https://github.com/arterm-sedov)  
+**Co-author:** Marat Mutalimov
+
 ## AI-Enabled Repo
 
 Chat with DeepWiki to get answers about this repo:
 
-[Ask DeepWiki](https://deepwiki.com/arterm-sedov/cmw-rag)
+[Ask DeepWiki](https://deepwiki.com/cmw-team/cmw-rag)
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/arterm-sedov/cmw-rag)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/cmw-team/cmw-rag)
 
 ## Features
 
@@ -159,7 +162,7 @@ See `rag_engine/tests/test_tools_utils.py` and `rag_engine/tests/test_agent_hand
 ## Prerequisites
 
 - Python 3.12+
-- Virtual environment (`.venv` for Windows, `.venv-wsl` for WSL/Linux)
+- Virtual environment (`.venv`)
 - API keys: Google (Gemini) or OpenRouter
 - Source documents (markdown files) for indexing
 
@@ -167,9 +170,9 @@ See `rag_engine/tests/test_tools_utils.py` and `rag_engine/tests/test_agent_hand
 
 ### 1. Setup Environment
 
-**WSL/Linux:**
+**Linux:**
 ```bash
-source .venv-wsl/bin/activate
+source .venv/bin/activate
 pip install -r rag_engine/requirements.txt
 ```
 
@@ -279,8 +282,8 @@ bash rag_engine/scripts/start_app.sh
 **Manual start:**
 
 ```bash
-# WSL/Linux
-source .venv-wsl/bin/activate
+# Linux
+source .venv/bin/activate
 python rag_engine/api/app.py
 
 # Windows PowerShell
@@ -554,15 +557,68 @@ rag_engine/
 ├── retrieval/        # Embedding, vector search, and reranking
 ├── scripts/          # CLI tools for indexing and startup
 ├── storage/          # ChromaDB vector store
+├── cmw_platform/     # CMW Platform integration connectors
 └── utils/            # Logging and formatting utilities
 ```
+
+## Sibling Repos
+
+This project depends on the following sibling repositories:
+
+| Repo | Purpose | Active |
+|------|---------|--------|
+| [cmw-mosec](https://github.com/cmw-team/cmw-mosec) | Embedding, reranker, and guard inference server | ✅ Deployed on :7998 |
+| [cmw-vllm](https://github.com/cmw-team/cmw-vllm) | vLLM inference server management (local LLM alternative) | ⬜ Not deployed (needs separate GPU) |
+
+### Running ChromaDB Server
+
+The RAG engine requires a running ChromaDB instance for vector storage:
+
+```bash
+# Create data directory
+mkdir -p ~/cmw-rag/data/chromadb_data
+
+# Start from the project root
+cd cmw-rag
+source .venv/bin/activate
+python rag_engine/scripts/start_chroma_server.py
+
+# Or install and run directly
+pip install chromadb
+chroma run --host 0.0.0.0 --port 8000 --path ~/cmw-rag/data/chromadb_data
+```
+
+Configure in `.env`:
+```bash
+CHROMADB_PORT=8000
+CHROMA_CLIENT_HOST=localhost
+CHROMADB_COLLECTION=mkdocs_kb_qwen06b_linux_qwen_default_instruct_chunk_768
+CHROMADB_PERSIST_DIR=~/cmw-rag/data/chromadb_data
+```
+
+### HTTPS Reverse Proxy (Production)
+
+In production, the Gradio app runs behind an **nginx** reverse proxy that handles TLS termination:
+
+```
+https://ennoia.slickjump.org  →  nginx (:443)  →  localhost:7860 (Gradio HTTP)
+```
+
+Key nginx config (`/etc/nginx/sites-enabled/ennoia.conf`):
+- SSL certificate from Let's Encrypt (Certbot-managed)
+- WebSocket proxy headers (`Upgrade`, `Connection`) for Gradio streaming
+- `proxy_buffering off` — required for real-time token streaming
+- `proxy_read_timeout 300s` — long-running requests
+- HTTP → HTTPS redirect (301)
+
+The RAG app itself is not TLS-aware — it serves plain HTTP on `GRADIO_SERVER_PORT`.
 
 ## Troubleshooting
 
 ### No Virtual Environment Found
 
 Create and activate a virtual environment:
-- WSL: `python3 -m venv .venv-wsl`
+- Linux: `python3 -m venv .venv`
 - Windows: `python -m venv .venv`
 
 ### Settings Validation Error

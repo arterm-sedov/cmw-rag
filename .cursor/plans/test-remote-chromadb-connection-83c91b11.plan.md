@@ -10,7 +10,7 @@ Create a simple script to test connection to a remote ChromaDB server.
 Simple connection test script that:
 
 - Uses `chromadb.HttpClient` to connect to remote server
-- Accepts URL via command-line argument (default: `http://10.9.7.7:8000/`)
+- Accepts URL via command-line argument (default: `http://<host>:8000/`)
 - Tests basic connectivity:
   - Attempts to connect to server
   - Lists available collections
@@ -29,7 +29,7 @@ Simple connection test script that:
 python rag_engine/scripts/test_chroma_connection.py
 
 # Test specific server URL
-python rag_engine/scripts/test_chroma_connection.py --url http://10.9.7.7:8000/
+python rag_engine/scripts/test_chroma_connection.py --url http://<host>:8000/
 ```
 
 ### To-dos

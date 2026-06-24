@@ -24,7 +24,7 @@ def test_connection(url: str) -> bool:
     """Test connection to remote ChromaDB server.
 
     Args:
-        url: Server URL (e.g., http://10.9.7.7:8000/)
+        url: Server URL (e.g., http://<host>:8000/)
 
     Returns:
         True if connection successful, False otherwise
@@ -94,7 +94,7 @@ def main() -> None:
         epilog=f"""
 Examples:
   python test_chroma_connection.py
-  python test_chroma_connection.py --url http://10.9.7.7:8000/
+  python test_chroma_connection.py --url http://<host>:8000/
   python test_chroma_connection.py --url http://localhost:8000
 
 Environment Variables (from .env):
