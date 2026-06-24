@@ -123,6 +123,18 @@ User Browser
     │
     ├──→ 10.9.7.7:7860/kb_assist (KB Assist Agent)
     │
+    ├── External integrations (from CMW Platform → RAG API):
+    │       │
+    │       ├──→ support.comindware.com
+    │       │       POST /api/v1/cmw/process-support-request
+    │       │       └── reads systemSolution.Requests
+    │       │       └── writes systemSolution.agent_responses
+    │       │
+    │       └──→ lukoil.bau.cbap.ru
+    │               POST /api/v1/cmw/summarize-document
+    │               └── reads ArchitectureManagement.Zaprosinarazrabotky
+    │               └── writes summary attribute
+    │
     └── Internal (RAG app → backing services):
             │
             ├──→ localhost:7998  (Mosec — embeddings, score, moderate)
@@ -187,18 +199,189 @@ GRADIO_LOCALE=ru
 # VLLM_BASE_URL=http://localhost:8000/v1
 # VLLM_API_KEY=EMPTY
 
-# CMW Platform Integration (for support agent ticket operations)
+# CMW Platform Integration — Primary (Support Agent)
 CMW_BASE_URL=https://support.comindware.com
 CMW_LOGIN=<login>
 CMW_PASSWORD=<password>
 CMW_TIMEOUT=30
 CMW_API_KEY=<api-key>
 
+# CMW Platform Integration — Secondary / Lukoil (Document Summarization)
+CMW2_BASE_URL=<secondary-platform-url>
+CMW2_LOGIN=<login>
+CMW2_PASSWORD=<password>
+CMW2_TIMEOUT=30
+CMW2_API_KEY=<api-key>
+
 # LLM Reasoning
 LLM_REASONING_ENABLED=true
 LLM_REASONING_MAX_TOKENS=1200
 LLM_REASONING_EXCLUDE_FROM_RESPONSE=true
 ```
+
+---
+
+## CMW Platform Integration
+
+The RAG app integrates with two Comindware Platform instances via FastAPI endpoints and a YAML-driven pipeline. Both follow the same fire-and-forget pattern: fetch record → spawn background agent → write result back.
+
+### Two Platform Instances
+
+| Instance | Purpose | Config file | Env prefix |
+|----------|---------|-------------|------------|
+| Primary | Support desk: read support case → RAG answer → write response record | `cmw_platform.yaml` | `CMW_` |
+| Secondary (Лукойл) | Document summarization: read attached doc → LLM summarize → write summary | `cmw_platform_secondary.yaml` | `CMW2_` |
+
+### Primary: Support Request Pipeline
+
+**Endpoint:** `POST /api/v1/cmw/process-support-request`
+
+**Schema:**
+```json
+{"request_id": "string"}
+```
+
+**Flow:**
+```
+CMW Platform (support.comindware.com)
+    │ POST /api/v1/cmw/process-support-request {request_id}
+    ▼
+RAG FastAPI endpoint
+    │ 1. Auth via X-API-Key header (optional, if CMW_API_KEY set)
+    │ 2. Fetch record from systemSolution.Requests
+    │    Fields: name, Description, currentBuild, browserDetails
+    │ 3. Build markdown request via template
+    │ 4. Return 200 {success: true, message: "Request fetched, agent started at ..."}
+    │ 5. Background thread → call LangChain agent (ask_comindware_structured)
+    │ 6. Map agent response to output fields
+    │ 7. Write response record to systemSolution.agent_responses
+    │    (linked to original request via support_request attribute)
+    ▼
+Response written back to CMW Platform
+```
+
+**YAML pipeline config** (`cmw_platform.yaml`):
+
+```yaml
+pipeline:
+  input:
+    application: systemSolution
+    template: Requests
+    attributes:
+      support_case_title: name
+      support_case_question: Description
+      product_version: currentBuild
+      user_browser: browserDetails
+
+  request_template: |
+    ---
+    - product version: {product_version}
+    - user browser: {user_browser}
+    ---
+    # {support_case_title}
+    {support_case_question}
+
+  output:
+    application: systemSolution
+    template: agent_responses
+    record_attribute: support_request
+    linked_template: Requests
+```
+
+The agent response is mapped to output attributes via `mapping.py`:
+- `answer` → agent's final answer text
+- `question_for_agent` → original request with YAML frontmatter
+- `agent_thinking` → SGR research report
+- `issue_area` → classified category from `category_enum`
+- `kb_articles` → cited documentation articles
+
+### Secondary / Lukoil: Document Summarization
+
+**Endpoint:** `POST /api/v1/cmw/summarize-document`
+
+**Schema:**
+```json
+{"request_id": "string"}
+```
+
+**Flow:**
+```
+CMW Platform (lukoil.bau.cbap.ru, app: ArchitectureManagement)
+    │ POST /api/v1/cmw/summarize-document {record_id}
+    ▼
+RAG FastAPI endpoint
+    │ 1. Auth via X-API-Key header (optional, if CMW2_API_KEY set)
+    │ 2. Read record from ArchitectureManagement.Zaprosinarazrabotky
+    │    Fields: Commerpredloshenie (document), promt (user prompt)
+    │ 3. Fetch document content → extract text
+    │ 4. Return 200 {success: true, message: "Начата обработка данных"}
+    │ 5. Background thread → create_summary_agent (LangChain)
+    │    Agent has web_search tool, uses system prompt from YAML
+    │ 6. Convert summary to HTML
+    │ 7. Write summary back to record's summary attribute
+    ▼
+Summary written back to CMW Platform
+```
+
+**YAML pipeline config** (`cmw_platform_secondary.yaml`):
+
+```yaml
+pipeline:
+  input:
+    application: ArchitectureManagement
+    template: Zaprosinarazrabotky
+    attributes:
+      document_file: Commerpredloshenie
+      user_prompt: promt
+
+  output:
+    application: ArchitectureManagement
+    template: Zaprosinarazrabotky
+    summary_attribute: summary
+    summary_as_html: true
+
+  system_prompt: |
+    Ты — профессиональный бизнес-ассистент. Твоя задача — составлять
+    краткие и информативные резюме деловых документов.
+    ...
+```
+
+### API Schemas (Pydantic)
+
+```python
+class ProcessSupportRequest(BaseModel):
+    request_id: str
+
+class SummarizeDocumentRequest(BaseModel):
+    request_id: str
+
+class ProcessResult:
+    success: bool
+    message: str | None = None
+    error: str | None = None
+
+class HTTPResponse(BaseModel):
+    success: bool
+    status_code: int
+    raw_response: dict | str | None = None
+    error: str | None = None
+    base_url: str
+
+class APIResponse(BaseModel):
+    response: Any | None = None
+    success: bool | None = None
+    error: str | None = None
+
+class RequestConfig(BaseModel):
+    base_url: str
+    login: str
+    password: str
+    timeout: int = 30
+```
+
+### Category Enum
+
+Request issue areas are loaded from `cmw_platform.yaml` → `category_enum`. The list is fetched from CMW Platform via `scripts/fetch_issue_areas.py`. Example categories: `account`, `api`, `deployment`, `email`, `performance`, `integrations`, etc.
 
 ---
 
@@ -256,16 +439,21 @@ To replicate this deployment on a new host:
 1. **Install Python 3.11+** and create venvs for each project
 2. **Install dependencies** — `pip install -e .` in cmw-mosec, `pip install -r rag_engine/requirements.txt` in cmw-rag
 3. **Install ChromaDB** — `pip install chromadb`
-4. **Configure .env** in cmw-mosec (models, port, HF token) and cmw-rag (as shown above)
+4. **Configure .env** in cmw-mosec (models, port, HF token) and cmw-rag (LLM keys, platform credentials, as shown above)
 5. **Start Mosec** → `cmw-mosec serve` (downloads models on first run, ~8GB total GPU mem)
 6. **Start ChromaDB** → `python rag_engine/scripts/start_chroma_server.py`
 7. **Build/verify index** → run corpus sync to populate ChromaDB collections
 8. **Start RAG UI** → `python rag_engine/api/app.py`
-9. **Verify**:
-   - `curl http://localhost:7998/v1/embeddings -X POST -d '{"input":"test","model":"Qwen/Qwen3-Embedding-0.6B"}'`
-   - `curl http://localhost:7998/v1/moderate -X POST -d '{"input":"test"}'`
-   - `curl http://localhost:8000/api/v1/heartbeat`
-   - Open `http://localhost:7860` and `http://localhost:7860/kb_assist` in browser
+9. **Configure CMW Platform webhooks** to call:
+   - `POST http://<host>:7860/api/v1/cmw/process-support-request` (support.comindware.com)
+   - `POST http://<host>:7860/api/v1/cmw/summarize-document` (lukoil.bau.cbap.ru)
+   - Both accept `{"request_id": "..."}` with optional `X-API-Key` header
+10. **Verify**:
+    - `curl http://localhost:7998/v1/embeddings -X POST -d '{"input":"test","model":"Qwen/Qwen3-Embedding-0.6B"}'`
+    - `curl http://localhost:7998/v1/moderate -X POST -d '{"input":"test"}'`
+    - `curl http://localhost:8000/api/v1/heartbeat`
+    - `curl http://localhost:7860/api/v1/cmw/process-support-request -X POST -d '{"request_id":"test"}'`
+    - Open `http://localhost:7860` and `http://localhost:7860/kb_assist` in browser
 
 ### GPU Requirements
 
