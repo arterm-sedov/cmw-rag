@@ -582,7 +582,7 @@ rag_engine/
 
 ## Sibling Repos
 
-This project depends on the following sibling repositories:
+This project depends on the following sibling repositories. For the complete cross-repo topology, API contracts, and systemd dependencies, see [docs/deployment/deployment_architecture.md](docs/deployment/deployment_architecture.md).
 
 | Repo | Purpose | Active |
 |------|---------|--------|

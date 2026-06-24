@@ -16,6 +16,58 @@
 
 ---
 
+## Repo Topology
+
+Three sibling repositories form the CMW RAG deployment. cmw-rag is the central orchestrator; cmw-mosec provides local inference; cmw-vllm is an optional local LLM alternative to OpenRouter.
+
+| Repo | Role | Entry point | Port | systemd unit | Status |
+|------|------|-------------|------|-------------|--------|
+| [**cmw-rag**](https://github.com/cmw-team/cmw-rag) | RAG engine: Gradio UI + ChromaDB + platform integration | `rag_engine/api/app.py` | :7860 | `cmw-rag-app.service` | ✅ Active |
+| | ChromaDB vector store | `chroma run` | :8000 | `cmw-rag-chroma.service` | ✅ Active |
+| [**cmw-mosec**](https://github.com/cmw-team/cmw-mosec) | Embedding, reranker, guard inference | `cmw-mosec serve --foreground` | :7998 | `cmw-rag-mosec.service` | ✅ Active |
+| [**cmw-vllm**](https://github.com/cmw-team/cmw-vllm) | Optional: local LLM (OpenRouter alternative) | `cmw-vllm start` | 8000 | — | ⬜ Not deployed |
+
+### Dependency Graph
+
+```
+User browser (https://ennoia.slickjump.org)
+    │
+    ├── nginx (:443, Let's Encrypt TLS)
+    │   └── localhost:7860 ─── cmw-rag (Gradio UI)
+    │                              │
+    │                              ├── HTTP :7998 ─── cmw-mosec
+    │                              │   ├── /v1/embeddings ── Qwen3-Embedding-0.6B
+    │                              │   ├── /v1/score      ── Qwen3-Reranker-0.6B
+    │                              │   └── /v1/moderate   ── Qwen3Guard-Gen-0.6B
+    │                              │
+    │                              ├── HTTP :8000 ─── ChromaDB (mkdocs_kb_* collections)
+    │                              │
+    │                              ├── HTTP ──── api.openrouter.ai (LLM: deepseek/deepseek-v4-pro)
+    │                              │
+    │                              └── HTTP ──── [optional] cmw-vllm / vLLM server
+    │
+    ├── CMW Platform ── support.comindware.com
+    │       POST /api/v1/cmw/process-support-request
+    │
+    └── CMW Platform ── lukoil.bau.cbap.ru
+            POST /api/v1/cmw/summarize-document
+```
+
+### How They Connect
+
+| From | To | Protocol | Env vars in cmw-rag |
+|------|----|----------|---------------------|
+| cmw-rag (embedder) | cmw-mosec `/v1/embeddings` | HTTP POST | `MOSEC_EMBEDDING_ENDPOINT`, `EMBEDDING_MODEL` |
+| cmw-rag (reranker) | cmw-mosec `/v1/score` | HTTP POST | `MOSEC_RERANKER_ENDPOINT`, `RERANKER_MODEL` |
+| cmw-rag (guard) | cmw-mosec `/v1/moderate` | HTTP POST | `GUARD_MOSEC_ENDPOINT` |
+| cmw-rag (LLM) | OpenRouter | HTTP POST | `OPENROUTER_BASE_URL`, `OPENROUTER_API_KEY` |
+| cmw-rag (LLM) | cmw-vllm (optional) | HTTP POST | `VLLM_BASE_URL`, `VLLM_API_KEY` |
+| cmw-rag (vector) | ChromaDB | HTTP | `CHROMADB_HOST`, `CHROMADB_PORT` |
+
+All systemd service definitions live in `cmw-rag/systemd/` and are symlinked to `~/.config/systemd/user/`.
+
+---
+
 ## CMW-Mosec (port 7998)
 
 Single Mosec process serving multiple model types via env-conditional route registration.
