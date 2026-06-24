@@ -6,9 +6,9 @@
 
 | Сервис | Порт | Процесс | Статус |
 |--------|------|---------|--------|
-| RAG Gradio UI | 7860 | `python rag_engine/api/app.py` | Работает |
-| CMW-Mosec | 7998 | `cmw_mosec.v2.dynamic_server` | Работает |
-| ChromaDB | 8000 | `chroma run --host 0.0.0.0 --port 8000` | Работает |
+| RAG Gradio UI | 7860 | `cmw-rag-app.service` (systemd) | Работает |
+| CMW-Mosec | 7998 | `cmw_mosec.v2.dynamic_server` (tmux) | Работает |
+| ChromaDB | 8000 | `cmw-rag-chroma.service` (systemd) | Работает |
 
 ### Незапущенные сервисы
 
@@ -113,12 +113,22 @@ ExecStart=%h/cmw-rag/.venv/bin/chroma run --host 0.0.0.0 --port 8000 --path %h/c
 
 Оба агента используют один и тот же обработчик LangChain (`chat_with_metadata`). KB Assist лишь скрывает панели метаданных и отключает SRP.
 
-### Запуск
+Управляется как **systemd user service** (`cmw-rag-app.service`). Зависит от ChromaDB (`After=cmw-rag-chroma.service`).
+
+### Пуск / Стоп / Статус
 
 ```bash
-cd cmw-rag
-source .venv/bin/activate
-python rag_engine/api/app.py
+systemctl --user start/stop/status cmw-rag-app
+journalctl --user -u cmw-rag-app -f
+```
+
+### Файл сервиса
+
+`systemd/cmw-rag-app.service` в репозитории cmw-rag.
+
+```ini
+Environment=PYTHONPATH=%h/cmw-rag
+ExecStart=%h/cmw-rag/.venv/bin/python rag_engine/api/app.py
 ```
 
 ### Схема связей

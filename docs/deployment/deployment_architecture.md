@@ -6,9 +6,9 @@
 
 | Service | Port | Process | Status |
 |---------|------|---------|--------|
-| RAG Gradio UI | 7860 | `python rag_engine/api/app.py` | Active |
-| CMW-Mosec | 7998 | `cmw_mosec.v2.dynamic_server` | Active |
-| ChromaDB | 8000 | `chroma run --host 0.0.0.0 --port 8000` | Active |
+| RAG Gradio UI | 7860 | `cmw-rag-app.service` (systemd) | Active |
+| CMW-Mosec | 7998 | `cmw_mosec.v2.dynamic_server` (tmux) | Active |
+| ChromaDB | 8000 | `cmw-rag-chroma.service` (systemd) | Active |
 
 ### Not Running on this Host
 
@@ -113,12 +113,22 @@ Source: `github.com/cmw-team/cmw-rag` (pushurl: `arterm-sedov`)
 
 Both agents use the same LangChain agent handler (`chat_with_metadata`). The only difference is KB Assist suppresses metadata panel rendering and SRP generation.
 
-### Start Command
+Managed as a **systemd user service** (`cmw-rag-app.service`). Depends on ChromaDB (`After=cmw-rag-chroma.service`).
+
+### Start / Stop / Status
 
 ```bash
-cd cmw-rag
-source .venv/bin/activate
-python rag_engine/api/app.py
+systemctl --user start/stop/status cmw-rag-app
+journalctl --user -u cmw-rag-app -f
+```
+
+### Service File
+
+`systemd/cmw-rag-app.service` in the cmw-rag repo.
+
+```ini
+Environment=PYTHONPATH=%h/cmw-rag
+ExecStart=%h/cmw-rag/.venv/bin/python rag_engine/api/app.py
 ```
 
 ### Service Dependencies

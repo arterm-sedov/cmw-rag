@@ -1,0 +1,17 @@
+[Unit]
+Description=CMW RAG Engine Gradio UI
+Documentation=https://github.com/cmw-team/cmw-rag
+After=network-online.target cmw-rag-chroma.service
+Wants=network-online.target cmw-rag-chroma.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/cmw-rag
+Environment=PYTHONPATH=%h/cmw-rag
+ExecStart=%h/cmw-rag/.venv/bin/python rag_engine/api/app.py
+Restart=always
+RestartSec=10
+SyslogIdentifier=cmw-rag-app
+
+[Install]
+WantedBy=default.target

@@ -279,21 +279,40 @@ bash rag_engine/scripts/start_app.sh
 .\rag_engine\scripts\start_app.ps1
 ```
 
-**Manual start:**
+**Production (systemd user service):**
+
+```bash
+# Install (one-time)
+ln -sf "$(pwd)/systemd/cmw-rag-app.service" ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable cmw-rag-app.service
+
+# Manage
+systemctl --user start/stop/restart/status cmw-rag-app
+
+# Logs
+journalctl --user -u cmw-rag-app -f
+```
+
+The app starts after ChromaDB (`After=cmw-rag-chroma.service`) and restarts automatically on failure and after reboot.
+
+**Development (manual):**
 
 ```bash
 # Linux
 source .venv/bin/activate
+export PYTHONPATH="$(pwd):${PYTHONPATH:-}"
 python rag_engine/api/app.py
 
 # Windows PowerShell
 .venv\Scripts\Activate.ps1
+$env:PYTHONPATH = "$(Get-Location);$env:PYTHONPATH"
 python rag_engine\api\app.py
 ```
 
 ### 5. Access the Application
 
-- **Web UI**: http://localhost:7860
+- **Web UI**: [http://localhost:7860](http://localhost:7860)
 - **KB Assist demo**: http://localhost:7860/kb_assist
 - **Production widget**: embedded via `ai-widget.php` in the [kb.comindware.ru](https://kb.comindware.ru) repo
 - **REST API**: http://localhost:7860/api/query_rag
