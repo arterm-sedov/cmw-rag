@@ -1,0 +1,4 @@
+# Local PDF build config (machine-specific paths)
+.env
+
+# Intermediate MkDocs HTML: <repo>/.scratch/deployment_architecture_pdf/.site/ (root .gitignore)
