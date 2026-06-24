@@ -114,6 +114,46 @@ Entry: `rag_engine/api/app.py`
 
 ---
 
+## Corpus Sync (MkDocs)
+
+Syncs documentation content from an external MkDocs repo into ChromaDB for RAG indexing.
+
+### Systemd Timer
+
+| Component | Value |
+|-----------|-------|
+| Timer | `cmw-rag-corpus-sync.timer` — enabled and active |
+| Schedule | Every 6h at 00:00, 06:00, 12:00, 18:00 UTC (+ 10min random delay) |
+| Service | `cmw-rag-corpus-sync.service` — oneshot, runs on timer trigger |
+| Command | `sync_mkdocs_corpus.py --index --corpus all` |
+
+### Upstream Repo
+
+| Setting | Value |
+|---------|-------|
+| Remote | `github.com/arterm-sedov/cbap-mkdocs-ru` |
+| Branch | `platform_v6` |
+| Sparse path | `phpkb_content_rag` |
+| Local clone | `.reference-repos/cbap-mkdocs-ru` |
+
+### Corpus Versions
+
+Two corpus versions are synced and indexed into separate ChromaDB collections:
+
+| Version | Source path | ChromaDB collection suffix |
+|---------|-------------|---------------------------|
+| v5 | `phpkb_content_rag/798-platform_v5` | `_v5` |
+| v6 | `phpkb_content_rag/896-platform_v6` | `_v6` |
+
+When `CHROMADB_COLLECTION=mkdocs_kb_qwen06b_linux_qwen_default_instruct_chunk_768`, the actual collections are:
+
+- `mkdocs_kb_qwen06b_linux_qwen_default_instruct_chunk_768_v5`
+- `mkdocs_kb_qwen06b_linux_qwen_default_instruct_chunk_768_v6`
+
+The sync script runs `git sparse-checkout` to fetch only the `phpkb_content_rag` directory, then indexes new/changed files into the corresponding ChromaDB collection. If no changes are detected since last sync, indexing is skipped (saves API calls).
+
+---
+
 ## Connection Map
 
 ```
