@@ -12,8 +12,9 @@
 
 ### Not Running on this Host
 
-- vLLM — not running (no process found)
-- CMW Platform Agent — not running (no process found)
+- vLLM (`cmw-vllm`) — not running
+- Infinity (`cmw-infinity`) — not running (superseded by cmw-mosec)
+- CMW Platform Agent (`cmw-platform-agent`) — not running
 
 ---
 
@@ -461,9 +462,93 @@ Mosec with the three active models requires ~8GB GPU VRAM total (embedding 2GB, 
 
 ---
 
+## Sibling Repos Overview
+
+### cmw-mosec
+
+| Attribute | Value |
+|-----------|-------|
+| Source | `github.com/arterm-sedov/cmw-mosec` (remote `cmw-team` added) |
+| Entry | `cmw_mosec.cli:cli` (Click CLI) |
+| Server module | `cmw_mosec.v2.dynamic_server` |
+| Model config | `config/models.yaml` — embedding, reranker, guard definitions |
+| Active usage | Serving embeddings, scores, moderation on this host |
+| Model download | Auto-downloads from HuggingFace on first start |
+
+Command: `cmw-mosec serve` (reads `ACTIVE_*_MODEL` env vars, starts Mosec server on `SERVER_PORT`).
+
+### cmw-infinity
+
+| Attribute | Value |
+|-----------|-------|
+| Source | `github.com/arterm-sedov/cmw-infinity` (remote `cmw-team` added) |
+| Entry | `cmw_infinity.cli:cli` (Click CLI) |
+| Model config | `config/models.yaml` |
+| Default ports | Embeddings on 7997, Rerankers on 7998 |
+| Status | Not running. Superseded by cmw-mosec (single-port multi-model). |
+
+Command: `cmw-infinity start <model>`.
+
+### cmw-vllm
+
+| Attribute | Value |
+|-----------|-------|
+| Source | `github.com/arterm-sedov/cmw-vllm` (remote `cmw-team` added) |
+| Entry | `cmw_vllm.cli:cli` (Click CLI) |
+| Model registry | `cmw_vllm/model_registry.py` |
+| Default port | 8000 |
+| Active model | `openai/gpt-oss-20b` |
+| Status | Not running. Port 8000 occupied by ChromaDB on this host. |
+
+Command: `cmw-vllm start <model>`.
+
+If vLLM were to be deployed:
+```bash
+VLLM_PORT=8000
+VLLM_HOST=0.0.0.0
+VLLM_MAX_MODEL_LEN=128000
+VLLM_GPU_MEMORY_UTILIZATION=0.75
+VLLM_TENSOR_PARALLEL_SIZE=1
+```
+Would need a dedicated GPU host or free port.
+
+### cmw-platform-agent
+
+| Attribute | Value |
+|-----------|-------|
+| Source | `github.com/arterm-sedov/cmw-platform-agent` (remote `cmw-team` added) |
+| Entry | `agent_ng/app_ng_modular.py` (Gradio app) |
+| Config | `.env` with `CMW_*` platform credentials |
+| Default port | 7860 |
+| LLM provider | openrouter |
+| Default model | `deepseek/deepseek-v3.1-terminus:exacto` |
+| Status | Not running on this host. Separate Gradio app for CMW Platform entity management. |
+
+This is a standalone agent (not part of RAG). It uses its own LangChain agent with tools for creating/managing CMW Platform entities (users, records, buttons, templates) via natural language.
+
+Command if deployed:
+```bash
+cd cmw-platform-agent
+source .venv/bin/activate
+python agent_ng/app_ng_modular.py
+```
+
+### sgr-agent-core
+
+| Attribute | Value |
+|-----------|-------|
+| Source | `github.com/vamplabAI/sgr-agent-core` |
+| Docker compose | `docker-compose.dist.yaml` (backend + frontend) |
+| Backend port | 8010 |
+| Frontend port | 5173 |
+| Status | Not deployed. External project, not part of cmw ecosystem. |
+
+---
+
 ## Notes
 
 - Mosec `/v1/rerank` endpoint is registered but returns inference error at runtime — RAG uses `/v1/score` instead, which works correctly.
-- vLLM configuration exists (`cmw-vllm/.env`, `VLLM_PORT=8000`, model `openai/gpt-oss-20b`) but the server is not currently running. Port 8000 on this host is occupied by ChromaDB.
-- CMW Platform Agent (`cmw-platform-agent`) Gradio app is not running on this host.
+- vLLM (`cmw-vllm`) can serve as an alternative LLM backend if OpenRouter is not desired. Would need separate GPU host as port 8000 is occupied by ChromaDB.
+- Infinity (`cmw-infinity`) is superseded by cmw-mosec which serves all model types (embeddings, reranker, guard) on a single port.
+- CMW Platform Agent (`cmw-platform-agent`) is a standalone Gradio app, independent from RAG. Not currently deployed.
 - When changing embedding model (different dimensions), create a new ChromaDB collection and reindex. Collection dimension must match embedding output dimension.
