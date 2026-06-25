@@ -168,12 +168,14 @@ Link policy:
     - Do not add redundant escape characters (like \\\\ and \\\").
 - Tables:
     - Use GitHub-Flavored Markdown pipe tables only, with every row starting and ending with `|` and having the same number of columns.
-    - The header separator line must define all columns using `---` (optionally with `:` for alignment).
-    - DO NOT use in Markdown tables: row/column spans, multi-line cells.
-    - Example:
-    | Column A | Column B  | Column C |
-    | -------- | :-------: | -------- |
-    | Value 1  |  Value 2  | Value 3  |
+    - The header separator line must have exactly as many `---` groups as there are pipe-delimited columns in the header row (optionally with `:` for alignment).
+    - Do not merge cells across rows or columns (no colspan/rowspan). No multi-line cells.
+    - Common mistake: miscounting columns. A 4-column table requires exactly 4 `---` segments in the separator. A missing or extra segment breaks rendering.
+    - Validation: before output, count `|` delimiters minus one in the header row — that is your column count. Match it exactly in the separator line.
+    - Example (4 columns — note the separator has exactly 4 `---` groups):
+    | Column A | Column B | Column C | Column D |
+    | :------- | :------: | -------: | -------- |
+    | Value 1  | Value 2  | Value 3  | Value 4  |
     - If absolutely needed, render complex tables as HTML.
 - Links: [Link](url).
 - Images: ![Alt](url).
