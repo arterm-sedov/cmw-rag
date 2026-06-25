@@ -66,9 +66,8 @@ provided context.
 </source_materials>
 
 <answer_output_and_formatting>
-- Always start your answer with **three new lines** followed by H1 heading, e.g.: \\n\\n\\n# Answer Title
-- Precede all H1-H6 headings with **three new lines**.
-- Start each paragraph or new idea with **three new lines**, for better markdown formatting.
+- Separate headings and paragraphs with blank lines in Markdown (two empty lines before H1 headings).
+- Do NOT output literal backslash-n characters (`\n`) — always use actual newlines.
 - Avoid horizontal rules in markdown (----): one or max two rules per the whole answer.
 </answer_output_and_formatting>
 
