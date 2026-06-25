@@ -66,6 +66,70 @@ pytest -m "not slow"
 pytest -m integration
 ```
 
+## Systemd Service Management
+
+Production services run as systemd user services. **Do NOT start services manually** (e.g., `python app.py`) — this causes port conflicts.
+
+### Services
+
+| Service | Port | Command |
+|---------|------|---------|
+| `cmw-rag-app` | 7860 | RAG Gradio UI |
+| `cmw-rag-chroma` | 8000 | ChromaDB vector store |
+| `cmw-rag-mosec` | 7998 | Embedding/reranker/guard |
+| `cmw-rag-vllm` | 8001 | vLLM (optional) |
+| `cmw-rag-corpus-sync` | — | Corpus sync (oneshot/timer) |
+
+### Commands
+
+```bash
+# Status (all services)
+systemctl --user status cmw-rag-mosec cmw-rag-chroma cmw-rag-app cmw-rag-vllm
+
+# Per-service
+systemctl --user status cmw-rag-app
+systemctl --user start cmw-rag-app
+systemctl --user stop cmw-rag-app
+systemctl --user restart cmw-rag-app
+
+# Logs
+journalctl --user -u cmw-rag-app -f
+journalctl --user -u cmw-rag-app --no-pager -n 50
+```
+
+### Important
+
+- Service files live in `cmw-rag/systemd/`, symlinked to `~/.config/systemd/user/`
+- Services auto-restart on failure and after reboot
+- Dependencies: `cmw-rag-app` starts after `cmw-rag-chroma` and `cmw-rag-mosec`
+- **Never run `python app.py` in production** — use `systemctl --user start` instead
+- First-time prerequisite: `loginctl enable-linger $USER` (allows user services at boot)
+
+### Backing Services
+
+| Service | Port | Health Check |
+|---------|------|--------------|
+| Mosec | 7998 | `curl localhost:7998/v1/embeddings -X POST -d '{"input":"test","model":"Qwen/Qwen3-Embedding-0.6B"}'` |
+| ChromaDB | 8000 | `curl localhost:8000/api/v1/heartbeat` |
+| RAG UI | 7860 | Open `http://localhost:7860` |
+
+### ChromaDB Collections
+
+- Active: `mkdocs_kb_qwen06b_linux_qwen_default_instruct_chunk_768` (1024d, Qwen3-Embedding-0.6B)
+- v5 docs: `mkdocs_kb_qwen06b_linux_qwen_default_instruct_chunk_768_v5`
+- v6 docs: `mkdocs_kb_qwen06b_linux_qwen_default_instruct_chunk_768_v6`
+
+### Mosec Routes
+
+| Route | Worker | Verified |
+|-------|--------|----------|
+| `POST /v1/embeddings` | EmbeddingWorkerV2 | ✅ |
+| `POST /v1/score` | ScoreWorkerV2 | ✅ |
+| `POST /v1/moderate` | GuardWorkerV2 | ✅ |
+| `POST /v1/rerank` | RerankWorkerV2 | ❌ Returns error (use `/v1/score`) |
+
+> Full deployment details: `docs/deployment/deployment_architecture.md`
+
 ## Project Structure
 
 - **App Entry:** `rag_engine/api/app.py`
