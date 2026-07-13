@@ -281,6 +281,24 @@ class LLMManager:
                 callbacks=[UsageAccountingCallback()],
             )
             return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
+        if p == "polza":
+          api_key = settings.polza_api_key
+          if not api_key or not api_key.strip():
+            raise ValueError(
+              "POLZA_API_KEY is not set or empty. "
+              "Please set it int your .env file."
+            )
+          base_url = settings.polza_base_url
+          logger.info(f"Initializing PolzaAI client: model={self.model_name}, base_url={base_url}")
+          model = ChatOpenAI(
+            model=self.model_name,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=self.temperature,
+            max_tokens=self._model_config.get("max_tokens"),
+            callbacks=[UsageAccountingCallback()],
+          )
+          return self._apply_structured_output(model, structured_output_schema) if structured_output_schema else model
         # default fallback to Gemini
         logger.warning(f"Unknown provider {p}, falling back to Gemini")
         model = ChatGoogleGenerativeAI(

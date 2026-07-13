@@ -305,4 +305,11 @@ MODEL_CONFIGS: dict[str, dict] = {
         "max_tokens": 2_048,
         "temperature": 0.1,
     },
+    # PolzaAI models (matching cmw-platform-agent)
+    "deepseek/deepseek-v4-flash": {
+        "token_limit": 1_048_576,  # 1M context window as per OpenRouter model card
+        "max_tokens": 65_536,
+        "temperature": 0,
+        "supports_forced_tool_choice": False,  # tool_choice not supported in thinking mode
+    },
 }

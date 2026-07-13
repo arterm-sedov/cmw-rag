@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     openrouter_base_url: str
     # OpenAI (true API, opt-in via DEFAULT_LLM_PROVIDER=openai)
     openai_api_key: str | None = None
+    # PolzaAI
+    polza_api_key: str | None = None
+    polza_base_url:str
     # vLLM configuration (OpenAI-compatible API)
     vllm_base_url: str
     vllm_api_key: str

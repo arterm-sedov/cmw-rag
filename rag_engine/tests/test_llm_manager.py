@@ -212,6 +212,15 @@ class TestLLMManager:
             ("anthropic/claude-sonnet-4.5", 1000000),
         ],
     )
+    
+    def test_polza_provider_creates_chatopenai(self, monkeypatch):
+      monkeypatch.setattr("rag_engine.llm.llm_manager.settings.polza_api_key", "test-key")
+      monkeypatch.setattr("rag_engine.llm.llm_manager.settings.polza_base_url", "https://polza.ai/api/v1")
+      manager = LLMManager("polza", "deepseek/deepseek-v4-flash")
+      from unittest.mock import MagicMock
+      monkeypatch.setattr("rag_engine.llm.llm_manager.ChatOpenAI", MagicMock)
+      model = manager._chat_model("polza")
+    
     def test_model_token_limits(self, model, expected_limit):
         """Test token limits for specific models."""
         # Use appropriate provider based on model
